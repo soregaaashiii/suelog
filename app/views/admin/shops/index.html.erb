@@ -1,0 +1,139 @@
+<%# app/views/admin/shops/index.html.erb %>
+
+<h1>店舗管理</h1>
+
+<div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
+<strong>表示：</strong>
+<% if @status == "all" %>
+<strong>すべて</strong>｜
+<%= link_to "承認待ち", admin_shops_path(status: "pending") %>｜
+<%= link_to "却下", admin_shops_path(status: "rejected") %>
+<% elsif @status == "rejected" %>
+<%= link_to "すべて", admin_shops_path(status: "all") %>｜
+<%= link_to "承認待ち", admin_shops_path(status: "pending") %>｜
+<strong>却下</strong>
+<% else %>
+<%= link_to "すべて", admin_shops_path(status: "all") %>｜
+<strong>承認待ち</strong>｜
+<%= link_to "却下", admin_shops_path(status: "rejected") %>
+<% end %>
+</div>
+
+<p style="color:#666; margin:8px 0;">件数：<%= @shops.count %> 件</p>
+
+<% if @shops.any? %>
+<table style="width:100%; border-collapse:collapse;">
+<thead>
+<tr style="border-bottom:2px solid #111;">
+<th align="left">店名</th>
+<th align="left">住所</th>
+<th align="left">メモ（抜粋）</th>
+<th align="left">状態</th>
+<th align="left">操作 / プレビュー</th>
+</tr>
+</thead>
+
+<tbody>
+<% @shops.each do |shop| %>
+<% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
+<% note_excerpt = shop.try(:note).to_s.strip.gsub(/\s+/, " ") %>
+<% note_excerpt = note_excerpt.length > 40 ? "#{note_excerpt[0,40]}…" : note_excerpt %>
+
+<tr style="border-bottom:1px solid #ddd; vertical-align:top;">
+<td style="padding:8px 0;">
+<strong><%= shop.name %></strong>
+</td>
+
+<td style="padding:8px 0;">
+<%= shop.address.presence || "未設定" %>
+</td>
+
+<td style="padding:8px 0; color:#444; font-size:12px;">
+<%= note_excerpt.presence || "（なし）" %>
+</td>
+
+<td style="padding:8px 0;">
+<% if shop.approved? %>
+<span style="color:#137333; font-weight:bold;">承認済み</span>
+<% elsif rejected %>
+<span style="color:#b00020; font-weight:bold;">却下</span>
+<% else %>
+<span style="color:#b00020; font-weight:bold;">承認待ち</span>
+<% end %>
+</td>
+
+<td style="padding:8px 0;">
+<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+<%# ✅ 承認待ちの時だけ操作を出す %>
+<% if !shop.approved? && !rejected %>
+<%= button_to "承認",
+approve_admin_shop_path(shop, status: @status),
+method: :patch,
+data: { turbo: false, turbo_confirm: "承認しますか？" } %>
+
+<%= button_to "却下（削除）",
+reject_admin_shop_path(shop, status: @status),
+method: :patch,
+data: { turbo: false, turbo_confirm: "却下して削除します。よろしいですか？" } %>
+<% end %>
+
+<%= link_to "プレビュー（公開ページ）",
+shop_path(shop),
+target: "_blank",
+rel: "noopener",
+style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+</div>
+
+<%# ✅ 一覧内プレビュー（開閉） %>
+<details style="margin-top:10px;">
+<summary style="cursor:pointer; list-style:none; display:inline-block; padding:8px 10px; border:1px solid #ddd; border-radius:10px;">
+一覧内プレビュー
+</summary>
+
+<div style="margin-top:10px; border:1px solid #eee; border-radius:12px; padding:12px; background:#fafafa;">
+<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+<div>
+<div style="font-weight:700; margin-bottom:6px;"><%= shop.name %></div>
+<div style="color:#666; font-size:12px;">
+作成：<%= shop.created_at&.strftime("%Y-%m-%d %H:%M") rescue "" %>
+<% if shop.respond_to?(:last_confirmed_on) %>
+／ 最終確認日：<%= shop.last_confirmed_on.presence || "未設定" %>
+<% end %>
+</div>
+</div>
+
+<div>
+<% if shop.approved? %>
+<span style="display:inline-block; padding:4px 10px; border-radius:999px; background:#e6f4ea; color:#137333; font-weight:700; font-size:12px;">承認済み</span>
+<% elsif rejected %>
+<span style="display:inline-block; padding:4px 10px; border-radius:999px; background:#fdecea; color:#b00020; font-weight:700; font-size:12px;">却下</span>
+<% else %>
+<span style="display:inline-block; padding:4px 10px; border-radius:999px; background:#fff5f5; color:#b00020; font-weight:700; font-size:12px;">承認待ち</span>
+<% end %>
+</div>
+</div>
+
+<hr style="border:none; border-top:1px solid #eee; margin:10px 0;">
+
+<p style="margin:0 0 6px;"><strong>住所：</strong><%= shop.address.presence || "未設定" %></p>
+<p style="margin:0 0 6px;"><strong>エリア：</strong><%= shop.try(:area).presence || "未設定" %></p>
+
+<p style="margin:10px 0 6px;"><strong>メモ（note）：</strong></p>
+<% if shop.try(:note).present? %>
+<div style="border:1px solid #eee; background:#fff; border-radius:10px; padding:10px;">
+<%= simple_format(h(shop.note.to_s)) %>
+</div>
+<% else %>
+<p style="margin:0; color:#666;">（なし）</p>
+<% end %>
+</div>
+</details>
+
+</td>
+</tr>
+<% end %>
+</tbody>
+</table>
+<% else %>
+<p>該当する店舗はありません。</p>
+<% end %>

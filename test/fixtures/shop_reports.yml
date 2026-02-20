@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  shop: one
+  reporter_name: MyString
+  reason: MyString
+  detail: MyText
+  status: 1
+
+two:
+  shop: two
+  reporter_name: MyString
+  reason: MyString
+  detail: MyText
+  status: 1

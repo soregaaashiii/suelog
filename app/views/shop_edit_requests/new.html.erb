@@ -1,0 +1,167 @@
+<%# app/views/shop_edit_requests/new.html.erb %>
+
+<h1>編集依頼：<%= @shop.name %></h1>
+<p style="color:#666;">
+※ 依頼内容は管理者が確認して反映します（多くの項目は空欄なら「変更しない」扱い）<br>
+※ ただし <strong>喫煙ステータス</strong> と <strong>写真（どれか1枚）</strong> は編集依頼では必須です
+</p>
+
+<% if @req.errors.any? %>
+<div style="border:1px solid #f5c2c7; background:#f8d7da; padding:12px; border-radius:10px; margin:12px 0;">
+<p style="margin:0; font-weight:bold;">入力エラーがあります：</p>
+<ul style="margin:8px 0 0;">
+<% @req.errors.full_messages.each do |msg| %>
+<li><%= msg %></li>
+<% end %>
+</ul>
+</div>
+<% end %>
+
+<%= form_with model: [@shop, @req], local: true, html: { multipart: true, novalidate: true } do |f| %>
+
+<p>
+あなたの名前（任意）：<br>
+<%= f.text_field :proposer_name %>
+</p>
+
+<hr>
+<h3>変更案（任意）</h3>
+
+<p>
+店名：<br>
+<%= f.text_field :proposed_name, placeholder: "（変更しない場合は空でOK）" %>
+</p>
+
+<div style="margin-top:12px;">
+<%= f.label :genre, "ジャンル" %><br>
+<%= f.select :genre,
+["居酒屋", "バー / パブ", "喫茶店 / カフェ", "焼肉", "ラーメン",
+"中華", "和食", "洋食", "立ち飲み", "スナック", "その他"],
+{ include_blank: "（変更しない）" } %>
+</div>
+
+<div style="margin-top:8px;">
+<%= f.label :genre_other, "その他" %><br>
+<%= f.text_field :genre_other, placeholder: "例：シーシャバー、ダーツバー（ジャンルが「その他」の時だけ必須）" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :proposed_area, "エリア(任意)" %><br>
+<%= f.select :proposed_area, Shop::AREAS, { include_blank: "（変更しない）" } %>
+</div>
+
+<p style="margin-top:12px;">
+住所：<br>
+<%= f.text_field :proposed_address, placeholder: "（変更しない場合は空でOK）" %>
+</p>
+
+<p>
+最終確認日：<br>
+<%= f.date_field :proposed_last_confirmed_on, max: Date.current %>
+<span style="display:block; color:#666; font-size:12px; margin-top:6px;">※ 空なら変更しません</span>
+</p>
+
+<p>
+最寄駅（任意）：<br>
+<%= f.text_field :proposed_nearest_station, placeholder: "例：梅田駅 徒歩5分（変更しない場合は空でOK）" %>
+</p>
+
+<div style="margin-top:12px;">
+<%= f.label :proposed_opening_hours, "営業時間（任意）" %><br>
+<%= f.text_area :proposed_opening_hours, rows: 4,
+placeholder: "例）\n月 11:00-23:00\n水 休み\n土 12:00-02:00" %>
+
+<p style="color:#666; font-size:12px; margin-top:6px;">
+例：<br>
+月 11:00-23:00<br>
+水 休み<br>
+土 12:00-02:00
+</p>
+</div>
+
+<p>
+電話番号（任意）：<br>
+<%= f.telephone_field :proposed_phone, placeholder: "例：06-1234-5678（変更しない場合は空でOK）" %>
+</p>
+
+<p>
+補足（任意）：<br>
+<%= f.text_area :note, rows: 4, placeholder: "例：席で吸える / 21時以降だけOK など" %>
+</p>
+
+<hr>
+<h3>喫煙ステータス（必須）</h3>
+
+<p>
+喫煙エリア（必須）：<br>
+<%= f.select :proposed_smoking_area,
+[["喫煙所あり", "separated"], ["席で喫煙可", "all_smoking"]],
+{ include_blank: "選択してください" } %>
+</p>
+
+<p>
+喫煙タイプ（必須）：<br>
+<%= f.select :proposed_smoking_type,
+[["紙・電子どちらもOK", "both_ok"],
+["電子タバコのみOK", "electronic_only"],
+["紙タバコのみOK", "paper_only"]],
+{ include_blank: "選択してください" } %>
+</p>
+
+<hr>
+<h3>写真（必須・編集依頼に添付）</h3>
+<p style="color:#666; font-size:12px; margin-top:6px;">
+※ 料理/内観/外観/メニューのどれでもOK。<strong>どれか1枚</strong>は必ず添付してください。<br>
+※ ここで添付した写真は「編集依頼」に紐づきます。管理側で確認して店舗に反映します。
+</p>
+
+<div style="margin-top:12px;">
+<%= f.label :food_photos, "料理の写真（複数OK）" %><br>
+<%= f.file_field :food_photos, multiple: true, accept: "image/*" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :interior_photos, "内観の写真（複数OK）" %><br>
+<%= f.file_field :interior_photos, multiple: true, accept: "image/*" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :exterior_photos, "外観の写真（複数OK）" %><br>
+<%= f.file_field :exterior_photos, multiple: true, accept: "image/*" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :menu_photos, "メニューの写真（複数OK）" %><br>
+<%= f.file_field :menu_photos, multiple: true, accept: "image/*" %>
+</div>
+
+<hr>
+<h3>サムネ候補（一覧に出す写真）</h3>
+<p style="color:#666; font-size:12px; margin-top:6px;">
+※ ここで指定するのは「希望」です。管理側で反映するか判断します。<br>
+※ 何枚目は 1 から数えます（1 = 先頭）
+</p>
+
+<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin-top:10px;">
+<div>
+<%= f.label :proposed_thumbnail_kind, "種類" %><br>
+<%= f.select :proposed_thumbnail_kind,
+[["自動（おすすめ）", "auto"], ["料理", "food"], ["外観", "exterior"], ["内観", "interior"], ["メニュー", "menu"]],
+{ include_blank: "（変更しない）" } %>
+</div>
+
+<div>
+<%= f.label :proposed_thumbnail_index, "何枚目（1〜）" %><br>
+<%= f.number_field :proposed_thumbnail_index, in: 1..20, step: 1, style: "width:140px;" %>
+</div>
+</div>
+
+<div style="margin-top:16px;">
+<%= f.submit "編集依頼を送る" %>
+</div>
+
+<% end %>
+
+<p style="margin-top:12px;">
+<%= link_to "戻る", shop_path(@shop) %>
+</p>

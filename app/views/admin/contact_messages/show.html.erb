@@ -1,0 +1,21 @@
+<h1>お問い合わせ詳細</h1>
+
+<p>
+<%= link_to "お問い合わせ一覧", admin_contact_messages_path %>
+</p>
+
+<p><strong>日時：</strong><%= @contact_message.created_at.strftime("%Y/%m/%d %H:%M") %></p>
+<p><strong>名前：</strong><%= @contact_message.name %></p>
+<p><strong>メール：</strong><%= @contact_message.email %></p>
+<p><strong>件名：</strong><%= @contact_message.subject %></p>
+
+<hr>
+
+<p><strong>内容：</strong></p>
+<div style="white-space:pre-wrap;">
+<%= @contact_message.body %>
+</div>
+
+<hr>
+
+<%= link_to "一覧へ戻る", admin_contact_messages_path %>

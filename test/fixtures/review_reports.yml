@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  review: one
+  reporter_name: MyString
+  reason: MyString
+  comment: MyText
+  status: 1
+
+two:
+  review: two
+  reporter_name: MyString
+  reason: MyString
+  comment: MyText
+  status: 1

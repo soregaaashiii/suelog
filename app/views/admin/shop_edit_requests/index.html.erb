@@ -1,0 +1,113 @@
+<%# app/views/admin/shop_edit_requests/index.html.erb %>
+
+<h1>編集依頼（管理）</h1>
+
+<p style="margin:8px 0;">
+<% if params[:status] == "pending" %>
+<strong>承認待ちのみ</strong>
+<span style="color:#999;">｜</span>
+<%= link_to "すべて表示", admin_shop_edit_requests_path %>
+<% else %>
+<strong>すべて</strong>
+<span style="color:#999;">｜</span>
+<%= link_to "承認待ちだけ表示", admin_shop_edit_requests_path(status: "pending") %>
+<% end %>
+</p>
+
+<p style="color:#666;">件数：<%= @edit_requests.count %> 件</p>
+
+<% if @edit_requests.any? %>
+<% @edit_requests.each do |req| %>
+<% shop = req.shop %>
+<% is_pending = (req.status.to_s == "pending") %>
+
+<div style="border:1px solid #ccc; padding:12px; margin:12px 0; border-radius:12px; background:#fff;">
+
+<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
+<div>
+<p style="margin:0;">
+<strong>店舗：</strong>
+<%= link_to shop.name, shop_path(shop), target: "_blank", rel: "noopener" %>
+</p>
+<p style="margin:6px 0 0; color:#666; font-size:12px;">
+依頼者：<%= req.proposer_name.presence || "匿名" %>
+／ <%= req.created_at.strftime("%Y-%m-%d %H:%M") %>
+／ 状態：<strong><%= req.status %></strong>
+</p>
+</div>
+
+<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+<%# ✅ 詳細（写真/サムネ確認） %>
+<%= link_to "詳細（写真/サムネ確認）",
+admin_shop_edit_request_path(req),
+style: "padding:8px 10px; border:1px solid #111; border-radius:10px; text-decoration:none; display:inline-block;" %>
+
+<%# ✅ 公開ページ %>
+<%= link_to "店舗ページ（新規タブ）",
+shop_path(shop),
+target: "_blank",
+rel: "noopener",
+style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+
+<%# ✅ 承認待ちの時だけ操作ボタンを出す（button_to=CSRF最強） %>
+<% if is_pending %>
+<%= button_to "承認して反映",
+approve_admin_shop_edit_request_path(req),
+method: :patch,
+form: { data: { turbo: false } },
+data: { turbo_confirm: "承認して反映しますか？" } %>
+
+<%= button_to "却下",
+reject_admin_shop_edit_request_path(req),
+method: :patch,
+form: { data: { turbo: false } },
+data: { turbo_confirm: "却下しますか？" } %>
+<% end %>
+</div>
+</div>
+
+<hr style="border:none; border-top:1px solid #eee; margin:10px 0;">
+
+<%# ざっくり差分の有無だけ表示（重くしない） %>
+<% changed =
+req.proposed_name.present? ||
+req.proposed_address.present? ||
+req.proposed_nearest_station.present? ||
+req.proposed_phone.present? ||
+req.proposed_opening_hours.present? ||
+req.proposed_last_confirmed_on.present? ||
+req.proposed_smoking_area.present? ||
+req.proposed_smoking_type.present? ||
+req.genre.present? ||
+(req.respond_to?(:proposed_thumbnail_kind) && req.proposed_thumbnail_kind.present?) ||
+(req.respond_to?(:proposed_thumbnail_index) && req.proposed_thumbnail_index.present?) ||
+(req.respond_to?(:food_photos) && req.food_photos.attached?) ||
+(req.respond_to?(:interior_photos) && req.interior_photos.attached?) ||
+(req.respond_to?(:exterior_photos) && req.exterior_photos.attached?) ||
+(req.respond_to?(:menu_photos) && req.menu_photos.attached?)
+%>
+
+<p style="margin:0; color:<%= changed ? '#111' : '#666' %>;">
+<strong>変更/添付：</strong>
+<%= changed ? "あり（詳細で確認）" : "なし" %>
+</p>
+
+<%# 添付写真がある場合だけ件数表示 %>
+<% if req.respond_to?(:food_photos) || req.respond_to?(:interior_photos) || req.respond_to?(:exterior_photos) || req.respond_to?(:menu_photos) %>
+<% fp = (req.respond_to?(:food_photos) && req.food_photos.attached?) ? req.food_photos.count : 0 %>
+<% ip = (req.respond_to?(:interior_photos) && req.interior_photos.attached?) ? req.interior_photos.count : 0 %>
+<% ep = (req.respond_to?(:exterior_photos) && req.exterior_photos.attached?) ? req.exterior_photos.count : 0 %>
+<% mp = (req.respond_to?(:menu_photos) && req.menu_photos.attached?) ? req.menu_photos.count : 0 %>
+
+<% if (fp + ip + ep + mp) > 0 %>
+<p style="margin:8px 0 0; color:#666; font-size:12px;">
+添付：料理 <%= fp %> / 内観 <%= ip %> / 外観 <%= ep %> / メニュー <%= mp %>
+</p>
+<% end %>
+<% end %>
+
+</div>
+<% end %>
+<% else %>
+<p>該当する編集依頼はありません。</p>
+<% end %>

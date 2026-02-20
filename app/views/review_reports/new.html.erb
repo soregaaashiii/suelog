@@ -1,0 +1,49 @@
+<h1>口コミを通報</h1>
+
+<p style="color:#666;">
+  対象店舗：<%= link_to @shop.name, shop_path(@shop) %>
+</p>
+
+<div style="border:1px solid #ddd; padding:12px; border-radius:12px; margin:12px 0;">
+  <p style="margin:0; color:#666; font-size:12px;">対象口コミ</p>
+  <p style="margin:6px 0 0;"><%= simple_format(h(@review.comment.to_s)) %></p>
+</div>
+
+<%= form_with model: [@review, @report] do |f| %>
+  <% if @report.errors.any? %>
+    <div style="border:1px solid #f99; padding:12px; border-radius:12px; background:#fff5f5;">
+      <p style="font-weight:bold; margin:0 0 6px;">入力エラーがあります：</p>
+      <ul style="margin:0; padding-left:18px;">
+        <% @report.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div style="margin-top:12px;">
+    <%= f.label :reason, "通報理由（必須）" %><br>
+    <%= f.select :reason,
+      ["誹謗中傷", "個人情報が含まれる", "スパム", "事実と異なる", "その他"],
+      { include_blank: "選択してください" },
+      { required: true } %>
+  </div>
+
+  <div style="margin-top:12px;">
+    <%= f.label :comment, "補足（任意）" %><br>
+    <%= f.text_area :comment, rows: 4, placeholder: "具体的な内容があると助かります" %>
+  </div>
+
+  <div style="margin-top:12px;">
+    <%= f.label :reporter_name, "お名前（任意）" %><br>
+    <%= f.text_field :reporter_name, placeholder: "匿名でもOK" %>
+  </div>
+
+  <div style="margin-top:16px;">
+    <%= f.submit "通報する" %>
+  </div>
+<% end %>
+
+<p style="margin-top:16px;">
+  <%= link_to "店舗詳細に戻る", shop_path(@shop) %>
+</p>

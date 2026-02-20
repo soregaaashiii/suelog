@@ -1,0 +1,35 @@
+<h1>アクセス（管理）</h1>
+
+<p style="color:#666;">総閲覧数：<strong><%= @total_views %></strong></p>
+
+<hr>
+<h2>直近7日（合計）</h2>
+<% if @daily.any? %>
+  <ul>
+    <% @daily.each do |day, count| %>
+      <li><%= day %>：<%= count %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <p style="color:#666;">データがまだありません。</p>
+<% end %>
+
+<hr>
+<h2>店舗別（上位50）</h2>
+<% if @by_shop.any? %>
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <% @by_shop.each do |row| %>
+      <div style="border:1px solid #ddd; padding:12px; border-radius:12px;">
+        <p style="margin:0;">
+          <strong><%= row.name %></strong>
+          <span style="color:#666;">（<%= row.views %>）</span>
+        </p>
+        <p style="margin:6px 0 0;">
+          <%= link_to "店舗詳細", shop_path(row.id) %>
+        </p>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <p style="color:#666;">まだ閲覧がありません。</p>
+<% end %>

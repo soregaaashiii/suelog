@@ -1,0 +1,145 @@
+<%# app/views/maps/index.html.erb %>
+
+<h1>近くの店舗（地図）</h1>
+
+<p style="color:#666; font-size:12px;">
+※ 住所から位置を推定してピンを立てます（初回は少し時間がかかります）
+</p>
+
+<%# ✅ エリア検索（クリックで候補が出る） %>
+<div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
+<%= form_with url: map_path, method: :get, local: true do %>
+<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+
+<div class="area-ac"
+data-controller="area-autocomplete"
+data-area-autocomplete-items-value='["阿倍野","阿倍野橋","旭区清水","朝潮橋","淡路","石橋阪大前","泉大津","泉ヶ丘","泉佐野","和泉中央","今里","茨木","茨木市","梅田","江坂","難波","大阪阿部野橋","大阪上本町","大阪狭山市","大阪天満宮","大日","大東市","大正","岡町","貝塚","香里園","柏原","門真市","岸和田","京橋","喜連瓜破","九条","河内小阪","河内国分","河内長野","河内松原","岸辺","北新地","北千里","北花田","布施","堺","堺東","桜川","新金岡","新今宮","新大阪","心斎橋","住道","千里中央","千林大宮","高槻","高槻市","玉造","天下茶屋","天王寺","天満橋","豊中","中百舌鳥","長居","西梅田","西九条","野田","東岸和田","東三国","東梅田","東大阪市","東花園","枚方市","平野","深井","藤井寺","古市","弁天町","本町","松原","箕面","都島","守口市","八尾","山田","淀屋橋","四ツ橋"]'>
+
+<label style="display:block; font-weight:700; margin-bottom:6px;">エリア</label>
+
+<%= text_field_tag :area,
+params[:area],
+placeholder: "例：梅田",
+autocomplete: "off",
+style: "width:260px;",
+data: {
+area_autocomplete_target: "input",
+action: "focus->area-autocomplete#onFocus click->area-autocomplete#onClick input->area-autocomplete#onInput keydown->area-autocomplete#onKeydown"
+} %>
+
+<div class="area-ac__list" data-area-autocomplete-target="list"></div>
+<div class="area-ac__hint">※ クリックで候補表示（入力で絞り込みも可）</div>
+</div>
+
+<div>
+<%= submit_tag "絞り込む", style: "padding:9px 12px; border-radius:10px; border:1px solid #ddd; background:#111; color:#fff; font-weight:800;" %>
+</div>
+
+<div>
+<%= link_to "クリア", map_path, style: "padding:9px 12px; border-radius:10px; border:1px solid #ddd; background:#fff; font-weight:800; display:inline-block;" %>
+</div>
+
+</div>
+<% end %>
+</div>
+
+<p style="margin:6px 0; color:#666; font-size:12px;">
+店舗数：<%= @shops_count %>
+</p>
+
+<div id="map" style="width:100%; height:70vh; border:1px solid #ddd; border-radius:12px;"></div>
+
+<script>
+// Rails から店舗データ（住所/名前/URL）を渡す
+const shops = <%= raw @shops.map { |s|
+{
+id: s.id,
+name: s.name.to_s,
+address: s.address.to_s,
+url: shop_path(s)
+}
+}.to_json %>;
+</script>
+
+<script>
+let map;
+let geocoder;
+
+function initMap() {
+geocoder = new google.maps.Geocoder();
+
+map = new google.maps.Map(document.getElementById("map"), {
+center: { lat: 34.7025, lng: 135.4959 }, // 初答（大阪）
+zoom: 13
+});
+
+const bounds = new google.maps.LatLngBounds();
+
+// ---- 現在地マーカー（許可されれば表示） ----
+if (navigator.geolocation) {
+navigator.geolocation.getCurrentPosition(
+(pos) => {
+const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+new google.maps.Marker({
+map,
+position: me,
+title: "現在地",
+});
+
+bounds.extend(me);
+map.fitBounds(bounds);
+},
+() => {}
+);
+}
+
+// ---- 住所→ピン（Geocoder）----
+let pinned = 0;
+const delayMs = 160;
+
+const pinOne = (shop) => {
+const addr = (shop.address || "").trim();
+if (!addr) return;
+
+geocoder.geocode({ address: addr }, (results, status) => {
+if (status !== "OK" || !results || !results[0]) return;
+
+const loc = results[0].geometry.location;
+
+const marker = new google.maps.Marker({
+map,
+position: loc,
+title: shop.name
+});
+
+marker.addListener("click", () => {
+window.open(shop.url, "_blank", "noopener");
+});
+
+bounds.extend(loc);
+pinned += 1;
+
+if (pinned >= 1) map.fitBounds(bounds);
+});
+};
+
+let i = 0;
+const timer = setInterval(() => {
+if (i >= shops.length) {
+clearInterval(timer);
+if (pinned === 0) {
+alert("地図に表示できる店舗がありません（住所が不完全な可能性があります）");
+}
+return;
+}
+pinOne(shops[i]);
+i += 1;
+}, delayMs);
+}
+</script>
+
+<script async defer
+src="https://maps.googleapis.com/maps/api/js?key=<%= ENV.fetch("GOOGLE_MAPS_API_KEY", "") %>&callback=initMap">
+</script>
+

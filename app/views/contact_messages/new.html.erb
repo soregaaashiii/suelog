@@ -1,0 +1,65 @@
+<h1>お問い合わせ</h1>
+
+<p style="color:#666; margin:8px 0 12px;">
+ご意見・不具合報告・掲載内容の修正依頼などはこちらから送れます。
+</p>
+
+<% if @contact_message.errors.any? %>
+<div style="border:1px solid #f5c2c7; background:#fdecea; padding:12px; border-radius:10px; margin:12px 0;">
+<p style="margin:0; font-weight:900; color:#b00020;">
+入力エラーがあります：
+</p>
+<ul style="margin:8px 0 0;">
+<% @contact_message.errors.full_messages.each do |msg| %>
+<li><%= msg %></li>
+<% end %>
+</ul>
+</div>
+<% end %>
+
+<%= form_with model: @contact_message, local: true, html: { novalidate: true } do |f| %>
+
+<div style="margin-top:14px;">
+<%= f.label :name do %>
+お名前 <span style="color:#b00020; font-weight:900;">※必須</span>
+<% end %><br>
+<%= f.text_field :name, required: true %>
+</div>
+
+<div style="margin-top:14px;">
+<%= f.label :email do %>
+メールアドレス <span style="color:#b00020; font-weight:900;">※必須</span>
+<% end %><br>
+<%= f.email_field :email,
+required: true,
+placeholder: "example@example.com" %>
+</div>
+
+<div style="margin-top:14px;">
+<%= f.label :subject do %>
+件名 <span style="color:#b00020; font-weight:900;">※必須</span>
+<% end %><br>
+<%= f.text_field :subject,
+required: true,
+placeholder: "例：掲載情報の修正依頼 / 不具合報告" %>
+</div>
+
+<div style="margin-top:14px;">
+<%= f.label :body do %>
+内容 <span style="color:#b00020; font-weight:900;">※必須</span>
+<% end %><br>
+<%= f.text_area :body,
+required: true,
+rows: 7,
+placeholder: "できるだけ具体的に書いてください（店舗名・URL・状況など）" %>
+</div>
+
+<div style="margin-top:18px;">
+<%= f.submit "送信する", class: "nav-btn" %>
+</div>
+
+<% end %>
+
+<p style="margin-top:16px;">
+<%= link_to "戻る", root_path %>
+</p>

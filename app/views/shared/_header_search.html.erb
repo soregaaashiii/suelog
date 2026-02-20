@@ -1,0 +1,31 @@
+<%= form_with url: root_path, method: :get, local: true, class: "header-search" do %>
+<div class="hs-row">
+<%= text_field_tag :area, params[:area], class: "hs-input", placeholder: "エリア（例：梅田 / 難波）" %>
+<%= text_field_tag :station, params[:station], class: "hs-input", placeholder: "最寄駅（例：梅田駅）" %>
+
+<%= select_tag :genre,
+options_for_select(
+[["ジャンル",""]] + ["居酒屋","バー / パブ","喫茶店 / カフェ","焼肉","ラーメン","中華","和食","洋食","立ち飲み","スナック","その他"],
+params[:genre]
+),
+class: "hs-select"
+%>
+
+<%= select_tag :smoking_area,
+options_for_select([["喫煙エリア",""],["喫煙所あり","separated"],["席で喫煙可","all_smoking"]], params[:smoking_area]),
+class: "hs-select"
+%>
+
+<%= select_tag :smoking_type,
+options_for_select([["喫煙タイプ",""],["紙・電子OK","both_ok"],["電子のみ","electronic_only"],["紙のみ","paper_only"]], params[:smoking_type]),
+class: "hs-select"
+%>
+
+<%= button_tag "検索", type: "submit", class: "hs-btn" %>
+
+<% if params[:area].present? || params[:station].present? || params[:genre].present? || params[:smoking_area].present? || params[:smoking_type].present? %>
+<%= link_to "クリア", root_path, class: "hs-clear" %>
+<% end %>
+</div>
+<% end %>
+

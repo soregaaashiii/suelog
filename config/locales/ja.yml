@@ -1,0 +1,25 @@
+ja:
+  activerecord:
+    models:
+      shop: "店舗"
+    attributes:
+      shop:
+        name: "店名"
+        genre: "ジャンル"
+        genre_other: "その他"
+        area: "エリア"
+        address: "住所"
+        nearest_station: "最寄駅"
+        opening_hours: "営業時間"
+        phone: "電話番号"
+        last_confirmed_on: "最終確認日"
+        smoking_area: "喫煙エリア"
+        smoking_type: "喫煙タイプ"
+        note: "メモ"
+
+  errors:
+    format: "%{attribute}%{message}"
+    messages:
+      blank: "を入力してください"
+      required: "を入力してください"
+      taken: "はすでに使われています"

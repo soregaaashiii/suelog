@@ -1,0 +1,209 @@
+<%# /app/views/shops/map.html.erb %>
+
+<h1>近くの店舗から探す</h1>
+
+<p style="color:#666; margin:8px 0;">
+  位置情報を許可すると、現在地から半径1.0km以内の店舗を表示します。
+</p>
+
+<p style="margin:12px 0;">
+  <button id="locate-btn" class="nav-btn" type="button">現在地を表示</button>
+</p>
+
+<div id="map" style="height:70vh; border:1px solid #ddd; border-radius:12px; overflow:hidden;"></div>
+
+<script>
+  // --- 店舗データ（緯度経度が入ってる店だけ来る想定だが念のためnullも弾く） ---
+  const shops = <%= raw(
+    @shops.map { |s|
+      { id: s.id, name: s.name.to_s, lat: s.latitude, lng: s.longitude }
+    }.to_json
+  ) %>;
+
+  const RADIUS_KM = 1.0;
+  const RADIUS_M  = 1000;
+
+  // 初期表示（大阪・ズーム近め）
+  const DEFAULT_CENTER = [34.702485, 135.495951];
+  const DEFAULT_ZOOM   = 15;
+
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+  }
+
+  function haversineKm(lat1, lng1, lat2, lng2){
+    const R = 6371;
+    const toRad = (d) => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  // --- Leaflet 読み込み（Turboでも崩れにくいように「1回だけ」読み込む） ---
+  function loadLeafletOnce(){
+    if (window.L) return Promise.resolve();
+
+    if (window.__leafletLoadingPromise) return window.__leafletLoadingPromise;
+
+    window.__leafletLoadingPromise = new Promise((resolve, reject) => {
+      // CSS
+      if (!document.querySelector('link[data-leaflet="css"]')) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        link.setAttribute("data-leaflet", "css");
+        document.head.appendChild(link);
+      }
+
+      // JS
+      if (document.querySelector('script[data-leaflet="js"]')) {
+        const t = setInterval(() => {
+          if (window.L) { clearInterval(t); resolve(); }
+        }, 30);
+        setTimeout(() => { clearInterval(t); reject(new Error("Leaflet load timeout")); }, 8000);
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      script.async = true;
+      script.defer = true;
+      script.setAttribute("data-leaflet", "js");
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("failed to load Leaflet"));
+      document.head.appendChild(script);
+    });
+
+    return window.__leafletLoadingPromise;
+  }
+
+  // --- Turboのキャッシュ前に破棄（「再起動しないと出ない」本命対策） ---
+  document.addEventListener("turbo:before-cache", () => {
+    const el = document.getElementById("map");
+    if (el && el._leaflet_map_instance) {
+      el._leaflet_map_instance.remove();
+      el._leaflet_map_instance = null;
+    }
+  });
+
+  async function bootMap(){
+    await loadLeafletOnce();
+
+    const mapEl = document.getElementById("map");
+    if (!mapEl) return;
+
+    // 戻る/進む・再描画で残骸がある場合は破棄して作り直す
+    if (mapEl._leaflet_map_instance) {
+      mapEl._leaflet_map_instance.remove();
+      mapEl._leaflet_map_instance = null;
+    }
+
+    const map = L.map("map", { zoomControl: true }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+    mapEl._leaflet_map_instance = map;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // 初期：近めで表示したいのでfitBoundsしない（ズームアウト事故防止）
+    // ただしマーカーは置く（lat/lngがあるものだけ）
+    shops.forEach((s) => {
+      if (s.lat == null || s.lng == null) return;
+      const m = L.marker([s.lat, s.lng]).addTo(map);
+      m.bindPopup(`
+        <div style="min-width:160px;">
+          <div style="font-weight:bold; margin-bottom:6px;">${escapeHtml(s.name)}</div>
+          <a href="/shops/${s.id}" target="_blank" rel="noopener">詳細を開く</a>
+        </div>
+      `);
+    });
+
+    // 真っ白対策（コンテナサイズ確定後に再計算）
+    setTimeout(() => map.invalidateSize(), 0);
+    setTimeout(() => map.invalidateSize(), 200);
+
+    // 現在地表示
+    let userMarker = null;
+    let circle = null;
+    let rangeMarkers = [];
+
+    const clearRangeMarkers = () => {
+      rangeMarkers.forEach(m => map.removeLayer(m));
+      rangeMarkers = [];
+    };
+
+    const renderShopsWithinRadius = (centerLat, centerLng) => {
+      clearRangeMarkers();
+
+      const inRange = shops.filter(s => {
+        if (s.lat == null || s.lng == null) return false;
+        return haversineKm(centerLat, centerLng, s.lat, s.lng) <= RADIUS_KM;
+      });
+
+      inRange.forEach(s => {
+        const m = L.marker([s.lat, s.lng]).addTo(map);
+        m.bindPopup(`
+          <div style="min-width:160px;">
+            <div style="font-weight:bold; margin-bottom:6px;">${escapeHtml(s.name)}</div>
+            <a href="/shops/${s.id}" target="_blank" rel="noopener">詳細を開く</a>
+          </div>
+        `);
+        rangeMarkers.push(m);
+      });
+
+      // 半径が収まるズームに（広すぎ防止でmaxZoomを上限）
+      const bounds = L.circle([centerLat, centerLng], { radius: RADIUS_M }).getBounds();
+      map.fitBounds(bounds, { padding: [20, 20] });
+      if (map.getZoom() > 16) map.setZoom(16);
+    };
+
+    document.getElementById("locate-btn")?.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        alert("このブラウザでは位置情報が使えません。");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          // ✅ 現在地ピン（必ず出す）
+          if (userMarker) map.removeLayer(userMarker);
+          userMarker = L.circleMarker([lat, lng], { radius: 10 }).addTo(map);
+          userMarker.bindPopup("現在地").openPopup();
+
+          // ✅ 半径サークル
+          if (circle) map.removeLayer(circle);
+          circle = L.circle([lat, lng], { radius: RADIUS_M }).addTo(map);
+
+          // ✅ 範囲内店舗だけ表示
+          renderShopsWithinRadius(lat, lng);
+
+          setTimeout(() => map.invalidateSize(), 0);
+        },
+        () => alert("位置情報が取得できませんでした（許可しているか確認してください）"),
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    });
+  }
+
+  // Turbo対応
+  document.addEventListener("turbo:load", () => { bootMap().catch(console.error); });
+  // Turboが無い環境でも動くように
+  document.addEventListener("DOMContentLoaded", () => { if (!window.Turbo) bootMap().catch(console.error); });
+</script>
+
+<p style="margin-top:12px;">
+  <%= link_to "一覧に戻る", root_path %>
+</p>

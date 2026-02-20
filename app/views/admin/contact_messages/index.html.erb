@@ -1,0 +1,29 @@
+<h1>お問い合わせ一覧</h1>
+
+<table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse; width:100%;">
+<thead style="background:#f5f5f5;">
+<tr>
+<th>日時</th>
+<th>名前</th>
+<th>メール</th>
+<th>件名</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<% @contact_messages.each do |msg| %>
+<tr>
+<td><%= msg.created_at.strftime("%Y/%m/%d %H:%M") %></td>
+<td><%= msg.name %></td>
+<td><%= msg.email %></td>
+<td><%= msg.subject %></td>
+<td>
+<%= link_to "詳細", admin_contact_message_path(msg) %> |
+<%= link_to "削除", admin_contact_message_path(msg),
+data: { turbo_method: :delete, turbo_confirm: "削除しますか？" } %>
+</td>
+</tr>
+<% end %>
+</tbody>
+</table>

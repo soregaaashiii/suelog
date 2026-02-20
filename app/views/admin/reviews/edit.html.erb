@@ -1,0 +1,116 @@
+<h1>口コミ編集（管理）</h1>
+
+<%# controllerが @shop を用意してても、無い場合に落ちないように %>
+<% shop = defined?(@shop) ? @shop : @review&.shop %>
+
+<p style="color:#666; margin:0 0 10px;">
+店舗：
+<% if shop.present? %>
+<%= link_to shop.name, shop_path(shop), target: "_blank", rel: "noopener" %>
+<% else %>
+<span style="color:#b00020; font-weight:700;">（店舗が見つかりません）</span>
+<% end %>
+</p>
+
+<%# 一覧に戻る時にフィルタを保持 %>
+<% back_params = {} %>
+<% back_params[:filter] = params[:filter] if params[:filter].present? %>
+<% back_params[:status] = params[:status] if params[:status].present? %>
+
+<%# ステータス表示を日本語に（通報用） %>
+<% status_label = {
+"pending" => "未対応",
+"resolved" => "対応済み",
+"rejected" => "却下"
+} %>
+
+<%= form_with model: [:admin, @review],
+url: admin_review_path(@review, back_params),
+method: :patch do |f| %>
+
+<% if @review.errors.any? %>
+<div style="border:1px solid #f99; padding:12px; border-radius:12px; background:#fff5f5;">
+<p style="font-weight:bold; margin:0 0 6px;">入力エラーがあります：</p>
+<ul style="margin:0; padding-left:18px;">
+<% @review.errors.full_messages.each do |msg| %>
+<li><%= msg %></li>
+<% end %>
+</ul>
+</div>
+<% end %>
+
+<div style="border:1px solid #eee; background:#fff; padding:12px; border-radius:12px;">
+<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+<div>
+<label style="display:flex; gap:8px; align-items:center;">
+<%= f.check_box :approved %>
+<span><strong>公開（承認）</strong></span>
+</label>
+<p style="color:#666; font-size:12px; margin:6px 0 0;">
+※ OFFのままだと「承認待ち」として扱われます
+</p>
+</div>
+
+<div style="color:#666; font-size:12px;">
+投稿日：<%= @review.created_at&.strftime("%Y-%m-%d %H:%M") %>
+</div>
+</div>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :rating, "評価（1〜5）" %><br>
+<%= f.number_field :rating, in: 1..5, step: 1, style: "width:120px;" %>
+<p style="color:#666; font-size:12px; margin:6px 0 0;">
+※ 1〜5の整数で入力してください
+</p>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :author_name, "投稿者名" %><br>
+<%= f.text_field :author_name, style: "width:100%; max-width:420px;" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :comment, "本文" %><br>
+<%= f.text_area :comment, rows: 6, style: "width:100%; max-width:680px;" %>
+</div>
+
+<div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+<%= f.submit "更新する" %>
+<%= link_to "一覧に戻る",
+admin_reviews_path(back_params),
+style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+</div>
+<% end %>
+
+<hr>
+
+<% reports = defined?(@reports) && @reports.present? ? @reports : [] %>
+
+<h2 style="margin-top:18px;">
+通報（最新順）
+<span style="color:#b00020; font-size:14px; font-weight:normal;">
+（<%= reports.size %>件）
+</span>
+</h2>
+
+<% if reports.any? %>
+<% reports.each do |rep| %>
+<div style="border:1px solid #f5c2c7; background:#fff5f5; padding:10px; border-radius:12px; margin:10px 0;">
+<p style="margin:0; color:#666; font-size:12px;">
+<%= rep.created_at.strftime("%Y-%m-%d %H:%M") %>
+／ 状態：<%= status_label[rep.status.to_s] || rep.status.to_s %>
+</p>
+
+<p style="margin:6px 0 0;">
+<strong>理由：</strong><%= simple_format(h(rep.reason.to_s)) %>
+</p>
+
+<% if rep.respond_to?(:comment) && rep.comment.present? %>
+<p style="margin-top:6px;"><%= simple_format(h(rep.comment.to_s)) %></p>
+<% end %>
+</div>
+<% end %>
+<% else %>
+<p style="color:#666;">通報はありません。</p>
+<% end %>

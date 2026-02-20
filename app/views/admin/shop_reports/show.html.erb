@@ -1,0 +1,114 @@
+<h1>店舗通報・詳細</h1>
+
+<p style="color:#666; margin-bottom:12px;">
+  通報日時：<%= @report.created_at.strftime("%Y-%m-%d %H:%M") %> ／
+  状態：
+  <% st = @report.status.to_s %>
+  <% if st == "pending" %>
+    <span style="color:#b00020; font-weight:bold;">未対応</span>
+  <% elsif st == "resolved" %>
+    <span style="color:#0a7a0a;">対応済み</span>
+  <% elsif st == "rejected" %>
+    <span style="color:#666;">却下</span>
+  <% else %>
+    <span style="color:#666;"><%= h(st) %></span>
+  <% end %>
+</p>
+
+<hr>
+
+<h2>対象店舗</h2>
+
+<div style="border:1px solid #ddd; padding:12px; border-radius:12px; margin-bottom:16px;">
+  <% if @shop.present? %>
+    <p><strong>店舗名：</strong>
+      <%= link_to @shop.name, shop_path(@shop), target: "_blank", rel: "noopener" %>
+    </p>
+
+    <p>住所：<%= @shop.address.presence || "未設定" %></p>
+
+    <%# display_genre が無い/private でも落ちないようにする %>
+    <% genre_text =
+        if @shop.respond_to?(:display_genre)
+          @shop.display_genre.to_s
+        else
+          (@shop.genre == "その他" ? @shop.genre_other.to_s : @shop.genre.to_s)
+        end
+    %>
+    <p>ジャンル：<%= genre_text.presence || "未設定" %></p>
+
+    <p>最寄駅：<%= @shop.nearest_station.presence || "未設定" %></p>
+    <p>電話番号：<%= @shop.phone.presence || "未設定" %></p>
+
+    <% if @shop.respond_to?(:approved?) && !@shop.approved? %>
+      <p style="color:#b00020; font-weight:bold;">※ この店舗は承認待ちです</p>
+    <% end %>
+  <% else %>
+    <p style="color:#b00020;">対象店舗が見つかりません（削除済みの可能性）</p>
+  <% end %>
+</div>
+
+<hr>
+
+<h2>通報内容</h2>
+
+<div style="border:1px solid #f5c2c7; background:#fff5f5; padding:12px; border-radius:12px;">
+  <p><strong>理由：</strong></p>
+  <p style="margin-left:8px;"><%= h(@report.reason.to_s) %></p>
+
+  <%# 補足は detail を優先（comment がある実装にも一応対応） %>
+  <% detail_text =
+      if @report.respond_to?(:detail) && @report.detail.present?
+        @report.detail
+      elsif @report.respond_to?(:comment) && @report.comment.present?
+        @report.comment
+      else
+        nil
+      end
+  %>
+
+  <% if detail_text.present? %>
+    <p style="margin-top:10px;"><strong>補足：</strong></p>
+    <div style="margin-left:8px;">
+      <%= simple_format(h(detail_text)) %>
+    </div>
+  <% end %>
+
+  <% if @report.respond_to?(:reporter_name) && @report.reporter_name.present? %>
+    <p style="margin-top:10px; color:#666; font-size:12px;">
+      通報者：<%= h(@report.reporter_name) %>
+    </p>
+  <% end %>
+</div>
+
+<hr>
+
+<h2>対応</h2>
+
+<div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">
+  <% if @report.status.to_s == "pending" %>
+    <%= button_to "対応済みにする",
+      resolve_admin_shop_report_path(@report, status: params[:status]),
+      method: :patch,
+      style: "padding:10px 14px;" %>
+
+    <%= button_to "却下",
+      reject_admin_shop_report_path(@report, status: params[:status]),
+      method: :patch,
+      data: { turbo_confirm: "却下しますか？" },
+      style: "padding:10px 14px;" %>
+  <% else %>
+    <p style="color:#666;">この通報はすでに未対応ではありません。</p>
+  <% end %>
+</div>
+
+<hr>
+
+<p style="margin-top:16px;">
+  <%= link_to "← 一覧に戻る",
+    admin_shop_reports_path(status: params[:status]),
+    style: "text-decoration:none;" %>
+</p>
+
+
+

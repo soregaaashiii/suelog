@@ -1,0 +1,137 @@
+<h1>通報（管理）</h1>
+
+<p style="margin:8px 0;">
+<% if params[:status] == "pending" %>
+<strong>未対応のみ</strong> |
+<%= link_to "すべて表示", admin_shop_reports_path %>
+<% else %>
+<strong>すべて</strong> |
+<%= link_to "未対応だけ表示", admin_shop_reports_path(status: "pending") %>
+<% end %>
+</p>
+
+<p style="color:#666;">件数：<%= @reports&.count.to_i %> 件</p>
+
+<% if @reports.present? && @reports.any? %>
+<% @reports.each do |rep| %>
+<% shop = (rep.shop rescue nil) %>
+
+<%# 補足は detail を優先（comment がある実装にも一応対応） %>
+<% detail_text =
+if rep.respond_to?(:detail) && rep.detail.present?
+rep.detail
+elsif rep.respond_to?(:comment) && rep.comment.present?
+rep.comment
+else
+nil
+end
+%>
+
+<div style="border:1px solid #ccc; padding:12px; margin:12px 0; border-radius:12px; background:#fff;">
+<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+<div>
+<p style="color:#666; font-size:12px; margin:0 0 6px;">
+店舗：
+<% if shop.present? %>
+<%= link_to shop.name, shop_path(shop), target: "_blank", rel: "noopener" %>
+<% else %>
+（店舗が見つかりません）
+<% end %>
+／ <%= rep.created_at.strftime("%Y-%m-%d %H:%M") %>
+／ 状態：<%= rep.status %>
+</p>
+
+<% if rep.respond_to?(:reason) && rep.reason.present? %>
+<p style="margin:0;"><strong>理由：</strong><%= h(rep.reason) %></p>
+<% end %>
+</div>
+
+<div style="display:flex; gap:8px; flex-wrap:wrap;">
+<%= link_to "詳細ページ",
+admin_shop_report_path(rep, status: params[:status]),
+style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+</div>
+</div>
+
+<% if detail_text.present? %>
+<div style="margin:8px 0; color:#333;">
+<%= simple_format(h(detail_text)) %>
+</div>
+<% end %>
+
+<div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+<%= button_to "対応済み",
+resolve_admin_shop_report_path(rep, status: params[:status]),
+method: :patch,
+data: { turbo: false } %>
+
+<%= button_to "却下",
+reject_admin_shop_report_path(rep, status: params[:status]),
+method: :patch,
+data: { turbo: false, turbo_confirm: "却下しますか？" } %>
+</div>
+
+<%# ===== 一覧内プレビュー（開閉）===== %>
+<details style="margin-top:12px;">
+<summary style="cursor:pointer; list-style:none; display:inline-block; padding:8px 10px; border:1px solid #ddd; border-radius:10px;">
+一覧内プレビュー（店舗＋地図＋通報内容）
+</summary>
+
+<div style="margin-top:10px; padding:12px; border:1px solid #eee; border-radius:12px; background:#fafafa;">
+<% if shop.present? %>
+<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
+<div style="font-size:18px; font-weight:800;"><%= shop.name %></div>
+<%= link_to "店舗ページ（新規タブ）",
+shop_path(shop),
+target: "_blank",
+rel: "noopener",
+style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+</div>
+
+<hr style="border:none; border-top:1px solid #eee; margin:10px 0;">
+
+<p style="margin:0 0 6px;"><strong>住所：</strong><%= shop.address.presence || "未設定" %></p>
+<p style="margin:0 0 6px;"><strong>最寄駅：</strong><%= shop.try(:nearest_station).presence || "未設定" %></p>
+<p style="margin:0 0 6px;"><strong>電話：</strong><%= shop.try(:phone).presence || "未設定" %></p>
+<p style="margin:0 0 6px;"><strong>最終確認日：</strong><%= shop.try(:last_confirmed_on).presence || "未設定" %></p>
+
+<%# 住所ベース地図（緯度経度不要） %>
+<% q = ERB::Util.url_encode([shop.name, shop.try(:area), shop.address].compact.join(" ")) %>
+<div style="margin-top:10px;">
+<div style="font-weight:700; margin-bottom:6px;">地図</div>
+<iframe width="100%" height="220" style="border:0; border-radius:12px;" loading="lazy"
+src="https://www.google.com/maps?q=<%= q %>&output=embed"></iframe>
+<div style="margin-top:6px;">
+<a href="https://www.google.com/maps?q=<%= q %>" target="_blank" rel="noopener">Googleマップで開く</a>
+</div>
+</div>
+<% else %>
+<p style="color:#666;">この通報に紐づく店舗が見つかりません。</p>
+<% end %>
+
+<hr style="border:none; border-top:1px solid #eee; margin:10px 0;">
+
+<div style="border:1px solid #f5c2c7; background:#fff5f5; padding:10px; border-radius:12px;">
+<p style="margin:0; color:#666; font-size:12px;">
+通報日時：<%= rep.created_at.strftime("%Y-%m-%d %H:%M") %> ／ 状態：<%= rep.status %>
+</p>
+
+<% if rep.respond_to?(:reason) && rep.reason.present? %>
+<p style="margin:6px 0 0;"><strong>理由：</strong><%= h(rep.reason) %></p>
+<% end %>
+
+<% if detail_text.present? %>
+<div style="margin-top:8px;">
+<%= simple_format(h(detail_text)) %>
+</div>
+<% else %>
+<p style="margin:6px 0 0; color:#666;">補足なし</p>
+<% end %>
+</div>
+</div>
+</details>
+</div>
+<% end %>
+<% else %>
+<p>該当する通報はありません。</p>
+<% end %>

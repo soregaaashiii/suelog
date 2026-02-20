@@ -1,0 +1,44 @@
+<h1>口コミを編集</h1>
+
+<p style="color:#666; margin:0 0 10px;">
+店舗：<%= link_to @shop.name, shop_path(@shop) %>
+</p>
+
+<% if @review.errors.any? %>
+  <div style="border:1px solid #f99; padding:12px; border-radius:12px; background:#fff5f5;">
+    <p style="font-weight:bold; margin:0 0 6px;">入力エラーがあります：</p>
+    <ul style="margin:0; padding-left:18px;">
+      <% @review.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: [@shop, @review], method: :patch, local: true do |f| %>
+  <div style="margin-top:12px;">
+    <%= f.label :rating, "評価（1〜5）" %><br>
+    <%= f.number_field :rating, in: 1..5, step: 1, style: "width:120px;" %>
+  </div>
+
+  <div style="margin-top:12px;">
+    <%= f.label :author_name, "投稿者名（任意）" %><br>
+    <%= f.text_field :author_name, style: "width:100%; max-width:420px;" %>
+  </div>
+
+  <div style="margin-top:12px;">
+    <%= f.label :comment, "本文" %><br>
+    <%= f.text_area :comment, rows: 6, style: "width:100%; max-width:680px;" %>
+  </div>
+
+  <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+    <%= f.submit "更新する" %>
+    <%= link_to "店舗ページに戻る", shop_path(@shop),
+      style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+  </div>
+<% end %>
+
+<p style="color:#666; font-size:12px; margin-top:10px;">
+※ 更新後は再承認が必要になる場合があります（運用次第で調整できます）
+</p>
+

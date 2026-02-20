@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>吸えログ</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<%= csrf_meta_tags %>
+<%= csp_meta_tag %>
+
+<%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+<%= javascript_importmap_tags %>
+</head>
+
+<body>
+<header class="site-header">
+<div class="header-inner">
+<%= link_to "吸えログ", root_path, class: "logo" %>
+
+<div></div>
+
+<nav class="nav">
+<%= link_to "近くの店舗から探す", map_path,
+style: "
+padding:8px 14px;
+border-radius:8px;
+background:#111;
+color:#fff;
+text-decoration:none;
+font-weight:700;
+" %>
+
+<%= link_to "＋ 店舗登録", new_shop_path,
+style: "
+padding:8px 14px;
+border:1px solid #ddd;
+border-radius:8px;
+background:#fff;
+color:#333;
+text-decoration:none;
+font-weight:600;
+" %>
+</nav>
+</div>
+
+
+
+</header>
+
+<main class="container main-content">
+<%= yield %>
+</main>
+
+<footer class="site-footer">
+<div class="container">© <%= Time.current.year %> 吸えログ</div>
+
+
+<footer style="margin-top:60px; padding:20px; text-align:center; font-size:13px; color:#666; border-top:1px solid #eee;">
+<%= link_to "お問い合わせ", new_contact_message_path, style: "margin:0 8px;" %>｜
+<%= link_to "利用規約", terms_path, style: "margin:0 8px;" %>｜
+<%= link_to "プライバシーポリシー", privacy_path, style: "margin:0 8px;" %>
+</footer>
+
+
+
+
+</body>
+</html>

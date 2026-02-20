@@ -1,0 +1,135 @@
+<h1>口コミ 詳細（管理）</h1>
+
+<%# 一覧に戻る時にフィルタを保持 %>
+<% back_params = {} %>
+<% back_params[:filter] = params[:filter] if params[:filter].present? %>
+<% back_params[:status] = params[:status] if params[:status].present? %>
+
+<% status_label = { "pending" => "未対応", "resolved" => "対応済み", "rejected" => "却下" } %>
+
+<%# ★表示（0〜5） %>
+<% def stars(n)
+i = n.to_i
+i = 0 if i < 0
+i = 5 if i > 5
+"★" * i + "☆" * (5 - i)
+end %>
+
+<% shop = defined?(@shop) ? @shop : @review&.shop %>
+
+<p style="color:#666; margin:0 0 10px;">
+店舗：
+<% if shop.present? %>
+<%= link_to shop.name, shop_path(shop), target: "_blank", rel: "noopener" %>
+<% else %>
+<span style="color:#b00020; font-weight:700;">（店舗が見つかりません）</span>
+<% end %>
+</p>
+
+<div style="border:1px solid #ddd; padding:12px; border-radius:12px; background:#fff;">
+<p style="margin:0; color:#666; font-size:12px;">
+投稿日：<%= @review.created_at.strftime("%Y-%m-%d %H:%M") %>
+／ 承認：<%= @review.approved? ? "公開" : "承認待ち" %>
+</p>
+
+<% rating = @review.rating.to_i %>
+<p style="margin:8px 0 0;">
+<strong>評価：</strong>
+<span style="font-weight:900;"><%= stars(rating) %></span>
+<span style="color:#666; font-size:12px;">（<%= rating %>/5）</span>
+</p>
+
+<p style="margin:6px 0 0; color:#666;">
+投稿者：<%= @review.author_name.presence || "匿名" %>
+</p>
+
+<% if @review.comment.present? %>
+<div style="margin-top:10px;">
+<%= simple_format(h(@review.comment.to_s)) %>
+</div>
+<% else %>
+<p style="color:#666; margin-top:10px;">本文なし</p>
+<% end %>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+<% unless @review.approved? %>
+<%= button_to "承認", approve_admin_review_path(@review, back_params), method: :patch %>
+<%= button_to "却下（削除）",
+reject_admin_review_path(@review, back_params),
+method: :patch,
+data: { turbo_confirm: "却下して削除します。よろしいですか？" } %>
+<% end %>
+
+<%= link_to "編集する",
+edit_admin_review_path(@review, back_params),
+style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+
+<%= link_to "一覧に戻る",
+admin_reviews_path(back_params),
+style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+</div>
+</div>
+
+<hr>
+
+<%# controllerで @pending_reports / @all_reports を作ってる前提。無くても落ちないよう保険 %>
+<% pending_list = defined?(@pending_reports) && @pending_reports.present? ? @pending_reports : [] %>
+<% all_list = defined?(@all_reports) && @all_reports.present? ? @all_reports : [] %>
+
+<h2 style="margin:0 0 8px;">
+通報（未対応）
+<span style="color:#b00020; font-size:14px; font-weight:normal;">
+（<%= (defined?(@pending_reports_count) ? @pending_reports_count : pending_list.size).to_i %>件）
+</span>
+</h2>
+
+<% if pending_list.any? %>
+<% pending_list.each do |rep| %>
+<div style="border:1px solid #f5c2c7; background:#fff5f5; padding:10px; border-radius:12px; margin:10px 0;">
+<p style="margin:0; color:#666; font-size:12px;">
+<%= rep.created_at.strftime("%Y-%m-%d %H:%M") %>
+／ 状態：<%= status_label[rep.status.to_s] || rep.status.to_s %>
+</p>
+
+<p style="margin:6px 0 0;">
+<strong>理由：</strong><%= simple_format(h(rep.reason.to_s)) %>
+</p>
+
+<% if rep.respond_to?(:comment) && rep.comment.present? %>
+<p style="margin-top:6px;"><%= simple_format(h(rep.comment.to_s)) %></p>
+<% end %>
+</div>
+<% end %>
+<% else %>
+<p style="color:#666;">未対応の通報はありません。</p>
+<% end %>
+
+<hr>
+
+<h2 style="margin:0 0 8px;">
+通報（すべて・最新順）
+<span style="color:#666; font-size:14px; font-weight:normal;">
+（<%= (defined?(@all_reports_count) ? @all_reports_count : all_list.size).to_i %>件）
+</span>
+</h2>
+
+<% if all_list.any? %>
+<% all_list.each do |rep| %>
+<div style="border:1px solid #ddd; background:#fff; padding:10px; border-radius:12px; margin:10px 0;">
+<p style="margin:0; color:#666; font-size:12px;">
+<%= rep.created_at.strftime("%Y-%m-%d %H:%M") %>
+／ 状態：<%= status_label[rep.status.to_s] || rep.status.to_s %>
+</p>
+
+<p style="margin:6px 0 0;">
+<strong>理由：</strong><%= simple_format(h(rep.reason.to_s)) %>
+</p>
+
+<% if rep.respond_to?(:comment) && rep.comment.present? %>
+<p style="margin-top:6px;"><%= simple_format(h(rep.comment.to_s)) %></p>
+<% end %>
+</div>
+<% end %>
+<% else %>
+<p style="color:#666;">通報はありません。</p>
+<% end %>

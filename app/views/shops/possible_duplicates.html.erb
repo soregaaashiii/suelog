@@ -1,0 +1,36 @@
+<h1>重複の疑い（電話番号）</h1>
+
+<p style="color:#666;">
+入力された電話番号：<strong><%= @phone.presence || "（なし）" %></strong>
+</p>
+
+<% if @normalized_phone.blank? %>
+<p style="color:#b00020; font-weight:900;">電話番号が空のため、確認できません。</p>
+<p><%= link_to "店舗登録に戻る", new_shop_path %></p>
+<% else %>
+<p style="color:#666;">一致した件数：<%= @shops.count %> 件</p>
+
+<% if @shops.any? %>
+<div style="border:1px solid #eee; background:#fff; border-radius:12px; padding:12px;">
+<% @shops.each do |s| %>
+<div style="padding:10px 0; border-bottom:1px solid #f2f2f2;">
+<div style="font-weight:900;"><%= s.name %></div>
+<div style="color:#666; font-size:12px;">
+電話：<%= s.phone.presence || "未設定" %> ／ 住所：<%= s.address.presence || "未設定" %>
+</div>
+<div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+<%= link_to "公開ページを見る", shop_path(s), target: "_blank", rel: "noopener",
+style: "display:inline-block; padding:8px 10px; border:1px solid #ddd; border-radius:10px;" %>
+</div>
+</div>
+<% end %>
+</div>
+<% else %>
+<p>一致する店舗は見つかりませんでした。</p>
+<% end %>
+
+<p style="margin-top:14px;">
+<%= link_to "店舗登録に戻る", new_shop_path(phone: @phone),
+style: "display:inline-block; padding:10px 12px; border:1px solid #ddd; border-radius:10px;" %>
+</p>
+<% end %>

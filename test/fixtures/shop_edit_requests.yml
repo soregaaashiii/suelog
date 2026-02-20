@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  shop: one
+  proposer_name: MyString
+  note: MyText
+  proposed_name: MyString
+  proposed_address: MyString
+  proposed_last_confirmed_on: 2026-02-07
+  status: 1
+
+two:
+  shop: two
+  proposer_name: MyString
+  note: MyText
+  proposed_name: MyString
+  proposed_address: MyString
+  proposed_last_confirmed_on: 2026-02-07
+  status: 1

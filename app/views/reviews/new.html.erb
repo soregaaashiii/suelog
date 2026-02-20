@@ -1,0 +1,34 @@
+<h1><%= @shop.name %> に口コミ投稿</h1>
+
+<%= form_with model: [@shop, @review], local: true do |f| %>
+<div style="margin-top:12px;">
+<%= f.label :author_name, "名前（任意）" %><br>
+<%= f.text_field :author_name, placeholder: "匿名でもOK" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :taste, "味" %><br>
+<%= f.select :taste, [["★☆☆☆☆",1],["★★☆☆☆",2],["★★★☆☆",3],["★★★★☆",4],["★★★★★",5]] %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :atmosphere, "雰囲気" %><br>
+<%= f.select :atmosphere, [["★☆☆☆☆",1],["★★☆☆☆",2],["★★★☆☆",3],["★★★★☆",4],["★★★★★",5]] %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :comment, "コメント（任意）" %><br>
+<%= f.text_area :comment, rows: 5, placeholder: "吸えた条件（席/時間/紙巻きOKなど）も書くと助かる" %>
+</div>
+
+
+<p style="color:#666;"> ※ 口コミは内容確認後に公開されます </p>
+
+<div style="margin-top:16px;">
+<%= f.submit "投稿する" %>
+</div>
+<% end %>
+
+<p style="margin-top:16px;">
+<%= link_to "店舗詳細に戻る", shop_path(@shop) %>
+</p>

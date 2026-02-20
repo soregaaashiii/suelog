@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>吸えログ 管理</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<%= csrf_meta_tags %>
+<%= csp_meta_tag %>
+
+<%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+<%= javascript_importmap_tags %>
+</head>
+
+<body data-turbo="false" class="admin-body">
+
+<%# ✅ バッジ付きナビ（admin_nav_link を使う） %>
+<%= render "admin/nav" %>
+
+<main style="max-width:1100px; margin:20px auto; padding:0 16px;">
+<% if notice.present? %>
+<div style="margin-bottom:12px; padding:10px; background:#e6f4ea; border:1px solid #cfe8d3; border-radius:10px;">
+<%= notice %>
+</div>
+<% end %>
+
+<% if alert.present? %>
+<div style="margin-bottom:12px; padding:10px; background:#fdecea; border:1px solid #f5c2c7; border-radius:10px;">
+<%= alert %>
+</div>
+<% end %>
+
+<%= yield %>
+</main>
+</body>
+</html>

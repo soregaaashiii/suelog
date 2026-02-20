@@ -1,0 +1,169 @@
+<h1>お店情報を編集</h1>
+
+<% if @shop.errors.any? %>
+<div style="border:1px solid #f5c2c7; background:#f8d7da; padding:12px; border-radius:10px; margin:12px 0;">
+<p style="margin:0; font-weight:bold;">入力エラーがあります：</p>
+<ul style="margin:8px 0 0;">
+<% @shop.errors.full_messages.each do |msg| %>
+<li><%= msg %></li>
+<% end %>
+</ul>
+</div>
+<% end %>
+
+
+
+<%= form_with model: @shop, local: true, html: { novalidate: true } do |f| %>
+
+<div style="margin-top:12px;">
+<%= f.label :name, "店名" %><br>
+<%= f.text_field :name, required: true %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :genre, "ジャンル" %><br>
+<%= f.select :genre,
+["居酒屋", "バー / パブ", "喫茶店 / カフェ", "焼肉", "ラーメン",
+"中華", "和食", "洋食", "立ち飲み", "スナック", "その他"],
+{ include_blank: "選択してください" },
+{ required: true } %>
+</div>
+
+<div style="margin-top:8px;">
+<%= f.label :genre_other, "その他" %><br>
+<%= f.text_field :genre_other, placeholder: "例：シーシャバー、ダーツバー" %>
+</div>
+
+
+
+<div style="margin-top:12px;">
+<%= f.label :area, "エリア" %><br>
+<%= f.select :area,
+Shop::AREAS,
+{ include_blank: "選択してください" },
+{ required: true } %>
+</div>
+
+
+
+
+<div style="margin-top:12px;">
+<%= f.label :address, "住所" %><br>
+<%= f.text_field :address, placeholder: "例：大阪市北区梅田1-1-1 / 〇〇店 梅田", required: true %>
+</div>
+
+
+<div style="margin-top:12px;">
+<%= f.label :last_confirmed_on, "最終確認日" %><br>
+<%= f.date_field :last_confirmed_on, max: Date.current, required: true %>
+</div>
+
+<hr>
+<h3>基本情報</h3>
+
+<p>
+最寄駅（任意）<br>
+<%= f.text_field :nearest_station, placeholder: "例：梅田駅 徒歩5分" %>
+</p>
+
+<p>
+営業時間（任意）<br>
+<%= f.text_area :opening_hours,
+rows: 5,
+placeholder: "例）
+月 11:00-23:00
+水 休み
+土 12:00-02:00" %>
+<span style="display:block; color:#666; font-size:12px; margin-top:6px;">
+例：<br>
+月 11:00-23:00<br>
+水 休み<br>
+土 12:00-02:00
+</span>
+</p>
+
+<p>
+電話番号（任意）<br>
+<%= f.telephone_field :phone, placeholder: "例：06-1234-5678" %>
+</p>
+
+
+
+<hr>
+<h3>喫煙ステータス</h3>
+
+<p>
+喫煙エリア：<br>
+<%= f.select :smoking_area,
+[["喫煙所あり", "separated"], ["席で喫煙可", "all_smoking"]],
+{ include_blank: "選択してください" } %>
+</p>
+
+<p>
+喫煙タイプ：<br>
+<%= f.select :smoking_type,
+[["紙・電子どちらもOK", "both_ok"], ["電子タバコのみOK", "electronic_only"], ["紙タバコのみOK", "paper_only"]],
+{ include_blank: "選択してください" } %>
+</p>
+
+<hr>
+<h2>写真（任意）</h2>
+
+<div style="margin-top:12px;">
+<%= f.label :food_photos, "料理の写真（複数OK）" %><br>
+<%= f.file_field :food_photos, multiple: true, accept: "image/*" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :interior_photos, "内観の写真（複数OK）" %><br>
+<%= f.file_field :interior_photos, multiple: true, accept: "image/*" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :exterior_photos, "外観の写真（複数OK）" %><br>
+<%= f.file_field :exterior_photos, multiple: true, accept: "image/*" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :menu_photos, "メニューの写真（複数OK）" %><br>
+<%= f.file_field :menu_photos, multiple: true, accept: "image/*" %>
+</div>
+
+<hr>
+<h3>一覧に出す写真（サムネ設定）</h3>
+<p style="color:#666; font-size:12px; margin-top:6px;">
+種類＋「何枚目（1〜）」を指定できます。<br>
+存在しない番号/写真が無い場合は、自動で別の写真にフォールバックします。
+</p>
+
+<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin-top:10px;">
+<div>
+<%= f.label :thumbnail_kind, "種類" %><br>
+<%= f.select :thumbnail_kind,
+[["自動（おすすめ）", "auto"], ["料理", "food"], ["外観", "exterior"], ["内観", "interior"], ["メニュー", "menu"]],
+{ include_blank: false } %>
+</div>
+
+<div>
+<%= f.label :thumbnail_index, "何枚目（1〜）" %><br>
+<%= f.number_field :thumbnail_index, in: 1..20, step: 1, style: "width:120px;" %>
+<div style="color:#666; font-size:12px; margin-top:6px;">
+例：料理の #2 を出したい → 種類=料理 / 何枚目=2
+</div>
+</div>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :note, "メモ（吸える条件・席・時間など）" %><br>
+<%= f.text_area :note, rows: 5 %>
+</div>
+
+<div style="margin-top:16px;">
+<%= f.submit "更新する" %>
+</div>
+<% end %>
+
+<p style="margin-top:16px;">
+<%= link_to "詳細に戻る", shop_path(@shop) %> |
+<%= link_to "一覧に戻る", root_path %>
+</p>
