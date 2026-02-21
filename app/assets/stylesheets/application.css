@@ -1,364 +1,87 @@
+/* ===== Global Fix ===== */
+html, body {
+width: 100%;
+max-width: 100%;
+overflow-x: hidden;
+}
+
+*, *::before, *::after {
+box-sizing: border-box;
+}
+
+img, video, iframe {
+max-width: 100%;
+height: auto;
+display: block;
+}
+
 /* ===== Base ===== */
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-  background: #f7f7f7;
-  color: #111;
+margin: 0;
+font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+background: #f7f7f7;
+color: #111;
 }
 
 .container {
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 16px;
+width: 100%;
+max-width: 1100px;
+margin: 0 auto;
+padding: 0 16px;
 }
 
-a { color: inherit; text-decoration: none; }
-
-hr {
-  border: none;
-  border-top: 1px solid #e5e5e5;
-  margin: 24px 0;
-}
-
-/* ===== Header（食べログ寄せ） ===== */
+/* ===== Header ===== */
 .site-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: #fff;
-  border-bottom: 1px solid #eee;
+position: sticky;
+top: 0;
+z-index: 50;
+background: #fff;
+border-bottom: 1px solid #eee;
 }
 
 .header-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 10px 14px;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 12px;
-  align-items: center;
-}
-
-.logo {
-  font-weight: 900;
-  font-size: 18px;
-  color: #111;
-  letter-spacing: 0.02em;
-}
-
-.nav { display: flex; justify-content: flex-end; gap: 10px; }
-
-.nav-link {
-  color: #111;
-  padding: 8px 10px;
-  border-radius: 10px;
-}
-
-.nav-link:hover { background: #f6f6f6; }
-
-.nav-primary {
-  color: #fff !important;
-  background: #111;
-  padding: 9px 12px;
-  border-radius: 12px;
-  font-weight: 800;
-}
-
-/* ===== Main / Footer ===== */
-.main-content { padding-top: 14px; }
-
-.site-footer {
-  margin-top: 60px;
-  padding: 30px 0;
-  background: #111;
-  color: #fff;
-  text-align: center;
-  font-size: 12px;
-}
-
-/* ===== Shop Card v2 ===== */
-.shop-grid{
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap:16px;
-  margin: 12px 0 6px;
-}
-
-.shop-card2{
-  border:1px solid #e7e7e7;
-  border-radius:18px;
-  background:#fff;
-  overflow:hidden;
-  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-}
-
-.shop-card2:hover{
-  transform: translateY(-2px);
-  box-shadow: 0 10px 26px rgba(0,0,0,.08);
-  border-color:#dedede;
-}
-
-.shop-card2--stale{
-  border-color:#ffd7d7;
-  background: linear-gradient(0deg, #fff, #fff3f3);
-}
-
-.shop-card2__media{
-  position:relative;
-  aspect-ratio: 16 / 10;
-  background:#f6f6f6;
-  overflow:hidden; /* ← これが無いと拡大が見えにくい */
-}
-
-.shop-card2__mediaLink{ display:block; width:100%; height:100%; }
-
-.shop-card2__img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-  transform: scale(1);
-  transition: transform .45s ease; /* ← ここで効く */
-}
-
-.shop-card2:hover .shop-card2__img{
-  transform: scale(1.07); /* ← 変化が分かる倍率 */
-}
-
-.shop-card2__placeholder{
-  width:100%;
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  gap:6px;
-  padding:16px;
-  background: radial-gradient(1200px 400px at 20% 0%, #f7f7f7, #f1f1f1);
-}
-
-.shop-card2__placeholderTitle{
-  font-weight:900;
-  font-size:16px;
-  color:#111;
-  text-align:center;
-}
-
-.shop-card2__placeholderSub{
-  font-size:12px;
-  color:#666;
-}
-
-.shop-card2__badges{
-  position:absolute;
-  top:10px;
-  right:10px;
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-
-/* Badges */
-.badge{
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:800;
-  letter-spacing:.02em;
-  border:1px solid rgba(0,0,0,.06);
-  background: rgba(255,255,255,.85);
-  color:#111;
-}
-
-.badge--open{ background: rgba(230,244,234,.92); color:#137333; border-color: rgba(19,115,51,.18); }
-.badge--closed{ background: rgba(253,236,234,.92); color:#b00020; border-color: rgba(176,0,32,.18); }
-.badge--stale{ background: rgba(255,243,243,.92); color:#b00020; border-color: rgba(176,0,32,.18); }
-
-/* Body */
-.shop-card2__body{ padding:14px 14px 16px; }
-
-.shop-card2__top{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:10px;
-}
-
-.shop-card2__title{
-  margin:0;
-  font-size:16px;
-  line-height:1.25;
-  font-weight:900;
-}
-
-.shop-card2__titleLink{ color:#111; }
-.shop-card2__titleLink:hover{ text-decoration: underline; }
-
-.shop-card2__tags{
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-
-.tag{
-  display:inline-block;
-  padding:5px 10px;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:800;
-  background:#111;
-  color:#fff;
-}
-.tag--muted{
-  background:#f3f3f3;
-  color:#333;
-  border:1px solid #e6e6e6;
-}
-
-.shop-card2__address{
-  margin:8px 0 10px;
-  color:#666;
-  font-size:12px;
-}
-
-/* Rating */
-.shop-card2__rating{
-  border:1px solid #ededed;
-  border-radius:14px;
-  padding:10px;
-  background:#fafafa;
-  display:grid;
-  gap:8px;
-}
-
-.ratingBlock{
-  display:grid;
-  grid-template-columns: 46px 1fr 42px;
-  align-items:center;
-  gap:8px;
-}
-.ratingBlock__label{ font-size:12px; color:#666; font-weight:800; }
-.ratingBlock__stars{ font-size:12px; letter-spacing:.12em; color:#111; white-space:nowrap; }
-.ratingBlock__num{ text-align:right; font-size:12px; font-weight:900; color:#111; }
-.ratingMeta{ font-size:12px; color:#666; }
-
-/* Meta */
-.shop-card2__meta{
-  margin:10px 0 0;
-  display:grid;
-  gap:6px;
-}
-.metaRow{
-  display:grid;
-  grid-template-columns: 70px 1fr;
-  gap:8px;
-  font-size:12px;
-  color:#444;
-}
-.metaRow dt{ color:#666; font-weight:800; }
-.metaRow dd{ margin:0; font-weight:700; color:#111; }
-
-/* Actions */
-.shop-card2__actions{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:12px;
-}
-
-.btnPill{
-  display:inline-block;
-  padding:8px 12px;
-  border-radius:999px;
-  border:1px solid #e3e3e3;
-  background:#fff;
-  font-size:12px;
-  font-weight:900;
-  color:#111;
-}
-
-.btnPill:hover{
-  border-color:#d6d6d6;
-  box-shadow: 0 6px 14px rgba(0,0,0,.06);
-}
-
-.btnPill--ghost{ background:#fafafa; }
-.btnPill--danger{
-  border-color:#f3c6c9;
-  background:#fff5f5;
-  color:#b00020;
-}
-
-/* Responsive */
-@media (max-width: 820px) {
-  .header-inner { grid-template-columns: 1fr; }
-  .nav { justify-content: flex-start; }
-}
-
-/* ===== Admin Nav Badge ===== */
-.admin-badge{
-display:inline-flex;
-align-items:center;
-justify-content:center;
-min-width:18px;
-height:18px;
-padding:0 6px;
-margin-left:8px;
-border-radius:999px;
-background:#b00020;
-color:#fff;
-font-size:12px;
-font-weight:900;
-line-height:1;
-}
-
-
-/* ===== Area Autocomplete（これだけ残す） ===== */
-
-.area-ac {
-position: relative;
-max-width: 420px;
-}
-
-.area-ac__list {
-display: none; /* JSで表示制御 */
-position: absolute;
-top: calc(100% + 6px);
-left: 0;
-right: 0;
-background: #fff;
-border: 1px solid #ddd;
-border-radius: 10px;
-padding: 6px;
-z-index: 99999;
-max-height: 240px;
-overflow-y: auto;
-box-shadow: 0 10px 26px rgba(0,0,0,.08);
-}
-
-.area-ac__item {
 width: 100%;
-text-align: left;
-padding: 8px 10px;
-border: 0;
-background: transparent;
-border-radius: 8px;
-cursor: pointer;
-font-weight: 700;
+max-width: 1100px;
+margin: 0 auto;
+padding: 10px 14px;
+display: grid;
+grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto);
+gap: 12px;
+align-items: center;
 }
 
-.area-ac__item:hover,
-.area-ac__item.is-active {
-background: #f2f2f2;
+.header-inner > * {
+min-width: 0; /* ← これ重要 */
 }
 
-.area-ac__hint {
-margin-top: 6px;
-font-size: 12px;
-color: #666;
+.nav {
+display: flex;
+justify-content: flex-end;
+gap: 10px;
+flex-wrap: wrap; /* ← 折り返す */
 }
 
+/* ===== Shop Grid ===== */
+.shop-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+gap: 16px;
+margin: 12px 0 6px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 820px) {
+.header-inner {
+grid-template-columns: 1fr;
+}
+.nav {
+justify-content: flex-start;
+}
+}
+
+/* 小さいスマホ用 */
+@media (max-width: 420px) {
+.shop-grid {
+grid-template-columns: 1fr;
+}
+}
