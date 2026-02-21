@@ -15,6 +15,11 @@ height: auto;
 display: block;
 }
 
+
+html, body { width: 100%; overflow-x: hidden; }
+*, *::before, *::after { box-sizing: border-box; }
+img { max-width: 100%; height: auto; display: block; }
+
 /* ===== Base ===== */
 body {
 margin: 0;
@@ -40,7 +45,6 @@ border-bottom: 1px solid #eee;
 }
 
 .header-inner {
-width: 100%;
 max-width: 1100px;
 margin: 0 auto;
 padding: 10px 14px;
@@ -50,24 +54,30 @@ gap: 12px;
 align-items: center;
 }
 
-.header-inner > * {
-min-width: 0; /* ← これ重要 */
-}
+.header-inner > * { min-width: 0; }
+
+
 
 .nav {
 display: flex;
 justify-content: flex-end;
 gap: 10px;
-flex-wrap: wrap; /* ← 折り返す */
+flex-wrap: wrap;
 }
 
 /* ===== Shop Grid ===== */
-.shop-grid {
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-gap: 16px;
+.shop-grid{
+display:grid;
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* ←元のまま */
+gap:16px;
 margin: 12px 0 6px;
 }
+
+/* スマホだけ1列にして横スクロール封じ */
+@media (max-width: 420px) {
+.shop-grid { grid-template-columns: 1fr; }
+}
+
 
 /* ===== Responsive ===== */
 @media (max-width: 820px) {
