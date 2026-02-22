@@ -71,3 +71,7 @@ gem "geocoder"
 group :development, :test do
   gem "dotenv-rails"
 end
+
+gem "httparty", "~> 0.24.2"
+
+gem "kaminari"

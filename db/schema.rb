@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_18_120711) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_22_030417) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -140,13 +140,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_18_120711) do
     t.text "note"
     t.text "opening_hours"
     t.string "phone"
+    t.string "place_id"
     t.boolean "rejected"
     t.integer "smoking_area"
     t.integer "smoking_type"
+    t.string "source"
     t.integer "taste"
     t.integer "thumbnail_index"
     t.string "thumbnail_kind"
     t.datetime "updated_at", null: false
+    t.index ["place_id"], name: "index_shops_on_place_id", unique: true
+    t.index ["source"], name: "index_shops_on_source"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

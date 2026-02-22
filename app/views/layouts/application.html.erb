@@ -1,66 +1,74 @@
 <!DOCTYPE html>
-<html>
-<head>
-<title>吸えログ in大阪</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<%= csrf_meta_tags %>
-<%= csp_meta_tag %>
+<html lang="ja">
+  <head>
+    <title>吸えログ in大阪</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-<%= javascript_importmap_tags %>
-</head>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
 
-<body>
-<header class="site-header">
-<div class="header-inner">
-<%= link_to "吸えログ in大阪", root_path, class: "logo" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
 
-<div></div>
+  <body>
 
-<nav class="nav">
-<%= link_to "近くの店舗から探す", map_path,
-style: "
-padding:8px 14px;
-border-radius:8px;
-background:#111;
-color:#fff;
-text-decoration:none;
-font-weight:700;
-" %>
+    <% count = session[:contribution_count].to_i %>
+    <% badge = contribution_badge(count) %>
 
-<%= link_to "＋ 店舗登録", new_shop_path,
-style: "
-padding:8px 14px;
-border:1px solid #ddd;
-border-radius:8px;
-background:#fff;
-color:#333;
-text-decoration:none;
-font-weight:600;
-" %>
-</nav>
-</div>
+    <% if count > 0 %>
+      <div style="background:#111; color:#fff; padding:8px; text-align:center; font-size:13px;">
+        ご協力回数：<strong><%= count %>回</strong>
 
+        <% if badge %>
+          <span style="margin-left:10px; padding:4px 10px; border-radius:999px; background:<%= badge[:color] %>; font-weight:700;">
+            <%= badge[:icon] %> <%= badge[:name] %>
+          </span>
+        <% end %>
+      </div>
+    <% end %>
 
+    <header class="site-header">
+      <div class="header-inner">
+        <%= link_to "吸えログ in大阪", root_path, class: "logo" %>
 
-</header>
+        <nav class="nav">
+          <%= link_to "近くの店舗から探す", map_path,
+            style: "padding:8px 14px; border-radius:8px; background:#111; color:#fff; text-decoration:none; font-weight:700;" %>
 
-<main class="container main-content">
-<%= yield %>
-</main>
+          <%= link_to "＋ 店舗登録", new_shop_path,
+            style: "padding:8px 14px; border:1px solid #ddd; border-radius:8px; background:#fff; color:#333; text-decoration:none; font-weight:600; margin-left:8px;" %>
+        </nav>
+      </div>
+    </header>
 
-<footer class="site-footer">
-<div class="container">© <%= Time.current.year %> 吸えログ in大阪</div>
+    <main class="container main-content">
 
+      <% if notice.present? %>
+        <div style="margin:12px 0; padding:10px 12px; border:1px solid #cfe8d6; background:#e6f4ea; color:#137333; border-radius:10px;">
+          <%= notice %>
+        </div>
+      <% end %>
 
-<footer style="margin-top:60px; padding:20px; text-align:center; font-size:13px; color:#666; border-top:1px solid #eee;">
-<%= link_to "お問い合わせ", new_contact_message_path, style: "margin:0 8px;" %>｜
-<%= link_to "利用規約", terms_path, style: "margin:0 8px;" %>｜
-<%= link_to "プライバシーポリシー", privacy_path, style: "margin:0 8px;" %>
-</footer>
+      <% if alert.present? %>
+        <div style="margin:12px 0; padding:10px 12px; border:1px solid #f3c7c7; background:#fff5f5; color:#b00020; border-radius:10px;">
+          <%= alert %>
+        </div>
+      <% end %>
 
+      <%= yield %>
+    </main>
 
+    <footer class="site-footer">
+      <div class="container">
+        © <%= Time.current.year %> 吸えログ in大阪
+      </div>
 
-
-</body>
+      <div style="margin-top:18px; padding:20px; text-align:center; font-size:13px; color:#666; border-top:1px solid #eee;">
+        <%= link_to "お問い合わせ", new_contact_message_path, style: "margin:0 8px;" %>｜
+        <%= link_to "利用規約", terms_path, style: "margin:0 8px;" %>｜
+        <%= link_to "プライバシーポリシー", privacy_path, style: "margin:0 8px;" %>
+      </div>
+    </footer>
+  </body>
 </html>

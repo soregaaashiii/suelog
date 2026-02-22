@@ -1,35 +1,38 @@
 <!DOCTYPE html>
-<html>
-<head>
-<title>吸えログ 管理</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ja">
+  <head>
+    <title>吸えログ 管理画面</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<%= csrf_meta_tags %>
-<%= csp_meta_tag %>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
 
-<%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-<%= javascript_importmap_tags %>
-</head>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
 
-<body data-turbo="false" class="admin-body">
+  <body style="background:#f7f7f7; font-family:-apple-system, BlinkMacSystemFont, sans-serif;">
+    <div style="background:#111; color:#fff; padding:14px 20px; font-weight:700;">
+      吸えログ 管理画面
+    </div>
 
-<%# ✅ バッジ付きナビ（admin_nav_link を使う） %>
-<%= render "admin/nav" %>
+    <div style="max-width:1200px; margin:30px auto; padding:0 20px;">
+      <%# ✅ 管理メニュー（承認待ち口コミ/編集依頼/通報/アクセス/お問い合わせ など） %>
+      <%= render "admin/nav" %>
 
-<main style="max-width:1100px; margin:20px auto; padding:0 16px;">
-<% if notice.present? %>
-<div style="margin-bottom:12px; padding:10px; background:#e6f4ea; border:1px solid #cfe8d3; border-radius:10px;">
-<%= notice %>
-</div>
-<% end %>
+      <% if notice.present? %>
+        <div style="margin:15px 0; padding:10px; background:#e6f4ea; border:1px solid #cfe8d6; color:#137333; border-radius:8px;">
+          <%= notice %>
+        </div>
+      <% end %>
 
-<% if alert.present? %>
-<div style="margin-bottom:12px; padding:10px; background:#fdecea; border:1px solid #f5c2c7; border-radius:10px;">
-<%= alert %>
-</div>
-<% end %>
+      <% if alert.present? %>
+        <div style="margin:15px 0; padding:10px; background:#fff5f5; border:1px solid #f3c7c7; color:#b00020; border-radius:8px;">
+          <%= alert %>
+        </div>
+      <% end %>
 
-<%= yield %>
-</main>
-</body>
+      <%= yield %>
+    </div>
+  </body>
 </html>
