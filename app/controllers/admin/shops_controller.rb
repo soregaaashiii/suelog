@@ -9,7 +9,7 @@ def index
 
 @per = (params[:per].presence || 50).to_i
 @per = 50 if @per <= 0
-@per = 500 if @per > 500 # 暴走防止
+@per = 500 if @per > 500
 
 @page = params[:page].to_i
 @page = 1 if @page <= 0
@@ -20,7 +20,7 @@ case @status
 when "rejected"
 scope = scope.where(rejected: true)
 when "all"
-# 全部
+# all
 else
 scope = scope.where(approved: false).where(rejected: [false, nil])
 end
@@ -68,7 +68,6 @@ redirect_to admin_shops_path(status: status, source: params[:source], per: param
 alert: "却下に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
 end
 
-# ✅ 一括操作（approve / reject）
 def bulk_update
 status = params[:status].presence || "pending"
 
@@ -101,7 +100,6 @@ alert: "不正な操作です"
 end
 end
 
-# ✅ 承認待ちも編集
 def edit
 @shop = Shop.find(params[:id])
 @status = params[:status].presence || "pending"
@@ -110,11 +108,10 @@ def edit
 @page = (params[:page].presence || 1).to_i
 end
 
-# ✅ 編集ページで「更新」「更新して承認」「更新して却下」を1発でできる
 def update
 @shop = Shop.find(params[:id])
 
-action = params[:commit_action].to_s # "update" / "approve" / "reject"
+action = params[:commit_action].to_s
 notice = "更新しました"
 
 ActiveRecord::Base.transaction do
@@ -142,7 +139,7 @@ flash.now[:alert] = e.record.errors.full_messages.join(" / ")
 render :edit, status: :unprocessable_entity
 end
 
-# ✅ CSVインポート（ヘッダー揺れ吸収＋エリア正規化）
+# ✅ CSVインポート（ヘッダー揺れ吸収 + エリア正規化）
 def import
 file = params[:file]
 return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
