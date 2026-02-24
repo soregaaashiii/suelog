@@ -2,262 +2,285 @@
 
 <h1>店舗管理</h1>
 
+<%# =========================
+✅ CSV一括インポート
+========================= %>
+<div style="margin:10px 0; padding:12px; border:1px solid #ddd; border-radius:12px; background:#fafafa;">
+<div style="font-weight:900; margin-bottom:8px;">CSV一括インポート</div>
+
+<%= form_with url: import_admin_shops_path,
+multipart: true,
+local: true,
+style: "display:flex; gap:10px; align-items:center; flex-wrap:wrap;" do %>
+
+<%= file_field_tag :file, accept: ".csv", required: true %>
+
+<%= submit_tag "インポートする",
+style: "padding:8px 12px; border:1px solid #111; border-radius:10px; background:#111; color:#fff;" %>
+<% end %>
+
+<div style="color:#666; font-size:12px; margin-top:8px; line-height:1.6;">
+・phone を数字化して normalized_phone で既存判定 → あれば更新 / なければ新規<br>
+・喫煙エリア or 喫煙タイプが空なら自動で承認待ち（noteに「未確認」を追記）<br>
+</div>
+</div>
+
 <div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
-  <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-    <div>
-      <strong>表示：</strong>
-      <% if @status == "all" %>
-        <strong>すべて</strong>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>
-      <% elsif @status == "rejected" %>
-        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <strong>却下</strong>
-      <% else %>
-        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-        <strong>承認待ち</strong>｜
-        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>
-      <% end %>
-    </div>
+<div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+<div>
+<strong>表示：</strong>
+<% if @status == "all" %>
+<strong>すべて</strong>｜
+<%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+<%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>
+<% elsif @status == "rejected" %>
+<%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+<%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+<strong>却下</strong>
+<% else %>
+<%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+<strong>承認待ち</strong>｜
+<%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>
+<% end %>
+</div>
 
-    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-      <%# ✅ 表示件数(per) %>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <strong>表示件数：</strong>
-        <form action="<%= admin_shops_path %>" method="get" style="display:flex; gap:8px; align-items:center;">
-          <input type="hidden" name="status" value="<%= @status %>">
-          <input type="hidden" name="source" value="<%= @source %>">
-          <input type="hidden" name="page" value="1">
-          <select name="per" style="padding:6px 8px; border:1px solid #ddd; border-radius:10px;">
-            <% [50, 100, 200, 500].each do |n| %>
-              <option value="<%= n %>" <%= "selected" if @per.to_i == n %>><%= n %></option>
-            <% end %>
-          </select>
-          <button type="submit" style="padding:6px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
-            反映
-          </button>
-        </form>
-      </div>
+<div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+<%# ✅ 表示件数(per) %>
+<div style="display:flex; gap:8px; align-items:center;">
+<strong>表示件数：</strong>
+<form action="<%= admin_shops_path %>" method="get" style="display:flex; gap:8px; align-items:center;">
+<input type="hidden" name="status" value="<%= @status %>">
+<input type="hidden" name="source" value="<%= @source %>">
+<input type="hidden" name="page" value="1">
+<select name="per" style="padding:6px 8px; border:1px solid #ddd; border-radius:10px;">
+<% [50, 100, 200, 500].each do |n| %>
+<option value="<%= n %>" <%= "selected" if @per.to_i == n %>><%= n %></option>
+<% end %>
+</select>
+<button type="submit" style="padding:6px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+反映
+</button>
+</form>
+</div>
 
-      <%# ✅ sourceフィルタ %>
-      <% if Shop.column_names.include?("source") %>
-        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <strong>source：</strong>
-          <form action="<%= admin_shops_path %>" method="get" style="display:flex; gap:8px; align-items:center;">
-            <input type="hidden" name="status" value="<%= @status %>">
-            <input type="hidden" name="per" value="<%= @per %>">
-            <input type="hidden" name="page" value="1">
-            <select name="source" style="padding:6px 8px; border:1px solid #ddd; border-radius:10px;">
-              <option value="" <%= "selected" if @source.blank? %>>すべて</option>
-              <option value="google" <%= "selected" if @source == "google" %>>google</option>
-            </select>
-            <button type="submit" style="padding:6px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
-              絞り込む
-            </button>
-          </form>
-        </div>
-      <% end %>
-    </div>
-  </div>
+<%# ✅ sourceフィルタ %>
+<% if Shop.column_names.include?("source") %>
+<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+<strong>source：</strong>
+<form action="<%= admin_shops_path %>" method="get" style="display:flex; gap:8px; align-items:center;">
+<input type="hidden" name="status" value="<%= @status %>">
+<input type="hidden" name="per" value="<%= @per %>">
+<input type="hidden" name="page" value="1">
+<select name="source" style="padding:6px 8px; border:1px solid #ddd; border-radius:10px;">
+<option value="" <%= "selected" if @source.blank? %>>すべて</option>
+<option value="google" <%= "selected" if @source == "google" %>>google</option>
+</select>
+<button type="submit" style="padding:6px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+絞り込む
+</button>
+</form>
+</div>
+<% end %>
+</div>
+</div>
 </div>
 
 <p style="color:#666; margin:8px 0;">
-  件数：<%= (@total_count || @shops.count) %> 件 ／ ページ：<%= (@page || 1) %> / <%= (@total_pages || 1) %>
+件数：<%= (@total_count || @shops.count) %> 件 ／ ページ：<%= (@page || 1) %> / <%= (@total_pages || 1) %>
 </p>
 
 <%# ✅ 前へ/次へ（ページャ） %>
 <% if (@total_pages || 1) > 1 %>
-  <div style="margin:10px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-    <% if (@page || 1) > 1 %>
-      <%= link_to "← 前へ",
-                  admin_shops_path(status: @status, source: @source, per: @per, page: (@page - 1)),
-                  style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-    <% end %>
+<div style="margin:10px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+<% if (@page || 1) > 1 %>
+<%= link_to "← 前へ",
+admin_shops_path(status: @status, source: @source, per: @per, page: (@page - 1)),
+style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+<% end %>
 
-    <% if (@page || 1) < (@total_pages || 1) %>
-      <%= link_to "次へ →",
-                  admin_shops_path(status: @status, source: @source, per: @per, page: (@page + 1)),
-                  style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-    <% end %>
-  </div>
+<% if (@page || 1) < (@total_pages || 1) %>
+<%= link_to "次へ →",
+admin_shops_path(status: @status, source: @source, per: @per, page: (@page + 1)),
+style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+<% end %>
+</div>
 <% end %>
 
 <% if @shops.any? %>
 
-  <%# ✅ 一括操作フォーム（入れ子form禁止。tableの外に置く） %>
-  <%= form_with url: bulk_update_admin_shops_path, method: :patch, local: true, id: "bulk_form" do %>
-    <input type="hidden" name="status" value="<%= @status %>">
-    <input type="hidden" name="source" value="<%= @source %>">
-    <input type="hidden" name="per" value="<%= @per %>">
-    <input type="hidden" name="page" value="<%= @page %>">
+<%# ✅ 一括操作フォーム（入れ子form禁止。tableの外に置く） %>
+<%= form_with url: bulk_update_admin_shops_path, method: :patch, local: true, id: "bulk_form" do %>
+<input type="hidden" name="status" value="<%= @status %>">
+<input type="hidden" name="source" value="<%= @source %>">
+<input type="hidden" name="per" value="<%= @per %>">
+<input type="hidden" name="page" value="<%= @page %>">
 
-    <input type="hidden" name="shop_ids_csv" id="shop_ids_csv" value="">
+<input type="hidden" name="shop_ids_csv" id="shop_ids_csv" value="">
 
-    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; padding:10px; border:1px solid #eee; border-radius:12px; background:#fafafa;">
-      <label style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="select_all">
-        <strong>全選択（このページ）</strong>
-      </label>
+<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; padding:10px; border:1px solid #eee; border-radius:12px; background:#fafafa;">
+<label style="display:flex; align-items:center; gap:8px;">
+<input type="checkbox" id="select_all">
+<strong>全選択（このページ）</strong>
+</label>
 
-      <span id="selected_count" style="color:#666;">選択：0件</span>
+<span id="selected_count" style="color:#666;">選択：0件</span>
 
-      <button type="submit"
-              name="operation"
-              value="approve"
-              data-turbo="false"
-              data-turbo-confirm="選択した店舗を一括承認しますか？"
-              style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
-        一括承認
-      </button>
+<button type="submit"
+name="operation"
+value="approve"
+data-turbo="false"
+data-turbo-confirm="選択した店舗を一括承認しますか？"
+style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+一括承認
+</button>
 
-      <button type="submit"
-              name="operation"
-              value="reject"
-              data-turbo="false"
-              data-turbo-confirm="選択した店舗を一括却下しますか？"
-              style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
-        一括却下
-      </button>
+<button type="submit"
+name="operation"
+value="reject"
+data-turbo="false"
+data-turbo-confirm="選択した店舗を一括却下しますか？"
+style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+一括却下
+</button>
 
-      <span style="color:#999; font-size:12px;">
-        ※ 一括操作は「このページでチェックされた店舗のみ」
-      </span>
-    </div>
-  <% end %>
+<span style="color:#999; font-size:12px;">
+※ 一括操作は「このページでチェックされた店舗のみ」
+</span>
+</div>
+<% end %>
 
-  <table style="width:100%; border-collapse:collapse;">
-    <thead>
-      <tr style="border-bottom:2px solid #111;">
-        <th align="left" style="width:42px;">選択</th>
-        <th align="left">店名</th>
-        <th align="left">住所</th>
-        <th align="left">状態</th>
-        <th align="left">操作</th>
-      </tr>
-    </thead>
+<table style="width:100%; border-collapse:collapse;">
+<thead>
+<tr style="border-bottom:2px solid #111;">
+<th align="left" style="width:42px;">選択</th>
+<th align="left">店名</th>
+<th align="left">住所</th>
+<th align="left">状態</th>
+<th align="left">操作</th>
+</tr>
+</thead>
 
-    <tbody>
-      <% @shops.each do |shop| %>
-        <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
+<tbody>
+<% @shops.each do |shop| %>
+<% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
 
-        <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
-          <td style="padding:10px 0;">
-            <input type="checkbox" class="shop_checkbox" value="<%= shop.id %>">
-          </td>
+<tr style="border-bottom:1px solid #ddd; vertical-align:top;">
+<td style="padding:10px 0;">
+<input type="checkbox" class="shop_checkbox" value="<%= shop.id %>">
+</td>
 
-          <td style="padding:8px 0;">
-            <strong><%= shop.name %></strong>
-            <% if Shop.column_names.include?("source") && shop.respond_to?(:source) && shop.source.present? %>
-              <div style="color:#666; font-size:12px; margin-top:4px;">source：<%= shop.source %></div>
-            <% end %>
-          </td>
+<td style="padding:8px 0;">
+<strong><%= shop.name %></strong>
+<% if Shop.column_names.include?("source") && shop.respond_to?(:source) && shop.source.present? %>
+<div style="color:#666; font-size:12px; margin-top:4px;">source：<%= shop.source %></div>
+<% end %>
+</td>
 
-          <td style="padding:8px 0;"><%= shop.address.presence || "未設定" %></td>
+<td style="padding:8px 0;"><%= shop.address.presence || "未設定" %></td>
 
-          <td style="padding:8px 0;">
-            <% if shop.approved? %>
-              <span style="color:#137333; font-weight:bold;">承認済み</span>
-            <% elsif rejected %>
-              <span style="color:#b00020; font-weight:bold;">却下</span>
-            <% else %>
-              <span style="color:#b00020; font-weight:bold;">承認待ち</span>
-            <% end %>
-          </td>
+<td style="padding:8px 0;">
+<% if shop.approved? %>
+<span style="color:#137333; font-weight:bold;">承認済み</span>
+<% elsif rejected %>
+<span style="color:#b00020; font-weight:bold;">却下</span>
+<% else %>
+<span style="color:#b00020; font-weight:bold;">承認待ち</span>
+<% end %>
+</td>
 
-          <td style="padding:8px 0;">
-            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-              <% if !shop.approved? && !rejected %>
-                <%= button_to "承認",
-                              approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                              method: :patch,
-                              data: { turbo: false, turbo_confirm: "承認しますか？" } %>
+<td style="padding:8px 0;">
+<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+<% if !shop.approved? && !rejected %>
+<%= button_to "承認",
+approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+method: :patch,
+data: { turbo: false, turbo_confirm: "承認しますか？" } %>
 
-                <%= button_to "却下",
-                              reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                              method: :patch,
-                              data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
+<%= button_to "却下",
+reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+method: :patch,
+data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
 
-                <%= link_to "編集",
-                            edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                            style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-              <% end %>
+<%= link_to "編集",
+edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+<% end %>
 
-              <%= link_to "公開ページ",
-                          shop_path(shop),
-                          target: "_blank",
-                          rel: "noopener",
-                          style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-            </div>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+<%= link_to "公開ページ",
+shop_path(shop),
+target: "_blank",
+rel: "noopener",
+style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+</div>
+</td>
+</tr>
+<% end %>
+</tbody>
+</table>
 
-  <%# ✅ 下部ページャ %>
-  <% if (@total_pages || 1) > 1 %>
-    <div style="margin:12px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <% if (@page || 1) > 1 %>
-        <%= link_to "← 前へ",
-                    admin_shops_path(status: @status, source: @source, per: @per, page: (@page - 1)),
-                    style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-      <% end %>
+<%# ✅ 下部ページャ %>
+<% if (@total_pages || 1) > 1 %>
+<div style="margin:12px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+<% if (@page || 1) > 1 %>
+<%= link_to "← 前へ",
+admin_shops_path(status: @status, source: @source, per: @per, page: (@page - 1)),
+style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+<% end %>
 
-      <% if (@page || 1) < (@total_pages || 1) %>
-        <%= link_to "次へ →",
-                    admin_shops_path(status: @status, source: @source, per: @per, page: (@page + 1)),
-                    style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-      <% end %>
-    </div>
-  <% end %>
+<% if (@page || 1) < (@total_pages || 1) %>
+<%= link_to "次へ →",
+admin_shops_path(status: @status, source: @source, per: @per, page: (@page + 1)),
+style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+<% end %>
+</div>
+<% end %>
 
-  <script>
-    (function () {
-      const selectAll = document.getElementById("select_all");
-      const boxes = Array.from(document.querySelectorAll(".shop_checkbox"));
-      const countEl = document.getElementById("selected_count");
-      const csvEl = document.getElementById("shop_ids_csv");
-      const bulkForm = document.getElementById("bulk_form");
+<script>
+(function () {
+const selectAll = document.getElementById("select_all");
+const boxes = Array.from(document.querySelectorAll(".shop_checkbox"));
+const countEl = document.getElementById("selected_count");
+const csvEl = document.getElementById("shop_ids_csv");
+const bulkForm = document.getElementById("bulk_form");
 
-      function selectedIds() {
-        return boxes.filter(b => b.checked).map(b => b.value);
-      }
+function selectedIds() {
+return boxes.filter(b => b.checked).map(b => b.value);
+}
 
-      function update() {
-        const ids = selectedIds();
-        countEl.textContent = `選択：${ids.length}件`;
-        csvEl.value = ids.join(",");
+function update() {
+const ids = selectedIds();
+countEl.textContent = `選択：${ids.length}件`;
+csvEl.value = ids.join(",");
 
-        if (selectAll) {
-          selectAll.checked = (ids.length > 0 && ids.length === boxes.length);
-          selectAll.indeterminate = (ids.length > 0 && ids.length < boxes.length);
-        }
-      }
+if (selectAll) {
+selectAll.checked = (ids.length > 0 && ids.length === boxes.length);
+selectAll.indeterminate = (ids.length > 0 && ids.length < boxes.length);
+}
+}
 
-      if (selectAll) {
-        selectAll.addEventListener("change", () => {
-          boxes.forEach(b => b.checked = selectAll.checked);
-          update();
-        });
-      }
+if (selectAll) {
+selectAll.addEventListener("change", () => {
+boxes.forEach(b => b.checked = selectAll.checked);
+update();
+});
+}
 
-      boxes.forEach(b => b.addEventListener("change", update));
+boxes.forEach(b => b.addEventListener("change", update));
 
-      if (bulkForm) {
-        bulkForm.addEventListener("submit", (e) => {
-          const ids = selectedIds();
-          if (ids.length === 0) {
-            e.preventDefault();
-            alert("店舗が選択されていません");
-          }
-        });
-      }
+if (bulkForm) {
+bulkForm.addEventListener("submit", (e) => {
+const ids = selectedIds();
+if (ids.length === 0) {
+e.preventDefault();
+alert("店舗が選択されていません");
+}
+});
+}
 
-      update();
-    })();
-  </script>
+update();
+})();
+</script>
 
 <% else %>
-  <p>該当する店舗はありません。</p>
+<p>該当する店舗はありません。</p>
 <% end %>

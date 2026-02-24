@@ -1,4 +1,7 @@
-# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/controllers/admin/shops_controller.rb
+# frozen_string_literal: true
+
+require "csv"
+
 class Admin::ShopsController < Admin::BaseController
 def index
 @status = params[:status].presence || "pending"
@@ -27,7 +30,6 @@ if @source.present? && Shop.column_names.include?("source")
 scope = scope.where(source: @source)
 end
 
-# ✅ 管理画面で写真を確実に出す（ActiveStorage eager load）
 scope = scope.includes(
 food_photos_attachments: :blob,
 interior_photos_attachments: :blob,
@@ -35,12 +37,10 @@ exterior_photos_attachments: :blob,
 menu_photos_attachments: :blob
 )
 
-# ✅ 総件数（ページング計算用）
 @total_count = scope.count
 @total_pages = (@total_count.to_f / @per).ceil
 @total_pages = 1 if @total_pages <= 0
 
-# ✅ offset/limit でページング
 offset = (@page - 1) * @per
 @shops = scope.offset(offset).limit(@per)
 end
@@ -144,6 +144,94 @@ rescue ActiveRecord::RecordInvalid => e
 flash.now[:alert] = e.record.errors.full_messages.join(" / ")
 render :edit, status: :unprocessable_entity
 end
+def import
+file = params[:file]
+return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
+
+require "csv"
+
+success = 0
+failed = 0
+
+CSV.foreach(file.path, headers: true) do |row|
+begin
+attrs = row.to_hash.symbolize_keys
+
+# =========================
+# 全角 → 半角変換
+# =========================
+attrs.each do |k, v|
+next unless v.is_a?(String)
+attrs[k] = v.tr("０-９", "0-9").strip
+end
+
+# =========================
+# 喫煙エリア 数字対応
+# 1 = 席で喫煙可
+# 2 = 喫煙所あり
+# =========================
+case attrs[:smoking_area].to_s
+when "1"
+attrs[:smoking_area] = "all_smoking"
+when "2"
+attrs[:smoking_area] = "separated"
+end
+
+# =========================
+# 喫煙タイプ 数字対応
+# 1 = 紙・加熱式OK
+# 2 = 加熱式のみ
+# 3 = 紙のみ
+# =========================
+case attrs[:smoking_type].to_s
+when "1"
+attrs[:smoking_type] = "both_ok"
+when "2"
+attrs[:smoking_type] = "electronic_only"
+when "3"
+attrs[:smoking_type] = "paper_only"
+end
+
+# =========================
+# 6桁日付対応（例: 260223）
+# =========================
+if attrs[:last_confirmed_on].present?
+date_str = attrs[:last_confirmed_on].to_s
+
+if date_str.match?(/\A\d{6}\z/)
+year = "20" + date_str[0..1]
+month = date_str[2..3]
+day = date_str[4..5]
+attrs[:last_confirmed_on] = Date.new(year.to_i, month.to_i, day.to_i)
+else
+attrs[:last_confirmed_on] = Date.parse(date_str)
+end
+else
+# 空なら今日にする（爆速用）
+attrs[:last_confirmed_on] = Date.current
+end
+
+# =========================
+# 保存処理
+# =========================
+shop = Shop.new(attrs)
+shop.approved = false
+shop.rejected = false if shop.respond_to?(:rejected=)
+
+shop.save!
+success += 1
+
+rescue => e
+Rails.logger.error "[CSV IMPORT ERROR] #{e.message}"
+failed += 1
+end
+end
+
+redirect_to admin_shops_path,
+notice: "CSV取込完了：#{success}件成功 / #{failed}件失敗"
+end
+
+
 
 private
 

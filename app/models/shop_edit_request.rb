@@ -19,8 +19,8 @@ all_smoking: 1 # 席で喫煙可
 }, prefix: true
 
 enum :proposed_smoking_type, {
-both_ok: 0, # 紙・電子OK
-electronic_only: 1, # 電子のみ
+both_ok: 0, # 紙・加熱式OK
+electronic_only: 1, # 加熱式のみ
 paper_only: 2 # 紙のみ
 }, prefix: true
 

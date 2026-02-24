@@ -3,6 +3,8 @@ Rails.application.routes.draw do
   root "home#index"
   get "map", to: "shops#map"
 
+require "digest"
+
   resources :shops do
     collection do
       get :possible_duplicates
@@ -43,6 +45,7 @@ Rails.application.routes.draw do
       end
       collection do
         patch :bulk_update
+        post :import
       end
     end
 

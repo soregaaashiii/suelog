@@ -143,22 +143,18 @@ placeholder: "例）\n月 11:00-23:00\n水 休み\n土 12:00-02:00" %>
 <% end %><br>
 <%= f.select :smoking_type,
 [["選択してください", ""],
-["紙・電子どちらもOK", "both_ok"],
-["電子タバコのみOK", "electronic_only"],
+["紙・加熱式どちらもOK", "both_ok"],
+["加熱式タバコのみOK", "electronic_only"],
 ["紙タバコのみOK", "paper_only"]],
 {},
 { required: true } %>
 </p>
 
 <hr>
-<h2>写真</h2>
+<h2>写真（任意）</h2>
 <p style="color:#666; font-size:12px; margin-top:6px;">
-料理/内観/外観/メニューのどれでもOK。<strong>最低1枚</strong>追加してください。
+写真は未登録でもOKです（あとから追加できます）
 </p>
-
-<div id="photo-error" style="display:none; border:1px solid #f5c2c7; background:#fdecea; padding:10px; border-radius:10px; margin:10px 0; color:#b00020; font-weight:900;">
-写真を1枚以上追加してください（料理/内観/外観/メニューのどれでもOK）
-</div>
 
 <div style="margin-top:12px;">
 <%= f.label :food_photos, "料理の写真（複数OK）" %><br>
@@ -217,36 +213,3 @@ placeholder: "例）\n月 11:00-23:00\n水 休み\n土 12:00-02:00" %>
 <p style="margin-top:16px;">
 <%= link_to "一覧へ戻る", root_path %>
 </p>
-
-<script>
-(function(){
-const form = document.getElementById("shop-form");
-if (!form) return;
-
-const photoInputs = Array.from(form.querySelectorAll(".shop-photo-input"));
-const errBox = document.getElementById("photo-error");
-
-function hasAnyPhoto(){
-return photoInputs.some(input => input.files && input.files.length > 0);
-}
-
-function setError(on){
-if (!errBox) return;
-errBox.style.display = on ? "block" : "none";
-}
-
-photoInputs.forEach(inp => {
-inp.addEventListener("change", () => setError(!hasAnyPhoto()));
-});
-
-form.addEventListener("submit", (e) => {
-if (!hasAnyPhoto()) {
-e.preventDefault();
-setError(true);
-if (errBox && errBox.scrollIntoView) {
-errBox.scrollIntoView({ behavior: "smooth", block: "center" });
-}
-}
-});
-})();
-</script>

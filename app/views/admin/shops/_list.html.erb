@@ -32,8 +32,8 @@
 
           <% smoking_type =
               case shop.try(:smoking_type).to_s
-              when "both_ok" then "紙・電子OK"
-              when "electronic_only" then "電子のみ"
+              when "both_ok" then "紙・加熱式OK"
+              when "electronic_only" then "加熱式のみ"
               when "paper_only" then "紙のみ"
               else nil
               end %>

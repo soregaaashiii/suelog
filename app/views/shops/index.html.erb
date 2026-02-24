@@ -12,7 +12,7 @@
 <% q = request.query_parameters.deep_dup %>
 
 <% smoking_area_label = { "separated" => "喫煙所あり", "smoking_allowed" => "席で喫煙可" } %>
-<% smoking_type_label = { "both_ok" => "紙・電子OK", "electronic_only" => "電子のみ", "paper_only" => "紙のみ" } %>
+<% smoking_type_label = { "both_ok" => "紙・加熱式OK", "electronic_only" => "加熱式のみ", "paper_only" => "紙のみ" } %>
 
 <% chips = [] %>
 <% chips << ["ジャンル：#{params[:genre]}", :genre] if params[:genre].present? %>
@@ -87,7 +87,7 @@ options_for_select([["指定なし",""],["喫煙所あり","separated"],["席で
 <div>
 <label>喫煙タイプ</label><br>
 <%= select_tag :smoking_type,
-options_for_select([["指定なし",""],["紙・電子OK","both_ok"],["電子のみ","electronic_only"],["紙のみ","paper_only"]], params[:smoking_type]) %>
+options_for_select([["指定なし",""],["紙・加熱式OK","both_ok"],["加熱式のみ","electronic_only"],["紙のみ","paper_only"]], params[:smoking_type]) %>
 </div>
 
 <div>

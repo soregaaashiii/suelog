@@ -62,7 +62,7 @@ loading: "lazy" %>
 <%# ==== 喫煙タイプ ==== %>
 <% if shop.smoking_type == "both_ok" %>
 <span style="padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#e3f2fd; color:#0d47a1;">
-紙・電子OK
+紙・加熱式OK
 </span>
 <% elsif shop.smoking_type == "paper_only" %>
 <span style="padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#fff3e0; color:#e65100;">
@@ -70,7 +70,7 @@ loading: "lazy" %>
 </span>
 <% elsif shop.smoking_type == "electronic_only" %>
 <span style="padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#f3e5f5; color:#4a148c;">
-電子のみ
+加熱式のみ
 </span>
 <% end %>
 

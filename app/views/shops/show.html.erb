@@ -2,6 +2,19 @@
 
 <h1 style="margin-top:0;"><%= @shop.name %></h1>
 
+<%# ✅ 追加：フラッシュ表示（感謝メッセージ/エラー表示） %>
+<% if flash[:notice].present? %>
+  <div style="padding:12px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:12px; margin:10px 0; color:#137333; font-weight:700;">
+    <%= flash[:notice] %>
+  </div>
+<% end %>
+
+<% if flash[:alert].present? %>
+  <div style="padding:12px; border:1px solid #f5c2c7; background:#fff5f5; border-radius:12px; margin:10px 0; color:#b00020; font-weight:700;">
+    <%= flash[:alert] %>
+  </div>
+<% end %>
+
 <p style="color:#666; margin:6px 0 14px;">
 ジャンル：
 <%= @shop.genre == "その他" ? (@shop.genre_other.presence || "未設定") : (@shop.genre.presence || "未設定") %>
@@ -85,9 +98,9 @@ style="display:inline-block; padding:10px 14px; background:#e3f2fd; border-radiu
 喫煙タイプ：
 <% case @shop.smoking_type %>
 <% when "both_ok" %>
-紙・電子どちらもOK
+紙・加熱式どちらもOK
 <% when "electronic_only" %>
-電子タバコのみOK
+加熱式タバコのみOK
 <% when "paper_only" %>
 紙タバコのみOK
 <% else %>

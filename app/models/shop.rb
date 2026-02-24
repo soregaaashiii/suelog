@@ -18,8 +18,8 @@ class Shop < ApplicationRecord
   }
 
   enum :smoking_type, {
-    both_ok: 0,         # 紙・電子OK
-    electronic_only: 1, # 電子のみ
+    both_ok: 0,         # 紙・加熱式OK
+    electronic_only: 1, # 加熱式のみ
     paper_only: 2       # 紙のみ
   }
 
@@ -55,7 +55,7 @@ class Shop < ApplicationRecord
   validate :last_confirmed_on_cannot_be_future
 
   # ✅ 店舗登録時だけ：写真1枚以上必須
-  validate :at_least_one_photo_attached, on: :create
+  # validate :at_least_one_photo_attached, on: :create
 
   # 電話番号の重複防止（digitsのみ）
   before_validation :set_normalized_phone

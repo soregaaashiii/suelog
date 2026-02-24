@@ -40,3 +40,21 @@ plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
+
+
+
+# frozen_string_literal: true
+
+max_threads_count = ENV.fetch("RAILS_MAX_THREADS", 5).to_i
+min_threads_count = ENV.fetch("RAILS_MIN_THREADS", max_threads_count).to_i
+threads min_threads_count, max_threads_count
+
+port ENV.fetch("PORT", 3000)
+environment ENV.fetch("RAILS_ENV", "production")
+
+pidfile ENV.fetch("PIDFILE", "tmp/pids/server.pid")
+workers ENV.fetch("WEB_CONCURRENCY", 1).to_i
+
+preload_app!
+
+plugin :tmp_restart
