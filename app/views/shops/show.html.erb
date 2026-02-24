@@ -2,22 +2,20 @@
 
 <h1 style="margin-top:0;"><%= @shop.name %></h1>
 
-<%# ✅ 追加：フラッシュ表示（感謝メッセージ/エラー表示） %>
 <% if flash[:notice].present? %>
-  <div style="padding:12px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:12px; margin:10px 0; color:#137333; font-weight:700;">
-    <%= flash[:notice] %>
-  </div>
+<div style="padding:12px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:12px; margin:10px 0; color:#137333; font-weight:700;">
+<%= flash[:notice] %>
+</div>
 <% end %>
 
 <% if flash[:alert].present? %>
-  <div style="padding:12px; border:1px solid #f5c2c7; background:#fff5f5; border-radius:12px; margin:10px 0; color:#b00020; font-weight:700;">
-    <%= flash[:alert] %>
-  </div>
+<div style="padding:12px; border:1px solid #f5c2c7; background:#fff5f5; border-radius:12px; margin:10px 0; color:#b00020; font-weight:700;">
+<%= flash[:alert] %>
+</div>
 <% end %>
 
 <p style="color:#666; margin:6px 0 14px;">
-ジャンル：
-<%= @shop.genre == "その他" ? (@shop.genre_other.presence || "未設定") : (@shop.genre.presence || "未設定") %>
+ジャンル：<%= @shop.display_genre.presence || "未設定" %>
 </p>
 
 <p>住所：<%= @shop.address.presence || "未設定" %></p>
@@ -120,168 +118,69 @@ style="display:inline-block; padding:10px 14px; background:#e3f2fd; border-radiu
 <p style="margin:6px 0 0; color:#666;">※ 詳細（地図・写真・口コミ・メモ等）は確認後に公開されます</p>
 </div>
 <% else %>
+
 <hr>
 
 <p>エリア：<%= @shop.area.presence || "未設定" %></p>
 <p>メモ：<%= @shop.note.presence || "未設定" %></p>
 
 <%# ============================
-✅ 地図（/map と同じ Google Maps 統一）
-※ 位置情報が無いとピンが出ないので controller 側で警告表示
+地図（Leaflet）
+※ 位置情報が無いとピンが出ない
 ============================ %>
 
 <h2>地図</h2>
 
 <% if @shop.latitude.present? && @shop.longitude.present? %>
-  <div id="shop-map" style="height:320px; border:1px solid #ddd; border-radius:12px; overflow:hidden;"></div>
+<div id="shop-map" style="height:320px; border:1px solid #ddd; border-radius:12px; overflow:hidden;"></div>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <script>
-    document.addEventListener("turbo:before-cache", () => {
-      const el = document.getElementById("shop-map");
-      if (el && el._leaflet_map_instance) {
-        el._leaflet_map_instance.remove();
-        el._leaflet_map_instance = null;
-      }
-    });
+<script>
+document.addEventListener("turbo:before-cache", () => {
+const el = document.getElementById("shop-map");
+if (el && el._leaflet_map_instance) {
+el._leaflet_map_instance.remove();
+el._leaflet_map_instance = null;
+}
+});
 
-    document.addEventListener("turbo:load", () => {
-      const el = document.getElementById("shop-map");
-      if (!el) return;
+document.addEventListener("turbo:load", () => {
+const el = document.getElementById("shop-map");
+if (!el) return;
 
-      if (el._leaflet_map_instance) {
-        el._leaflet_map_instance.remove();
-        el._leaflet_map_instance = null;
-      }
+if (el._leaflet_map_instance) {
+el._leaflet_map_instance.remove();
+el._leaflet_map_instance = null;
+}
 
-      const lat = <%= @shop.latitude.to_f %>;
-      const lng = <%= @shop.longitude.to_f %>;
+const lat = <%= @shop.latitude.to_f %>;
+const lng = <%= @shop.longitude.to_f %>;
 
-      const map = L.map("shop-map").setView([lat, lng], 16);
-      el._leaflet_map_instance = map;
+const map = L.map("shop-map").setView([lat, lng], 16);
+el._leaflet_map_instance = map;
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+maxZoom: 19,
+attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
-      const marker = L.marker([lat, lng]).addTo(map);
-      marker.bindPopup("<strong><%= j @shop.name %></strong>").openPopup();
+const marker = L.marker([lat, lng]).addTo(map);
+marker.bindPopup("<strong><%= j @shop.name %></strong>").openPopup();
 
-      setTimeout(() => map.invalidateSize(), 0);
-      setTimeout(() => map.invalidateSize(), 200);
-    });
-  </script>
-
-  <p style="margin-top:8px;">
-    <% q = ERB::Util.url_encode([@shop.name, @shop.area, @shop.address].compact.join(" ")) %>
-    <a href="https://www.google.com/maps?q=<%= q %>" target="_blank" rel="noopener">Googleマップで開く</a>
-  </p>
-<% else %>
-  <p style="color:#666;">この店舗は位置情報（緯度・経度）が未設定です。</p>
-<% end %>
-
-
-<hr>
-<h2>口コミ</h2>
-<p style="color:#666;">※ 口コミは内容確認後に公開されます</p>
-
-<% my_review = @my_review %>
-<% approved_reviews = @approved_reviews || @shop.reviews.approved.order(created_at: :desc) %>
-
-<% if approved_reviews.any? %>
-<% avg_rating = approved_reviews.average(:rating).to_f.round(1) %>
-<p>平均評価：<strong><%= avg_rating %></strong>（<%= approved_reviews.count %>件）</p>
-
-<% approved_reviews.each do |r| %>
-<% rating = r.rating.to_i %>
-<div style="border:1px solid #ddd; padding:12px; margin:12px 0;">
-<p style="color:#666; font-size:12px;"><%= r.author_name.presence || "匿名" %> ／ <%= r.created_at.strftime("%Y-%m-%d") %></p>
-<p>評価：<%= "★"*rating %><%= "☆"*(5-rating) %></p>
-
-<% if r.comment.present? %>
-<p><%= simple_format(h(r.comment)) %></p>
-<% end %>
+setTimeout(() => map.invalidateSize(), 0);
+setTimeout(() => map.invalidateSize(), 200);
+});
+</script>
 
 <p style="margin-top:8px;">
-<%= link_to "通報", new_review_review_report_path(r) %>
+<% q = ERB::Util.url_encode([@shop.name, @shop.area, @shop.address].compact.join(" ")) %>
+<a href="https://www.google.com/maps?q=<%= q %>" target="_blank" rel="noopener">Googleマップで開く</a>
 </p>
-</div>
-<% end %>
 <% else %>
-<p style="color:#666;">公開中の口コミはまだありません。</p>
+<p style="color:#666;">この店舗は位置情報（緯度・経度）が未設定です。</p>
 <% end %>
-
-<hr>
-
-<div id="review-form"></div>
-
-<style>
-.star-rating{display:inline-flex;flex-direction:row-reverse;font-size:28px;gap:2px}
-.star-rating input{display:none}
-.star-rating label{cursor:pointer;color:#ccc}
-.star-rating input:checked ~ label,
-.star-rating label:hover,
-.star-rating label:hover ~ label{color:#f5b301}
-</style>
-
-<% if my_review.present? %>
-<h3>あなたの口コミを編集</h3>
-
-<div style="border:1px solid #eee; background:#fafafa; padding:12px; border-radius:12px; margin:10px 0;">
-<% if my_review.approved? %>
-<p style="margin:0; color:#137333; font-weight:700;">状態：公開中</p>
-<% else %>
-<p style="margin:0; color:#b00020; font-weight:700;">状態：承認待ち（編集すると再審査になります）</p>
-<% end %>
-<p style="margin:6px 0 0; color:#666; font-size:12px;">※ 同じIPからは「この店舗に1件だけ」投稿できます。編集で更新してください。</p>
-</div>
-
-<%= form_with model: my_review, url: review_path(my_review), method: :patch, local: true do |f| %>
-<p>投稿者名（任意）：<br><%= f.text_field :author_name %></p>
-
-<p style="color:#666; font-size:12px;">※ 星をクリックして評価してください</p>
-<p><strong>評価</strong></p>
-<div class="star-rating">
-<% 5.downto(1) do |i| %>
-<%= f.radio_button :rating, i, id: "rating_edit_#{i}", checked: (my_review.rating.to_i == i) %>
-<label for="rating_edit_<%= i %>">★</label>
-<% end %>
-</div>
-
-<p>コメント（任意）：<br><%= f.text_area :comment, rows: 4 %></p>
-<%= f.submit "編集内容を送信する（再審査）" %>
-<% end %>
-
-<% else %>
-<h3>口コミを投稿</h3>
-
-<%= form_with model: [@shop, Review.new], local: true do |f| %>
-<p>投稿者名（任意）：<br><%= f.text_field :author_name %></p>
-
-<p style="color:#666; font-size:12px;">※ 星をクリックして評価してください</p>
-<p><strong>評価</strong></p>
-<div class="star-rating">
-<% 5.downto(1) do |i| %>
-<%= f.radio_button :rating, i, id: "rating_#{i}" %>
-<label for="rating_<%= i %>">★</label>
-<% end %>
-</div>
-
-<p>コメント（任意）：<br><%= f.text_area :comment, rows: 4 %></p>
-<%= f.submit "投稿する" %>
-<% end %>
-
-<p style="color:#666; font-size:12px;">
-※ 同じIPからは「この店舗に1件だけ」投稿できます
-</p>
-<% end %>
-
-<p style="color:#666; font-size:12px;">
-この店舗の閲覧数：<%= PageView.where(shop_id: @shop.id).count %>
-</p>
 
 <hr>
 <h2>写真</h2>
@@ -298,4 +197,5 @@ style="display:inline-block; padding:10px 14px; background:#e3f2fd; border-radiu
 <p style="color:#666;">まだありません</p>
 <% end %>
 <% end %>
+
 <% end %>

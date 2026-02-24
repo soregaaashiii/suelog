@@ -22,7 +22,6 @@ scope = scope.where(rejected: true)
 when "all"
 # 全部
 else
-# 承認待ち（却下済みは除外）
 scope = scope.where(approved: false).where(rejected: [false, nil])
 end
 
@@ -48,7 +47,6 @@ end
 def approve
 status = params[:status].presence || "pending"
 shop = Shop.find(params[:id])
-
 shop.update!(approved: true, rejected: false)
 
 redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
@@ -61,7 +59,6 @@ end
 def reject
 status = params[:status].presence || "pending"
 shop = Shop.find(params[:id])
-
 shop.update!(approved: false, rejected: true)
 
 redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
@@ -144,94 +141,120 @@ rescue ActiveRecord::RecordInvalid => e
 flash.now[:alert] = e.record.errors.full_messages.join(" / ")
 render :edit, status: :unprocessable_entity
 end
+
+# ✅ CSVインポート（ヘッダー揺れ吸収＋エリア正規化）
 def import
 file = params[:file]
 return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
 
-require "csv"
-
 success = 0
 failed = 0
 
+area_map = {
+"umeda" => "梅田",
+"namba" => "難波",
+"tennoji" => "天王寺",
+"shinsaibashi" => "心斎橋",
+"kyobashi" => "京橋",
+"shinosaka" => "新大阪",
+"yodoyabashi" => "淀屋橋",
+"hommachi" => "本町"
+}
+
+normalize_str = lambda do |v|
+return "" if v.nil?
+s = v.is_a?(String) ? v : v.to_s
+s = s.tr("０-９", "0-9")
+s.gsub(/\A[[:space:]]+|[[:space:]]+\z/, "")
+end
+
+pick = lambda do |row, keys|
+keys.each do |k|
+v = row[k]
+v = row[k.to_s] if v.nil? && k.is_a?(Symbol)
+v = row[k.to_sym] if v.nil? && k.is_a?(String)
+return v if v.present?
+end
+nil
+end
+
 CSV.foreach(file.path, headers: true) do |row|
 begin
-attrs = row.to_hash.symbolize_keys
+name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
+phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
+address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
+opening = normalize_str.call(pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"]))
+area_raw = normalize_str.call(pick.call(row, [:area, "area", "エリア"]))
 
-# =========================
-# 全角 → 半角変換
-# =========================
-attrs.each do |k, v|
-next unless v.is_a?(String)
-attrs[k] = v.tr("０-９", "0-9").strip
+nearest_station = normalize_str.call(pick.call(row, [:nearest_station, "nearest_station", "最寄駅"]))
+note = normalize_str.call(pick.call(row, [:note, "note", "メモ"]))
+
+genre = normalize_str.call(pick.call(row, [:genre, "genre", "ジャンル"]))
+genre_other = normalize_str.call(pick.call(row, [:genre_other, "genre_other", "ジャンルその他", "その他"]))
+
+smoking_area_raw = normalize_str.call(pick.call(row, [:smoking_area, "smoking_area", "喫煙エリア"]))
+smoking_area =
+case smoking_area_raw
+when "1" then "all_smoking"
+when "2" then "separated"
+else smoking_area_raw.presence
 end
 
-# =========================
-# 喫煙エリア 数字対応
-# 1 = 席で喫煙可
-# 2 = 喫煙所あり
-# =========================
-case attrs[:smoking_area].to_s
-when "1"
-attrs[:smoking_area] = "all_smoking"
-when "2"
-attrs[:smoking_area] = "separated"
+smoking_type_raw = normalize_str.call(pick.call(row, [:smoking_type, "smoking_type", "喫煙タイプ"]))
+smoking_type =
+case smoking_type_raw
+when "1" then "both_ok"
+when "2" then "electronic_only"
+when "3" then "paper_only"
+else smoking_type_raw.presence
 end
 
-# =========================
-# 喫煙タイプ 数字対応
-# 1 = 紙・加熱式OK
-# 2 = 加熱式のみ
-# 3 = 紙のみ
-# =========================
-case attrs[:smoking_type].to_s
-when "1"
-attrs[:smoking_type] = "both_ok"
-when "2"
-attrs[:smoking_type] = "electronic_only"
-when "3"
-attrs[:smoking_type] = "paper_only"
-end
-
-# =========================
-# 6桁日付対応（例: 260223）
-# =========================
-if attrs[:last_confirmed_on].present?
-date_str = attrs[:last_confirmed_on].to_s
-
-if date_str.match?(/\A\d{6}\z/)
-year = "20" + date_str[0..1]
-month = date_str[2..3]
-day = date_str[4..5]
-attrs[:last_confirmed_on] = Date.new(year.to_i, month.to_i, day.to_i)
+last_raw = normalize_str.call(pick.call(row, [:last_confirmed_on, "last_confirmed_on", "最終確認日"]))
+last_confirmed_on =
+if last_raw.present?
+if last_raw.match?(/\A\d{6}\z/)
+year = ("20" + last_raw[0..1]).to_i
+month = last_raw[2..3].to_i
+day = last_raw[4..5].to_i
+Date.new(year, month, day)
 else
-attrs[:last_confirmed_on] = Date.parse(date_str)
+Date.parse(last_raw)
 end
 else
-# 空なら今日にする（爆速用）
-attrs[:last_confirmed_on] = Date.current
+Date.current
 end
 
-# =========================
-# 保存処理
-# =========================
-shop = Shop.new(attrs)
+area_key = area_raw.to_s.downcase
+area = area_map[area_key] || area_raw
+
+shop = Shop.new(
+name: name,
+phone: phone.presence,
+address: address,
+area: area.presence,
+nearest_station: nearest_station.presence,
+opening_hours: opening.presence,
+note: note.presence,
+genre: genre.presence,
+genre_other: genre_other.presence,
+smoking_area: smoking_area,
+smoking_type: smoking_type,
+last_confirmed_on: last_confirmed_on
+)
+
 shop.approved = false
 shop.rejected = false if shop.respond_to?(:rejected=)
 
 shop.save!
 success += 1
-
 rescue => e
-Rails.logger.error "[CSV IMPORT ERROR] #{e.message}"
+Rails.logger.error "[CSV IMPORT ERROR] #{e.class}: #{e.message}"
 failed += 1
 end
 end
 
-redirect_to admin_shops_path,
-notice: "CSV取込完了：#{success}件成功 / #{failed}件失敗"
+redirect_to admin_shops_path, notice: "CSV取込完了：#{success}件成功 / #{failed}件失敗"
 end
-
-
 
 private
 

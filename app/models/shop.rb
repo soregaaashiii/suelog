@@ -1,288 +1,269 @@
-# app/models/shop.rb
-class Shop < ApplicationRecord
-  # ===== Associations =====
-  has_many :reviews, dependent: :destroy
-  has_many :shop_edit_requests, dependent: :destroy
-  has_many :shop_reports, dependent: :destroy
+# frozen_string_literal: true
 
-  # ===== ActiveStorage =====
-  has_many_attached :food_photos
-  has_many_attached :interior_photos
-  has_many_attached :exterior_photos
-  has_many_attached :menu_photos
+require "csv"
 
-  # ===== Smoking status =====
-  enum :smoking_area, {
-    separated: 0,   # 喫煙所あり
-    all_smoking: 1  # 席で喫煙可
-  }
+class Admin::ShopsController < Admin::BaseController
+def index
+@status = params[:status].presence || "pending"
+@source = params[:source].to_s.presence
 
-  enum :smoking_type, {
-    both_ok: 0,         # 紙・加熱式OK
-    electronic_only: 1, # 加熱式のみ
-    paper_only: 2       # 紙のみ
-  }
+@per = (params[:per].presence || 50).to_i
+@per = 50 if @per <= 0
+@per = 500 if @per > 500 # 暴走防止
 
-  # ===== Scopes =====
-  scope :approved, -> { where(approved: true) }
+@page = params[:page].to_i
+@page = 1 if @page <= 0
 
-  scope :keyword, ->(q) do
-    kw = q.to_s.strip
-    next all if kw.blank?
+scope = Shop.order(created_at: :desc)
 
-    like = "%#{kw}%"
-    where(
-      <<~SQL.squish, like: like
-        shops.name LIKE :like
-        OR shops.address LIKE :like
-        OR shops.area LIKE :like
-        OR shops.nearest_station LIKE :like
-        OR shops.phone LIKE :like
-        OR shops.note LIKE :like
-        OR shops.genre LIKE :like
-        OR shops.genre_other LIKE :like
-        OR shops.opening_hours LIKE :like
-      SQL
-    )
-  end
+case @status
+when "rejected"
+scope = scope.where(rejected: true)
+when "all"
+# 全部
+else
+scope = scope.where(approved: false).where(rejected: [false, nil])
+end
 
-  # ===== Validations =====
-  validates :name, :address, :last_confirmed_on, presence: { message: "を入力してください" }
-  validates :genre, presence: { message: "を選択してください" }
-  validates :smoking_area, presence: { message: "を選択してください" }
-  validates :smoking_type, presence: { message: "を選択してください" }
+if @source.present? && Shop.column_names.include?("source")
+scope = scope.where(source: @source)
+end
 
-  validate :last_confirmed_on_cannot_be_future
+scope = scope.includes(
+food_photos_attachments: :blob,
+interior_photos_attachments: :blob,
+exterior_photos_attachments: :blob,
+menu_photos_attachments: :blob
+)
 
-  # ✅ 店舗登録時だけ：写真1枚以上必須
-  # validate :at_least_one_photo_attached, on: :create
+@total_count = scope.count
+@total_pages = (@total_count.to_f / @per).ceil
+@total_pages = 1 if @total_pages <= 0
 
-  # 電話番号の重複防止（digitsのみ）
-  before_validation :set_normalized_phone
-  validates :normalized_phone, uniqueness: true, allow_nil: true, allow_blank: true
+offset = (@page - 1) * @per
+@shops = scope.offset(offset).limit(@per)
+end
 
-  # ===== Geocoding =====
-  # 精度を上げるため、area + address を結合（タブ/改行/連続スペースを潰す）
-  def geocode_address
-    [address, area]
-      .compact
-      .map(&:to_s)
-      .map { |v| v.gsub(/\s+/, " ").strip }
-      .reject(&:blank?)
-      .join(" ")
-  end
+def approve
+status = params[:status].presence || "pending"
+shop = Shop.find(params[:id])
+shop.update!(approved: true, rejected: false)
 
-  geocoded_by :geocode_address, latitude: :latitude, longitude: :longitude
+redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+notice: "承認しました"
+rescue ActiveRecord::RecordInvalid => e
+redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+alert: "承認に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+end
 
-  # ✅ ここが重要：
-  # - APIキー無し（Google）で RequestDenied が出る環境では geocode を走らせない
-  # - 走っても落ちたら握りつぶして保存を通す
-  after_validation :safe_geocode, if: :should_geocode?
+def reject
+status = params[:status].presence || "pending"
+shop = Shop.find(params[:id])
+shop.update!(approved: false, rejected: true)
 
-  def safe_geocode
-    geocode
-  rescue Geocoder::Error => e
-    Rails.logger.warn("[geocode skipped] #{e.class}: #{e.message}")
-    # 保存は止めない（lat/lngは空のまま）
-    self.latitude = nil if self.latitude_changed?
-    self.longitude = nil if self.longitude_changed?
-    true
-  end
+redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+alert: "却下しました"
+rescue ActiveRecord::RecordInvalid => e
+redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+alert: "却下に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+end
 
-  # ===== Thumbnail =====
-  THUMB_KINDS = %w[auto food exterior interior menu].freeze
+# ✅ 一括操作（approve / reject）
+def bulk_update
+status = params[:status].presence || "pending"
 
-  def thumbnail_attachment
-    kind = thumbnail_kind.to_s.presence || "auto"
-    kind = "auto" unless THUMB_KINDS.include?(kind)
+ids =
+Array(params[:shop_ids]).presence ||
+params[:shop_ids_csv].to_s.split(",")
 
-    idx = thumbnail_index.to_i
-    idx = 1 if idx <= 0
-    i0 = idx - 1
+ids = ids.map(&:to_i).uniq
+op = params[:operation].to_s
 
-    pick_from = ->(attachments) do
-      return nil unless attachments.respond_to?(:attached?) && attachments.attached?
-      attachments[i0] || attachments.first
-    end
+if ids.empty?
+return redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+alert: "店舗が選択されていません"
+end
 
-    case kind
-    when "food"
-      t = pick_from.call(food_photos)
-      return t if t.present?
-    when "exterior"
-      t = pick_from.call(exterior_photos)
-      return t if t.present?
-    when "interior"
-      t = pick_from.call(interior_photos)
-      return t if t.present?
-    when "menu"
-      t = pick_from.call(menu_photos)
-      return t if t.present?
-    end
+scope = Shop.where(id: ids)
 
-    pick_from.call(food_photos) ||
-      pick_from.call(exterior_photos) ||
-      pick_from.call(interior_photos) ||
-      pick_from.call(menu_photos)
-  end
+case op
+when "approve"
+scope.update_all(approved: true, rejected: false, updated_at: Time.current)
+redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+notice: "一括承認しました（#{ids.size}件）"
+when "reject"
+scope.update_all(approved: false, rejected: true, updated_at: Time.current)
+redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+alert: "一括却下しました（#{ids.size}件）"
+else
+redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+alert: "不正な操作です"
+end
+end
 
-  # ===== Display helpers =====
-  def display_genre
-    return "" if genre.blank?
-    genre == "その他" ? genre_other.to_s : genre.to_s
-  end
+# ✅ 承認待ちも編集
+def edit
+@shop = Shop.find(params[:id])
+@status = params[:status].presence || "pending"
+@source = params[:source].to_s.presence
+@per = (params[:per].presence || 50).to_i
+@page = (params[:page].presence || 1).to_i
+end
 
-  # 今日の営業時間（分）を返す [open_min, close_min] or nil（休み/未設定）
-  def today_time_range
-    schedule = parse_opening_hours_by_day(opening_hours)
-    return nil if schedule.empty?
-    key = wday_ja(Time.zone.today.wday) # "日","月".."土"
-    schedule[key]
-  end
+# ✅ 編集ページで「更新」「更新して承認」「更新して却下」を1発でできる
+def update
+@shop = Shop.find(params[:id])
 
-  # 現在営業中（簡易判定）
-  def open_now?
-    range = today_time_range
-    return false unless range
+action = params[:commit_action].to_s # "update" / "approve" / "reject"
+notice = "更新しました"
 
-    open_min, close_min = range
-    now = Time.zone.now
-    now_min = now.hour * 60 + now.min
+ActiveRecord::Base.transaction do
+@shop.update!(shop_params)
 
-    if close_min > open_min
-      now_min >= open_min && now_min < close_min
-    else
-      # 例: 20:00-02:00（跨ぎ）
-      now_min >= open_min || now_min < close_min
-    end
-  end
+case action
+when "approve"
+@shop.update!(approved: true, rejected: false)
+notice = "更新して承認しました"
+when "reject"
+@shop.update!(approved: false, rejected: true)
+notice = "更新して却下しました"
+end
+end
 
-  # => [["月","11:00-23:00"], ["火","休み"], ...]
-  def opening_hours_lines
-    schedule = parse_opening_hours_by_day(opening_hours)
-    order = %w[月 火 水 木 金 土 日]
+redirect_to admin_shops_path(status: params[:status], source: params[:source], per: params[:per], page: params[:page]),
+notice: notice
+rescue ActiveRecord::RecordInvalid => e
+@status = params[:status].presence || "pending"
+@source = params[:source].to_s.presence
+@per = (params[:per].presence || 50).to_i
+@page = (params[:page].presence || 1).to_i
 
-    return order.map { |d| [d, "未設定"] } if schedule.empty?
+flash.now[:alert] = e.record.errors.full_messages.join(" / ")
+render :edit, status: :unprocessable_entity
+end
 
-    order.map do |d|
-      range = schedule[d]
-      if range.nil?
-        [d, "休み"]
-      else
-        [d, "#{minutes_to_hhmm(range[0])}-#{minutes_to_hhmm(range[1])}"]
-      end
-    end
-  end
+# ✅ CSVインポート（ヘッダー揺れ吸収＋エリア正規化）
+def import
+file = params[:file]
+return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
 
-  # SQLiteでも動く LIKE 検索
-  scope :text_like, ->(column, keyword) do
-    kw = keyword.to_s.strip
-    next all if kw.blank?
-    where("shops.#{column} LIKE ?", "%#{kw}%")
-  end
+success = 0
+failed = 0
 
-  # ジャンル検索（genre / genre_other 両方を見る）
-  scope :genre_like, ->(keyword) do
-    kw = keyword.to_s.strip
-    next all if kw.blank?
-    where("(shops.genre LIKE :kw) OR (shops.genre_other LIKE :kw)", kw: "%#{kw}%")
-  end
+area_map = {
+"umeda" => "梅田",
+"namba" => "難波",
+"tennoji" => "天王寺",
+"shinsaibashi" => "心斎橋",
+"kyobashi" => "京橋",
+"shinosaka" => "新大阪",
+"yodoyabashi" => "淀屋橋",
+"hommachi" => "本町"
+}
 
-  AREAS = [
-    "阿倍野","阿倍野橋","旭区清水","朝潮橋","淡路","石橋阪大前","泉大津","泉ヶ丘","泉佐野","和泉中央",
-    "今里","茨木","茨木市","梅田","江坂","難波","大阪阿部野橋","大阪上本町","大阪狭山市","大阪天満宮",
-    "大日","大東市","大正","岡町","貝塚","香里園","柏原","門真市","岸和田","京橋","喜連瓜破","九条",
-    "河内小阪","河内国分","河内長野","河内松原","岸辺","北新地","北千里","北花田","布施","堺","堺東",
-    "桜川","新金岡","新今宮","新大阪","心斎橋","住道","千里中央","千林大宮","高槻","高槻市","玉造",
-    "天下茶屋","天王寺","天満橋","豊中","中百舌鳥","長居","西梅田","西九条","野田","東岸和田","東三国",
-    "東梅田","東大阪市","東花園","枚方市","平野","深井","藤井寺","古市","弁天町","本町","松原","箕面",
-    "都島","守口市","八尾","山田","淀屋橋","四ツ橋"
-  ].freeze
+normalize_str = lambda do |v|
+return "" if v.nil?
+s = v.is_a?(String) ? v : v.to_s
+s = s.tr("０-９", "0-9")
+s.gsub(/\A[[:space:]]+|[[:space:]]+\z/, "")
+end
 
-  private
+pick = lambda do |row, keys|
+keys.each do |k|
+v = row[k]
+v = row[k.to_s] if v.nil? && k.is_a?(Symbol)
+v = row[k.to_sym] if v.nil? && k.is_a?(String)
+return v if v.present?
+end
+nil
+end
 
-  # ✅ Google lookupでAPIキーが無いなら geocode しない（RequestDenied回避）
-  def geocoding_enabled?
-    lookup = (Geocoder.config.lookup rescue nil).to_s
+CSV.foreach(file.path, headers: true) do |row|
+begin
+name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
+phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
+address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
+opening = normalize_str.call(pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"]))
+area_raw = normalize_str.call(pick.call(row, [:area, "area", "エリア"]))
 
-    # Google系lookupの場合はキー必須扱い
-    if lookup.include?("google")
-      key = ENV["GOOGLE_MAPS_API_KEY"].to_s.strip
-      key = ENV["GMAPS_API_KEY"].to_s.strip if key.blank?
-      return key.present?
-    end
+nearest_station = normalize_str.call(pick.call(row, [:nearest_station, "nearest_station", "最寄駅"]))
+note = normalize_str.call(pick.call(row, [:note, "note", "メモ"]))
 
-    # Google以外のlookupならキー不要（=有効）
-    true
-  end
+genre = normalize_str.call(pick.call(row, [:genre, "genre", "ジャンル"]))
+genre_other = normalize_str.call(pick.call(row, [:genre_other, "genre_other", "ジャンルその他", "その他"]))
 
-  # ✅ 住所/エリアが変わった or latlngが無い時だけ
-  def should_geocode?
-    return false unless geocoding_enabled?
-    return false if geocode_address.blank?
+smoking_area_raw = normalize_str.call(pick.call(row, [:smoking_area, "smoking_area", "喫煙エリア"]))
+smoking_area =
+case smoking_area_raw
+when "1" then "all_smoking"
+when "2" then "separated"
+else smoking_area_raw.presence
+end
 
-    address_changed = will_save_change_to_address?
-    area_changed    = will_save_change_to_area?
-    missing_latlng   = latitude.blank? || longitude.blank?
+smoking_type_raw = normalize_str.call(pick.call(row, [:smoking_type, "smoking_type", "喫煙タイプ"]))
+smoking_type =
+case smoking_type_raw
+when "1" then "both_ok"
+when "2" then "electronic_only"
+when "3" then "paper_only"
+else smoking_type_raw.presence
+end
 
-    address_changed || area_changed || missing_latlng
-  end
+last_raw = normalize_str.call(pick.call(row, [:last_confirmed_on, "last_confirmed_on", "最終確認日"]))
+last_confirmed_on =
+if last_raw.present?
+if last_raw.match?(/\A\d{6}\z/)
+year = ("20" + last_raw[0..1]).to_i
+month = last_raw[2..3].to_i
+day = last_raw[4..5].to_i
+Date.new(year, month, day)
+else
+Date.parse(last_raw)
+end
+else
+Date.current
+end
 
-  def last_confirmed_on_cannot_be_future
-    return if last_confirmed_on.blank?
-    errors.add(:last_confirmed_on, "は未来の日付にできません") if last_confirmed_on > Date.current
-  end
+area_key = area_raw.to_s.downcase
+area = area_map[area_key] || area_raw
 
-  # ✅ 店舗登録時：写真はどれか1枚必須
-  def at_least_one_photo_attached
-    return if food_photos.attached? || interior_photos.attached? || exterior_photos.attached? || menu_photos.attached?
-    errors.add(:base, "写真を1枚以上追加してください（料理/内観/外観/メニューのどれでもOK）")
-  end
+shop = Shop.new(
+name: name,
+phone: phone.presence,
+address: address,
+area: area.presence,
+nearest_station: nearest_station.presence,
+opening_hours: opening.presence,
+note: note.presence,
+genre: genre.presence,
+genre_other: genre_other.presence,
+smoking_area: smoking_area,
+smoking_type: smoking_type,
+last_confirmed_on: last_confirmed_on
+)
 
-  # "日","月".."土"
-  def wday_ja(wday)
-    %w[日 月 火 水 木 金 土][wday]
-  end
+shop.approved = false
+shop.rejected = false if shop.respond_to?(:rejected=)
 
-  def parse_opening_hours_by_day(text)
-    return {} if text.blank?
+shop.save!
+success += 1
+rescue => e
+Rails.logger.error "[CSV IMPORT ERROR] #{e.class}: #{e.message}"
+failed += 1
+end
+end
 
-    h = {}
-    text.to_s.lines.each do |line|
-      s = line.strip
-      next if s.blank?
+redirect_to admin_shops_path, notice: "CSV取込完了：#{success}件成功 / #{failed}件失敗"
+end
 
-      m = s.match(/\A([月火水木金土日])\s+(.*)\z/)
-      next unless m
+private
 
-      day = m[1]
-      rest = m[2].strip
-
-      if rest.match?(/休|定休日|closed/i)
-        h[day] = nil
-        next
-      end
-
-      t = rest.match(/(\d{1,2}):(\d{2})\s*[-–—〜~]\s*(\d{1,2}):(\d{2})/)
-      next unless t
-
-      open_min  = t[1].to_i * 60 + t[2].to_i
-      close_min = t[3].to_i * 60 + t[4].to_i
-      h[day] = [open_min, close_min]
-    end
-
-    h
-  end
-
-  def minutes_to_hhmm(min)
-    hh = (min / 60) % 24
-    mm = min % 60
-    format("%02d:%02d", hh, mm)
-  end
-
-  # "06-1234-5678" -> "0612345678"
-  def set_normalized_phone
-    digits = phone.to_s.gsub(/[^0-9]/, "")
-    self.normalized_phone = digits.presence
-  end
+def shop_params
+params.require(:shop).permit(
+:name, :address, :area, :nearest_station, :phone,
+:opening_hours,
+:genre, :genre_other, :note,
+:smoking_area, :smoking_type
+)
+end
 end
