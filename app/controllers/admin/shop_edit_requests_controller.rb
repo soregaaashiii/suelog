@@ -83,6 +83,7 @@ attrs[:phone] = phone if phone.present?
 
 opening = req.proposed_opening_hours.to_s.strip
 attrs[:opening_hours] = opening if opening.present?
+attrs[:opening_hours_data] = req.proposed_opening_hours_data if req.proposed_opening_hours_data.present?
 
 # 日付（空なら反映しない）
 attrs[:last_confirmed_on] = req.proposed_last_confirmed_on if req.proposed_last_confirmed_on.present?

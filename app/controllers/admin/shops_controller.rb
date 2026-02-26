@@ -260,7 +260,8 @@ params.require(:shop).permit(
 :name, :address, :area, :nearest_station, :phone,
 :opening_hours,
 :genre, :genre_other, :note,
-:smoking_area, :smoking_type
+:smoking_area, :smoking_type,
+opening_hours_data: {}
 )
 end
 end

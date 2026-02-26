@@ -1,0 +1,28 @@
+<%# locals: form_builder:, param_key:, field_name:, schedule: %>
+<% Shop::WEEKDAYS.each do |label, key| %>
+  <% day = schedule[key] || {} %>
+  <div style="border:1px solid #eee; border-radius:12px; padding:10px; margin:10px 0;">
+    <label style="display:flex; align-items:center; gap:8px; font-weight:700;">
+      <input type="checkbox" name="<%= "#{param_key}[#{field_name}][#{key}][enabled]" %>" value="1" <%= "checked" if day["enabled"] %>>
+      <span><%= label %>曜営業</span>
+    </label>
+
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center;">
+      <span>開店：</span>
+      <input type="time" name="<%= "#{param_key}[#{field_name}][#{key}][open]" %>" value="<%= day['open'] %>">
+      <span>〜 閉店：</span>
+      <input type="time" name="<%= "#{param_key}[#{field_name}][#{key}][close]" %>" value="<%= day['close'] %>">
+    </div>
+
+    <label style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+      <input type="checkbox" name="<%= "#{param_key}[#{field_name}][#{key}][break_enabled]" %>" value="1" <%= "checked" if day["break_enabled"] %>>
+      <span>中休みあり</span>
+    </label>
+
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center;">
+      <input type="time" name="<%= "#{param_key}[#{field_name}][#{key}][break_start]" %>" value="<%= day['break_start'] %>">
+      <span>〜</span>
+      <input type="time" name="<%= "#{param_key}[#{field_name}][#{key}][break_end]" %>" value="<%= day['break_end'] %>">
+    </div>
+  </div>
+<% end %>

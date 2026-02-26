@@ -114,6 +114,7 @@ class ShopsController < ApplicationController
       :genre, :genre_other,
       :opening_hours,
       :thumbnail_kind, :thumbnail_index,
+      opening_hours_data: {},
       food_photos: [],
       interior_photos: [],
       exterior_photos: [],

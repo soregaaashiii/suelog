@@ -54,7 +54,7 @@
 
     <div style="grid-column:1/-1;">
       <div style="font-weight:700;">営業時間</div>
-      <%= f.text_area :opening_hours, rows: 5, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+      <%= render "shared/opening_hours_picker", form_builder: f, param_key: "shop", field_name: "opening_hours_data", schedule: @shop.opening_hours_data_for_form %>
     </div>
 
     <div>
