@@ -181,6 +181,9 @@ name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
 phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
 address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
 opening = normalize_str.call(pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"]))
+opening_json = OpeningHoursParser.parse_legacy_text(opening)
+
+
 area_raw = normalize_str.call(pick.call(row, [:area, "area", "エリア"]))
 
 nearest_station = normalize_str.call(pick.call(row, [:nearest_station, "nearest_station", "最寄駅"]))
@@ -231,6 +234,7 @@ address: address,
 area: area.presence,
 nearest_station: nearest_station.presence,
 opening_hours: opening.presence,
+opening_hours_json: opening_json, # ✅ 構造化も保存
 note: note.presence,
 genre: genre.presence,
 genre_other: genre_other.presence,
@@ -259,6 +263,7 @@ def shop_params
 params.require(:shop).permit(
 :name, :address, :area, :nearest_station, :phone,
 :opening_hours,
+ opening_hours_json: {}, # ✅ 追加  
 :genre, :genre_other, :note,
 :smoking_area, :smoking_type
 )

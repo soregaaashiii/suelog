@@ -113,6 +113,7 @@ class ShopsController < ApplicationController
       :smoking_area, :smoking_type,
       :genre, :genre_other,
       :opening_hours,
+       opening_hours_json: {}, # ✅ 追加（構造化）
       :thumbnail_kind, :thumbnail_index,
       food_photos: [],
       interior_photos: [],

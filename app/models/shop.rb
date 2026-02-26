@@ -59,6 +59,9 @@ validate :last_confirmed_on_cannot_be_future
 before_validation :set_normalized_phone
 validates :normalized_phone, uniqueness: true, allow_nil: true, allow_blank: true
 
+# opening_hours_json を整形して保存
+before_validation :normalize_opening_hours_json
+
 # ===== Geocoding =====
 def geocode_address
 [address, area]
@@ -84,75 +87,115 @@ end
 # ===== Display helpers =====
 def display_genre
 return "" if genre.blank?
+
 genre == "その他" ? genre_other.to_s : genre.to_s
 end
 
 # =========================
-# 営業時間（昼休憩対応）
-# opening_hours例:
-# 月 11:00-14:00,17:00-23:00
-# 火 休み
+# 営業時間（構造化JSON + フォールバック）
 # =========================
 
-# 今日の営業時間帯（配列）を返す: [[open_min, close_min], ...] or nil（休み） or []（未設定）
-def today_time_ranges
-schedule = parse_opening_hours_by_day(opening_hours)
-return [] if schedule.empty?
-key = wday_ja(Time.zone.today.wday)
-schedule[key]
+# 優先: opening_hours_json（構造化）
+# 無ければ: opening_hours（文字列）をパース
+def opening_hours_data
+data = (opening_hours_json || {}).to_h
+return data if data.present?
+
+OpeningHoursParser.parse_legacy_text(opening_hours)
 end
 
-# 現在営業中（昼休憩も考慮）
 def open_now?
-ranges = today_time_ranges
-return false if ranges.blank?
-return false if ranges.nil?
+today = opening_hours_data[today_key]
+return false if today.blank?
+return false if today["closed"]
 
 now = Time.zone.now
 now_min = now.hour * 60 + now.min
 
-ranges.any? do |open_min, close_min|
-if close_min > open_min
-now_min >= open_min && now_min < close_min
-else
-# 例: 20:00-02:00（跨ぎ）
-now_min >= open_min || now_min < close_min
-end
+open_min = hhmm_to_min(today["open"])
+close_min = hhmm_to_min(today["close"])
+return false if open_min.nil? || close_min.nil?
+
+# 中休み
+if today["break_enabled"]
+bs = hhmm_to_min(today["break_start"])
+be = hhmm_to_min(today["break_end"])
+if bs && be && within_range?(now_min, bs, be)
+return false
 end
 end
 
-# 表示用： [["月","11:00-14:00 / 17:00-23:00"], ["火","休み"], ...]
+within_range?(now_min, open_min, close_min)
+end
+
+# 表示用： [["月","11:00-23:00（休憩 14:00-17:00）"], ...]
 def opening_hours_lines
-schedule = parse_opening_hours_by_day(opening_hours)
-order = %w[月 火 水 木 金 土 日]
+order = [
+["月", "monday"],
+["火", "tuesday"],
+["水", "wednesday"],
+["木", "thursday"],
+["金", "friday"],
+["土", "saturday"],
+["日", "sunday"]
+]
 
-return order.map { |d| [d, "未設定"] } if schedule.empty?
+data = opening_hours_data
 
-order.map do |d|
-ranges = schedule[d]
-if ranges.nil?
-[d, "休み"]
-elsif ranges.blank?
-[d, "未設定"]
+order.map do |label, key|
+d = data[key]
+if d.blank?
+[label, "未設定"]
+elsif d["closed"]
+[label, "休み"]
 else
-text = ranges.map { |a, b| "#{minutes_to_hhmm(a)}-#{minutes_to_hhmm(b)}" }.join(" / ")
-[d, text]
+base = "#{d["open"]}-#{d["close"]}"
+if d["break_enabled"] && d["break_start"].present? && d["break_end"].present?
+[label, "#{base}（休憩 #{d["break_start"]}-#{d["break_end"]}）"]
+else
+[label, base]
+end
 end
 end
 end
 
 AREAS = [
-"阿倍野","阿倍野橋","旭区清水","朝潮橋","淡路","石橋阪大前","泉大津","泉ヶ丘","泉佐野","和泉中央",
-"今里","茨木","茨木市","梅田","江坂","難波","大阪阿部野橋","大阪上本町","大阪狭山市","大阪天満宮",
-"大日","大東市","大正","岡町","貝塚","香里園","柏原","門真市","岸和田","京橋","喜連瓜破","九条",
-"河内小阪","河内国分","河内長野","河内松原","岸辺","北新地","北千里","北花田","布施","堺","堺東",
-"桜川","新金岡","新今宮","新大阪","心斎橋","住道","千里中央","千林大宮","高槻","高槻市","玉造",
-"天下茶屋","天王寺","天満橋","豊中","中百舌鳥","長居","西梅田","西九条","野田","東岸和田","東三国",
-"東梅田","東大阪市","東花園","枚方市","平野","深井","藤井寺","古市","弁天町","本町","松原","箕面",
-"都島","守口市","八尾","山田","淀屋橋","四ツ橋"
+"阿倍野", "阿倍野橋", "旭区清水", "朝潮橋", "淡路", "石橋阪大前", "泉大津", "泉ヶ丘", "泉佐野", "和泉中央",
+"今里", "茨木", "茨木市", "梅田", "江坂", "難波", "大阪阿部野橋", "大阪上本町", "大阪狭山市", "大阪天満宮",
+"大日", "大東市", "大正", "岡町", "貝塚", "香里園", "柏原", "門真市", "岸和田", "京橋", "喜連瓜破", "九条",
+"河内小阪", "河内国分", "河内長野", "河内松原", "岸辺", "北新地", "北千里", "北花田", "布施", "堺", "堺東",
+"桜川", "新金岡", "新今宮", "新大阪", "心斎橋", "住道", "千里中央", "千林大宮", "高槻", "高槻市", "玉造",
+"天下茶屋", "天王寺", "天満橋", "豊中", "中百舌鳥", "長居", "西梅田", "西九条", "野田", "東岸和田", "東三国",
+"東梅田", "東大阪市", "東花園", "枚方市", "平野", "深井", "藤井寺", "古市", "弁天町", "本町", "松原", "箕面",
+"都島", "守口市", "八尾", "山田", "淀屋橋", "四ツ橋"
 ].freeze
 
 private
+
+def normalize_opening_hours_json
+self.opening_hours_json = OpeningHoursParser.normalize_json(opening_hours_json)
+end
+
+def today_key
+%w[sunday monday tuesday wednesday thursday friday saturday][Time.zone.today.wday]
+end
+
+def hhmm_to_min(hhmm)
+return nil if hhmm.blank?
+m = hhmm.to_s.match(/\A(\d{1,2}):(\d{2})\z/)
+return nil unless m
+
+m[1].to_i * 60 + m[2].to_i
+end
+
+def within_range?(now_min, start_min, end_min)
+if end_min > start_min
+now_min >= start_min && now_min < end_min
+else
+# 跨ぎ（例 20:00-02:00）
+now_min >= start_min || now_min < end_min
+end
+end
 
 def geocoding_enabled?
 lookup = (Geocoder.config.lookup rescue nil).to_s
@@ -177,58 +220,8 @@ end
 
 def last_confirmed_on_cannot_be_future
 return if last_confirmed_on.blank?
+
 errors.add(:last_confirmed_on, "は未来の日付にできません") if last_confirmed_on > Date.current
-end
-
-def wday_ja(wday)
-%w[日 月 火 水 木 金 土][wday]
-end
-
-# 戻り値:
-# - schedule[day] = nil -> 休み
-# - schedule[day] = [[open,close],[open,close]...] -> 複数帯（昼休憩対応）
-def parse_opening_hours_by_day(text)
-return {} if text.blank?
-
-h = {}
-text.to_s.lines.each do |line|
-s = line.strip
-next if s.blank?
-
-m = s.match(/\A([月火水木金土日])\s+(.*)\z/)
-next unless m
-
-day = m[1]
-rest = m[2].strip
-
-if rest.match?(/休|定休日|closed/i)
-h[day] = nil
-next
-end
-
-ranges = []
-rest.split(/[、,\/]/).each do |part|
-p = part.strip
-next if p.blank?
-
-t = p.match(/(\d{1,2}):(\d{2})\s*[-–—〜~]\s*(\d{1,2}):(\d{2})/)
-next unless t
-
-open_min = t[1].to_i * 60 + t[2].to_i
-close_min = t[3].to_i * 60 + t[4].to_i
-ranges << [open_min, close_min]
-end
-
-h[day] = ranges if ranges.any?
-end
-
-h
-end
-
-def minutes_to_hhmm(min)
-hh = (min / 60) % 24
-mm = min % 60
-format("%02d:%02d", hh, mm)
 end
 
 def set_normalized_phone
