@@ -100,6 +100,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_22_034632) do
     t.string "proposed_name"
     t.string "proposed_nearest_station"
     t.text "proposed_opening_hours"
+    t.json "proposed_opening_hours_data", default: {}, null: false
     t.string "proposed_phone"
     t.integer "proposed_smoking_area"
     t.integer "proposed_smoking_type"
@@ -139,6 +140,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_22_034632) do
     t.string "normalized_phone"
     t.text "note"
     t.text "opening_hours"
+    t.json "opening_hours_data", default: {}, null: false
     t.string "phone"
     t.string "place_id"
     t.boolean "rejected"

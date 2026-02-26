@@ -32,6 +32,22 @@ validates :proposed_smoking_type, presence: { message: "を選択してくださ
 validate :proposed_last_confirmed_on_not_future
 validate :genre_other_required_when_other
 validate :proposed_thumbnail_values
+before_validation :sync_proposed_opening_hours_data
+
+
+def proposed_opening_hours_data_for_form
+  source = proposed_opening_hours_data.presence || Shop.opening_hours_data_from_text(proposed_opening_hours)
+  Shop.normalize_opening_hours_data(source)
+end
+
+private
+
+def sync_proposed_opening_hours_data
+  source = proposed_opening_hours_data.presence || Shop.opening_hours_data_from_text(proposed_opening_hours)
+  normalized = Shop.normalize_opening_hours_data(source)
+  self.proposed_opening_hours_data = normalized
+  self.proposed_opening_hours = Shop.build_opening_hours_text(normalized)
+end
 
 private
 

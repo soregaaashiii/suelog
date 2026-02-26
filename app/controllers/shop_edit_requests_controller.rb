@@ -10,6 +10,7 @@ class ShopEditRequestsController < ApplicationController
       proposed_nearest_station: @shop.nearest_station,
       proposed_phone: @shop.phone,
       proposed_opening_hours: @shop.opening_hours,
+      proposed_opening_hours_data: @shop.opening_hours_data_for_form,
       proposed_smoking_area: @shop.smoking_area,
       proposed_smoking_type: @shop.smoking_type,
       genre: @shop.genre,
@@ -30,6 +31,7 @@ class ShopEditRequestsController < ApplicationController
       proposed_nearest_station: @shop.nearest_station,
       proposed_phone: @shop.phone,
       proposed_opening_hours: @shop.opening_hours,
+      proposed_opening_hours_data: @shop.opening_hours_data_for_form,
       proposed_smoking_area: @shop.smoking_area,
       proposed_smoking_type: @shop.smoking_type,
       genre: @shop.genre,
@@ -51,6 +53,10 @@ class ShopEditRequestsController < ApplicationController
     @req.proposed_nearest_station = @shop.nearest_station if blankish?(@req.proposed_nearest_station)
     @req.proposed_phone = @shop.phone if blankish?(@req.proposed_phone)
     @req.proposed_opening_hours = @shop.opening_hours if blankish?(@req.proposed_opening_hours)
+
+    if @req.proposed_opening_hours_data.blank?
+      @req.proposed_opening_hours_data = @shop.opening_hours_data_for_form
+    end
 
     @req.proposed_smoking_area = @shop.smoking_area if blankish?(@req.proposed_smoking_area)
     @req.proposed_smoking_type = @shop.smoking_type if blankish?(@req.proposed_smoking_type)
@@ -105,6 +111,7 @@ class ShopEditRequestsController < ApplicationController
       :genre, :genre_other,
       :proposed_opening_hours,
       :proposed_thumbnail_kind, :proposed_thumbnail_index,
+      proposed_opening_hours_data: {},
       food_photos: [],
       interior_photos: [],
       exterior_photos: [],

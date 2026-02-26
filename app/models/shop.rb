@@ -24,6 +24,114 @@ electronic_only: 1, # 加熱式のみ
 paper_only: 2 # 紙のみ
 }
 
+
+WEEKDAYS = [
+  ["月", "mon"], ["火", "tue"], ["水", "wed"], ["木", "thu"],
+  ["金", "fri"], ["土", "sat"], ["日", "sun"]
+].freeze
+
+class << self
+  def default_opening_hours_data
+    WEEKDAYS.to_h do |_label, key|
+      [key, {
+        "enabled" => false,
+        "open" => "11:00",
+        "close" => "23:00",
+        "break_enabled" => false,
+        "break_start" => "14:00",
+        "break_end" => "17:00"
+      }]
+    end
+  end
+
+  def normalize_opening_hours_data(raw)
+    base = default_opening_hours_data
+    src = raw.is_a?(Hash) ? raw : {}
+
+    base.each do |key, defaults|
+      day = src[key] || src[key.to_sym] || {}
+      next unless day.is_a?(Hash)
+
+      defaults["enabled"] = truthy?(day["enabled"] || day[:enabled])
+      defaults["break_enabled"] = truthy?(day["break_enabled"] || day[:break_enabled])
+      defaults["open"] = normalize_hhmm(day["open"] || day[:open], defaults["open"])
+      defaults["close"] = normalize_hhmm(day["close"] || day[:close], defaults["close"])
+      defaults["break_start"] = normalize_hhmm(day["break_start"] || day[:break_start], defaults["break_start"])
+      defaults["break_end"] = normalize_hhmm(day["break_end"] || day[:break_end], defaults["break_end"])
+    end
+
+    base
+  end
+
+  def build_opening_hours_text(data)
+    normalized = normalize_opening_hours_data(data)
+
+    WEEKDAYS.map do |label, key|
+      day = normalized[key] || {}
+      unless day["enabled"]
+        next "#{label} 休み"
+      end
+
+      if day["break_enabled"]
+        "#{label} #{day['open']}-#{day['break_start']},#{day['break_end']}-#{day['close']}"
+      else
+        "#{label} #{day['open']}-#{day['close']}"
+      end
+    end.join("\n")
+  end
+
+  def opening_hours_data_from_text(text)
+    data = default_opening_hours_data
+    return data if text.blank?
+
+    text.to_s.lines.each do |line|
+      m = line.strip.match(/\A([月火水木金土日])\s+(.*)\z/)
+      next unless m
+
+      label, rest = m[1], m[2].to_s.strip
+      key = WEEKDAYS.assoc(label)&.last
+      next unless key
+
+      if rest.match?(/休|定休日|closed/i)
+        data[key]["enabled"] = false
+        next
+      end
+
+      ranges = rest.split(/[、,\/]/).map(&:strip).reject(&:blank?)
+      parsed = ranges.map { |r| r.match(/\A(\d{1,2}:\d{2})\s*[-–—〜~]\s*(\d{1,2}:\d{2})\z/) }.compact
+      next if parsed.empty?
+
+      data[key]["enabled"] = true
+      data[key]["open"] = normalize_hhmm(parsed.first[1], "11:00")
+      data[key]["close"] = normalize_hhmm(parsed.last[2], "23:00")
+
+      if parsed.size >= 2
+        data[key]["break_enabled"] = true
+        data[key]["break_start"] = normalize_hhmm(parsed.first[2], "14:00")
+        data[key]["break_end"] = normalize_hhmm(parsed.last[1], "17:00")
+      end
+    end
+
+    data
+  end
+
+  private
+
+  def truthy?(v)
+    [true, "1", 1, "true", "on"].include?(v)
+  end
+
+  def normalize_hhmm(value, fallback)
+    v = value.to_s.strip
+    return fallback unless v.match?(/\A\d{1,2}:\d{2}\z/)
+
+    hh, mm = v.split(":").map(&:to_i)
+    return fallback if hh.negative? || hh > 23 || mm.negative? || mm > 59
+
+    format("%02d:%02d", hh, mm)
+  end
+end
+
 # ===== Scopes =====
 scope :approved, -> { where(approved: true) }
 
@@ -57,6 +165,7 @@ validate :last_confirmed_on_cannot_be_future
 
 # 電話番号の重複防止（digitsのみ）
 before_validation :set_normalized_phone
+before_validation :sync_opening_hours_data
 validates :normalized_phone, uniqueness: true, allow_nil: true, allow_blank: true
 
 # ===== Geocoding =====
@@ -152,7 +261,19 @@ AREAS = [
 "都島","守口市","八尾","山田","淀屋橋","四ツ橋"
 ].freeze
 
+def opening_hours_data_for_form
+  source = opening_hours_data.presence || self.class.opening_hours_data_from_text(opening_hours)
+  self.class.normalize_opening_hours_data(source)
+end
+
 private
+
+def sync_opening_hours_data
+  source = opening_hours_data.presence || self.class.opening_hours_data_from_text(opening_hours)
+  normalized = self.class.normalize_opening_hours_data(source)
+  self.opening_hours_data = normalized
+  self.opening_hours = self.class.build_opening_hours_text(normalized)
+end
 
 def geocoding_enabled?
 lookup = (Geocoder.config.lookup rescue nil).to_s

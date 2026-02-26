@@ -98,14 +98,7 @@ style: "display:inline-block; padding:6px 10px; border:1px solid #ddd; border-ra
 
 <p>
 営業時間（任意）<br>
-<%= f.text_area :opening_hours, rows: 5,
-placeholder: "例）\n月 11:00-23:00\n水 休み\n土 12:00-02:00" %>
-<span style="display:block; color:#666; font-size:12px; margin-top:6px;">
-例：<br>
-月 11:00-23:00<br>
-水 休み<br>
-土 12:00-02:00
-</span>
+<%= render "shared/opening_hours_picker", form_builder: f, param_key: "shop", field_name: "opening_hours_data", schedule: @shop.opening_hours_data_for_form %>
 </p>
 
 <p>
