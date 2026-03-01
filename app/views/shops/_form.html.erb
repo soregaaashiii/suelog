@@ -1,9 +1,11 @@
 <%= form_with model: @shop, local: true do |f| %>
-<% if @shop.errors.any? %>
+<% shop = f.object %>
+
+<% if shop.errors.any? %>
 <div style="padding:12px; border:1px solid #f5c2c7; background:#fff5f5; border-radius:12px; margin:10px 0; color:#b00020;">
 <div style="font-weight:700; margin-bottom:6px;">入力エラー</div>
 <ul style="margin:0; padding-left:18px;">
-<% @shop.errors.full_messages.each do |msg| %>
+<% shop.errors.full_messages.each do |msg| %>
 <li><%= msg %></li>
 <% end %>
 </ul>
@@ -84,12 +86,12 @@ include_blank: "選択してください" %>
 <% days = [["月","monday"],["火","tuesday"],["水","wednesday"],["木","thursday"],["金","friday"],["土","saturday"],["日","sunday"]] %>
 
 <div id="opening-hours-form" style="display:grid; gap:12px;">
-<% data = @shop.opening_hours_data %>
+<% data = shop.opening_hours_data || {} %>
 
 <% days.each do |label, key| %>
 <% d = data[key] || {} %>
-<% closed = d["closed"] %>
-<% break_enabled = d["break_enabled"] %>
+<% closed = !!d["closed"] %>
+<% break_enabled = !!d["break_enabled"] %>
 
 <div style="border:1px solid #eee; border-radius:12px; padding:12px;">
 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -202,4 +204,3 @@ if (breakToggle) breakToggle.addEventListener("change", () => toggleDay(key));
 </div>
 </div>
 <% end %>
-
