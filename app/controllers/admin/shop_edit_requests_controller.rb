@@ -1,4 +1,5 @@
-# app/controllers/admin/shop_edit_requests_controller.rb
+# frozen_string_literal: true
+
 class Admin::ShopEditRequestsController < Admin::BaseController
 before_action :set_req, only: [:show, :approve, :reject]
 
@@ -22,24 +23,15 @@ def show
 end
 
 def approve
-req = ShopEditRequest.find(params[:id])
 shop = @req.shop
 attrs = build_shop_attrs_from_request(@req)
 
-# エリア（空欄は反映しない）
-area = req.proposed_area.to_s.strip
+area = @req.proposed_area.to_s.strip
 attrs[:area] = area if area.present?
 
-
-
 ActiveRecord::Base.transaction do
-# 1) 文字・数値などを反映（空は反映しない）
 shop.update!(attrs) if attrs.present?
-
-# 2) 管理画面で選んだ写真だけ Shop にコピー（追記）
 apply_selected_attachments!(@req, shop)
-
-# 3) 承認
 @req.update!(status: :approved)
 end
 
@@ -65,7 +57,6 @@ def set_req
 @req = ShopEditRequest.includes(:shop).find(params[:id])
 end
 
-# ✅ 空欄は反映しない（変更された項目だけ反映）
 def build_shop_attrs_from_request(req)
 attrs = {}
 
@@ -81,60 +72,31 @@ attrs[:nearest_station] = station if station.present?
 phone = req.proposed_phone.to_s.strip
 attrs[:phone] = phone if phone.present?
 
-opening = req.proposed_opening_hours.to_s.strip
-attrs[:opening_hours] = opening if opening.present?
+# ✅ 営業時間：JSON統一
+if req.proposed_opening_hours_json.present? && req.proposed_opening_hours_json.to_h.any?
+attrs[:opening_hours_json] = req.proposed_opening_hours_json
+end
 
-# 日付（空なら反映しない）
 attrs[:last_confirmed_on] = req.proposed_last_confirmed_on if req.proposed_last_confirmed_on.present?
 
-# セレクト系（"0"/"1" で来ることがあるので変換）
 smoking_area = req.proposed_smoking_area.to_s.strip
-if smoking_area.present?
-attrs[:smoking_area] = smoking_area.match?(/\A\d+\z/) ? smoking_area.to_i : smoking_area
-end
+attrs[:smoking_area] = smoking_area if smoking_area.present?
 
 smoking_type = req.proposed_smoking_type.to_s.strip
-if smoking_type.present?
-attrs[:smoking_type] = smoking_type.match?(/\A\d+\z/) ? smoking_type.to_i : smoking_type
-end
+attrs[:smoking_type] = smoking_type if smoking_type.present?
 
-# ジャンル（空なら反映しない）
 genre = req.genre.to_s.strip
 if genre.present?
 attrs[:genre] = genre
-if genre == "その他"
-attrs[:genre_other] = req.genre_other.to_s.strip
-else
-attrs[:genre_other] = nil
-end
+attrs[:genre_other] = (genre == "その他" ? req.genre_other.to_s.strip : nil)
 end
 
-# ✅ 編集依頼の「補足(note)」を店舗の note に反映（空欄は反映しない）
 req_note = req.note.to_s.strip
 attrs[:note] = req_note if req_note.present?
-
-# ✅ サムネ（管理画面の approve フォームから入る値を優先）
-tk = params.dig(:apply, :thumbnail_kind).to_s.strip
-ti = params.dig(:apply, :thumbnail_index).to_s.strip
-
-if tk.present?
-attrs[:thumbnail_kind] = tk
-else
-proposed_tk = req.try(:proposed_thumbnail_kind).to_s.strip
-attrs[:thumbnail_kind] = proposed_tk if proposed_tk.present?
-end
-
-if ti.present?
-attrs[:thumbnail_index] = ti.to_i
-else
-proposed_ti = req.try(:proposed_thumbnail_index)
-attrs[:thumbnail_index] = proposed_ti.to_i if proposed_ti.present?
-end
 
 attrs
 end
 
-# ✅ 管理画面で選ばれた blob だけ attach する（複製はしない）
 def apply_selected_attachments!(req, shop)
 apply = params[:apply] || {}
 
@@ -150,7 +112,6 @@ return unless req.respond_to?(name) && shop.respond_to?(name)
 ids = Array(blob_ids).map { |v| v.to_s.strip }.reject(&:blank?).uniq
 return if ids.empty?
 
-# req に実際に付いている blob だけ許可（改ざん対策）
 allowed = req.public_send(name).attachments.map { |a| a.blob_id.to_s }
 ids &= allowed
 return if ids.empty?

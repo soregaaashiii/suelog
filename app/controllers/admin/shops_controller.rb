@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "csv"
+require "json"
+require "date"
 
 class Admin::ShopsController < Admin::BaseController
 def index
@@ -139,7 +141,9 @@ flash.now[:alert] = e.record.errors.full_messages.join(" / ")
 render :edit, status: :unprocessable_entity
 end
 
-# ✅ CSVインポート（ヘッダー揺れ吸収 + エリア正規化）
+# ✅ CSVインポート：
+# - opening_hours_json があればそれを最優先（新方式）
+# - 無ければ opening_hours を legacy として parse（互換）
 def import
 file = params[:file]
 return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
@@ -175,39 +179,68 @@ end
 nil
 end
 
+# ✅ あなたの enum に合わせて受け取る：
+# smoking_area: separated=0 / all_smoking=1
+# smoking_type: both_ok=0 / electronic_only=1 / paper_only=2
+# ついでに「旧形式 1/2/3」も受け付ける
+map_smoking_area = lambda do |raw|
+s = normalize_str.call(raw)
+return nil if s.blank?
+
+case s
+when "0" then "separated"
+when "1" then "all_smoking"
+when "2" then "separated" # 旧ルール互換（昔のCSVが 2=separated だった場合）
+else
+s.presence
+end
+end
+
+map_smoking_type = lambda do |raw|
+s = normalize_str.call(raw)
+return nil if s.blank?
+
+case s
+when "0" then "both_ok"
+when "1" then "electronic_only"
+when "2" then "paper_only"
+when "3" then "paper_only" # 旧ルール互換（昔のCSVが 3=paper_only だった場合）
+else
+s.presence
+end
+end
+
 CSV.foreach(file.path, headers: true) do |row|
 begin
 name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
 phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
 address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
-opening = normalize_str.call(pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"]))
-opening_json = OpeningHoursParser.parse_legacy_text(opening)
 
+# ✅ 営業時間：JSON優先
+opening_json_raw = pick.call(row, [:opening_hours_json, "opening_hours_json", "営業時間JSON"])
+opening_text = normalize_str.call(pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"]))
+
+opening_json =
+if opening_json_raw.present?
+begin
+parsed = JSON.parse(opening_json_raw.to_s)
+OpeningHoursParser.normalize_json(parsed)
+rescue JSON::ParserError
+OpeningHoursParser.parse_legacy_text(opening_text)
+end
+else
+OpeningHoursParser.parse_legacy_text(opening_text)
+end
 
 area_raw = normalize_str.call(pick.call(row, [:area, "area", "エリア"]))
-
 nearest_station = normalize_str.call(pick.call(row, [:nearest_station, "nearest_station", "最寄駅"]))
 note = normalize_str.call(pick.call(row, [:note, "note", "メモ"]))
 
 genre = normalize_str.call(pick.call(row, [:genre, "genre", "ジャンル"]))
 genre_other = normalize_str.call(pick.call(row, [:genre_other, "genre_other", "ジャンルその他", "その他"]))
 
-smoking_area_raw = normalize_str.call(pick.call(row, [:smoking_area, "smoking_area", "喫煙エリア"]))
-smoking_area =
-case smoking_area_raw
-when "1" then "all_smoking"
-when "2" then "separated"
-else smoking_area_raw.presence
-end
-
-smoking_type_raw = normalize_str.call(pick.call(row, [:smoking_type, "smoking_type", "喫煙タイプ"]))
-smoking_type =
-case smoking_type_raw
-when "1" then "both_ok"
-when "2" then "electronic_only"
-when "3" then "paper_only"
-else smoking_type_raw.presence
-end
+smoking_area = map_smoking_area.call(pick.call(row, [:smoking_area, "smoking_area", "喫煙エリア"]))
+smoking_type = map_smoking_type.call(pick.call(row, [:smoking_type, "smoking_type", "喫煙タイプ"]))
 
 last_raw = normalize_str.call(pick.call(row, [:last_confirmed_on, "last_confirmed_on", "最終確認日"]))
 last_confirmed_on =
@@ -233,8 +266,7 @@ phone: phone.presence,
 address: address,
 area: area.presence,
 nearest_station: nearest_station.presence,
-opening_hours: opening.presence,
-opening_hours_json: opening_json, # ✅ 構造化も保存
+opening_hours_json: opening_json,
 note: note.presence,
 genre: genre.presence,
 genre_other: genre_other.presence,
@@ -249,7 +281,7 @@ shop.rejected = false if shop.respond_to?(:rejected=)
 shop.save!
 success += 1
 rescue => e
-Rails.logger.error "[CSV IMPORT ERROR] #{e.class}: #{e.message}"
+Rails.logger.error "[CSV IMPORT ERROR] #{e.class}: #{e.message} row=#{row.to_h.inspect}"
 failed += 1
 end
 end
@@ -262,10 +294,9 @@ private
 def shop_params
 params.require(:shop).permit(
 :name, :address, :area, :nearest_station, :phone,
-:opening_hours,
- opening_hours_json: {}, # ✅ 追加  
 :genre, :genre_other, :note,
-:smoking_area, :smoking_type
+:smoking_area, :smoking_type,
+opening_hours_json: {}
 )
 end
 end

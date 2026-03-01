@@ -1,7 +1,6 @@
 <%# app/views/shops/new.html.erb %>
 
 <h1>お店を登録</h1>
-<%= render "form" %>
 
 <% req = '<span style="color:#b00020; font-weight:900; font-size:12px; margin-left:6px;">※必須</span>'.html_safe %>
 
@@ -97,19 +96,12 @@ style: "display:inline-block; padding:6px 10px; border:1px solid #ddd; border-ra
 <%= f.text_field :nearest_station, placeholder: "例：梅田駅 徒歩5分" %>
 </p>
 
-<p>
-営業時間（任意）<br>
-<%= f.text_area :opening_hours, rows: 5,
-placeholder: "例）\n月 11:00-23:00\n水 休み\n土 12:00-02:00" %>
-<span style="display:block; color:#666; font-size:12px; margin-top:6px;">
-例：<br>
-月 11:00-23:00<br>
-水 休み<br>
-土 12:00-02:00
-</span>
-</p>
+<%# ✅ 営業時間（統一UI） %>
+<%= render "shared/opening_hours_fields",
+param_prefix: "shop[opening_hours_json]",
+data: (@shop.opening_hours_data || {}) %>
 
-<p>
+<p style="margin-top:12px;">
 電話番号（任意）<br>
 <%= f.telephone_field :phone, placeholder: "例：06-1234-5678" %>
 </p>
@@ -178,28 +170,6 @@ placeholder: "例）\n月 11:00-23:00\n水 休み\n土 12:00-02:00" %>
 </div>
 
 <hr>
-<h3>一覧に出す写真（サムネ設定）</h3>
-<p style="color:#666; font-size:12px; margin-top:6px;">
-種類＋「何枚目（1〜）」を指定できます。<br>
-存在しない番号/写真が無い場合は、自動で別の写真にフォールバックします。
-</p>
-
-<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin-top:10px;">
-<div>
-<%= f.label :thumbnail_kind, "種類" %><br>
-<%= f.select :thumbnail_kind,
-[["自動（おすすめ）", "auto"], ["料理", "food"], ["外観", "exterior"], ["内観", "interior"], ["メニュー", "menu"]],
-{ include_blank: false } %>
-</div>
-
-<div>
-<%= f.label :thumbnail_index, "何枚目（1〜）" %><br>
-<%= f.number_field :thumbnail_index, in: 1..20, step: 1, style: "width:120px;" %>
-<div style="color:#666; font-size:12px; margin-top:6px;">
-例：料理の #2 を出したい → 種類=料理 / 何枚目=2
-</div>
-</div>
-</div>
 
 <div style="margin-top:12px;">
 <%= f.label :note, "メモ（吸える条件・席・時間など）" %><br>

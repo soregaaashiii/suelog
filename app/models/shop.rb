@@ -27,7 +27,8 @@ paper_only: 2 # 紙のみ
 # ===== Scopes =====
 scope :approved, -> { where(approved: true) }
 
-scope :keyword, ->(q) do
+# 文字列カラムのキーワード検索（opening_hours は廃止するので除外）
+scope :keyword, lambda { |q|
 kw = q.to_s.strip
 next all if kw.blank?
 
@@ -42,16 +43,17 @@ OR shops.phone LIKE :like
 OR shops.note LIKE :like
 OR shops.genre LIKE :like
 OR shops.genre_other LIKE :like
-OR shops.opening_hours LIKE :like
 SQL
 )
-end
+}
 
 # ===== Validations =====
 validates :name, :address, :last_confirmed_on, presence: { message: "を入力してください" }
 validates :genre, presence: { message: "を選択してください" }
-validates :smoking_area, presence: { message: "を選択してください" }
-validates :smoking_type, presence: { message: "を選択してください" }
+
+# ✅ 承認済みのときだけ必須（CSV取り込みの pending を通す）
+validates :smoking_area, presence: { message: "を選択してください" }, if: :approved?
+validates :smoking_type, presence: { message: "を選択してください" }, if: :approved?
 
 validate :last_confirmed_on_cannot_be_future
 
@@ -79,29 +81,24 @@ def safe_geocode
 geocode
 rescue Geocoder::Error => e
 Rails.logger.warn("[geocode skipped] #{e.class}: #{e.message}")
-self.latitude = nil if self.latitude_changed?
-self.longitude = nil if self.longitude_changed?
+self.latitude = nil if latitude_changed?
+self.longitude = nil if longitude_changed?
 true
 end
 
 # ===== Display helpers =====
 def display_genre
 return "" if genre.blank?
-
 genre == "その他" ? genre_other.to_s : genre.to_s
 end
 
 # =========================
-# 営業時間（構造化JSON + フォールバック）
+# 営業時間（構造化JSON）
 # =========================
-
-# 優先: opening_hours_json（構造化）
-# 無ければ: opening_hours（文字列）をパース
+# opening_hours_json が正。
+# （過去データ互換が必要なら OpeningHoursParser.parse_legacy_text をここに戻せるが、UI統一なので今は使わない）
 def opening_hours_data
-data = (opening_hours_json || {}).to_h
-return data if data.present?
-
-OpeningHoursParser.parse_legacy_text(opening_hours)
+(opening_hours_json.presence || {}).to_h
 end
 
 def open_now?
@@ -116,7 +113,6 @@ open_min = hhmm_to_min(today["open"])
 close_min = hhmm_to_min(today["close"])
 return false if open_min.nil? || close_min.nil?
 
-# 中休み
 if today["break_enabled"]
 bs = hhmm_to_min(today["break_start"])
 be = hhmm_to_min(today["break_end"])
@@ -184,7 +180,6 @@ def hhmm_to_min(hhmm)
 return nil if hhmm.blank?
 m = hhmm.to_s.match(/\A(\d{1,2}):(\d{2})\z/)
 return nil unless m
-
 m[1].to_i * 60 + m[2].to_i
 end
 
@@ -192,7 +187,6 @@ def within_range?(now_min, start_min, end_min)
 if end_min > start_min
 now_min >= start_min && now_min < end_min
 else
-# 跨ぎ（例 20:00-02:00）
 now_min >= start_min || now_min < end_min
 end
 end
@@ -220,7 +214,6 @@ end
 
 def last_confirmed_on_cannot_be_future
 return if last_confirmed_on.blank?
-
 errors.add(:last_confirmed_on, "は未来の日付にできません") if last_confirmed_on > Date.current
 end
 

@@ -1,6 +1,3 @@
-
-
-
 # frozen_string_literal: true
 
 class OpeningHoursParser
@@ -14,15 +11,7 @@ DAYS = {
 "土" => "saturday"
 }.freeze
 
-# 入力例:
-# 月 11:00-14:00,17:00-23:00
-# 火 休み
-#
-# 出力（UIと合わせた1日1枠+休憩）
-# {
-# "monday"=>{"closed"=>false,"open"=>"11:00","close"=>"23:00","break_enabled"=>true,"break_start"=>"14:00","break_end"=>"17:00"},
-# "tuesday"=>{"closed"=>true}
-# }
+# 旧テキスト → json（CSV等の互換用）
 def self.parse_legacy_text(text)
 return {} if text.blank?
 
@@ -68,7 +57,6 @@ out[day] = {
 "break_enabled" => false
 }
 else
-# 2枠目までを「中休み」に落とし込む（それ以上は無視）
 first_open, first_close = periods[0]
 second_open, second_close = periods[1]
 out[day] = {
@@ -86,6 +74,9 @@ out
 end
 
 # フォームから来たopening_hours_jsonを整形（空文字を消す）
+# - closed が true の日は {closed:true} に固定
+# - open/close が両方ない日は「未設定扱い」で保存しない
+# - break_enabled は break_start/end が揃った時だけ true
 def self.normalize_json(input)
 h = (input || {}).to_h
 out = {}
@@ -101,21 +92,19 @@ end
 
 open = presence(v["open"])
 close = presence(v["close"])
-
-# 最低限 open/close が無い日は保存しない（未設定扱い）
 next if open.blank? || close.blank?
 
-break_enabled = truthy?(v["break_enabled"])
 break_start = presence(v["break_start"])
 break_end = presence(v["break_end"])
+break_enabled = truthy?(v["break_enabled"]) && break_start.present? && break_end.present?
 
 out[day] = {
 "closed" => false,
 "open" => open,
 "close" => close,
-"break_enabled" => break_enabled && break_start.present? && break_end.present?,
-"break_start" => break_start,
-"break_end" => break_end
+"break_enabled" => break_enabled,
+"break_start" => (break_enabled ? break_start : nil),
+"break_end" => (break_enabled ? break_end : nil)
 }.compact
 end
 
@@ -132,4 +121,3 @@ s = s.strip
 s.presence
 end
 end
-
