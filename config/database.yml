@@ -1,16 +1,16 @@
 development:
-adapter: sqlite3
-database: storage/development.sqlite3
-pool: 5
-timeout: 5000
+  adapter: sqlite3
+  database: storage/development.sqlite3
+  pool: 5
+  timeout: 5000
 
 test:
-adapter: sqlite3
-database: storage/test.sqlite3
-pool: 5
-timeout: 5000
+  adapter: sqlite3
+  database: storage/test.sqlite3
+  pool: 5
+  timeout: 5000
 
 production:
-adapter: postgresql
-url: <%= ENV["DATABASE_URL"] %>
-pool: 5
+  adapter: postgresql
+  url: <%= ENV["DATABASE_URL"] %>
+  pool: 5
