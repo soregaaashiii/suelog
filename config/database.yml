@@ -1,17 +1,17 @@
 default: &default
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+ pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
 development:
-<<: *default
-  adapter: sqlite3
-  database: storage/development.sqlite3
+ <<: *default
+ adapter: sqlite3
+ database: storage/development.sqlite3
 
 test:
-<<: *default
-  adapter: sqlite3
-  database: storage/test.sqlite3
+ <<: *default
+ adapter: sqlite3
+ database: storage/test.sqlite3
 
 production:
-<<: *default
-  adapter: postgresql
-  url: <%= ENV["DATABASE_URL"] %>
+ <<: *default
+ adapter: postgresql
+ url: <%= ENV["DATABASE_URL"] %>
