@@ -1,79 +1,69 @@
+---
 development:
- primary:
- adapter: sqlite3
- database: storage/development.sqlite3
- pool: 5
- timeout: 5000
-
- cache:
- adapter: sqlite3
- database: storage/development_cache.sqlite3
- pool: 5
- timeout: 5000
- migrations_paths: db/cache_migrate
-
- queue:
- adapter: sqlite3
- database: storage/development_queue.sqlite3
- pool: 5
- timeout: 5000
- migrations_paths: db/queue_migrate
-
- cable:
- adapter: sqlite3
- database: storage/development_cable.sqlite3
- pool: 5
- timeout: 5000
- migrations_paths: db/cable_migrate
-
+  primary:
+    adapter: sqlite3
+    database: storage/development.sqlite3
+    pool: 5
+    timeout: 5000
+  cache:
+    adapter: sqlite3
+    database: storage/development_cache.sqlite3
+    pool: 5
+    timeout: 5000
+    migrations_paths: db/cache_migrate
+  queue:
+    adapter: sqlite3
+    database: storage/development_queue.sqlite3
+    pool: 5
+    timeout: 5000
+    migrations_paths: db/queue_migrate
+  cable:
+    adapter: sqlite3
+    database: storage/development_cable.sqlite3
+    pool: 5
+    timeout: 5000
+    migrations_paths: db/cable_migrate
 test:
- primary:
- adapter: sqlite3
- database: storage/test.sqlite3
- pool: 5
- timeout: 5000
-
- cache:
- adapter: sqlite3
- database: storage/test_cache.sqlite3
- pool: 5
- timeout: 5000
- migrations_paths: db/cache_migrate
-
- queue:
- adapter: sqlite3
- database: storage/test_queue.sqlite3
- pool: 5
- timeout: 5000
- migrations_paths: db/queue_migrate
-
- cable:
- adapter: sqlite3
- database: storage/test_cable.sqlite3
- pool: 5
- timeout: 5000
- migrations_paths: db/cable_migrate
-
+  primary:
+    adapter: sqlite3
+    database: storage/test.sqlite3
+    pool: 5
+    timeout: 5000
+  cache:
+    adapter: sqlite3
+    database: storage/test_cache.sqlite3
+    pool: 5
+    timeout: 5000
+    migrations_paths: db/cache_migrate
+  queue:
+    adapter: sqlite3
+    database: storage/test_queue.sqlite3
+    pool: 5
+    timeout: 5000
+    migrations_paths: db/queue_migrate
+  cable:
+    adapter: sqlite3
+    database: storage/test_cable.sqlite3
+    pool: 5
+    timeout: 5000
+    migrations_paths: db/cable_migrate
 production:
- primary:
- adapter: postgresql
- url: <%= ENV["DATABASE_URL"] %>
- pool: 5
-
- cache:
- adapter: postgresql
- url: <%= ENV["DATABASE_URL"] %>
- pool: 5
- migrations_paths: db/cache_migrate
-
- queue:
- adapter: postgresql
- url: <%= ENV["DATABASE_URL"] %>
- pool: 5
- migrations_paths: db/queue_migrate
-
- cable:
- adapter: postgresql
- url: <%= ENV["DATABASE_URL"] %>
- pool: 5
- migrations_paths: db/cable_migrate
+  primary:
+    adapter: postgresql
+    url: <%= ENV["DATABASE_URL"] %>
+    pool: 5
+  cache:
+    adapter: postgresql
+    url: <%= ENV["DATABASE_URL"] %>
+    pool: 5
+    migrations_paths: db/cache_migrate
+  queue:
+    adapter: postgresql
+    url: <%= ENV["DATABASE_URL"] %>
+    pool: 5
+    migrations_paths: db/queue_migrate
+  cable:
+    adapter: postgresql
+    url: <%= ENV["DATABASE_URL"] %>
+    pool: 5
+    migrations_paths: db/cable_migrate
