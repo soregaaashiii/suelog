@@ -1,4 +1,4 @@
-<%# app/views/shared/_shop_cards.html.erb %>
+<% shops ||= [] %>
 
 <% if shops.present? %>
 <div class="shop-grid">
@@ -7,86 +7,74 @@
 <% very_old = confirmed.present? && confirmed < 2.years.ago.to_date %>
 <% thumb = shop.respond_to?(:thumbnail_attachment) ? shop.thumbnail_attachment : nil %>
 
-<article class="shop-card2 <%= "shop-card2--stale" if very_old %>">
-
-<!-- 画像 -->
-<div class="shop-card2__media">
-<%= link_to shop_path(shop), class: "shop-card2__mediaLink" do %>
+<article class="shop-card <%= "shop-card--stale" if very_old %>">
+<%= link_to shop_path(shop), class: "shop-card__mediaLink" do %>
+<div class="shop-card__media">
 <% if thumb.present? %>
 <%= image_tag url_for(thumb),
-class: "shop-card2__img",
+class: "shop-card__img",
 alt: shop.name,
 loading: "lazy" %>
 <% else %>
-<div class="shop-card2__placeholder">
-<div class="shop-card2__placeholderTitle"><%= shop.name %></div>
-<div class="shop-card2__placeholderSub">写真がまだありません</div>
+<div class="shop-card__placeholder">
+<div class="shop-card__placeholderTitle"><%= shop.name %></div>
+<div class="shop-card__placeholderSub">写真がまだありません</div>
 </div>
 <% end %>
+</div>
+<% end %>
+
+<div class="shop-card__body">
+<div class="shop-card__meta">
+<span class="shop-card__genre">
+<%= shop.display_genre.presence || "未設定" %>
+</span>
+
+<% if confirmed.present? %>
+<span class="shop-card__confirmed">
+最終確認：<%= confirmed.strftime("%Y.%m.%d") %>
+</span>
 <% end %>
 </div>
 
-<!-- 本文 -->
-<div class="shop-card2__body">
-
-<!-- 店名 -->
-<h3 class="shop-card2__title" style="margin-bottom:4px;">
-<%= link_to shop.name, shop_path(shop), class: "shop-card2__titleLink" %>
+<h3 class="shop-card__title">
+<%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink" %>
 </h3>
 
-<!-- ジャンル（店名の下に小さく） -->
-<div style="font-size:12px; color:#666; margin-bottom:6px;">
-<%= shop.display_genre.presence || "未設定" %>
-</div>
-
-<!-- 住所（長い場合は途中で切る） -->
-<div style="font-size:13px; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:10px;">
+<p class="shop-card__address">
 <%= shop.address.presence || "住所未設定" %>
-</div>
+</p>
 
-<!-- 喫煙ステータス（色分け） -->
-<% if shop.smoking_area.present? || shop.smoking_type.present? %>
-<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
-
-<%# ==== 喫煙エリア ==== %>
+<div class="shop-card__badges">
 <% if shop.smoking_area == "all_smoking" %>
-<span style="padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#111; color:#fff;">
-席で喫煙可
-</span>
+<span class="badge badge--dark">席で喫煙可</span>
 <% elsif shop.smoking_area == "separated" %>
-<span style="padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#e8f5e9; color:#1b5e20;">
-喫煙所あり
-</span>
+<span class="badge badge--line">喫煙所あり</span>
 <% end %>
 
-<%# ==== 喫煙タイプ ==== %>
 <% if shop.smoking_type == "both_ok" %>
-<span style="padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#e3f2fd; color:#0d47a1;">
-紙・加熱式OK
-</span>
+<span class="badge badge--gold-soft">紙・加熱式OK</span>
 <% elsif shop.smoking_type == "paper_only" %>
-<span style="padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#fff3e0; color:#e65100;">
-紙のみ
-</span>
+<span class="badge badge--gold-soft">紙のみ</span>
 <% elsif shop.smoking_type == "electronic_only" %>
-<span style="padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#f3e5f5; color:#4a148c;">
-加熱式のみ
-</span>
+<span class="badge badge--gold-soft">加熱式のみ</span>
 <% end %>
 
-</div>
+<% if very_old %>
+<span class="badge badge--muted">確認日が古い可能性</span>
 <% end %>
-
-<!-- アクション -->
-<div class="shop-card2__actions">
-<%= link_to "詳細", shop_path(shop), class: "btnPill" %>
-<%= link_to "編集依頼", new_shop_shop_edit_request_path(shop), class: "btnPill btnPill--ghost" %>
 </div>
 
+<div class="shop-card__actions">
+<%= link_to "詳細を見る", shop_path(shop), class: "btn btn--small btn--dark" %>
+<%= link_to "情報修正を提案", new_shop_shop_edit_request_path(shop), class: "btn btn--small btn--ghost" %>
+</div>
 </div>
 </article>
 <% end %>
 </div>
 <% else %>
-<p style="color:#666;">該当する店舗がありません。</p>
+<div class="empty-state">
+<p>該当する店舗がありません。</p>
+</div>
 <% end %>
