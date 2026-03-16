@@ -110,7 +110,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000100) do
     t.integer "shop_id", null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.index ["proposed_opening_hours_json"], name: "index_shop_edit_requests_on_proposed_opening_hours_json"
+    t.index ["proposed_opening_hours_json"], name: "index_shop_edit_requests_on_proposed_opening_hours_json", using: :gin
     t.index ["shop_id"], name: "index_shop_edit_requests_on_shop_id"
   end
 
