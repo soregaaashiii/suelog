@@ -100,7 +100,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000100) do
     t.string "proposed_name"
     t.string "proposed_nearest_station"
     t.text "proposed_opening_hours"
-    t.json "proposed_opening_hours_json", default: {}, null: false
+    t.jsonb "proposed_opening_hours_json", default: {}, null: false
     t.string "proposed_phone"
     t.integer "proposed_smoking_area"
     t.integer "proposed_smoking_type"
@@ -110,7 +110,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000100) do
     t.integer "shop_id", null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.index ["proposed_opening_hours_json"], name: "index_shop_edit_requests_on_proposed_opening_hours_json", using: :gin
+   t.index ["proposed_opening_hours_json"], name: "index_shop_edit_requests_on_proposed_opening_hours_json", using: :gin
     t.index ["shop_id"], name: "index_shop_edit_requests_on_shop_id"
   end
 
@@ -141,7 +141,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000100) do
     t.string "normalized_phone"
     t.text "note"
     t.text "opening_hours"
-    t.json "opening_hours_json"
+    t.jsonb "opening_hours_json"
     t.string "phone"
     t.string "place_id"
     t.boolean "rejected"
