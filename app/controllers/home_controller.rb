@@ -1,4 +1,4 @@
-# app/controllers/home_controller.rb
+# /app/controllers/home_controller.rb
 class HomeController < ApplicationController
 def index
 track_page_view
@@ -11,9 +11,13 @@ Rails.logger.warn "PageView error: #{e.message}"
 end
 
 # ===========
-# ✅ ホーム = 検索＋一覧（承認済みのみ）
-# ✅ 評価は rating 一本化（avg_rating）
+# ホーム = 検索＋一覧（承認済みのみ）
+# 評価は rating 一本化（avg_rating）
+# ページネーション対応
 # ===========
+
+@per = params[:per].to_i
+@per = 30 unless [30, 50, 100].include?(@per)
 
 base = Shop
 .approved
@@ -34,11 +38,9 @@ area_q = params[:area].to_s.strip
 station_q = params[:station].to_s.strip
 smoking_area = params[:smoking_area].to_s.strip
 smoking_type = params[:smoking_type].to_s.strip
-
-# ✅ NEW: 横断キーワード
 keyword_q = params[:q].to_s.strip
 
-# ✅ 旧値/揺れを吸収（smoking_allowed → all_smoking）
+# 旧値/揺れを吸収（smoking_allowed → all_smoking）
 smoking_area = "all_smoking" if smoking_area == "smoking_allowed"
 
 if genre_q.present?
@@ -66,9 +68,10 @@ base = base.where("shops.smoking_type = ?", smoking_type)
 count_scope = count_scope.where(smoking_type: smoking_type)
 end
 
-# ✅ NEW: キーワード（どの項目でもヒット）
+# キーワード（どの項目でもヒット）
 if keyword_q.present?
 like = "%#{keyword_q}%"
+
 base = base.where(
 <<~SQL.squish, like: like
 shops.name LIKE :like
@@ -82,6 +85,7 @@ OR shops.genre_other LIKE :like
 OR shops.opening_hours LIKE :like
 SQL
 )
+
 count_scope = count_scope.where(
 <<~SQL.squish, like: like
 shops.name LIKE :like
@@ -97,7 +101,7 @@ SQL
 )
 end
 
-# ✅ 最終確認日が古い店だけ（任意）
+# 最終確認日が古い店だけ（任意）
 if params[:needs_review].present?
 cutoff = 2.years.ago.to_date
 base = base.where("shops.last_confirmed_on IS NULL OR shops.last_confirmed_on < ?", cutoff)
@@ -105,7 +109,7 @@ count_scope = count_scope.where("last_confirmed_on IS NULL OR last_confirmed_on 
 end
 
 # --- 並び替え ---
-@shops =
+sorted =
 case params[:sort]
 when "latest_review"
 base.order(Arel.sql("latest_review_at IS NULL, latest_review_at DESC"))
@@ -118,5 +122,6 @@ base.order(Arel.sql("shops.last_confirmed_on IS NULL, shops.last_confirmed_on DE
 end
 
 @shops_count = count_scope.count
+@shops = sorted.page(params[:page]).per(@per)
 end
 end

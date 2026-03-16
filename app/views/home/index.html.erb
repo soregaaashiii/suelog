@@ -1,18 +1,11 @@
 <%= render "shared/hero" %>
 
-<hr>
-
-<h2 style="margin-top:12px;">検索</h2>
-
-<%= form_with url: root_path, method: :get, local: true do %>
-<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin:10px 0;">
-
 <% q = request.query_parameters.to_h.deep_dup %>
 
 <% smoking_area_label = {
 "separated" => "喫煙所あり",
 "all_smoking" => "席で喫煙可",
-"smoking_allowed" => "席で喫煙可" # ✅ 旧値も表示崩れしないように
+"smoking_allowed" => "席で喫煙可"
 } %>
 
 <% smoking_type_label = {
@@ -37,107 +30,145 @@
 <% chips << ["喫煙タイプ：#{label}", :smoking_type] %>
 <% end %>
 
-<% if chips.any? %>
-<div style="width:100%; margin:10px 0;">
-<div style="color:#666; font-size:12px;">検索条件（タップで解除）</div>
-<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
-<% chips.each do |text, key| %>
-<% new_q = q.deep_dup; new_q.delete(key.to_s) %>
-<%= link_to root_path(new_q),
-style: "padding:8px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none;" do %>
-<%= text %> ×
-<% end %>
-<% end %>
+<% areas = ["阿倍野","阿倍野橋","旭区清水","朝潮橋","淡路","石橋阪大前","泉大津","泉ヶ丘","泉佐野","和泉中央","今里","茨木","茨木市","梅田","江坂","難波","大阪阿部野橋","大阪上本町","大阪狭山市","大阪天満宮","大日","大東市","大正","岡町","貝塚","香里園","柏原","門真市","岸和田","京橋","喜連瓜破","九条","河内小阪","河内国分","河内長野","河内松原","岸辺","北新地","北千里","北花田","布施","堺","堺東","桜川","新金岡","新今宮","新大阪","心斎橋","住道","千里中央","千林大宮","高槻","高槻市","玉造","天下茶屋","天王寺","天満橋","豊中","中百舌鳥","長居","西梅田","西九条","野田","東岸和田","東三国","東梅田","東大阪市","東花園","枚方市","平野","深井","藤井寺","古市","弁天町","本町","松原","箕面","都島","守口市","八尾","山田","淀屋橋","四ツ橋"] %>
 
-<%= link_to "条件をすべてクリア", root_path,
-style: "padding:8px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:#666;" %>
-</div>
-</div>
-<% end %>
-
-<!-- ✅ NEW: キーワード検索 -->
-<!-- <div>
-<label>キーワード</label><br>
-<%= text_field_tag :q,
-params[:q],
-placeholder: "店名・住所・メモ・電話・営業時間など",
-style: "min-width:280px;" %>
-</div> -->
-
-
-
+<div class="home-page">
+<section class="home-section">
+<div class="section-head">
 <div>
-<label>ジャンル</label><br>
+<h2 class="section-title">条件から探す</h2>
+<p class="section-subtitle">エリア・喫煙条件・キーワードで絞り込めます</p>
+</div>
+</div>
+
+<div class="panel">
+<%= form_with url: root_path, method: :get, local: true, html: { class: "search-form" } do %>
+<%= hidden_field_tag :per, @per %>
+
+<div class="search-grid">
+<div class="field">
+<label class="field-label">ジャンル</label>
 <%= select_tag :genre,
 options_for_select(
 [["指定なし",""]] + ["居酒屋","バー / パブ","喫茶店 / カフェ","焼肉","ラーメン","中華","和食","洋食","立ち飲み","スナック","その他"],
 params[:genre]
-) %>
+),
+class: "field-input" %>
 </div>
 
-<% areas = ["阿倍野","阿倍野橋","旭区清水","朝潮橋","淡路","石橋阪大前","泉大津","泉ヶ丘","泉佐野","和泉中央","今里","茨木","茨木市","梅田","江坂","難波","大阪阿部野橋","大阪上本町","大阪狭山市","大阪天満宮","大日","大東市","大正","岡町","貝塚","香里園","柏原","門真市","岸和田","京橋","喜連瓜破","九条","河内小阪","河内国分","河内長野","河内松原","岸辺","北新地","北千里","北花田","布施","堺","堺東","桜川","新金岡","新今宮","新大阪","心斎橋","住道","千里中央","千林大宮","高槻","高槻市","玉造","天下茶屋","天王寺","天満橋","豊中","中百舌鳥","長居","西梅田","西九条","野田","東岸和田","東三国","東梅田","東大阪市","東花園","枚方市","平野","深井","藤井寺","古市","弁天町","本町","松原","箕面","都島","守口市","八尾","山田","淀屋橋","四ツ橋"] %>
-
-<div>
-<label>エリア</label><br>
+<div class="field">
+<label class="field-label">エリア</label>
 <%= select_tag :area,
-options_for_select([["指定なし",""]] + areas.map { |a| [a, a] }, params[:area]) %>
+options_for_select([["指定なし",""]] + areas.map { |a| [a, a] }, params[:area]),
+class: "field-input" %>
 </div>
 
-<div>
-<label>最寄駅</label><br>
+<div class="field">
+<label class="field-label">最寄駅</label>
 <%= text_field_tag :station,
 params[:station],
 placeholder: "指定なし",
-style: "color:#111;" %>
+class: "field-input" %>
 </div>
 
-
-
-
-<div>
-<label>喫煙エリア</label><br>
+<div class="field">
+<label class="field-label">喫煙エリア</label>
 <%= select_tag :smoking_area,
-options_for_select([["指定なし",""],["喫煙所あり","separated"],["席で喫煙可","all_smoking"]], params[:smoking_area]) %>
+options_for_select([["指定なし",""],["喫煙所あり","separated"],["席で喫煙可","all_smoking"]], params[:smoking_area]),
+class: "field-input" %>
 </div>
 
-<div>
-<label>喫煙タイプ</label><br>
+<div class="field">
+<label class="field-label">喫煙タイプ</label>
 <%= select_tag :smoking_type,
-options_for_select([["指定なし",""],["紙・加熱式OK","both_ok"],["加熱式のみ","electronic_only"],["紙のみ","paper_only"]], params[:smoking_type]) %>
+options_for_select([["指定なし",""],["紙・加熱式OK","both_ok"],["加熱式のみ","electronic_only"],["紙のみ","paper_only"]], params[:smoking_type]),
+class: "field-input" %>
 </div>
 
-<div style="width:100%; margin-top:6px;">
-<label style="font-size:12px; color:#666;">キーワード（補助）</label><br>
+<div class="field field--wide">
+<label class="field-label">キーワード</label>
 <%= text_field_tag :q,
 params[:q],
 placeholder: "店名・住所など",
-style: "width:220px; font-size:13px; padding:6px 10px; border:1px solid #ddd; border-radius:10px;" %>
+class: "field-input" %>
+</div>
 </div>
 
+<div class="search-actions">
+<%= submit_tag "検索する", class: "btn btn--primary" %>
+<%= link_to "条件をクリア", root_path(per: @per), class: "btn btn--ghost" %>
+</div>
+<% end %>
 
+<% if chips.any? %>
+<div class="active-filters">
+<div class="active-filters__label">検索条件</div>
+<div class="active-filters__list">
+<% chips.each do |text, key| %>
+<% new_q = q.deep_dup %>
+<% new_q.delete(key.to_s) %>
+<%= link_to root_path(new_q), class: "filter-chip" do %>
+<span><%= text %></span>
+<span>×</span>
+<% end %>
+<% end %>
+
+<%= link_to "すべてクリア", root_path(per: @per), class: "filter-chip filter-chip--clear" %>
+</div>
+</div>
+<% end %>
+</div>
+</section>
+
+<section class="home-section">
+<div class="section-head">
 <div>
-<%= submit_tag "検索", class: "nav-btn" %>
-<%= link_to "クリア", root_path, class: "nav-btn" %>
+<h2 class="section-title">掲載店舗</h2>
+<p class="section-subtitle">大阪の喫煙可能店舗を一覧で確認できます</p>
 </div>
 
+<div class="result-count">
+<span class="result-count__num"><%= @shops_count %></span>
+<span class="result-count__text">件</span>
 </div>
-<% end %>
+</div>
 
-<hr>
+<div class="panel" style="margin-bottom:16px;">
+<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+<span style="font-size:13px; color:#666; font-weight:700;">表示件数</span>
 
-<h2 style="margin-top:20px;">店舗</h2>
-<p style="color:#666; margin:6px 0 12px;">
-件数：<%= @shops_count %> 件
-</p>
+<% current_query = request.query_parameters.except(:page).to_h %>
 
-<% if @shops.any? %>
-<%= render "shared/shop_cards", shops: @shops %>
+<%= link_to "30件",
+root_path(current_query.merge(per: 30)),
+class: "btn #{(@per == 30 ? 'btn--dark' : 'btn--ghost')}" %>
+
+<%= link_to "50件",
+root_path(current_query.merge(per: 50)),
+class: "btn #{(@per == 50 ? 'btn--dark' : 'btn--ghost')}" %>
+
+<%= link_to "100件",
+root_path(current_query.merge(per: 100)),
+class: "btn #{(@per == 100 ? 'btn--dark' : 'btn--ghost')}" %>
+</div>
+</div>
+
+<% if @shops.present? && @shops.any? %>
+<%= render partial: "shared/shop_cards", locals: { shops: @shops } %>
+
+<div style="margin-top:20px; display:flex; justify-content:center;">
+<%= paginate @shops, params: request.query_parameters.except(:page) %>
+</div>
 <% else %>
-<p style="color:#666;">該当する店舗はありません。</p>
+<div class="empty-state">
+<p>該当する店舗はありません。</p>
+</div>
 <% end %>
+</section>
 
-<hr>
-
-<p style="color:#666; font-size:12px;">
-※ 情報はユーザー投稿です。最新状況は店舗にてご確認ください。
-</p>
+<section class="home-section">
+<div class="info-note">
+※ 情報はユーザー投稿を含みます。最新状況は来店前に店舗へご確認ください。
+</div>
+</section>
+</div>

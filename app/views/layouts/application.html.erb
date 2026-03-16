@@ -1,74 +1,83 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <title>吸えログ in大阪</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+<head>
+<title>吸えログ in大阪</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
+<%= csrf_meta_tags %>
+<%= csp_meta_tag %>
 
-    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
-  </head>
+<%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+<%= javascript_importmap_tags %>
+</head>
 
-  <body>
+<body>
+<% count = session[:contribution_count].to_i %>
+<% badge = contribution_badge(count) %>
 
-    <% count = session[:contribution_count].to_i %>
-    <% badge = contribution_badge(count) %>
+<% if count > 0 %>
+<div style="background:#111111; color:#ffffff; border-bottom:1px solid #2a2a2a;">
+<div class="container" style="padding-top:8px; padding-bottom:8px; text-align:center; font-size:13px;">
+ご協力回数：<strong><%= count %>回</strong>
 
-    <% if count > 0 %>
-      <div style="background:#111; color:#fff; padding:8px; text-align:center; font-size:13px;">
-        ご協力回数：<strong><%= count %>回</strong>
+<% if badge %>
+<span style="display:inline-flex; align-items:center; margin-left:10px; padding:4px 10px; border-radius:999px; background:<%= badge[:color] %>; color:#111111; font-weight:800;">
+<%= badge[:icon] %>&nbsp;<%= badge[:name] %>
+</span>
+<% end %>
+</div>
+</div>
+<% end %>
 
-        <% if badge %>
-          <span style="margin-left:10px; padding:4px 10px; border-radius:999px; background:<%= badge[:color] %>; font-weight:700;">
-            <%= badge[:icon] %> <%= badge[:name] %>
-          </span>
-        <% end %>
-      </div>
-    <% end %>
+<header class="site-header">
+<div class="header-inner">
+<%= link_to root_path, class: "logo", style: "text-decoration:none;" do %>
+<span style="color:#111111;">吸えログ</span>
+<span style="color:#C6A75E;"> in大阪</span>
+<% end %>
 
-    <header class="site-header">
-      <div class="header-inner">
-        <%= link_to "吸えログ in大阪", root_path, class: "logo" %>
+<nav class="nav">
+<%= link_to "ホーム", root_path, class: "nav-link" %>
 
-        <nav class="nav">
-          <%= link_to "近くの店舗から探す", map_path,
-            style: "padding:8px 14px; border-radius:8px; background:#111; color:#fff; text-decoration:none; font-weight:700;" %>
+<%= link_to "地図で探す", map_path, class: "nav-link" %>
 
-          <%= link_to "＋ 店舗登録", new_shop_path,
-            style: "padding:8px 14px; border:1px solid #ddd; border-radius:8px; background:#fff; color:#333; text-decoration:none; font-weight:600; margin-left:8px;" %>
-        </nav>
-      </div>
-    </header>
+<%= link_to "店舗登録", new_shop_path, class: "nav-primary" %>
+</nav>
+</div>
+</header>
 
-    <main class="container main-content">
+<main class="main-content">
+<div class="container">
+<% if notice.present? %>
+<div style="margin:12px 0; padding:12px 14px; border:1px solid #d8e7d7; background:#eef7ee; color:#2f6b3b; border-radius:12px; font-weight:700;">
+<%= notice %>
+</div>
+<% end %>
 
-      <% if notice.present? %>
-        <div style="margin:12px 0; padding:10px 12px; border:1px solid #cfe8d6; background:#e6f4ea; color:#137333; border-radius:10px;">
-          <%= notice %>
-        </div>
-      <% end %>
+<% if alert.present? %>
+<div style="margin:12px 0; padding:12px 14px; border:1px solid #f0d1d1; background:#fff6f6; color:#b00020; border-radius:12px; font-weight:700;">
+<%= alert %>
+</div>
+<% end %>
 
-      <% if alert.present? %>
-        <div style="margin:12px 0; padding:10px 12px; border:1px solid #f3c7c7; background:#fff5f5; color:#b00020; border-radius:10px;">
-          <%= alert %>
-        </div>
-      <% end %>
+<%= yield %>
+</div>
+</main>
 
-      <%= yield %>
-    </main>
+<footer class="site-footer">
+<div class="container">
+<div style="font-weight:800; letter-spacing:0.02em;">
+© <%= Time.current.year %> 吸えログ in大阪
+</div>
 
-    <footer class="site-footer">
-      <div class="container">
-        © <%= Time.current.year %> 吸えログ in大阪
-      </div>
-
-      <div style="margin-top:18px; padding:20px; text-align:center; font-size:13px; color:#666; border-top:1px solid #eee;">
-        <%= link_to "お問い合わせ", new_contact_message_path, style: "margin:0 8px;" %>｜
-        <%= link_to "利用規約", terms_path, style: "margin:0 8px;" %>｜
-        <%= link_to "プライバシーポリシー", privacy_path, style: "margin:0 8px;" %>
-      </div>
-    </footer>
-  </body>
+<div style="margin-top:14px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+<%= link_to "お問い合わせ", new_contact_message_path, style: "color:#e7d7a7; text-decoration:none;" %>
+<span style="color:#666;">｜</span>
+<%= link_to "利用規約", terms_path, style: "color:#e7d7a7; text-decoration:none;" %>
+<span style="color:#666;">｜</span>
+<%= link_to "プライバシーポリシー", privacy_path, style: "color:#e7d7a7; text-decoration:none;" %>
+</div>
+</div>
+</footer>
+</body>
 </html>

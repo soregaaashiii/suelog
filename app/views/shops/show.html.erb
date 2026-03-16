@@ -1,99 +1,424 @@
-<%# app/views/shops/show.html.erb %>
+<% hours = (@shop.opening_hours_data.presence || @shop.opening_hours_json.presence || {}).to_h %>
 
-<h1 style="margin-top:0;"><%= @shop.name %></h1>
+<% days = {
+"monday" => "月",
+"tuesday" => "火",
+"wednesday" => "水",
+"thursday" => "木",
+"friday" => "金",
+"saturday" => "土",
+"sunday" => "日"
+} %>
 
-<% if flash[:notice].present? %>
-<div style="padding:12px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:12px; margin:10px 0; color:#137333; font-weight:700;">
-<%= flash[:notice] %>
+<% today_key = %w[sunday monday tuesday wednesday thursday friday saturday][Time.zone.today.wday] %>
+
+<style>
+.shop-show {
+max-width: 980px;
+margin: 0 auto;
+}
+
+.shop-show__back {
+margin: 0 0 14px;
+}
+
+.shop-show__backLink {
+display: inline-flex;
+align-items: center;
+color: #6b6b6b;
+text-decoration: none;
+font-weight: 700;
+}
+
+.shop-show__backLink:hover {
+color: #111111;
+}
+
+.shop-show__hero {
+background: linear-gradient(135deg, #fffdf8 0%, #ffffff 60%);
+border: 1px solid #e8e3d7;
+border-radius: 22px;
+padding: 22px;
+box-shadow: 0 10px 30px rgba(17, 17, 17, 0.04);
+margin-bottom: 18px;
+}
+
+.shop-show__title {
+margin: 0 0 8px;
+font-size: clamp(28px, 4vw, 40px);
+line-height: 1.15;
+letter-spacing: -0.03em;
+color: #111111;
+}
+
+.shop-show__sub {
+margin: 0;
+color: #6b6b6b;
+font-size: 14px;
+}
+
+.shop-show__badges {
+display: flex;
+gap: 8px;
+flex-wrap: wrap;
+margin-top: 14px;
+}
+
+.shop-show__layout {
+display: grid;
+grid-template-columns: minmax(0, 1fr);
+gap: 16px;
+}
+
+.shop-show__section {
+background: #ffffff;
+border: 1px solid #e8e3d7;
+border-radius: 20px;
+padding: 18px;
+box-shadow: 0 10px 30px rgba(17, 17, 17, 0.03);
+}
+
+.shop-show__sectionTitle {
+margin: 0 0 14px;
+font-size: 20px;
+font-weight: 800;
+color: #111111;
+letter-spacing: -0.02em;
+}
+
+.shop-show__metaGrid {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 12px;
+}
+
+.shop-show__metaItem {
+background: #faf8f2;
+border: 1px solid #eee6d6;
+border-radius: 16px;
+padding: 14px;
+min-width: 0;
+}
+
+.shop-show__metaLabel {
+display: block;
+margin-bottom: 6px;
+color: #7a7a7a;
+font-size: 12px;
+font-weight: 700;
+}
+
+.shop-show__metaValue {
+color: #111111;
+font-size: 15px;
+line-height: 1.7;
+word-break: break-word;
+}
+
+.shop-show__hoursTable {
+width: 100%;
+border-collapse: collapse;
+max-width: 560px;
+}
+
+.shop-show__hoursRow--today {
+background: #faf8f2;
+}
+
+.shop-show__hoursDay,
+.shop-show__hoursValue {
+padding: 10px 8px;
+border-bottom: 1px solid #eee6d6;
+vertical-align: top;
+}
+
+.shop-show__hoursDay {
+width: 64px;
+}
+
+.shop-show__hoursNote {
+margin-top: 8px;
+color: #777777;
+font-size: 12px;
+}
+
+.shop-show__phoneLink {
+display: inline-flex;
+align-items: center;
+padding: 10px 14px;
+background: #f6edd7;
+color: #7a5a12;
+border: 1px solid #eadbb5;
+border-radius: 10px;
+text-decoration: none;
+font-weight: 800;
+}
+
+.shop-show__map {
+height: 320px;
+border: 1px solid #e0e0e0;
+border-radius: 14px;
+overflow: hidden;
+}
+
+.shop-show__mapLink {
+margin-top: 10px;
+}
+
+.shop-show__mapLink a {
+color: #7a5a12;
+font-weight: 700;
+text-decoration: none;
+}
+
+.shop-show__photosGroup + .shop-show__photosGroup {
+margin-top: 18px;
+}
+
+.shop-show__photosTitle {
+margin: 0 0 10px;
+font-size: 16px;
+font-weight: 800;
+color: #111111;
+}
+
+.shop-show__photosGrid {
+display: flex;
+gap: 10px;
+flex-wrap: wrap;
+}
+
+.shop-show__photo {
+width: 160px;
+height: 160px;
+object-fit: cover;
+border-radius: 12px;
+border: 1px solid #ddd;
+}
+
+.shop-show__footerActions {
+display: flex;
+gap: 10px;
+flex-wrap: wrap;
+margin-top: 4px;
+}
+
+.shop-show__divider {
+border: 0;
+border-top: 1px solid #eee6d6;
+margin: 4px 0 0;
+}
+
+.ss-badge {
+display: inline-flex;
+align-items: center;
+min-height: 32px;
+padding: 0 10px;
+border-radius: 999px;
+font-size: 12px;
+font-weight: 800;
+border: 1px solid transparent;
+}
+
+.ss-badge--dark {
+background: #111111;
+color: #ffffff;
+border-color: #111111;
+}
+
+.ss-badge--gold {
+background: #f6edd7;
+color: #7a5a12;
+border-color: #eadbb5;
+}
+
+.ss-badge--line {
+background: #ffffff;
+color: #111111;
+border-color: #e8e3d7;
+}
+
+.ss-btn {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-height: 42px;
+padding: 0 16px;
+border-radius: 999px;
+text-decoration: none;
+font-size: 14px;
+font-weight: 800;
+border: 1px solid transparent;
+}
+
+.ss-btn--dark {
+background: #111111;
+color: #ffffff;
+border-color: #111111;
+}
+
+.ss-btn--ghost {
+background: #ffffff;
+color: #111111;
+border-color: #e8e3d7;
+}
+
+.ss-btn--muted {
+background: #ffffff;
+color: #666666;
+border-color: #eeeeee;
+}
+
+.ss-alert {
+padding: 12px 14px;
+border-radius: 12px;
+margin: 10px 0;
+font-weight: 700;
+}
+
+.ss-alert--notice {
+border: 1px solid #d8e7d7;
+background: #eef7ee;
+color: #2f6b3b;
+}
+
+.ss-alert--alert {
+border: 1px solid #f0d1d1;
+background: #fff6f6;
+color: #b00020;
+}
+
+.ss-pending {
+border: 1px solid #f0d1d1;
+background: #fff6f6;
+padding: 14px;
+border-radius: 14px;
+}
+
+.ss-pending__title {
+margin: 0;
+color: #b00020;
+font-weight: 800;
+}
+
+.ss-pending__text {
+margin: 6px 0 0;
+color: #666666;
+}
+
+@media (max-width: 720px) {
+.shop-show__hero,
+.shop-show__section {
+border-radius: 16px;
+padding: 16px;
+}
+
+.shop-show__metaGrid {
+grid-template-columns: 1fr;
+}
+
+.shop-show__footerActions {
+flex-direction: column;
+}
+
+.ss-btn {
+width: 100%;
+}
+
+.shop-show__photo {
+width: calc(50% - 5px);
+height: 140px;
+}
+}
+</style>
+
+<div class="shop-show">
+<div class="shop-show__back">
+<%= link_to "← 一覧に戻る", root_path, class: "shop-show__backLink" %>
 </div>
-<% end %>
 
-<% if flash[:alert].present? %>
-<div style="padding:12px; border:1px solid #f5c2c7; background:#fff5f5; border-radius:12px; margin:10px 0; color:#b00020; font-weight:700;">
-<%= flash[:alert] %>
-</div>
-<% end %>
-
-<p style="color:#666; margin:6px 0 14px;">
+<section class="shop-show__hero">
+<h1 class="shop-show__title"><%= @shop.name %></h1>
+<p class="shop-show__sub">
 ジャンル：<%= @shop.display_genre.presence || "未設定" %>
 </p>
 
-<p>住所：<%= @shop.address.presence || "未設定" %></p>
-
-<% if @shop.approved? && @shop.opening_hours.present? %>
-<% if @shop.open_now? %>
-<p style="color:#137333 !important; -webkit-text-fill-color:#137333 !important; font-weight:700;">● 現在営業中</p>
-<% else %>
-<p style="color:#b00020 !important; -webkit-text-fill-color:#b00020 !important; font-weight:700;">● 現在は営業時間外</p>
-<% end %>
+<div class="shop-show__badges">
+<% if @shop.smoking_area == "all_smoking" %>
+<span class="ss-badge ss-badge--dark">席で喫煙可</span>
+<% elsif @shop.smoking_area == "separated" %>
+<span class="ss-badge ss-badge--line">喫煙所あり</span>
 <% end %>
 
-<h3>営業時間</h3>
-
-<% if @shop.opening_hours.present? %>
-<table style="border-collapse:collapse; width:100%; max-width:520px;">
-<% today = %w[日 月 火 水 木 金 土][Time.zone.today.wday] %>
-
-<% @shop.opening_hours_lines.each do |day, text| %>
-<% is_today = (day == today) %>
-
-<tr style="<%= is_today ? 'background:#f6f7f9;' : '' %>">
-<td style="padding:8px; border-bottom:1px solid #eee; width:60px; font-weight:<%= is_today ? 'bold' : 'normal' %>;">
-<%= day %>
-</td>
-
-<td style="padding:8px; border-bottom:1px solid #eee;">
-<%= text %>
-
-<% if is_today && @shop.approved? && @shop.opening_hours.present? %>
-<% if @shop.open_now? %>
-<span style="margin-left:8px; padding:3px 8px; border-radius:999px; background:#e6f4ea; color:#137333 !important; -webkit-text-fill-color:#137333 !important; font-size:12px; font-weight:700; display:inline-block;">営業中</span>
-<% else %>
-<span style="margin-left:8px; padding:3px 8px; border-radius:999px; background:#fdecea; color:#b00020 !important; -webkit-text-fill-color:#b00020 !important; font-size:12px; font-weight:700; display:inline-block;">営業終了</span>
-<% end %>
-<% end %>
-</td>
-</tr>
-<% end %>
-</table>
-
-<p style="color:#666; font-size:12px; margin-top:8px;">
-※ 営業中判定は入力された営業時間を元にした簡易判定です
-</p>
-<% else %>
-<p style="color:#666;">未設定</p>
+<% if @shop.smoking_type == "both_ok" %>
+<span class="ss-badge ss-badge--gold">紙・加熱式OK</span>
+<% elsif @shop.smoking_type == "electronic_only" %>
+<span class="ss-badge ss-badge--gold">加熱式のみ</span>
+<% elsif @shop.smoking_type == "paper_only" %>
+<span class="ss-badge ss-badge--gold">紙のみ</span>
 <% end %>
 
-<p>最終確認日：<%= @shop.last_confirmed_on.presence || "未設定" %></p>
+<% if @shop.last_confirmed_on.present? %>
+<span class="ss-badge ss-badge--line">最終確認：<%= @shop.last_confirmed_on %></span>
+<% end %>
+</div>
+</section>
 
-<h3>店舗情報</h3>
-<p>最寄駅：<%= @shop.nearest_station.presence || "未設定" %></p>
+<% if flash[:notice].present? %>
+<div class="ss-alert ss-alert--notice"><%= flash[:notice] %></div>
+<% end %>
 
-<p>
-電話番号：
+<% if flash[:alert].present? %>
+<div class="ss-alert ss-alert--alert"><%= flash[:alert] %></div>
+<% end %>
+
+<div class="shop-show__layout">
+<section class="shop-show__section">
+<h2 class="shop-show__sectionTitle">基本情報</h2>
+
+<div class="shop-show__metaGrid">
+<div class="shop-show__metaItem">
+<span class="shop-show__metaLabel">住所</span>
+<div class="shop-show__metaValue"><%= @shop.address.presence || "未設定" %></div>
+</div>
+
+<div class="shop-show__metaItem">
+<span class="shop-show__metaLabel">エリア</span>
+<div class="shop-show__metaValue"><%= @shop.area.presence || "未設定" %></div>
+</div>
+
+<div class="shop-show__metaItem">
+<span class="shop-show__metaLabel">最寄駅</span>
+<div class="shop-show__metaValue"><%= @shop.nearest_station.presence || "未設定" %></div>
+</div>
+
+<div class="shop-show__metaItem">
+<span class="shop-show__metaLabel">電話番号</span>
+<div class="shop-show__metaValue">
 <% if @shop.phone.present? %>
-<a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>"
-style="display:inline-block; padding:10px 14px; background:#e3f2fd; border-radius:8px; text-decoration:none; font-weight:bold;">
+<a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="shop-show__phoneLink">
 <%= @shop.phone %>
 </a>
 <% else %>
 未設定
 <% end %>
-</p>
+</div>
+</div>
 
-<h3>喫煙情報</h3>
-
-<p>
-喫煙エリア：
+<div class="shop-show__metaItem">
+<span class="shop-show__metaLabel">喫煙エリア</span>
+<div class="shop-show__metaValue">
 <% if @shop.smoking_area.present? %>
 <%= @shop.smoking_area == "separated" ? "喫煙所あり" : "席で喫煙可" %>
 <% else %>
 未設定
 <% end %>
-</p>
+</div>
+</div>
 
-<p>
-喫煙タイプ：
+<div class="shop-show__metaItem">
+<span class="shop-show__metaLabel">喫煙タイプ</span>
+<div class="shop-show__metaValue">
 <% case @shop.smoking_type %>
 <% when "both_ok" %>
 紙・加熱式どちらもOK
@@ -104,35 +429,89 @@ style="display:inline-block; padding:10px 14px; background:#e3f2fd; border-radiu
 <% else %>
 未設定
 <% end %>
-</p>
+</div>
+</div>
+</div>
+</section>
 
-<p style="margin-top:12px;">
-<%= link_to "一覧に戻る", root_path %> |
-<%= link_to "編集依頼", new_shop_shop_edit_request_path(@shop) %> |
-<%= link_to "通報", new_shop_shop_report_path(@shop) %>
+<section class="shop-show__section">
+<h2 class="shop-show__sectionTitle">営業時間</h2>
+
+<% if hours.present? %>
+<table class="shop-show__hoursTable">
+<% days.each do |key, label| %>
+<% d = (hours[key] || {}).to_h %>
+<% is_today = (key == today_key) %>
+
+<% closed = d["closed"].to_s == "1" || d["closed"] == true %>
+<% open_t = d["open"].presence %>
+<% close_t = d["close"].presence %>
+
+<% break_enabled = d["break_enabled"].to_s == "1" || d["break_enabled"] == true %>
+<% break_start = d["break_start"].presence %>
+<% break_end = d["break_end"].presence %>
+
+<tr class="<%= 'shop-show__hoursRow--today' if is_today %>">
+<td class="shop-show__hoursDay" style="font-weight:<%= is_today ? '800' : '500' %>;">
+<%= label %>
+</td>
+
+<td class="shop-show__hoursValue">
+<% if closed %>
+<span style="color:#666; font-weight:700;">定休日</span>
+<% elsif open_t.blank? || close_t.blank? %>
+<span style="color:#666;">未設定</span>
+<% else %>
+<span><%= open_t %>〜<%= close_t %></span>
+
+<% if break_enabled && break_start.present? && break_end.present? %>
+<span style="margin-left:8px; color:#666; font-size:12px;">
+（中休み <%= break_start %>〜<%= break_end %>）
+</span>
+<% end %>
+<% end %>
+</td>
+</tr>
+<% end %>
+</table>
+
+<p class="shop-show__hoursNote">
+※ 営業時間はユーザー投稿を元に表示しています
 </p>
+<% else %>
+<p style="color:#666;">未設定</p>
+<% end %>
+</section>
 
 <% unless @shop.approved? %>
-<div style="border:1px solid #f5c2c7; background:#fff5f5; padding:12px; border-radius:12px; margin-top:12px;">
-<p style="margin:0; color:#b00020; font-weight:bold;">この店舗は承認待ちです</p>
-<p style="margin:6px 0 0; color:#666;">※ 詳細（地図・写真・口コミ・メモ等）は確認後に公開されます</p>
+<section class="shop-show__section">
+<div class="ss-pending">
+<p class="ss-pending__title">この店舗は承認待ちです</p>
+<p class="ss-pending__text">※ 詳細（地図・写真・口コミ・メモ等）は確認後に公開されます</p>
 </div>
+</section>
 <% else %>
+<section class="shop-show__section">
+<h2 class="shop-show__sectionTitle">補足情報</h2>
 
-<hr>
+<div class="shop-show__metaGrid">
+<div class="shop-show__metaItem">
+<span class="shop-show__metaLabel">メモ</span>
+<div class="shop-show__metaValue"><%= @shop.note.presence || "未設定" %></div>
+</div>
 
-<p>エリア：<%= @shop.area.presence || "未設定" %></p>
-<p>メモ：<%= @shop.note.presence || "未設定" %></p>
+<div class="shop-show__metaItem">
+<span class="shop-show__metaLabel">最終確認日</span>
+<div class="shop-show__metaValue"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
+</div>
+</div>
+</section>
 
-<%# ============================
-地図（Leaflet）
-※ 位置情報が無いとピンが出ない
-============================ %>
-
-<h2>地図</h2>
+<section class="shop-show__section">
+<h2 class="shop-show__sectionTitle">地図</h2>
 
 <% if @shop.latitude.present? && @shop.longitude.present? %>
-<div id="shop-map" style="height:320px; border:1px solid #ddd; border-radius:12px; overflow:hidden;"></div>
+<div id="shop-map" class="shop-show__map"></div>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -174,28 +553,47 @@ setTimeout(() => map.invalidateSize(), 200);
 });
 </script>
 
-<p style="margin-top:8px;">
+<p class="shop-show__mapLink">
 <% q = ERB::Util.url_encode([@shop.name, @shop.area, @shop.address].compact.join(" ")) %>
 <a href="https://www.google.com/maps?q=<%= q %>" target="_blank" rel="noopener">Googleマップで開く</a>
 </p>
 <% else %>
 <p style="color:#666;">この店舗は位置情報（緯度・経度）が未設定です。</p>
 <% end %>
+</section>
 
-<hr>
-<h2>写真</h2>
+<section class="shop-show__section">
+<h2 class="shop-show__sectionTitle">写真</h2>
 
 <% [["料理", @shop.food_photos], ["内観", @shop.interior_photos], ["外観", @shop.exterior_photos], ["メニュー", @shop.menu_photos]].each do |label, photos| %>
-<h3><%= label %></h3>
+<div class="shop-show__photosGroup">
+<h3 class="shop-show__photosTitle"><%= label %></h3>
+
 <% if photos.attached? %>
-<div style="display:flex; gap:10px; flex-wrap:wrap;">
+<div class="shop-show__photosGrid">
 <% photos.each do |p| %>
-<%= image_tag url_for(p), style: "width:160px; height:160px; object-fit:cover; border-radius:12px; border:1px solid #ddd;" %>
+<%= image_tag url_for(p), class: "shop-show__photo" %>
 <% end %>
 </div>
 <% else %>
 <p style="color:#666;">まだありません</p>
 <% end %>
+</div>
+<% end %>
+</section>
 <% end %>
 
-<% end %>
+<hr class="shop-show__divider">
+
+<section class="shop-show__section">
+<h2 class="shop-show__sectionTitle">このページについて</h2>
+<div class="shop-show__footerActions">
+<%= link_to "一覧に戻る", root_path, class: "ss-btn ss-btn--ghost" %>
+
+<%= link_to "情報の修正依頼", new_shop_shop_edit_request_path(@shop), class: "ss-btn ss-btn--dark" %>
+
+<%= link_to "通報", new_shop_shop_report_path(@shop), class: "ss-btn ss-btn--muted" %>
+</div>
+</section>
+</div>
+</div>
