@@ -1,3 +1,5 @@
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/shared/_shop_cards.html.erb %>
+
 <% shops ||= [] %>
 
 <% if shops.present? %>
@@ -5,16 +7,32 @@
 <% shops.each do |shop| %>
 <% confirmed = shop.last_confirmed_on %>
 <% very_old = confirmed.present? && confirmed < 2.years.ago.to_date %>
-<% thumb = shop.respond_to?(:thumbnail_attachment) ? shop.thumbnail_attachment : nil %>
+<% thumb = nil %>
+
+<% if shop.respond_to?(:thumbnail_attachment) %>
+<% begin %>
+<% candidate = shop.thumbnail_attachment %>
+<% thumb = candidate if candidate.present? %>
+<% rescue StandardError %>
+<% thumb = nil %>
+<% end %>
+<% end %>
 
 <article class="shop-card <%= "shop-card--stale" if very_old %>">
 <%= link_to shop_path(shop), class: "shop-card__mediaLink" do %>
 <div class="shop-card__media">
 <% if thumb.present? %>
+<% begin %>
 <%= image_tag url_for(thumb),
 class: "shop-card__img",
 alt: shop.name,
 loading: "lazy" %>
+<% rescue StandardError %>
+<div class="shop-card__placeholder">
+<div class="shop-card__placeholderTitle"><%= shop.name %></div>
+<div class="shop-card__placeholderSub">写真がまだありません</div>
+</div>
+<% end %>
 <% else %>
 <div class="shop-card__placeholder">
 <div class="shop-card__placeholderTitle"><%= shop.name %></div>
@@ -39,10 +57,16 @@ loading: "lazy" %>
 
 <h3 class="shop-card__title">
 <%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink" %>
+
+<% if shop.open_now? %>
+<span class="badge badge--open-inline">営業中</span>
+<% else %>
+<span class="badge badge--closed-inline">営業終了</span>
+<% end %>
 </h3>
 
 <p class="shop-card__address">
-<%= shop.address.presence || "住所未設定" %>
+<%= shop.nearest_station.presence || "最寄駅未設定" %>
 </p>
 
 <div class="shop-card__badges">
@@ -53,11 +77,11 @@ loading: "lazy" %>
 <% end %>
 
 <% if shop.smoking_type == "both_ok" %>
-<span class="badge badge--gold-soft">紙・加熱式OK</span>
+<span class="badge badge--type-both">紙・加熱式OK</span>
 <% elsif shop.smoking_type == "paper_only" %>
-<span class="badge badge--gold-soft">紙のみ</span>
+<span class="badge badge--type-paper">紙のみ</span>
 <% elsif shop.smoking_type == "electronic_only" %>
-<span class="badge badge--gold-soft">加熱式のみ</span>
+<span class="badge badge--type-electronic">加熱式のみ</span>
 <% end %>
 
 <% if very_old %>
@@ -73,6 +97,52 @@ loading: "lazy" %>
 </article>
 <% end %>
 </div>
+
+<style>
+.badge--open-inline {
+margin-left: 8px;
+vertical-align: middle;
+background: #e6f4ea;
+color: #137333;
+border: 1px solid #b7dfbf;
+font-size: 11px;
+padding: 2px 7px;
+border-radius: 999px;
+font-weight: 800;
+white-space: nowrap;
+}
+
+.badge--closed-inline {
+margin-left: 8px;
+vertical-align: middle;
+background: #f4f4f4;
+color: #666666;
+border: 1px solid #dddddd;
+font-size: 11px;
+padding: 2px 7px;
+border-radius: 999px;
+font-weight: 800;
+white-space: nowrap;
+}
+
+.badge--type-both {
+background: #f6edd7;
+color: #7a5a12;
+border: 1px solid #eadbb5;
+}
+
+.badge--type-paper {
+background: #fff4e5;
+color: #9a5a00;
+border: 1px solid #f0c98a;
+}
+
+.badge--type-electronic {
+background: #eef4ff;
+color: #1f4ea3;
+border: 1px solid #c8d8fb;
+}
+</style>
 <% else %>
 <div class="empty-state">
 <p>該当する店舗がありません。</p>

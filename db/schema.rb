@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_27_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_17_000100) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -100,7 +100,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000100) do
     t.string "proposed_name"
     t.string "proposed_nearest_station"
     t.text "proposed_opening_hours"
-    t.jsonb "proposed_opening_hours_json", default: {}, null: false
+    t.json "proposed_opening_hours_json", default: {}, null: false
     t.string "proposed_phone"
     t.integer "proposed_smoking_area"
     t.integer "proposed_smoking_type"
@@ -110,7 +110,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000100) do
     t.integer "shop_id", null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
-   t.index ["proposed_opening_hours_json"], name: "index_shop_edit_requests_on_proposed_opening_hours_json", using: :gin
+    t.index ["proposed_opening_hours_json"], name: "index_shop_edit_requests_on_proposed_opening_hours_json"
     t.index ["shop_id"], name: "index_shop_edit_requests_on_shop_id"
   end
 
@@ -130,9 +130,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000100) do
     t.boolean "approved", default: false, null: false
     t.string "area"
     t.integer "atmosphere"
+    t.string "closed_days_text"
     t.datetime "created_at", null: false
     t.string "genre"
     t.string "genre_other"
+    t.text "holiday_hours_text"
     t.date "last_confirmed_on"
     t.float "latitude"
     t.float "longitude"
@@ -141,7 +143,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000100) do
     t.string "normalized_phone"
     t.text "note"
     t.text "opening_hours"
-    t.jsonb "opening_hours_json"
+    t.json "opening_hours_json"
+    t.text "opening_hours_text"
     t.string "phone"
     t.string "place_id"
     t.boolean "rejected"

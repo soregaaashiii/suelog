@@ -1,3 +1,4 @@
+# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/models/shop.rb
 # frozen_string_literal: true
 
 class Shop < ApplicationRecord
@@ -15,8 +16,9 @@ has_many_attached :menu_photos
 # ===== Smoking status =====
 enum :smoking_area, {
 separated: 0, # 喫煙所あり
-all_smoking: 1 # 席で喫煙可
+all_smoking: 1, # 席で喫煙可
 }
+
 
 enum :smoking_type, {
 both_ok: 0, # 紙・加熱式OK
@@ -27,14 +29,13 @@ paper_only: 2 # 紙のみ
 # ===== Scopes =====
 scope :approved, -> { where(approved: true) }
 
-# 文字列カラムのキーワード検索（opening_hours は廃止するので除外）
 scope :keyword, lambda { |q|
 kw = q.to_s.strip
 next all if kw.blank?
 
 like = "%#{kw}%"
 where(
-<<~SQL.squish, like: like
+<<~SQL.squish,
 shops.name LIKE :like
 OR shops.address LIKE :like
 OR shops.area LIKE :like
@@ -43,7 +44,11 @@ OR shops.phone LIKE :like
 OR shops.note LIKE :like
 OR shops.genre LIKE :like
 OR shops.genre_other LIKE :like
+OR shops.opening_hours_text LIKE :like
+OR shops.holiday_hours_text LIKE :like
+OR shops.closed_days_text LIKE :like
 SQL
+like: like
 )
 }
 
@@ -51,7 +56,6 @@ SQL
 validates :name, :address, :last_confirmed_on, presence: { message: "を入力してください" }
 validates :genre, presence: { message: "を選択してください" }
 
-# ✅ 承認済みのときだけ必須（CSV取り込みの pending を通す）
 validates :smoking_area, presence: { message: "を選択してください" }, if: :approved?
 validates :smoking_type, presence: { message: "を選択してください" }, if: :approved?
 
@@ -61,7 +65,7 @@ validate :last_confirmed_on_cannot_be_future
 before_validation :set_normalized_phone
 validates :normalized_phone, uniqueness: true, allow_nil: true, allow_blank: true
 
-# opening_hours_json を整形して保存
+# opening_hours_json は既存データ互換のため残す
 before_validation :normalize_opening_hours_json
 
 # ===== Geocoding =====
@@ -92,11 +96,77 @@ return "" if genre.blank?
 genre == "その他" ? genre_other.to_s : genre.to_s
 end
 
+def smoking_area_label
+case smoking_area
+when "all_smoking"
+"席で喫煙可"
+when "separated"
+"喫煙所あり"
+else
+"未設定"
+end
+end
+
+def smoking_type_label
+case smoking_type
+when "both_ok"
+"紙・加熱式どちらもOK"
+when "electronic_only"
+"加熱式タバコのみOK"
+when "paper_only"
+"紙タバコのみOK"
+else
+"未設定"
+end
+end
+
 # =========================
-# 営業時間（構造化JSON）
+# サムネイル（安全版）
 # =========================
-# opening_hours_json が正。
-# （過去データ互換が必要なら OpeningHoursParser.parse_legacy_text をここに戻せるが、UI統一なので今は使わない）
+# 壊れた添付や不正indexで 400 を起こしにくくする
+def thumbnail_attachment
+kind = (respond_to?(:thumbnail_kind) ? thumbnail_kind.to_s : "").presence || "auto"
+idx = (respond_to?(:thumbnail_index) ? thumbnail_index.to_i : 1)
+idx = 1 if idx <= 0
+
+attachments =
+case kind
+when "food"
+safe_attachments(food_photos)
+when "interior"
+safe_attachments(interior_photos)
+when "exterior"
+safe_attachments(exterior_photos)
+when "menu"
+safe_attachments(menu_photos)
+else
+auto_thumbnail_attachments
+end
+
+pick_attachment_from(attachments, idx)
+rescue StandardError => e
+Rails.logger.warn("[thumbnail_attachment] #{e.class}: #{e.message}")
+nil
+end
+
+# =========================
+# 営業時間（簡易テキスト表示）
+# =========================
+def display_opening_hours_text
+opening_hours_text.presence || derived_opening_hours_text.presence || "未設定"
+end
+
+def display_holiday_hours_text
+holiday_hours_text.presence || "未設定"
+end
+
+def display_closed_days_text
+closed_days_text.presence || derived_closed_days_text.presence || "未設定"
+end
+
+# =========================
+# 既存の構造化JSON互換
+# =========================
 def opening_hours_data
 (opening_hours_json.presence || {}).to_h
 end
@@ -104,7 +174,7 @@ end
 def open_now?
 today = opening_hours_data[today_key]
 return false if today.blank?
-return false if today["closed"]
+return false if truthy?(today["closed"])
 
 now = Time.zone.now
 now_min = now.hour * 60 + now.min
@@ -113,12 +183,10 @@ open_min = hhmm_to_min(today["open"])
 close_min = hhmm_to_min(today["close"])
 return false if open_min.nil? || close_min.nil?
 
-if today["break_enabled"]
+if truthy?(today["break_enabled"])
 bs = hhmm_to_min(today["break_start"])
 be = hhmm_to_min(today["break_end"])
-if bs && be && within_range?(now_min, bs, be)
-return false
-end
+return false if bs && be && within_range?(now_min, bs, be)
 end
 
 within_range?(now_min, open_min, close_min)
@@ -140,13 +208,14 @@ data = opening_hours_data
 
 order.map do |label, key|
 d = data[key]
+
 if d.blank?
 [label, "未設定"]
-elsif d["closed"]
+elsif truthy?(d["closed"])
 [label, "休み"]
 else
 base = "#{d["open"]}-#{d["close"]}"
-if d["break_enabled"] && d["break_start"].present? && d["break_end"].present?
+if truthy?(d["break_enabled"]) && d["break_start"].present? && d["break_end"].present?
 [label, "#{base}（休憩 #{d["break_start"]}-#{d["break_end"]}）"]
 else
 [label, base]
@@ -169,7 +238,22 @@ AREAS = [
 private
 
 def normalize_opening_hours_json
+return unless respond_to?(:opening_hours_json)
 self.opening_hours_json = OpeningHoursParser.normalize_json(opening_hours_json)
+end
+
+def derived_opening_hours_text
+rows = opening_hours_lines.reject { |_label, value| value == "未設定" || value == "休み" }
+return nil if rows.blank?
+
+rows.map { |label, value| "#{label} #{value}" }.join(" / ")
+end
+
+def derived_closed_days_text
+rows = opening_hours_lines.select { |_label, value| value == "休み" }
+return nil if rows.blank?
+
+rows.map(&:first).join("・")
 end
 
 def today_key
@@ -178,8 +262,10 @@ end
 
 def hhmm_to_min(hhmm)
 return nil if hhmm.blank?
+
 m = hhmm.to_s.match(/\A(\d{1,2}):(\d{2})\z/)
 return nil unless m
+
 m[1].to_i * 60 + m[2].to_i
 end
 
@@ -189,6 +275,10 @@ now_min >= start_min && now_min < end_min
 else
 now_min >= start_min || now_min < end_min
 end
+end
+
+def truthy?(value)
+value == true || value.to_s == "1"
 end
 
 def geocoding_enabled?
@@ -214,11 +304,47 @@ end
 
 def last_confirmed_on_cannot_be_future
 return if last_confirmed_on.blank?
+
 errors.add(:last_confirmed_on, "は未来の日付にできません") if last_confirmed_on > Date.current
 end
 
 def set_normalized_phone
 digits = phone.to_s.gsub(/[^0-9]/, "")
 self.normalized_phone = digits.presence
+end
+
+def safe_attachments(collection)
+return [] unless collection.respond_to?(:attachments)
+
+collection.attachments.select do |att|
+begin
+att.present? && att.blob.present? && att.blob.key.present?
+rescue StandardError
+false
+end
+end
+end
+
+def auto_thumbnail_attachments
+[
+safe_attachments(food_photos),
+safe_attachments(exterior_photos),
+safe_attachments(interior_photos),
+safe_attachments(menu_photos)
+].flatten
+end
+
+def pick_attachment_from(attachments, idx)
+return nil if attachments.blank?
+
+picked = attachments[idx - 1] || attachments.first
+return nil unless picked.present?
+
+begin
+picked.blob
+picked
+rescue StandardError
+nil
+end
 end
 end

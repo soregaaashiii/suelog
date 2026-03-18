@@ -26,12 +26,13 @@ def approve
 shop = @req.shop
 attrs = build_shop_attrs_from_request(@req)
 
-area = @req.proposed_area.to_s.strip
+area = safe_str(@req.proposed_area)
 attrs[:area] = area if area.present?
 
 ActiveRecord::Base.transaction do
 shop.update!(attrs) if attrs.present?
 apply_selected_attachments!(@req, shop)
+apply_thumbnail_if_present!(shop)
 @req.update!(status: :approved)
 end
 
@@ -60,38 +61,71 @@ end
 def build_shop_attrs_from_request(req)
 attrs = {}
 
-name = req.proposed_name.to_s.strip
+name = safe_str(req.proposed_name)
 attrs[:name] = name if name.present?
 
-address = req.proposed_address.to_s.strip
+address = safe_str(req.proposed_address)
 attrs[:address] = address if address.present?
 
-station = req.proposed_nearest_station.to_s.strip
+station = safe_str(req.proposed_nearest_station)
 attrs[:nearest_station] = station if station.present?
 
-phone = req.proposed_phone.to_s.strip
+phone = safe_str(req.proposed_phone)
 attrs[:phone] = phone if phone.present?
 
-# ✅ 営業時間：JSON統一
-if req.proposed_opening_hours_json.present? && req.proposed_opening_hours_json.to_h.any?
+# ===== 新方式（テキスト営業時間）=====
+opening_hours_text =
+if req.respond_to?(:opening_hours_text)
+safe_str(req.opening_hours_text)
+elsif req.respond_to?(:proposed_opening_hours_text)
+safe_str(req.proposed_opening_hours_text)
+else
+""
+end
+attrs[:opening_hours_text] = opening_hours_text if opening_hours_text.present?
+
+holiday_hours_text =
+if req.respond_to?(:holiday_hours_text)
+safe_str(req.holiday_hours_text)
+elsif req.respond_to?(:proposed_holiday_hours_text)
+safe_str(req.proposed_holiday_hours_text)
+else
+""
+end
+attrs[:holiday_hours_text] = holiday_hours_text if holiday_hours_text.present?
+
+closed_days_text =
+if req.respond_to?(:closed_days_text)
+safe_str(req.closed_days_text)
+elsif req.respond_to?(:proposed_closed_days_text)
+safe_str(req.proposed_closed_days_text)
+else
+""
+end
+attrs[:closed_days_text] = closed_days_text if closed_days_text.present?
+
+# ===== 旧方式互換（JSON営業時間）=====
+if req.respond_to?(:proposed_opening_hours_json) &&
+req.proposed_opening_hours_json.present? &&
+req.proposed_opening_hours_json.to_h.any?
 attrs[:opening_hours_json] = req.proposed_opening_hours_json
 end
 
 attrs[:last_confirmed_on] = req.proposed_last_confirmed_on if req.proposed_last_confirmed_on.present?
 
-smoking_area = req.proposed_smoking_area.to_s.strip
+smoking_area = safe_str(req.proposed_smoking_area)
 attrs[:smoking_area] = smoking_area if smoking_area.present?
 
-smoking_type = req.proposed_smoking_type.to_s.strip
+smoking_type = safe_str(req.proposed_smoking_type)
 attrs[:smoking_type] = smoking_type if smoking_type.present?
 
-genre = req.genre.to_s.strip
+genre = safe_str(req.genre)
 if genre.present?
 attrs[:genre] = genre
-attrs[:genre_other] = (genre == "その他" ? req.genre_other.to_s.strip : nil)
+attrs[:genre_other] = (genre == "その他" ? safe_str(req.genre_other) : nil)
 end
 
-req_note = req.note.to_s.strip
+req_note = safe_str(req.note)
 attrs[:note] = req_note if req_note.present?
 
 attrs
@@ -116,8 +150,35 @@ allowed = req.public_send(name).attachments.map { |a| a.blob_id.to_s }
 ids &= allowed
 return if ids.empty?
 
-ActiveStorage::Blob.where(id: ids).find_each do |b|
-shop.public_send(name).attach(b)
+ActiveStorage::Blob.where(id: ids).find_each do |blob|
+shop.public_send(name).attach(blob)
 end
+end
+
+def apply_thumbnail_if_present!(shop)
+return unless shop.respond_to?(:thumbnail_kind=) || shop.respond_to?(:thumbnail_index=)
+
+apply = params[:apply] || {}
+
+thumbnail_kind = safe_str(apply[:thumbnail_kind])
+thumbnail_index = safe_str(apply[:thumbnail_index])
+
+if thumbnail_kind.blank? && @req.respond_to?(:proposed_thumbnail_kind)
+thumbnail_kind = safe_str(@req.proposed_thumbnail_kind)
+end
+
+if thumbnail_index.blank? && @req.respond_to?(:proposed_thumbnail_index) && @req.proposed_thumbnail_index.present?
+thumbnail_index = @req.proposed_thumbnail_index.to_i.to_s
+end
+
+updates = {}
+updates[:thumbnail_kind] = thumbnail_kind if thumbnail_kind.present? && shop.respond_to?(:thumbnail_kind=)
+updates[:thumbnail_index] = thumbnail_index.to_i if thumbnail_index.present? && shop.respond_to?(:thumbnail_index=)
+
+shop.update!(updates) if updates.present?
+end
+
+def safe_str(value)
+value.to_s.strip
 end
 end

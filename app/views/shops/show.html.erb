@@ -1,16 +1,4 @@
-<% hours = (@shop.opening_hours_data.presence || @shop.opening_hours_json.presence || {}).to_h %>
-
-<% days = {
-"monday" => "月",
-"tuesday" => "火",
-"wednesday" => "水",
-"thursday" => "木",
-"friday" => "金",
-"saturday" => "土",
-"sunday" => "日"
-} %>
-
-<% today_key = %w[sunday monday tuesday wednesday thursday friday saturday][Time.zone.today.wday] %>
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/shops/show.html.erb %>
 
 <style>
 .shop-show {
@@ -113,27 +101,34 @@ color: #111111;
 font-size: 15px;
 line-height: 1.7;
 word-break: break-word;
+white-space: pre-wrap;
 }
 
-.shop-show__hoursTable {
-width: 100%;
-border-collapse: collapse;
-max-width: 560px;
+.shop-show__hoursBox {
+display: grid;
+gap: 12px;
 }
 
-.shop-show__hoursRow--today {
+.shop-show__hoursCard {
 background: #faf8f2;
+border: 1px solid #eee6d6;
+border-radius: 16px;
+padding: 14px;
 }
 
-.shop-show__hoursDay,
-.shop-show__hoursValue {
-padding: 10px 8px;
-border-bottom: 1px solid #eee6d6;
-vertical-align: top;
+.shop-show__hoursCardTitle {
+margin: 0 0 6px;
+color: #7a7a7a;
+font-size: 12px;
+font-weight: 700;
 }
 
-.shop-show__hoursDay {
-width: 64px;
+.shop-show__hoursCardValue {
+color: #111111;
+font-size: 15px;
+line-height: 1.8;
+white-space: pre-wrap;
+word-break: break-word;
 }
 
 .shop-show__hoursNote {
@@ -156,9 +151,11 @@ font-weight: 800;
 
 .shop-show__map {
 height: 320px;
+min-height: 320px;
 border: 1px solid #e0e0e0;
 border-radius: 14px;
 overflow: hidden;
+background: #f7f7f7;
 }
 
 .shop-show__mapLink {
@@ -236,6 +233,12 @@ border-color: #eadbb5;
 background: #ffffff;
 color: #111111;
 border-color: #e8e3d7;
+}
+
+.ss-badge--green {
+background: #eef7ee;
+color: #2f6b3b;
+border-color: #d8e7d7;
 }
 
 .ss-btn {
@@ -358,6 +361,10 @@ height: 140px;
 <span class="ss-badge ss-badge--gold">紙のみ</span>
 <% end %>
 
+<% if @shop.open_now? %>
+<span class="ss-badge ss-badge--green">営業中</span>
+<% end %>
+
 <% if @shop.last_confirmed_on.present? %>
 <span class="ss-badge ss-badge--line">最終確認：<%= @shop.last_confirmed_on %></span>
 <% end %>
@@ -383,11 +390,6 @@ height: 140px;
 </div>
 
 <div class="shop-show__metaItem">
-<span class="shop-show__metaLabel">エリア</span>
-<div class="shop-show__metaValue"><%= @shop.area.presence || "未設定" %></div>
-</div>
-
-<div class="shop-show__metaItem">
 <span class="shop-show__metaLabel">最寄駅</span>
 <div class="shop-show__metaValue"><%= @shop.nearest_station.presence || "未設定" %></div>
 </div>
@@ -407,29 +409,12 @@ height: 140px;
 
 <div class="shop-show__metaItem">
 <span class="shop-show__metaLabel">喫煙エリア</span>
-<div class="shop-show__metaValue">
-<% if @shop.smoking_area.present? %>
-<%= @shop.smoking_area == "separated" ? "喫煙所あり" : "席で喫煙可" %>
-<% else %>
-未設定
-<% end %>
-</div>
+<div class="shop-show__metaValue"><%= @shop.smoking_area_label %></div>
 </div>
 
 <div class="shop-show__metaItem">
 <span class="shop-show__metaLabel">喫煙タイプ</span>
-<div class="shop-show__metaValue">
-<% case @shop.smoking_type %>
-<% when "both_ok" %>
-紙・加熱式どちらもOK
-<% when "electronic_only" %>
-加熱式タバコのみOK
-<% when "paper_only" %>
-紙タバコのみOK
-<% else %>
-未設定
-<% end %>
-</div>
+<div class="shop-show__metaValue"><%= @shop.smoking_type_label %></div>
 </div>
 </div>
 </section>
@@ -437,50 +422,26 @@ height: 140px;
 <section class="shop-show__section">
 <h2 class="shop-show__sectionTitle">営業時間</h2>
 
-<% if hours.present? %>
-<table class="shop-show__hoursTable">
-<% days.each do |key, label| %>
-<% d = (hours[key] || {}).to_h %>
-<% is_today = (key == today_key) %>
+<div class="shop-show__hoursBox">
+<div class="shop-show__hoursCard">
+<p class="shop-show__hoursCardTitle">通常営業時間</p>
+<div class="shop-show__hoursCardValue"><%= @shop.display_opening_hours_text %></div>
+</div>
 
-<% closed = d["closed"].to_s == "1" || d["closed"] == true %>
-<% open_t = d["open"].presence %>
-<% close_t = d["close"].presence %>
+<div class="shop-show__hoursCard">
+<p class="shop-show__hoursCardTitle">祝日営業時間</p>
+<div class="shop-show__hoursCardValue"><%= @shop.display_holiday_hours_text %></div>
+</div>
 
-<% break_enabled = d["break_enabled"].to_s == "1" || d["break_enabled"] == true %>
-<% break_start = d["break_start"].presence %>
-<% break_end = d["break_end"].presence %>
-
-<tr class="<%= 'shop-show__hoursRow--today' if is_today %>">
-<td class="shop-show__hoursDay" style="font-weight:<%= is_today ? '800' : '500' %>;">
-<%= label %>
-</td>
-
-<td class="shop-show__hoursValue">
-<% if closed %>
-<span style="color:#666; font-weight:700;">定休日</span>
-<% elsif open_t.blank? || close_t.blank? %>
-<span style="color:#666;">未設定</span>
-<% else %>
-<span><%= open_t %>〜<%= close_t %></span>
-
-<% if break_enabled && break_start.present? && break_end.present? %>
-<span style="margin-left:8px; color:#666; font-size:12px;">
-（中休み <%= break_start %>〜<%= break_end %>）
-</span>
-<% end %>
-<% end %>
-</td>
-</tr>
-<% end %>
-</table>
+<div class="shop-show__hoursCard">
+<p class="shop-show__hoursCardTitle">定休日</p>
+<div class="shop-show__hoursCardValue"><%= @shop.display_closed_days_text %></div>
+</div>
+</div>
 
 <p class="shop-show__hoursNote">
-※ 営業時間はユーザー投稿を元に表示しています
+※ 営業時間は店舗情報・ユーザー投稿を元に表示しています
 </p>
-<% else %>
-<p style="color:#666;">未設定</p>
-<% end %>
 </section>
 
 <% unless @shop.approved? %>
@@ -513,21 +474,44 @@ height: 140px;
 <% if @shop.latitude.present? && @shop.longitude.present? %>
 <div id="shop-map" class="shop-show__map"></div>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<p class="shop-show__mapLink">
+<% q = ERB::Util.url_encode([@shop.name, @shop.address].compact.join(" ")) %>
+<a href="https://www.google.com/maps?q=<%= q %>" target="_blank" rel="noopener">Googleマップで開く</a>
+</p>
 
 <script>
-document.addEventListener("turbo:before-cache", () => {
-const el = document.getElementById("shop-map");
-if (el && el._leaflet_map_instance) {
-el._leaflet_map_instance.remove();
-el._leaflet_map_instance = null;
+(function() {
+function loadLeafletCss() {
+if (document.getElementById("leaflet-css")) return;
+const link = document.createElement("link");
+link.id = "leaflet-css";
+link.rel = "stylesheet";
+link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+document.head.appendChild(link);
 }
-});
 
-document.addEventListener("turbo:load", () => {
+function loadLeafletJs(callback) {
+if (window.L) {
+callback();
+return;
+}
+
+if (document.getElementById("leaflet-js")) {
+document.getElementById("leaflet-js").addEventListener("load", callback, { once: true });
+return;
+}
+
+const script = document.createElement("script");
+script.id = "leaflet-js";
+script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+script.async = true;
+script.onload = callback;
+document.body.appendChild(script);
+}
+
+function initShopMap() {
 const el = document.getElementById("shop-map");
-if (!el) return;
+if (!el || !window.L) return;
 
 if (el._leaflet_map_instance) {
 el._leaflet_map_instance.remove();
@@ -537,7 +521,7 @@ el._leaflet_map_instance = null;
 const lat = <%= @shop.latitude.to_f %>;
 const lng = <%= @shop.longitude.to_f %>;
 
-const map = L.map("shop-map").setView([lat, lng], 16);
+const map = L.map(el).setView([lat, lng], 16);
 el._leaflet_map_instance = map;
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -548,15 +532,28 @@ attribution: '&copy; OpenStreetMap contributors'
 const marker = L.marker([lat, lng]).addTo(map);
 marker.bindPopup("<strong><%= j @shop.name %></strong>").openPopup();
 
-setTimeout(() => map.invalidateSize(), 0);
-setTimeout(() => map.invalidateSize(), 200);
-});
-</script>
+setTimeout(() => map.invalidateSize(), 50);
+setTimeout(() => map.invalidateSize(), 300);
+}
 
-<p class="shop-show__mapLink">
-<% q = ERB::Util.url_encode([@shop.name, @shop.area, @shop.address].compact.join(" ")) %>
-<a href="https://www.google.com/maps?q=<%= q %>" target="_blank" rel="noopener">Googleマップで開く</a>
-</p>
+function bootShopMap() {
+loadLeafletCss();
+loadLeafletJs(initShopMap);
+}
+
+document.addEventListener("turbo:load", bootShopMap);
+document.addEventListener("DOMContentLoaded", bootShopMap);
+document.addEventListener("turbo:before-cache", () => {
+const el = document.getElementById("shop-map");
+if (el && el._leaflet_map_instance) {
+el._leaflet_map_instance.remove();
+el._leaflet_map_instance = null;
+}
+});
+
+bootShopMap();
+})();
+</script>
 <% else %>
 <p style="color:#666;">この店舗は位置情報（緯度・経度）が未設定です。</p>
 <% end %>
@@ -589,9 +586,7 @@ setTimeout(() => map.invalidateSize(), 200);
 <h2 class="shop-show__sectionTitle">このページについて</h2>
 <div class="shop-show__footerActions">
 <%= link_to "一覧に戻る", root_path, class: "ss-btn ss-btn--ghost" %>
-
 <%= link_to "情報の修正依頼", new_shop_shop_edit_request_path(@shop), class: "ss-btn ss-btn--dark" %>
-
 <%= link_to "通報", new_shop_shop_report_path(@shop), class: "ss-btn ss-btn--muted" %>
 </div>
 </section>

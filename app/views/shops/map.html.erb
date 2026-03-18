@@ -110,10 +110,10 @@
     const map = L.map("map", { zoomControl: true }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
     mapEl._leaflet_map_instance = map;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+maxZoom: 19,
+attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
     // 初期：近めで表示したいのでfitBoundsしない（ズームアウト事故防止）
     // ただしマーカーは置く（lat/lngがあるものだけ）
