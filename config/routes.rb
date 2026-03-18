@@ -1,10 +1,10 @@
-# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/config/routes.rb
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
 root "home#index"
 
 get "map", to: "shops#map"
+get "/sitemap.xml", to: redirect("/sitemap.xml.gz")
 
 resources :shops do
 collection do
