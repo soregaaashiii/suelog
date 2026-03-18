@@ -1,4 +1,26 @@
+<% content_for :title, @page_title %>
+<% content_for :meta_description, @page_description %>
+<% content_for :canonical_url, @canonical_url if @canonical_url.present? %>
+
 <%= render "shared/hero" %>
+
+<section class="home-section">
+<div class="section-head">
+<div>
+<h2 class="section-title">人気エリアから探す</h2>
+<p class="section-subtitle">まずは梅田エリアの喫煙可能店から探せます</p>
+</div>
+</div>
+
+<div class="panel">
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+<%= link_to "梅田で喫煙できる店", umeda_path, class: "btn btn--ghost" %>
+<%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost" %>
+<%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost" %>
+<%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost" %>
+</div>
+</div>
+</section>
 
 <% q = request.query_parameters.to_h.deep_dup %>
 
@@ -16,8 +38,12 @@
 
 <% chips = [] %>
 <% chips << ["キーワード：#{params[:q]}", :q] if params[:q].present? %>
-<% chips << ["ジャンル：#{params[:genre]}", :genre] if params[:genre].present? %>
+<% chips << ["ジャンル：#{params[:genre]}", :genre] if params[:genre].present? && @forced_genre.blank? %>
 <% chips << ["最寄駅：#{params[:station]}", :station] if params[:station].present? %>
+
+<% if @forced_genre.present? %>
+<% chips << ["ジャンル：#{@forced_genre}", :forced_genre] %>
+<% end %>
 
 <% if params[:smoking_area].present? %>
 <% label = smoking_area_label[params[:smoking_area]] || params[:smoking_area] %>
@@ -30,6 +56,23 @@
 <% end %>
 
 <div class="home-page">
+<% if @is_area_page %>
+<section class="home-section">
+<div class="panel" style="margin-bottom:16px;">
+<h2 class="section-title" style="margin-bottom:8px;"><%= @area_intro_title %></h2>
+<p class="section-subtitle" style="margin:0 0 14px;"><%= @area_intro_text %></p>
+
+<% if @area_nav_links.present? %>
+<div style="display:flex; gap:8px; flex-wrap:wrap;">
+<% @area_nav_links.each do |item| %>
+<%= link_to item[:label], item[:path], class: "btn btn--ghost" %>
+<% end %>
+</div>
+<% end %>
+</div>
+</section>
+<% end %>
+
 <section class="home-section">
 <div class="section-head">
 <div>
@@ -39,7 +82,7 @@
 </div>
 
 <div class="panel">
-<%= form_with url: root_path, method: :get, local: true, html: { class: "search-form" } do %>
+<%= form_with url: @search_form_url, method: :get, local: true, html: { class: "search-form" } do %>
 <%= hidden_field_tag :per, @per %>
 
 <div class="search-grid">
@@ -47,10 +90,15 @@
 <label class="field-label">ジャンル</label>
 <%= select_tag :genre,
 options_for_select(
-[["指定なし",""]] + ["居酒屋","バー / パブ","喫茶店 / カフェ","焼肉","ラーメン","中華","和食","洋食","立ち飲み","スナック","その他"],
-params[:genre]
+[["指定なし", ""]] + ["居酒屋", "バー / パブ", "喫茶店 / カフェ", "焼肉", "ラーメン", "中華", "和食", "洋食", "立ち飲み", "スナック", "その他"],
+@forced_genre.presence || params[:genre]
 ),
-class: "field-input" %>
+class: "field-input",
+disabled: @forced_genre.present? %>
+
+<% if @forced_genre.present? %>
+<%= hidden_field_tag :genre, @forced_genre %>
+<% end %>
 </div>
 
 <div class="field">
@@ -64,14 +112,14 @@ class: "field-input" %>
 <div class="field">
 <label class="field-label">喫煙エリア</label>
 <%= select_tag :smoking_area,
-options_for_select([["指定なし",""],["喫煙所あり","separated"],["席で喫煙可","all_smoking"]], params[:smoking_area]),
+options_for_select([["指定なし", ""], ["喫煙所あり", "separated"], ["席で喫煙可", "all_smoking"]], params[:smoking_area]),
 class: "field-input" %>
 </div>
 
 <div class="field">
 <label class="field-label">喫煙タイプ</label>
 <%= select_tag :smoking_type,
-options_for_select([["指定なし",""],["紙・加熱式OK","both_ok"],["加熱式のみ","electronic_only"],["紙のみ","paper_only"]], params[:smoking_type]),
+options_for_select([["指定なし", ""], ["紙・加熱式OK", "both_ok"], ["加熱式のみ", "electronic_only"], ["紙のみ", "paper_only"]], params[:smoking_type]),
 class: "field-input" %>
 </div>
 
@@ -86,7 +134,7 @@ class: "field-input" %>
 
 <div class="search-actions">
 <%= submit_tag "検索する", class: "btn btn--primary" %>
-<%= link_to "条件をクリア", root_path(per: @per), class: "btn btn--ghost" %>
+<%= link_to "条件をクリア", @search_form_url + "?per=#{@per}", class: "btn btn--ghost" %>
 </div>
 <% end %>
 
@@ -95,15 +143,25 @@ class: "field-input" %>
 <div class="active-filters__label">検索条件</div>
 <div class="active-filters__list">
 <% chips.each do |text, key| %>
+<% if key == :forced_genre %>
+<%= link_to @search_form_url + "?per=#{@per}", class: "filter-chip" do %>
+<span><%= text %></span>
+<span>×</span>
+<% end %>
+<% else %>
 <% new_q = q.deep_dup %>
 <% new_q.delete(key.to_s) %>
-<%= link_to root_path(new_q), class: "filter-chip" do %>
+
+<%= link_to "#{@search_form_url}?#{new_q.to_query}", class: "filter-chip" do %>
 <span><%= text %></span>
 <span>×</span>
 <% end %>
 <% end %>
+<% end %>
 
-<%= link_to "すべてクリア", root_path(per: @per), class: "filter-chip filter-chip--clear" %>
+<%= link_to "すべてクリア",
+@search_form_url + "?per=#{@per}",
+class: "filter-chip filter-chip--clear" %>
 </div>
 </div>
 <% end %>
@@ -113,8 +171,8 @@ class: "field-input" %>
 <section class="home-section">
 <div class="section-head">
 <div>
-<h2 class="section-title">掲載店舗</h2>
-<p class="section-subtitle">大阪の喫煙可能店舗を一覧で確認できます</p>
+<h2 class="section-title"><%= @page_heading %></h2>
+<p class="section-subtitle"><%= @page_subtitle %></p>
 </div>
 
 <div class="result-count">
@@ -130,15 +188,15 @@ class: "field-input" %>
 <% current_query = request.query_parameters.except(:page).to_h %>
 
 <%= link_to "30件",
-root_path(current_query.merge(per: 30)),
+@search_form_url + "?" + current_query.merge(per: 30).to_query,
 class: "btn #{(@per == 30 ? 'btn--dark' : 'btn--ghost')}" %>
 
 <%= link_to "50件",
-root_path(current_query.merge(per: 50)),
+@search_form_url + "?" + current_query.merge(per: 50).to_query,
 class: "btn #{(@per == 50 ? 'btn--dark' : 'btn--ghost')}" %>
 
 <%= link_to "100件",
-root_path(current_query.merge(per: 100)),
+@search_form_url + "?" + current_query.merge(per: 100).to_query,
 class: "btn #{(@per == 100 ? 'btn--dark' : 'btn--ghost')}" %>
 </div>
 </div>

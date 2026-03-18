@@ -1,4 +1,3 @@
-# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/models/shop.rb
 # frozen_string_literal: true
 
 class Shop < ApplicationRecord
@@ -16,9 +15,8 @@ has_many_attached :menu_photos
 # ===== Smoking status =====
 enum :smoking_area, {
 separated: 0, # 喫煙所あり
-all_smoking: 1, # 席で喫煙可
+all_smoking: 1 # 席で喫煙可
 }
-
 
 enum :smoking_type, {
 both_ok: 0, # 紙・加熱式OK
@@ -50,6 +48,22 @@ OR shops.closed_days_text LIKE :like
 SQL
 like: like
 )
+}
+
+scope :text_like, lambda { |column, value|
+v = value.to_s.strip
+next all if v.blank?
+
+like = "%#{sanitize_sql_like(v)}%"
+where("shops.#{column} LIKE ?", like)
+}
+
+scope :genre_like, lambda { |value|
+v = value.to_s.strip
+next all if v.blank?
+
+like = "%#{sanitize_sql_like(v)}%"
+where("shops.genre LIKE ? OR shops.genre_other LIKE ?", like, like)
 }
 
 # ===== Validations =====
@@ -123,7 +137,6 @@ end
 # =========================
 # サムネイル（安全版）
 # =========================
-# 壊れた添付や不正indexで 400 を起こしにくくする
 def thumbnail_attachment
 kind = (respond_to?(:thumbnail_kind) ? thumbnail_kind.to_s : "").presence || "auto"
 idx = (respond_to?(:thumbnail_index) ? thumbnail_index.to_i : 1)
@@ -192,7 +205,6 @@ end
 within_range?(now_min, open_min, close_min)
 end
 
-# 表示用： [["月","11:00-23:00（休憩 14:00-17:00）"], ...]
 def opening_hours_lines
 order = [
 ["月", "monday"],
@@ -304,7 +316,6 @@ end
 
 def last_confirmed_on_cannot_be_future
 return if last_confirmed_on.blank?
-
 errors.add(:last_confirmed_on, "は未来の日付にできません") if last_confirmed_on > Date.current
 end
 
