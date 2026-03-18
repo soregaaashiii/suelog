@@ -1,9 +1,29 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<title><%= content_for?(:title) ? yield(:title) : "吸えログ in大阪｜喫煙できる飲食店を探せる" %></title>
-<meta name="description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。" %>">
+<% page_title = content_for?(:title) ? yield(:title) : "吸えログ in大阪｜喫煙できる飲食店を探せる" %>
+<% page_description = content_for?(:meta_description) ? yield(:meta_description) : "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。" %>
+<% page_url = content_for?(:canonical_url) ? yield(:canonical_url) : request.original_url %>
+
+<title><%= page_title %></title>
+<meta name="description" content="<%= page_description %>">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="index,follow">
+<meta name="format-detection" content="telephone=no">
+<link rel="canonical" href="<%= page_url %>">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:site_name" content="吸えログ in大阪">
+<meta property="og:title" content="<%= page_title %>">
+<meta property="og:description" content="<%= page_description %>">
+<meta property="og:url" content="<%= page_url %>">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<%= page_title %>">
+<meta name="twitter:description" content="<%= page_description %>">
+
+<%# Google Search Console 用。確認コードを入手したら content を差し替え %>
+<%# <meta name="google-site-verification" content="ここに確認コードを入れる"> %>
 
 <%= csrf_meta_tags %>
 <%= csp_meta_tag %>
