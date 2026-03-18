@@ -1,4 +1,35 @@
-<%# app/views/admin/shop_edit_requests/show.html.erb %>
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shop_edit_requests/show.html.erb %>
+
+<%
+opening_hours_text =
+  if @req.respond_to?(:opening_hours_text)
+    @req.opening_hours_text.to_s.strip
+  elsif @req.respond_to?(:proposed_opening_hours_text)
+    @req.proposed_opening_hours_text.to_s.strip
+  else
+    ""
+  end
+
+holiday_hours_text =
+  if @req.respond_to?(:holiday_hours_text)
+    @req.holiday_hours_text.to_s.strip
+  elsif @req.respond_to?(:proposed_holiday_hours_text)
+    @req.proposed_holiday_hours_text.to_s.strip
+  else
+    ""
+  end
+
+closed_days_text =
+  if @req.respond_to?(:closed_days_text)
+    @req.closed_days_text.to_s.strip
+  elsif @req.respond_to?(:proposed_closed_days_text)
+    @req.proposed_closed_days_text.to_s.strip
+  else
+    ""
+  end
+
+legacy_opening_hours = @req.respond_to?(:proposed_opening_hours) ? @req.proposed_opening_hours.to_s.strip : ""
+%>
 
 <h1>編集依頼 詳細（管理）</h1>
 
@@ -38,20 +69,36 @@
 
   <p style="margin:0 0 8px;"><strong>住所：</strong><%= @req.proposed_address.presence || "（未変更）" %></p>
 
-<p style="margin:0 0 8px;">
-<strong>エリア：</strong>
-<%= @req.proposed_area.presence || "（未変更）" %>
-</p>
+  <p style="margin:0 0 8px;">
+    <strong>エリア：</strong>
+    <%= @req.proposed_area.presence || "（未変更）" %>
+  </p>
 
   <p style="margin:0 0 8px;"><strong>最寄駅：</strong><%= @req.proposed_nearest_station.presence || "（未変更）" %></p>
   <p style="margin:0 0 8px;"><strong>電話：</strong><%= @req.proposed_phone.presence || "（未変更）" %></p>
-
   <p style="margin:0 0 8px;"><strong>最終確認日：</strong><%= @req.proposed_last_confirmed_on.presence || "（未変更）" %></p>
 
   <p style="margin:0 0 8px;">
-    <strong>営業時間：</strong><br>
-    <%= @req.proposed_opening_hours.present? ? simple_format(h(@req.proposed_opening_hours.to_s)) : "（未変更）" %>
+    <strong>通常営業時間：</strong><br>
+    <%= opening_hours_text.present? ? simple_format(h(opening_hours_text)) : "（未変更）" %>
   </p>
+
+  <p style="margin:0 0 8px;">
+    <strong>祝日営業時間：</strong><br>
+    <%= holiday_hours_text.present? ? simple_format(h(holiday_hours_text)) : "（未変更）" %>
+  </p>
+
+  <p style="margin:0 0 8px;">
+    <strong>定休日：</strong><br>
+    <%= closed_days_text.present? ? simple_format(h(closed_days_text)) : "（未変更）" %>
+  </p>
+
+  <% if opening_hours_text.blank? && holiday_hours_text.blank? && closed_days_text.blank? %>
+    <p style="margin:0 0 8px;">
+      <strong>旧営業時間欄：</strong><br>
+      <%= legacy_opening_hours.present? ? simple_format(h(legacy_opening_hours)) : "（未変更）" %>
+    </p>
+  <% end %>
 
   <p style="margin:0 0 8px;"><strong>喫煙エリア：</strong><%= @req.proposed_smoking_area.presence || "（未変更）" %></p>
   <p style="margin:0 0 8px;"><strong>喫煙タイプ：</strong><%= @req.proposed_smoking_type.presence || "（未変更）" %></p>

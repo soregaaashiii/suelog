@@ -16,8 +16,11 @@ genre_other: @shop.genre_other,
 proposed_thumbnail_kind: (@shop.thumbnail_kind.presence || "auto"),
 proposed_thumbnail_index: (@shop.thumbnail_index.presence || 1),
 note: @shop.note,
-proposed_opening_hours_json: (@shop.opening_hours_data || {}) # ✅ 追加
+proposed_opening_hours_json: (@shop.opening_hours_data || {})
 )
+
+# 新方式の営業時間テキスト初期値
+assign_simple_hours_from_shop!(@req, @shop)
 end
 
 def create
@@ -35,9 +38,10 @@ genre_other: @shop.genre_other,
 proposed_thumbnail_kind: (@shop.thumbnail_kind.presence || "auto"),
 proposed_thumbnail_index: (@shop.thumbnail_index.presence || 1),
 note: @shop.note,
-proposed_opening_hours_json: (@shop.opening_hours_data || {}) # ✅ 追加
+proposed_opening_hours_json: (@shop.opening_hours_data || {})
 )
 
+assign_simple_hours_from_shop!(@req, @shop)
 @req.assign_attributes(req_params)
 @req.status = :pending if @req.respond_to?(:status)
 
@@ -76,7 +80,26 @@ if @req.proposed_thumbnail_index.blank? || @req.proposed_thumbnail_index.to_i <=
 @req.proposed_thumbnail_index = (@shop.thumbnail_index.presence || 1)
 end
 
-# ✅ 営業時間：フォームが “全部未入力” の場合は「変更しない」扱いで shop の値を採用
+# 新方式の営業時間テキスト
+if @req.respond_to?(:proposed_opening_hours_text) && blankish?(@req.proposed_opening_hours_text)
+@req.proposed_opening_hours_text = @shop.opening_hours_text
+elsif @req.respond_to?(:opening_hours_text) && blankish?(@req.opening_hours_text)
+@req.opening_hours_text = @shop.opening_hours_text
+end
+
+if @req.respond_to?(:proposed_holiday_hours_text) && blankish?(@req.proposed_holiday_hours_text)
+@req.proposed_holiday_hours_text = @shop.holiday_hours_text
+elsif @req.respond_to?(:holiday_hours_text) && blankish?(@req.holiday_hours_text)
+@req.holiday_hours_text = @shop.holiday_hours_text
+end
+
+if @req.respond_to?(:proposed_closed_days_text) && blankish?(@req.proposed_closed_days_text)
+@req.proposed_closed_days_text = @shop.closed_days_text
+elsif @req.respond_to?(:closed_days_text) && blankish?(@req.closed_days_text)
+@req.closed_days_text = @shop.closed_days_text
+end
+
+# 旧方式互換
 if @req.proposed_opening_hours_json.blank? || @req.proposed_opening_hours_json.to_h.empty?
 @req.proposed_opening_hours_json = (@shop.opening_hours_data || {})
 end
@@ -97,14 +120,27 @@ private
 
 def req_params
 params.require(:shop_edit_request).permit(
-:proposer_name, :note,
-:proposed_name, :proposed_address, :proposed_last_confirmed_on,
-:proposed_nearest_station, :proposed_phone,
-:proposed_smoking_area, :proposed_smoking_type,
+:proposer_name,
+:note,
+:proposed_name,
+:proposed_address,
+:proposed_last_confirmed_on,
+:proposed_nearest_station,
+:proposed_phone,
+:proposed_smoking_area,
+:proposed_smoking_type,
 :proposed_area,
-:genre, :genre_other,
-:proposed_thumbnail_kind, :proposed_thumbnail_index,
-proposed_opening_hours_json: {}, # ✅ 追加
+:genre,
+:genre_other,
+:proposed_thumbnail_kind,
+:proposed_thumbnail_index,
+:opening_hours_text,
+:holiday_hours_text,
+:closed_days_text,
+:proposed_opening_hours_text,
+:proposed_holiday_hours_text,
+:proposed_closed_days_text,
+proposed_opening_hours_json: {},
 food_photos: [],
 interior_photos: [],
 exterior_photos: [],
@@ -112,8 +148,28 @@ menu_photos: []
 )
 end
 
-def blankish?(v)
-v.nil? || v.to_s.strip == ""
+def assign_simple_hours_from_shop!(req, shop)
+if req.respond_to?(:proposed_opening_hours_text=)
+req.proposed_opening_hours_text = shop.opening_hours_text
+elsif req.respond_to?(:opening_hours_text=)
+req.opening_hours_text = shop.opening_hours_text
+end
+
+if req.respond_to?(:proposed_holiday_hours_text=)
+req.proposed_holiday_hours_text = shop.holiday_hours_text
+elsif req.respond_to?(:holiday_hours_text=)
+req.holiday_hours_text = shop.holiday_hours_text
+end
+
+if req.respond_to?(:proposed_closed_days_text=)
+req.proposed_closed_days_text = shop.closed_days_text
+elsif req.respond_to?(:closed_days_text=)
+req.closed_days_text = shop.closed_days_text
+end
+end
+
+def blankish?(value)
+value.nil? || value.to_s.strip == ""
 end
 
 def increment_contribution!

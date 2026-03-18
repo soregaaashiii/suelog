@@ -16,7 +16,6 @@
 
 <% chips = [] %>
 <% chips << ["ジャンル：#{params[:genre]}", :genre] if params[:genre].present? %>
-<% chips << ["エリア：#{params[:area]}", :area] if params[:area].present? %>
 <% chips << ["最寄駅：#{params[:station]}", :station] if params[:station].present? %>
 
 <% if params[:smoking_area].present? %>
@@ -51,26 +50,9 @@ style: "padding:8px 10px; border:1px solid #ddd; border-radius:999px; text-decor
 <label>ジャンル</label><br>
 <%= select_tag :genre,
 options_for_select(
-[["指定なし",""]] + ["居酒屋","バー / パブ","喫茶店 / カフェ","焼肉","ラーメン","中華","和食","洋食","立ち飲み","スナック","その他"],
+[["指定なし", ""]] + ["居酒屋", "バー / パブ", "喫茶店 / カフェ", "焼肉", "ラーメン", "中華", "和食", "洋食", "立ち飲み", "スナック", "その他"],
 params[:genre]
 ) %>
-</div>
-
-<%# ✅ ここが変更：エリアを「クリックで候補表示」 %>
-<div class="area-ac"
-data-controller="area-autocomplete"
-data-area-autocomplete-items-value='["阿倍野","阿倍野橋","旭区清水","朝潮橋","淡路","石橋阪大前","泉大津","泉ヶ丘","泉佐野","和泉中央","今里","茨木","茨木市","梅田","江坂","難波","大阪阿部野橋","大阪上本町","大阪狭山市","大阪天満宮","大日","大東市","大正","岡町","貝塚","香里園","柏原","門真市","岸和田","京橋","喜連瓜破","九条","河内小阪","河内国分","河内長野","河内松原","岸辺","北新地","北千里","北花田","布施","堺","堺東","桜川","新金岡","新今宮","新大阪","心斎橋","住道","千里中央","千林大宮","高槻","高槻市","玉造","天下茶屋","天王寺","天満橋","豊中","中百舌鳥","長居","西梅田","西九条","野田","東岸和田","東三国","東梅田","東大阪市","東花園","枚方市","平野","深井","藤井寺","古市","弁天町","本町","松原","箕面","都島","守口市","八尾","山田","淀屋橋","四ツ橋"]'>
-
-<label>エリア</label><br>
-<%= text_field_tag :area, params[:area],
-placeholder: "選択 / 入力",
-autocomplete: "off",
-data: {
-area_autocomplete_target: "input",
-action: "focus->area-autocomplete#onFocus click->area-autocomplete#onClick input->area-autocomplete#onInput keydown->area-autocomplete#onKeydown"
-} %>
-
-<div class="area-ac__list" data-area-autocomplete-target="list"></div>
 </div>
 
 <div>
@@ -81,13 +63,13 @@ action: "focus->area-autocomplete#onFocus click->area-autocomplete#onClick input
 <div>
 <label>喫煙エリア</label><br>
 <%= select_tag :smoking_area,
-options_for_select([["指定なし",""],["喫煙所あり","separated"],["席で喫煙可","smoking_allowed"]], params[:smoking_area]) %>
+options_for_select([["指定なし", ""], ["喫煙所あり", "separated"], ["席で喫煙可", "smoking_allowed"]], params[:smoking_area]) %>
 </div>
 
 <div>
 <label>喫煙タイプ</label><br>
 <%= select_tag :smoking_type,
-options_for_select([["指定なし",""],["紙・加熱式OK","both_ok"],["加熱式のみ","electronic_only"],["紙のみ","paper_only"]], params[:smoking_type]) %>
+options_for_select([["指定なし", ""], ["紙・加熱式OK", "both_ok"], ["加熱式のみ", "electronic_only"], ["紙のみ", "paper_only"]], params[:smoking_type]) %>
 </div>
 
 <div>

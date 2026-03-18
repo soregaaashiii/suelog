@@ -141,9 +141,9 @@ flash.now[:alert] = e.record.errors.full_messages.join(" / ")
 render :edit, status: :unprocessable_entity
 end
 
-# ✅ CSVインポート：
-# - opening_hours_json があればそれを最優先（新方式）
-# - 無ければ opening_hours を legacy として parse（互換）
+# ✅ CSVインポート
+# - 新方式: opening_hours_text / holiday_hours_text / closed_days_text
+# - 旧方式: opening_hours_json / opening_hours も互換で受ける
 def import
 file = params[:file]
 return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
@@ -179,10 +179,6 @@ end
 nil
 end
 
-# ✅ あなたの enum に合わせて受け取る：
-# smoking_area: separated=0 / all_smoking=1
-# smoking_type: both_ok=0 / electronic_only=1 / paper_only=2
-# ついでに「旧形式 1/2/3」も受け付ける
 map_smoking_area = lambda do |raw|
 s = normalize_str.call(raw)
 return nil if s.blank?
@@ -190,9 +186,8 @@ return nil if s.blank?
 case s
 when "0" then "separated"
 when "1" then "all_smoking"
-when "2" then "separated" # 旧ルール互換（昔のCSVが 2=separated だった場合）
-else
-s.presence
+when "2" then "separated"
+else s.presence
 end
 end
 
@@ -204,9 +199,8 @@ case s
 when "0" then "both_ok"
 when "1" then "electronic_only"
 when "2" then "paper_only"
-when "3" then "paper_only" # 旧ルール互換（昔のCSVが 3=paper_only だった場合）
-else
-s.presence
+when "3" then "paper_only"
+else s.presence
 end
 end
 
@@ -216,9 +210,22 @@ name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
 phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
 address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
 
-# ✅ 営業時間：JSON優先
+# 新方式
+opening_hours_text = normalize_str.call(
+pick.call(row, [:opening_hours_text, "opening_hours_text", "通常営業時間", "営業時間テキスト"])
+)
+holiday_hours_text = normalize_str.call(
+pick.call(row, [:holiday_hours_text, "holiday_hours_text", "祝日営業時間"])
+)
+closed_days_text = normalize_str.call(
+pick.call(row, [:closed_days_text, "closed_days_text", "定休日"])
+)
+
+# 旧方式互換
 opening_json_raw = pick.call(row, [:opening_hours_json, "opening_hours_json", "営業時間JSON"])
-opening_text = normalize_str.call(pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"]))
+opening_text_legacy = normalize_str.call(
+pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"])
+)
 
 opening_json =
 if opening_json_raw.present?
@@ -226,10 +233,12 @@ begin
 parsed = JSON.parse(opening_json_raw.to_s)
 OpeningHoursParser.normalize_json(parsed)
 rescue JSON::ParserError
-OpeningHoursParser.parse_legacy_text(opening_text)
+OpeningHoursParser.parse_legacy_text(opening_text_legacy)
 end
+elsif opening_text_legacy.present?
+OpeningHoursParser.parse_legacy_text(opening_text_legacy)
 else
-OpeningHoursParser.parse_legacy_text(opening_text)
+{}
 end
 
 area_raw = normalize_str.call(pick.call(row, [:area, "area", "エリア"]))
@@ -266,6 +275,9 @@ phone: phone.presence,
 address: address,
 area: area.presence,
 nearest_station: nearest_station.presence,
+opening_hours_text: opening_hours_text.presence,
+holiday_hours_text: holiday_hours_text.presence,
+closed_days_text: closed_days_text.presence,
 opening_hours_json: opening_json,
 note: note.presence,
 genre: genre.presence,
@@ -274,6 +286,17 @@ smoking_area: smoking_area,
 smoking_type: smoking_type,
 last_confirmed_on: last_confirmed_on
 )
+
+# 新方式の営業時間が空で、旧方式だけある場合の補完
+if shop.opening_hours_text.blank? && shop.respond_to?(:derived_opening_hours_text, true)
+derived_text = shop.send(:derived_opening_hours_text)
+shop.opening_hours_text = derived_text if derived_text.present?
+end
+
+if shop.closed_days_text.blank? && shop.respond_to?(:derived_closed_days_text, true)
+derived_closed = shop.send(:derived_closed_days_text)
+shop.closed_days_text = derived_closed if derived_closed.present?
+end
 
 shop.approved = false
 shop.rejected = false if shop.respond_to?(:rejected=)
@@ -293,9 +316,20 @@ private
 
 def shop_params
 params.require(:shop).permit(
-:name, :address, :area, :nearest_station, :phone,
-:genre, :genre_other, :note,
-:smoking_area, :smoking_type,
+:name,
+:address,
+:area,
+:nearest_station,
+:phone,
+:genre,
+:genre_other,
+:note,
+:smoking_area,
+:smoking_type,
+:last_confirmed_on,
+:opening_hours_text,
+:holiday_hours_text,
+:closed_days_text,
 opening_hours_json: {}
 )
 end

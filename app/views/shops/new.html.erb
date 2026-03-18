@@ -1,4 +1,5 @@
-<%# app/views/shops/new.html.erb %>
+
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/shops/new.html.erb %>
 
 <h1>お店を登録</h1>
 
@@ -76,10 +77,8 @@ style: "display:inline-block; padding:6px 10px; border:1px solid #ddd; border-ra
 <%= f.text_field :genre_other, placeholder: "例：シーシャバー、ダーツバー" %>
 </div>
 
-<div style="margin-top:12px;">
-<%= f.label :area, "エリア（任意）" %><br>
-<%= f.select :area, Shop::AREAS, { include_blank: "選択してください" } %>
-</div>
+
+
 
 <div style="margin-top:12px;">
 <%= f.label :address do %>
@@ -96,10 +95,52 @@ style: "display:inline-block; padding:6px 10px; border:1px solid #ddd; border-ra
 <%= f.text_field :nearest_station, placeholder: "例：梅田駅 徒歩5分" %>
 </p>
 
-<%# ✅ 営業時間（統一UI） %>
-<%= render "shared/opening_hours_fields",
-param_prefix: "shop[opening_hours_json]",
-data: (@shop.opening_hours_data || {}) %>
+<div style="margin-top:12px; padding:14px; border:1px solid #eee; border-radius:12px; background:#fffdf8;">
+<div style="font-weight:800; font-size:16px; margin-bottom:8px;">営業時間</div>
+<p style="margin:0 0 10px; color:#666; font-size:13px; line-height:1.7;">
+曜日ごとの細かい入力はやめて、見たまま入れてください。<br>
+例）月-木 17:00-23:00 / 金土 17:00-02:00 / 日 15:00-22:00<br>
+例）11:30-14:00, 17:00-23:00 のように中休みもそのまま書けます。
+</p>
+
+<div style="margin-bottom:8px;">
+<div style="font-weight:700; margin-bottom:6px;">定型文</div>
+<div style="display:flex; gap:8px; flex-wrap:wrap;">
+<button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="毎日 17:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">毎日 夜営業</button>
+<button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">ランチ＋ディナー</button>
+<button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="火-日 18:00-24:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">夜のみ</button>
+<button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="通常営業と同じ" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日=通常営業</button>
+<button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="休業" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日休業</button>
+<button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="なし" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">定休日なし</button>
+<button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="不定休" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">不定休</button>
+<button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="月曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">月曜休み</button>
+<button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="水曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">水曜休み</button>
+</div>
+</div>
+
+<div style="margin-bottom:10px;">
+<div style="font-weight:700; margin-bottom:4px;">通常営業時間</div>
+<%= f.text_area :opening_hours_text,
+rows: 3,
+placeholder: "例）月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00",
+id: "shop_opening_hours_text" %>
+</div>
+
+<div style="margin-bottom:10px;">
+<div style="font-weight:700; margin-bottom:4px;">祝日営業時間</div>
+<%= f.text_area :holiday_hours_text,
+rows: 2,
+placeholder: "例）12:00-23:00 / 通常営業と同じ / 休業",
+id: "shop_holiday_hours_text" %>
+</div>
+
+<div>
+<div style="font-weight:700; margin-bottom:4px;">定休日</div>
+<%= f.text_field :closed_days_text,
+placeholder: "例）水曜 / 不定休 / なし",
+id: "shop_closed_days_text" %>
+</div>
+</div>
 
 <p style="margin-top:12px;">
 電話番号（任意）<br>
@@ -184,3 +225,19 @@ data: (@shop.opening_hours_data || {}) %>
 <p style="margin-top:16px;">
 <%= link_to "一覧へ戻る", root_path %>
 </p>
+
+<script>
+document.addEventListener("turbo:load", function() {
+document.querySelectorAll(".hours-preset-btn").forEach(function(button) {
+if (button.dataset.bound === "1") return;
+button.dataset.bound = "1";
+
+button.addEventListener("click", function() {
+var target = document.getElementById(button.dataset.target);
+if (!target) return;
+target.value = button.dataset.value;
+target.dispatchEvent(new Event("input", { bubbles: true }));
+});
+});
+});
+</script>
