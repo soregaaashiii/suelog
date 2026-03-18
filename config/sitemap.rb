@@ -11,6 +11,14 @@ add new_shop_path, changefreq: "monthly", priority: 0.5
 add terms_path, changefreq: "yearly", priority: 0.2
 add privacy_path, changefreq: "yearly", priority: 0.2
 
+add umeda_path, changefreq: "daily", priority: 0.9
+add umeda_smoking_path("all_smoking"), changefreq: "daily", priority: 0.8
+add umeda_smoking_path("separated"), changefreq: "daily", priority: 0.8
+add umeda_genre_path("izakaya"), changefreq: "daily", priority: 0.8
+add umeda_genre_path("bar"), changefreq: "weekly", priority: 0.7
+add umeda_genre_path("cafe"), changefreq: "weekly", priority: 0.7
+add umeda_genre_path("yakiniku"), changefreq: "weekly", priority: 0.7
+
 Shop.where(approved: true).find_each do |shop|
 add shop_path(shop), lastmod: shop.updated_at, changefreq: "weekly", priority: 0.8
 end

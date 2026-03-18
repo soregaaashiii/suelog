@@ -3,6 +3,10 @@
 Rails.application.routes.draw do
 root "home#index"
 
+get "umeda", to: "home#umeda", as: :umeda
+get "umeda/genre/:genre_slug", to: "home#umeda_genre", as: :umeda_genre
+get "umeda/:smoking_area", to: "home#umeda", as: :umeda_smoking
+
 get "map", to: "shops#map"
 get "/sitemap.xml", to: redirect("/sitemap.xml.gz")
 
@@ -44,6 +48,7 @@ member do
 patch :approve
 patch :reject
 end
+
 collection do
 patch :bulk_update
 post :import
