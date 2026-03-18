@@ -1,4 +1,15 @@
-<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/shops/show.html.erb %>
+<% page_title_parts = [@shop.name.presence, "喫煙できる店", "吸えログ in大阪"].compact %>
+<% page_description_parts = [] %>
+<% page_description_parts << "#{@shop.name}の喫煙情報。" if @shop.name.present? %>
+<% page_description_parts << @shop.smoking_area_label if @shop.respond_to?(:smoking_area_label) %>
+<% page_description_parts << @shop.smoking_type_label if @shop.respond_to?(:smoking_type_label) %>
+<% page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_station.present? %>
+<% page_description_parts << "住所：#{@shop.address}" if @shop.address.present? %>
+<% page_description_parts << "営業時間：#{@shop.display_opening_hours_text}" if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
+<% page_description_parts << "大阪で喫煙できる飲食店を探すなら吸えログ。" %>
+
+<% content_for :title, page_title_parts.join("｜") %>
+<% content_for :meta_description, page_description_parts.join(" ") %>
 
 <style>
 .shop-show {
@@ -50,6 +61,13 @@ display: flex;
 gap: 8px;
 flex-wrap: wrap;
 margin-top: 14px;
+}
+
+.shop-show__lead {
+margin-top: 16px;
+color: #333333;
+font-size: 15px;
+line-height: 1.9;
 }
 
 .shop-show__layout {
@@ -369,6 +387,19 @@ height: 140px;
 <span class="ss-badge ss-badge--line">最終確認：<%= @shop.last_confirmed_on %></span>
 <% end %>
 </div>
+
+<p class="shop-show__lead">
+<%= @shop.name %>は
+<%= @shop.smoking_area_label %>、
+<%= @shop.smoking_type_label %>の店舗です。
+<% if @shop.nearest_station.present? %>
+最寄駅は<%= @shop.nearest_station %>。
+<% end %>
+<% if @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
+通常営業時間は「<%= @shop.display_opening_hours_text %>」です。
+<% end %>
+大阪で喫煙できる飲食店を探している方の参考用ページです。
+</p>
 </section>
 
 <% if flash[:notice].present? %>

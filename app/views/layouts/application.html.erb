@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<title>吸えログ in大阪</title>
+<title><%= content_for?(:title) ? yield(:title) : "吸えログ in大阪｜喫煙できる飲食店を探せる" %></title>
+<meta name="description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。" %>">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
 <%= csrf_meta_tags %>
 <%= csp_meta_tag %>
+
+<%= yield :head %>
 
 <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
 <%= javascript_importmap_tags %>
@@ -38,9 +41,7 @@
 
 <nav class="nav">
 <%= link_to "ホーム", root_path, class: "nav-link" %>
-
 <%= link_to "地図で探す", map_path, class: "nav-link" %>
-
 <%= link_to "店舗登録", new_shop_path, class: "nav-primary" %>
 </nav>
 </div>
