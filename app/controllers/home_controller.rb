@@ -22,6 +22,8 @@ create_page_view_safely
 @canonical_url = root_url
 @is_area_page = false
 @area_nav_links = []
+@forced_area_keyword = nil
+@forced_genre = nil
 
 build_listing!
 render :index
@@ -139,13 +141,20 @@ count_scope = count_scope.where(area_sql, like: like)
 end
 
 if genre_q.present?
-base = base.merge(Shop.genre_like(genre_q))
-count_scope = count_scope.merge(Shop.genre_like(genre_q))
+like = "%#{genre_q}%"
+genre_sql = <<~SQL.squish
+shops.genre LIKE :like
+OR shops.genre_other LIKE :like
+SQL
+
+base = base.where(genre_sql, like: like)
+count_scope = count_scope.where(genre_sql, like: like)
 end
 
 if station_q.present?
-base = base.merge(Shop.text_like("nearest_station", station_q))
-count_scope = count_scope.merge(Shop.text_like("nearest_station", station_q))
+like = "%#{station_q}%"
+base = base.where("shops.nearest_station LIKE ?", like)
+count_scope = count_scope.where("shops.nearest_station LIKE ?", like)
 end
 
 if smoking_area.present?
@@ -192,6 +201,7 @@ end
 def normalized_smoking_area_param
 value = params[:smoking_area].to_s.strip
 return "all_smoking" if value == "smoking_allowed"
+
 value
 end
 
