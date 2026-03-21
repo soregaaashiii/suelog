@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-SitemapGenerator::Sitemap.default_host = ENV.fetch("APP_HOST", "https://your-app.onrender.com")
+SitemapGenerator::Sitemap.default_host = "https://suelog.onrender.com"
 SitemapGenerator::Sitemap.public_path = "public/"
 SitemapGenerator::Sitemap.compress = false
 
