@@ -5,11 +5,105 @@
 <% page_description_parts << @shop.smoking_type_label if @shop.respond_to?(:smoking_type_label) %>
 <% page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_station.present? %>
 <% page_description_parts << "住所：#{@shop.address}" if @shop.address.present? %>
-<% page_description_parts << "営業時間：#{@shop.display_opening_hours_text}" if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
+<% if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
+<% page_description_parts << "営業時間：#{@shop.display_opening_hours_text}" %>
+<% end %>
 <% page_description_parts << "大阪で喫煙できる飲食店を探すなら吸えログ。" %>
 
 <% content_for :title, page_title_parts.join("｜") %>
 <% content_for :meta_description, page_description_parts.join(" ") %>
+<% content_for :canonical_url, shop_url(@shop) %>
+
+<% shop_location_text = [@shop.address, @shop.nearest_station, @shop.name].compact.join(" ") %>
+<% is_umeda_shop = shop_location_text.include?("梅田") %>
+
+<% content_for :head do %>
+<% photo_url = nil %>
+<% if @shop.respond_to?(:food_photos) && @shop.food_photos.attached? %>
+<% photo_url = url_for(@shop.food_photos.first) rescue nil %>
+<% elsif @shop.respond_to?(:exterior_photos) && @shop.exterior_photos.attached? %>
+<% photo_url = url_for(@shop.exterior_photos.first) rescue nil %>
+<% elsif @shop.respond_to?(:interior_photos) && @shop.interior_photos.attached? %>
+<% photo_url = url_for(@shop.interior_photos.first) rescue nil %>
+<% elsif @shop.respond_to?(:menu_photos) && @shop.menu_photos.attached? %>
+<% photo_url = url_for(@shop.menu_photos.first) rescue nil %>
+<% end %>
+
+<% restaurant_structured_data = {
+"@context": "https://schema.org",
+"@type": "Restaurant",
+"name": @shop.name,
+"url": shop_url(@shop),
+"image": photo_url,
+"telephone": @shop.phone.presence,
+"address": (@shop.address.present? ? {
+"@type": "PostalAddress",
+"streetAddress": @shop.address,
+"addressRegion": "大阪府",
+"addressCountry": "JP"
+} : nil),
+"servesCuisine": @shop.display_genre.presence,
+"description": page_description_parts.join(" "),
+"smokingAllowed": (@shop.smoking_area == "all_smoking"),
+"keywords": [
+@shop.smoking_area_label,
+@shop.smoking_type_label,
+@shop.display_genre.presence,
+@shop.nearest_station.presence,
+"大阪",
+"喫煙可"
+].compact.join(", "),
+"geo": (@shop.latitude.present? && @shop.longitude.present? ? {
+"@type": "GeoCoordinates",
+"latitude": @shop.latitude,
+"longitude": @shop.longitude
+} : nil)
+}.compact %>
+
+<% breadcrumb_items = [
+{
+"@type": "ListItem",
+"position": 1,
+"name": "ホーム",
+"item": root_url
+}
+] %>
+
+<% if is_umeda_shop %>
+<% breadcrumb_items << {
+"@type": "ListItem",
+"position": 2,
+"name": "梅田で喫煙できる店",
+"item": umeda_url
+} %>
+
+<% breadcrumb_items << {
+"@type": "ListItem",
+"position": 3,
+"name": @shop.name
+} %>
+<% else %>
+<% breadcrumb_items << {
+"@type": "ListItem",
+"position": 2,
+"name": @shop.name
+} %>
+<% end %>
+
+<% breadcrumb_structured_data = {
+"@context": "https://schema.org",
+"@type": "BreadcrumbList",
+"itemListElement": breadcrumb_items
+} %>
+
+<script type="application/ld+json">
+<%= raw restaurant_structured_data.to_json %>
+</script>
+
+<script type="application/ld+json">
+<%= raw breadcrumb_structured_data.to_json %>
+</script>
+<% end %>
 
 <style>
 .shop-show {
@@ -218,6 +312,13 @@ flex-wrap: wrap;
 margin-top: 4px;
 }
 
+.shop-show__relatedLinks {
+display: flex;
+gap: 10px;
+flex-wrap: wrap;
+margin-top: 8px;
+}
+
 .shop-show__divider {
 border: 0;
 border-top: 1px solid #eee6d6;
@@ -338,7 +439,8 @@ padding: 16px;
 grid-template-columns: 1fr;
 }
 
-.shop-show__footerActions {
+.shop-show__footerActions,
+.shop-show__relatedLinks {
 flex-direction: column;
 }
 
@@ -608,6 +710,22 @@ bootShopMap();
 <% end %>
 </div>
 <% end %>
+</section>
+<% end %>
+
+<% if is_umeda_shop %>
+<section class="shop-show__section">
+<h2 class="shop-show__sectionTitle">梅田の関連ページ</h2>
+<p style="color:#666; margin:0 0 12px;">
+梅田エリアで喫煙できる他の店舗も探せます。
+</p>
+
+<div class="shop-show__relatedLinks">
+<%= link_to "梅田で喫煙できる店一覧", umeda_path, class: "ss-btn ss-btn--ghost" %>
+<%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "ss-btn ss-btn--ghost" %>
+<%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "ss-btn ss-btn--ghost" %>
+<%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "ss-btn ss-btn--ghost" %>
+</div>
 </section>
 <% end %>
 
