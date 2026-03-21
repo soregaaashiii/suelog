@@ -158,13 +158,13 @@ count_scope = count_scope.where("shops.nearest_station LIKE ?", like)
 end
 
 if smoking_area.present?
-base = base.where("shops.smoking_area = ?", smoking_area)
-count_scope = count_scope.where(smoking_area: smoking_area)
+base = base.where(shops: { smoking_area: Shop.smoking_areas[smoking_area] })
+count_scope = count_scope.where(smoking_area: Shop.smoking_areas[smoking_area])
 end
 
 if smoking_type.present?
-base = base.where("shops.smoking_type = ?", smoking_type)
-count_scope = count_scope.where(smoking_type: smoking_type)
+base = base.where(shops: { smoking_type: Shop.smoking_types[smoking_type] })
+count_scope = count_scope.where(smoking_type: Shop.smoking_types[smoking_type])
 end
 
 if keyword_q.present?
