@@ -5,10 +5,21 @@
 <% page_description = content_for?(:meta_description) ? yield(:meta_description) : "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。" %>
 <% page_url = content_for?(:canonical_url) ? yield(:canonical_url) : request.original_url %>
 
+<% noindex_params_present =
+params[:q].present? ||
+params[:station].present? ||
+params[:genre].present? ||
+params[:smoking_area].present? ||
+params[:smoking_type].present? ||
+params[:needs_review].present? ||
+params[:sort].present? ||
+params[:page].present? ||
+params[:per].present? %>
+
 <title><%= page_title %></title>
 <meta name="description" content="<%= page_description %>">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="index,follow">
+<meta name="robots" content="<%= noindex_params_present ? 'noindex,follow' : 'index,follow' %>">
 <meta name="format-detection" content="telephone=no">
 <link rel="canonical" href="<%= page_url %>">
 
