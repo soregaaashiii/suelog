@@ -2,7 +2,7 @@
 
 SitemapGenerator::Sitemap.default_host = ENV.fetch("APP_HOST", "https://your-app.onrender.com")
 SitemapGenerator::Sitemap.public_path = "public/"
-SitemapGenerator::Sitemap.compress = true
+SitemapGenerator::Sitemap.compress = false
 
 SitemapGenerator::Sitemap.create do
 add root_path, changefreq: "daily", priority: 1.0

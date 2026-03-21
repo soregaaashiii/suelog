@@ -12,7 +12,7 @@ get "namba/genre/:genre_slug", to: "home#namba_genre", as: :namba_genre
 get "namba/:smoking_area", to: "home#namba", as: :namba_smoking
 
 get "map", to: "shops#map"
-get "/sitemap.xml", to: redirect("/sitemap.xml.gz")
+get "/sitemap.xml", to: "sitemaps#show"
 
 resources :shops do
 collection do
