@@ -79,3 +79,5 @@ end
 gem "httparty", "~> 0.24.2"
 
 gem "kaminari"
+
+gem "sitemap_generator"
