@@ -2,14 +2,19 @@
 
 class SitemapsController < ApplicationController
 def show
-sitemap_path = Rails.root.join("public", "sitemap.xml")
+xml_path = Rails.root.join("public", "sitemap.xml")
+gz_path = Rails.root.join("public", "sitemap.xml.gz")
 
-if File.exist?(sitemap_path)
-send_file sitemap_path,
-type: "application/xml; charset=utf-8",
+if File.exist?(xml_path)
+send_file xml_path,
+type: "application/xml",
+disposition: "inline"
+elsif File.exist?(gz_path)
+send_file gz_path,
+type: "application/gzip",
 disposition: "inline"
 else
-render plain: "sitemap not found", status: :not_found
+head :not_found
 end
 end
 end
