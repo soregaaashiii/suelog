@@ -1,7 +1,6 @@
-# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
-
+# https://www.robotstxt.org/robotstxt.html
 
 User-agent: *
-Disallow:
+Allow: /
 
 Sitemap: https://suelog.onrender.com/sitemap.xml
