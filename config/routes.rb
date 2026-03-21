@@ -7,6 +7,10 @@ get "umeda", to: "home#umeda", as: :umeda
 get "umeda/genre/:genre_slug", to: "home#umeda_genre", as: :umeda_genre
 get "umeda/:smoking_area", to: "home#umeda", as: :umeda_smoking
 
+get "namba", to: "home#namba", as: :namba
+get "namba/genre/:genre_slug", to: "home#namba_genre", as: :namba_genre
+get "namba/:smoking_area", to: "home#namba", as: :namba_smoking
+
 get "map", to: "shops#map"
 get "/sitemap.xml", to: redirect("/sitemap.xml.gz")
 

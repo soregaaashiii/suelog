@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class HomeController < ApplicationController
-UMEDA_GENRE_MAP = {
+AREA_GENRE_MAP = {
 "izakaya" => "居酒屋",
 "bar" => "バー / パブ",
 "cafe" => "喫茶店 / カフェ",
@@ -76,7 +76,7 @@ def umeda_genre
 track_page_view
 create_page_view_safely
 
-genre_label = UMEDA_GENRE_MAP[params[:genre_slug].to_s]
+genre_label = AREA_GENRE_MAP[params[:genre_slug].to_s]
 raise ActionController::RoutingError, "Not Found" if genre_label.blank?
 
 @forced_area_keyword = "梅田"
@@ -92,6 +92,74 @@ raise ActionController::RoutingError, "Not Found" if genre_label.blank?
 @area_intro_title = "梅田で喫煙できる#{genre_label}を探す"
 @area_intro_text = "梅田エリアで喫煙できる#{genre_label}をまとめています。飲み会、仕事帰り、1人飲みなどで使いやすい店探しの入口ページです。"
 @canonical_url = umeda_genre_url(params[:genre_slug])
+
+build_listing!
+render :index
+end
+
+def namba
+track_page_view
+create_page_view_safely
+
+@forced_area_keyword = "難波"
+@forced_genre = nil
+@is_area_page = true
+@search_form_url = namba_path
+@area_nav_links = namba_nav_links
+
+smoking_area = normalized_smoking_area_param
+
+case smoking_area
+when "all_smoking"
+@page_title = "難波で席で喫煙可の店一覧｜吸えログ in大阪"
+@page_description = "難波で席で喫煙可の飲食店を掲載。紙・加熱式の喫煙タイプや最寄駅、営業時間を確認できます。"
+@page_heading = "難波で席で喫煙可の店"
+@page_subtitle = "難波エリアで席で喫煙できる店舗を一覧で確認できます"
+@area_intro_title = "難波で席で喫煙可の店を探す"
+@area_intro_text = "難波エリアで席で喫煙できる飲食店をまとめています。移動せずにその場で吸える店を探したい人向けの一覧です。"
+@canonical_url = namba_smoking_url("all_smoking")
+when "separated"
+@page_title = "難波で喫煙所ありの店一覧｜吸えログ in大阪"
+@page_description = "難波で喫煙所ありの飲食店を掲載。喫煙エリアや喫煙タイプ、最寄駅、営業時間を確認できます。"
+@page_heading = "難波で喫煙所ありの店"
+@page_subtitle = "難波エリアで喫煙所ありの店舗を一覧で確認できます"
+@area_intro_title = "難波で喫煙所ありの店を探す"
+@area_intro_text = "難波エリアで喫煙所ありの飲食店をまとめています。完全禁煙では困るけれど、喫煙場所が分かりやすい店を探したい人向けです。"
+@canonical_url = namba_smoking_url("separated")
+else
+@page_title = "難波で喫煙できる店一覧｜吸えログ in大阪"
+@page_description = "難波で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみなど、難波の喫煙可能店を探せます。"
+@page_heading = "難波で喫煙できる店"
+@page_subtitle = "難波エリアの喫煙可能店舗を一覧で確認できます"
+@area_intro_title = "難波で喫煙できる店を探す"
+@area_intro_text = "難波エリアで喫煙できる飲食店をまとめています。席で喫煙可の店、喫煙所ありの店、加熱式のみ対応の店などを探せます。"
+@canonical_url = namba_url
+end
+
+build_listing!
+render :index
+end
+
+def namba_genre
+track_page_view
+create_page_view_safely
+
+genre_label = AREA_GENRE_MAP[params[:genre_slug].to_s]
+raise ActionController::RoutingError, "Not Found" if genre_label.blank?
+
+@forced_area_keyword = "難波"
+@forced_genre = genre_label
+@is_area_page = true
+@search_form_url = namba_genre_path(params[:genre_slug])
+@area_nav_links = namba_nav_links
+
+@page_title = "難波で喫煙できる#{genre_label}一覧｜吸えログ in大阪"
+@page_description = "難波で喫煙できる#{genre_label}を掲載。喫煙エリア、喫煙タイプ、最寄駅、営業時間を確認できます。"
+@page_heading = "難波で喫煙できる#{genre_label}"
+@page_subtitle = "難波エリアの喫煙可能な#{genre_label}を一覧で確認できます"
+@area_intro_title = "難波で喫煙できる#{genre_label}を探す"
+@area_intro_text = "難波エリアで喫煙できる#{genre_label}をまとめています。飲み会、二軒目、休憩などに合わせて店を探しやすい入口ページです。"
+@canonical_url = namba_genre_url(params[:genre_slug])
 
 build_listing!
 render :index
@@ -158,13 +226,19 @@ count_scope = count_scope.where("shops.nearest_station LIKE ?", like)
 end
 
 if smoking_area.present?
-base = base.where(shops: { smoking_area: Shop.smoking_areas[smoking_area] })
-count_scope = count_scope.where(smoking_area: Shop.smoking_areas[smoking_area])
+smoking_area_value = Shop.smoking_areas[smoking_area]
+if smoking_area_value.present?
+base = base.where(shops: { smoking_area: smoking_area_value })
+count_scope = count_scope.where(smoking_area: smoking_area_value)
+end
 end
 
 if smoking_type.present?
-base = base.where(shops: { smoking_type: Shop.smoking_types[smoking_type] })
-count_scope = count_scope.where(smoking_type: Shop.smoking_types[smoking_type])
+smoking_type_value = Shop.smoking_types[smoking_type]
+if smoking_type_value.present?
+base = base.where(shops: { smoking_type: smoking_type_value })
+count_scope = count_scope.where(smoking_type: smoking_type_value)
+end
 end
 
 if keyword_q.present?
@@ -214,6 +288,18 @@ def umeda_nav_links
 { label: "梅田のバー", path: umeda_genre_path("bar") },
 { label: "梅田のカフェ", path: umeda_genre_path("cafe") },
 { label: "梅田の焼肉", path: umeda_genre_path("yakiniku") }
+]
+end
+
+def namba_nav_links
+[
+{ label: "難波すべて", path: namba_path },
+{ label: "難波で席で喫煙可", path: namba_smoking_path("all_smoking") },
+{ label: "難波で喫煙所あり", path: namba_smoking_path("separated") },
+{ label: "難波の居酒屋", path: namba_genre_path("izakaya") },
+{ label: "難波のバー", path: namba_genre_path("bar") },
+{ label: "難波のカフェ", path: namba_genre_path("cafe") },
+{ label: "難波の焼肉", path: namba_genre_path("yakiniku") }
 ]
 end
 end
