@@ -5,29 +5,29 @@ SitemapGenerator::Sitemap.public_path = "public/"
 SitemapGenerator::Sitemap.compress = false
 
 SitemapGenerator::Sitemap.create do
-add root_path, changefreq: "daily", priority: 1.0
-add map_path, changefreq: "weekly", priority: 0.7
-add new_shop_path, changefreq: "monthly", priority: 0.5
-add terms_path, changefreq: "yearly", priority: 0.2
-add privacy_path, changefreq: "yearly", priority: 0.2
+add "/", changefreq: "daily", priority: 1.0
+add "/map", changefreq: "weekly", priority: 0.7
+add "/shops/new", changefreq: "monthly", priority: 0.5
+add "/terms", changefreq: "yearly", priority: 0.2
+add "/privacy", changefreq: "yearly", priority: 0.2
 
-add umeda_path, changefreq: "daily", priority: 0.9
-add umeda_smoking_path("all_smoking"), changefreq: "daily", priority: 0.8
-add umeda_smoking_path("separated"), changefreq: "daily", priority: 0.8
-add umeda_genre_path("izakaya"), changefreq: "daily", priority: 0.8
-add umeda_genre_path("bar"), changefreq: "weekly", priority: 0.7
-add umeda_genre_path("cafe"), changefreq: "weekly", priority: 0.7
-add umeda_genre_path("yakiniku"), changefreq: "weekly", priority: 0.7
+add "/umeda", changefreq: "daily", priority: 0.9
+add "/umeda/all_smoking", changefreq: "daily", priority: 0.8
+add "/umeda/separated", changefreq: "daily", priority: 0.8
+add "/umeda/genre/izakaya", changefreq: "daily", priority: 0.8
+add "/umeda/genre/bar", changefreq: "weekly", priority: 0.7
+add "/umeda/genre/cafe", changefreq: "weekly", priority: 0.7
+add "/umeda/genre/yakiniku", changefreq: "weekly", priority: 0.7
 
-add namba_path, changefreq: "daily", priority: 0.9
-add namba_smoking_path("all_smoking"), changefreq: "daily", priority: 0.8
-add namba_smoking_path("separated"), changefreq: "daily", priority: 0.8
-add namba_genre_path("izakaya"), changefreq: "daily", priority: 0.8
-add namba_genre_path("bar"), changefreq: "weekly", priority: 0.7
-add namba_genre_path("cafe"), changefreq: "weekly", priority: 0.7
-add namba_genre_path("yakiniku"), changefreq: "weekly", priority: 0.7
+add "/namba", changefreq: "daily", priority: 0.9
+add "/namba/all_smoking", changefreq: "daily", priority: 0.8
+add "/namba/separated", changefreq: "daily", priority: 0.8
+add "/namba/genre/izakaya", changefreq: "daily", priority: 0.8
+add "/namba/genre/bar", changefreq: "weekly", priority: 0.7
+add "/namba/genre/cafe", changefreq: "weekly", priority: 0.7
+add "/namba/genre/yakiniku", changefreq: "weekly", priority: 0.7
 
 Shop.where(approved: true).find_each do |shop|
-add shop_path(shop), lastmod: shop.updated_at, changefreq: "weekly", priority: 0.8
+add "/shops/#{shop.id}", lastmod: shop.updated_at, changefreq: "weekly", priority: 0.8
 end
 end
