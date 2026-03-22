@@ -2,56 +2,62 @@
 
 <%
 opening_hours_text =
-  if @req.respond_to?(:opening_hours_text)
-    @req.opening_hours_text.to_s.strip
-  elsif @req.respond_to?(:proposed_opening_hours_text)
-    @req.proposed_opening_hours_text.to_s.strip
-  else
-    ""
-  end
+if @req.respond_to?(:proposed_opening_hours_text)
+@req.proposed_opening_hours_text.to_s.strip
+elsif @req.respond_to?(:opening_hours_text)
+@req.opening_hours_text.to_s.strip
+else
+""
+end
 
 holiday_hours_text =
-  if @req.respond_to?(:holiday_hours_text)
-    @req.holiday_hours_text.to_s.strip
-  elsif @req.respond_to?(:proposed_holiday_hours_text)
-    @req.proposed_holiday_hours_text.to_s.strip
-  else
-    ""
-  end
+if @req.respond_to?(:proposed_holiday_hours_text)
+@req.proposed_holiday_hours_text.to_s.strip
+elsif @req.respond_to?(:holiday_hours_text)
+@req.holiday_hours_text.to_s.strip
+else
+""
+end
 
 closed_days_text =
-  if @req.respond_to?(:closed_days_text)
-    @req.closed_days_text.to_s.strip
-  elsif @req.respond_to?(:proposed_closed_days_text)
-    @req.proposed_closed_days_text.to_s.strip
-  else
-    ""
-  end
+if @req.respond_to?(:proposed_closed_days_text)
+@req.proposed_closed_days_text.to_s.strip
+elsif @req.respond_to?(:closed_days_text)
+@req.closed_days_text.to_s.strip
+else
+""
+end
 
-legacy_opening_hours = @req.respond_to?(:proposed_opening_hours) ? @req.proposed_opening_hours.to_s.strip : ""
+legacy_opening_hours =
+if @req.respond_to?(:proposed_opening_hours)
+@req.proposed_opening_hours.to_s.strip
+else
+""
+end
 %>
 
 <h1>編集依頼 詳細（管理）</h1>
 
 <p style="color:#666; margin:6px 0 12px;">
-  店舗：
-  <%= link_to @shop.name, shop_path(@shop), target: "_blank", rel: "noopener" %><br>
-  依頼者：<%= @req.proposer_name.presence || "匿名" %>
-  ／ <%= @req.created_at.strftime("%Y-%m-%d %H:%M") %><br>
-  状態：<strong><%= @req.status %></strong>
+店舗：
+<%= link_to @shop.name, shop_path(@shop), target: "_blank", rel: "noopener" %><br>
+依頼者：<%= @req.proposer_name.presence || "匿名" %>
+／ <%= @req.created_at.strftime("%Y-%m-%d %H:%M") %><br>
+状態：<strong><%= @req.status %></strong>
 </p>
 
 <div style="display:flex; gap:10px; flex-wrap:wrap; margin:0 0 12px;">
-  <%= link_to "一覧に戻る", admin_shop_edit_requests_path(status: "pending"),
-    style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+<%= link_to "一覧に戻る",
+admin_shop_edit_requests_path(status: "pending"),
+style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
 
-  <% if @req.status.to_s == "pending" %>
-    <%= button_to "却下",
-      reject_admin_shop_edit_request_path(@req),
-      method: :patch,
-      form: { data: { turbo: false } },
-      data: { turbo_confirm: "却下しますか？" } %>
-  <% end %>
+<% if @req.status.to_s == "pending" %>
+<%= button_to "却下",
+reject_admin_shop_edit_request_path(@req),
+method: :patch,
+form: { data: { turbo: false } },
+data: { turbo_confirm: "却下しますか？" } %>
+<% end %>
 </div>
 
 <hr>
@@ -59,54 +65,54 @@ legacy_opening_hours = @req.respond_to?(:proposed_opening_hours) ? @req.proposed
 <h2 style="margin:0 0 8px;">変更案</h2>
 
 <div style="border:1px solid #ddd; border-radius:12px; padding:12px; background:#fff;">
-  <p style="margin:0 0 8px;"><strong>店名：</strong><%= @req.proposed_name.presence || "（未変更）" %></p>
+<p style="margin:0 0 8px;"><strong>店名：</strong><%= @req.proposed_name.presence || "（未変更）" %></p>
 
-  <p style="margin:0 0 8px;">
-    <strong>ジャンル：</strong>
-    <% g = @req.genre.presence ? (@req.genre.to_s == "その他" ? @req.genre_other.to_s : @req.genre.to_s) : "" %>
-    <%= g.presence || "（未変更）" %>
-  </p>
+<p style="margin:0 0 8px;">
+<strong>ジャンル：</strong>
+<% g = @req.genre.presence ? (@req.genre.to_s == "その他" ? @req.genre_other.to_s : @req.genre.to_s) : "" %>
+<%= g.presence || "（未変更）" %>
+</p>
 
-  <p style="margin:0 0 8px;"><strong>住所：</strong><%= @req.proposed_address.presence || "（未変更）" %></p>
+<p style="margin:0 0 8px;"><strong>住所：</strong><%= @req.proposed_address.presence || "（未変更）" %></p>
 
-  <p style="margin:0 0 8px;">
-    <strong>エリア：</strong>
-    <%= @req.proposed_area.presence || "（未変更）" %>
-  </p>
+<p style="margin:0 0 8px;">
+<strong>エリア：</strong>
+<%= @req.proposed_area.presence || "（未変更）" %>
+</p>
 
-  <p style="margin:0 0 8px;"><strong>最寄駅：</strong><%= @req.proposed_nearest_station.presence || "（未変更）" %></p>
-  <p style="margin:0 0 8px;"><strong>電話：</strong><%= @req.proposed_phone.presence || "（未変更）" %></p>
-  <p style="margin:0 0 8px;"><strong>最終確認日：</strong><%= @req.proposed_last_confirmed_on.presence || "（未変更）" %></p>
+<p style="margin:0 0 8px;"><strong>最寄駅：</strong><%= @req.proposed_nearest_station.presence || "（未変更）" %></p>
+<p style="margin:0 0 8px;"><strong>電話：</strong><%= @req.proposed_phone.presence || "（未変更）" %></p>
+<p style="margin:0 0 8px;"><strong>最終確認日：</strong><%= @req.proposed_last_confirmed_on.presence || "（未変更）" %></p>
 
-  <p style="margin:0 0 8px;">
-    <strong>通常営業時間：</strong><br>
-    <%= opening_hours_text.present? ? simple_format(h(opening_hours_text)) : "（未変更）" %>
-  </p>
+<p style="margin:0 0 8px;">
+<strong>通常営業時間：</strong><br>
+<%= opening_hours_text.present? ? simple_format(h(opening_hours_text)) : "（未変更）" %>
+</p>
 
-  <p style="margin:0 0 8px;">
-    <strong>祝日営業時間：</strong><br>
-    <%= holiday_hours_text.present? ? simple_format(h(holiday_hours_text)) : "（未変更）" %>
-  </p>
+<p style="margin:0 0 8px;">
+<strong>祝日営業時間：</strong><br>
+<%= holiday_hours_text.present? ? simple_format(h(holiday_hours_text)) : "（未変更）" %>
+</p>
 
-  <p style="margin:0 0 8px;">
-    <strong>定休日：</strong><br>
-    <%= closed_days_text.present? ? simple_format(h(closed_days_text)) : "（未変更）" %>
-  </p>
+<p style="margin:0 0 8px;">
+<strong>定休日：</strong><br>
+<%= closed_days_text.present? ? simple_format(h(closed_days_text)) : "（未変更）" %>
+</p>
 
-  <% if opening_hours_text.blank? && holiday_hours_text.blank? && closed_days_text.blank? %>
-    <p style="margin:0 0 8px;">
-      <strong>旧営業時間欄：</strong><br>
-      <%= legacy_opening_hours.present? ? simple_format(h(legacy_opening_hours)) : "（未変更）" %>
-    </p>
-  <% end %>
+<% if opening_hours_text.blank? && holiday_hours_text.blank? && closed_days_text.blank? %>
+<p style="margin:0 0 8px;">
+<strong>旧営業時間欄：</strong><br>
+<%= legacy_opening_hours.present? ? simple_format(h(legacy_opening_hours)) : "（未変更）" %>
+</p>
+<% end %>
 
-  <p style="margin:0 0 8px;"><strong>喫煙エリア：</strong><%= @req.proposed_smoking_area.presence || "（未変更）" %></p>
-  <p style="margin:0 0 8px;"><strong>喫煙タイプ：</strong><%= @req.proposed_smoking_type.presence || "（未変更）" %></p>
+<p style="margin:0 0 8px;"><strong>喫煙エリア：</strong><%= @req.proposed_smoking_area.presence || "（未変更）" %></p>
+<p style="margin:0 0 8px;"><strong>喫煙タイプ：</strong><%= @req.proposed_smoking_type.presence || "（未変更）" %></p>
 
-  <p style="margin:0;">
-    <strong>補足（この依頼の note）：</strong><br>
-    <%= @req.note.present? ? simple_format(h(@req.note.to_s)) : "（なし）" %>
-  </p>
+<p style="margin:0;">
+<strong>補足（この依頼の note）：</strong><br>
+<%= @req.note.present? ? simple_format(h(@req.note.to_s)) : "（なし）" %>
+</p>
 </div>
 
 <hr>
@@ -118,103 +124,102 @@ legacy_opening_hours = @req.respond_to?(:proposed_opening_hours) ? @req.proposed
 <% after_note = requested_note.present? ? requested_note : current_note %>
 
 <div style="border:1px solid #eee; border-radius:12px; padding:12px; background:#fafafa;">
-  <p style="margin:0 0 8px;"><strong>現在の店舗 note：</strong></p>
-  <% if current_note.present? %>
-    <div style="border:1px solid #eee; background:#fff; border-radius:10px; padding:10px;">
-      <%= simple_format(h(current_note)) %>
-    </div>
-  <% else %>
-    <p style="margin:0; color:#666;">（なし）</p>
-  <% end %>
+<p style="margin:0 0 8px;"><strong>現在の店舗 note：</strong></p>
+<% if current_note.present? %>
+<div style="border:1px solid #eee; background:#fff; border-radius:10px; padding:10px;">
+<%= simple_format(h(current_note)) %>
+</div>
+<% else %>
+<p style="margin:0; color:#666;">（なし）</p>
+<% end %>
 
-  <p style="margin:14px 0 8px;"><strong>承認後の店舗 note（想定）：</strong></p>
-  <% if after_note.present? %>
-    <div style="border:1px solid #eee; background:#fff; border-radius:10px; padding:10px;">
-      <%= simple_format(h(after_note)) %>
-    </div>
-    <% if requested_note.blank? %>
-      <p style="margin:6px 0 0; color:#666; font-size:12px;">※ 依頼 note が空なので、店舗 note は変更されません</p>
-    <% end %>
-  <% else %>
-    <p style="margin:0; color:#666;">（なし）</p>
-  <% end %>
+<p style="margin:14px 0 8px;"><strong>承認後の店舗 note（想定）：</strong></p>
+<% if after_note.present? %>
+<div style="border:1px solid #eee; background:#fff; border-radius:10px; padding:10px;">
+<%= simple_format(h(after_note)) %>
+</div>
+<% if requested_note.blank? %>
+<p style="margin:6px 0 0; color:#666; font-size:12px;">※ 依頼 note が空なので、店舗 note は変更されません</p>
+<% end %>
+<% else %>
+<p style="margin:0; color:#666;">（なし）</p>
+<% end %>
 </div>
 
 <hr>
 
 <h2 style="margin:0 0 8px;">添付写真（編集依頼に紐づく）</h2>
 <p style="color:#666; font-size:12px; margin:0 0 10px;">
-  ※ ここで「反映する」にチェックした写真だけ、店舗に追加で取り込みます（既存写真は消しません）
+※ ここで「反映する」にチェックした写真だけ、店舗に追加で取り込みます（既存写真は消しません）
 </p>
 
-<% render_group = lambda do |label, key, attachments| %>
-  <div style="margin:14px 0;">
-    <h3 style="margin:0 0 8px;"><%= label %></h3>
+<% if @req.status.to_s == "pending" %>
+<%= form_with url: approve_admin_shop_edit_request_path(@req),
+method: :patch, local: true, data: { turbo: false } do %>
 
-    <% if attachments.respond_to?(:attached?) && attachments.attached? %>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <% attachments.attachments.each_with_index do |att, i| %>
-          <div style="width:170px;">
-            <div style="border:1px solid #ddd; border-radius:12px; overflow:hidden; background:#fff;">
-              <%= image_tag url_for(att), style: "width:170px; height:170px; object-fit:cover; display:block;" %>
-            </div>
+<% [
+["料理", "food", (@req.respond_to?(:food_photos) ? @req.food_photos : nil)],
+["内観", "interior", (@req.respond_to?(:interior_photos) ? @req.interior_photos : nil)],
+["外観", "exterior", (@req.respond_to?(:exterior_photos) ? @req.exterior_photos : nil)],
+["メニュー", "menu", (@req.respond_to?(:menu_photos) ? @req.menu_photos : nil)]
+].each do |label, key, attachments| %>
+<div style="margin:14px 0;">
+<h3 style="margin:0 0 8px;"><%= label %></h3>
 
-            <label style="display:flex; gap:8px; align-items:center; margin-top:8px;">
-              <input type="checkbox"
-                     name="apply[<%= key %>_blob_ids][]"
-                     value="<%= att.blob_id %>">
-              <span style="font-size:12px;">反映する（<%= i + 1 %>枚目）</span>
-            </label>
-          </div>
-        <% end %>
-      </div>
-    <% else %>
-      <p style="color:#666; margin:0;">（添付なし）</p>
-    <% end %>
-  </div>
+<% if attachments.present? && attachments.attached? %>
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+<% attachments.attachments.each_with_index do |att, i| %>
+<div style="width:170px;">
+<div style="border:1px solid #ddd; border-radius:12px; overflow:hidden; background:#fff;">
+<%= image_tag url_for(att), style: "width:170px; height:170px; object-fit:cover; display:block;" %>
+</div>
+
+<label style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+<input type="checkbox"
+name="apply[<%= key %>_blob_ids][]"
+value="<%= att.blob_id %>">
+<span style="font-size:12px;">反映する（<%= i + 1 %>枚目）</span>
+</label>
+</div>
+<% end %>
+</div>
+<% else %>
+<p style="color:#666; margin:0;">（添付なし）</p>
+<% end %>
+</div>
 <% end %>
 
-<% if @req.status.to_s == "pending" %>
-  <%= form_with url: approve_admin_shop_edit_request_path(@req),
-    method: :patch, local: true, data: { turbo: false } do %>
+<hr>
 
-    <% render_group.call("料理", "food", @req.food_photos) if @req.respond_to?(:food_photos) %>
-    <% render_group.call("内観", "interior", @req.interior_photos) if @req.respond_to?(:interior_photos) %>
-    <% render_group.call("外観", "exterior", @req.exterior_photos) if @req.respond_to?(:exterior_photos) %>
-    <% render_group.call("メニュー", "menu", @req.menu_photos) if @req.respond_to?(:menu_photos) %>
+<h2 style="margin:0 0 8px;">サムネ反映（任意）</h2>
+<p style="color:#666; font-size:12px; margin:0 0 10px;">
+※ ここで指定すると、店舗側の <code>thumbnail_kind / thumbnail_index</code> を更新します
+</p>
 
-    <hr>
+<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
+<div>
+<label>サムネ種類</label><br>
+<select name="apply[thumbnail_kind]">
+<option value="">（依頼の希望 or 変更なし）</option>
+<option value="auto">自動</option>
+<option value="food">料理</option>
+<option value="exterior">外観</option>
+<option value="interior">内観</option>
+<option value="menu">メニュー</option>
+</select>
+</div>
 
-    <h2 style="margin:0 0 8px;">サムネ反映（任意）</h2>
-    <p style="color:#666; font-size:12px; margin:0 0 10px;">
-      ※ ここで指定すると、店舗側の <code>thumbnail_kind / thumbnail_index</code> を更新します
-    </p>
+<div>
+<label>何枚目（1〜）</label><br>
+<input type="number" name="apply[thumbnail_index]" min="1" max="20" style="width:140px;">
+</div>
+</div>
 
-    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
-      <div>
-        <label>サムネ種類</label><br>
-        <select name="apply[thumbnail_kind]">
-          <option value="">（依頼の希望 or 変更なし）</option>
-          <option value="auto">自動</option>
-          <option value="food">料理</option>
-          <option value="exterior">外観</option>
-          <option value="interior">内観</option>
-          <option value="menu">メニュー</option>
-        </select>
-      </div>
-
-      <div>
-        <label>何枚目（1〜）</label><br>
-        <input type="number" name="apply[thumbnail_index]" min="1" max="20" style="width:140px;">
-      </div>
-    </div>
-
-    <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
-      <%= submit_tag "承認して反映",
-        data: { turbo_confirm: "承認して反映しますか？（チェックした写真は店舗に追加されます）" } %>
-    </div>
-
-  <% end %>
+<div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+<%= submit_tag "承認して反映",
+data: { turbo_confirm: "承認して反映しますか？（チェックした写真は店舗に追加されます）" } %>
+</div>
+<% end %>
 <% else %>
-  <p style="color:#666;">※ この依頼は pending ではないため、反映操作はできません。</p>
+<p style="color:#666;">※ この依頼は pending ではないため、反映操作はできません。</p>
 <% end %>
