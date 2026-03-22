@@ -43,28 +43,28 @@ smoking_area = normalized_smoking_area_param
 
 case smoking_area
 when "all_smoking"
-@page_title = "梅田で席で喫煙可の店一覧｜吸えログ in大阪"
-@page_description = "梅田で席で喫煙可の飲食店を掲載。紙・加熱式の喫煙タイプや最寄駅、営業時間を確認できます。"
-@page_heading = "梅田で席で喫煙可の店"
-@page_subtitle = "梅田エリアで席で喫煙できる店舗を一覧で確認できます"
-@area_intro_title = "梅田で席で喫煙可の店を探す"
-@area_intro_text = "梅田エリアで席で喫煙できる飲食店をまとめています。仕事帰りや飲み会で、すぐ吸える店を探したい人向けの一覧です。"
+@page_title = "梅田で席で吸える店まとめ｜席で喫煙可の飲食店一覧【吸えログ】"
+@page_description = "梅田で席で喫煙可の飲食店を掲載。席でそのまま吸える店を探したい人向けに、喫煙タイプ・最寄駅・営業時間をまとめています。"
+@page_heading = "梅田で席で吸える店"
+@page_subtitle = "梅田エリアで席で喫煙可の店舗を一覧で確認できます"
+@area_intro_title = "梅田で席で吸える店を探す"
+@area_intro_text = "梅田で席で吸える飲食店をまとめています。移動せずにその場で吸いたい人、飲み会や仕事帰りに使いやすい店を探したい人向けの一覧です。"
 @canonical_url = umeda_smoking_url("all_smoking")
 when "separated"
-@page_title = "梅田で喫煙所ありの店一覧｜吸えログ in大阪"
-@page_description = "梅田で喫煙所ありの飲食店を掲載。喫煙エリアや喫煙タイプ、最寄駅、営業時間を確認できます。"
+@page_title = "梅田で喫煙所ありの店まとめ｜喫煙可の飲食店一覧【吸えログ】"
+@page_description = "梅田で喫煙所ありの飲食店を掲載。完全禁煙は困るけれど、喫煙場所が分かれている店を探したい人向けに最寄駅や営業時間も確認できます。"
 @page_heading = "梅田で喫煙所ありの店"
 @page_subtitle = "梅田エリアで喫煙所ありの店舗を一覧で確認できます"
 @area_intro_title = "梅田で喫煙所ありの店を探す"
-@area_intro_text = "梅田エリアで喫煙所ありの飲食店をまとめています。完全禁煙では困るけど、分かりやすく吸える場所がある店を探したい人向けです。"
+@area_intro_text = "梅田で喫煙所ありの飲食店をまとめています。吸える場所が明確な店を探したい人向けに、使いやすい喫煙可能店を一覧で見られます。"
 @canonical_url = umeda_smoking_url("separated")
 else
-@page_title = "梅田で喫煙できる店一覧｜吸えログ in大阪"
-@page_description = "梅田で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみなど、梅田の喫煙可能店を探せます。"
+@page_title = "梅田で喫煙可の店まとめ｜席で吸える・喫煙所あり【吸えログ】"
+@page_description = "梅田で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、梅田の喫煙可能店をまとめて探せます。"
 @page_heading = "梅田で喫煙できる店"
 @page_subtitle = "梅田エリアの喫煙可能店舗を一覧で確認できます"
-@area_intro_title = "梅田で喫煙できる店を探す"
-@area_intro_text = "梅田エリアで喫煙できる飲食店をまとめています。席で喫煙可の店、喫煙所ありの店、加熱式のみ対応の店などを探せます。"
+@area_intro_title = "梅田で喫煙可の店を探す"
+@area_intro_text = "梅田で喫煙できる飲食店をまとめています。席で吸える店、喫煙所ありの店、加熱式のみ対応の店などをまとめて探したい人向けの入口ページです。"
 @canonical_url = umeda_url
 end
 
@@ -85,12 +85,12 @@ raise ActionController::RoutingError, "Not Found" if genre_label.blank?
 @search_form_url = umeda_genre_path(params[:genre_slug])
 @area_nav_links = umeda_nav_links
 
-@page_title = "梅田で喫煙できる#{genre_label}一覧｜吸えログ in大阪"
-@page_description = "梅田で喫煙できる#{genre_label}を掲載。喫煙エリア、喫煙タイプ、最寄駅、営業時間を確認できます。"
+@page_title = "梅田で喫煙できる#{genre_label}まとめ｜喫煙可の店一覧【吸えログ】"
+@page_description = "梅田で喫煙できる#{genre_label}を掲載。喫煙エリア、喫煙タイプ、最寄駅、営業時間を確認しながら使いやすい店を探せます。"
 @page_heading = "梅田で喫煙できる#{genre_label}"
 @page_subtitle = "梅田エリアの喫煙可能な#{genre_label}を一覧で確認できます"
 @area_intro_title = "梅田で喫煙できる#{genre_label}を探す"
-@area_intro_text = "梅田エリアで喫煙できる#{genre_label}をまとめています。飲み会、仕事帰り、1人飲みなどで使いやすい店探しの入口ページです。"
+@area_intro_text = "梅田で喫煙できる#{genre_label}をまとめています。飲み会、仕事帰り、1人利用などに合わせて喫煙可能店を探しやすい一覧ページです。"
 @canonical_url = umeda_genre_url(params[:genre_slug])
 
 build_listing!
@@ -111,28 +111,28 @@ smoking_area = normalized_smoking_area_param
 
 case smoking_area
 when "all_smoking"
-@page_title = "難波で席で喫煙可の店一覧｜吸えログ in大阪"
-@page_description = "難波で席で喫煙可の飲食店を掲載。紙・加熱式の喫煙タイプや最寄駅、営業時間を確認できます。"
-@page_heading = "難波で席で喫煙可の店"
-@page_subtitle = "難波エリアで席で喫煙できる店舗を一覧で確認できます"
-@area_intro_title = "難波で席で喫煙可の店を探す"
-@area_intro_text = "難波エリアで席で喫煙できる飲食店をまとめています。移動せずにその場で吸える店を探したい人向けの一覧です。"
+@page_title = "難波で席で吸える店まとめ｜席で喫煙可の飲食店一覧【吸えログ】"
+@page_description = "難波で席で喫煙可の飲食店を掲載。席でそのまま吸える店を探したい人向けに、喫煙タイプ・最寄駅・営業時間をまとめています。"
+@page_heading = "難波で席で吸える店"
+@page_subtitle = "難波エリアで席で喫煙可の店舗を一覧で確認できます"
+@area_intro_title = "難波で席で吸える店を探す"
+@area_intro_text = "難波で席で吸える飲食店をまとめています。移動せずその場で吸いたい人や、二軒目・待ち合わせ前に使いやすい店を探したい人向けです。"
 @canonical_url = namba_smoking_url("all_smoking")
 when "separated"
-@page_title = "難波で喫煙所ありの店一覧｜吸えログ in大阪"
-@page_description = "難波で喫煙所ありの飲食店を掲載。喫煙エリアや喫煙タイプ、最寄駅、営業時間を確認できます。"
+@page_title = "難波で喫煙所ありの店まとめ｜喫煙可の飲食店一覧【吸えログ】"
+@page_description = "難波で喫煙所ありの飲食店を掲載。完全禁煙は困るけれど、喫煙場所が分かれている店を探したい人向けに最寄駅や営業時間も確認できます。"
 @page_heading = "難波で喫煙所ありの店"
 @page_subtitle = "難波エリアで喫煙所ありの店舗を一覧で確認できます"
 @area_intro_title = "難波で喫煙所ありの店を探す"
-@area_intro_text = "難波エリアで喫煙所ありの飲食店をまとめています。完全禁煙では困るけれど、喫煙場所が分かりやすい店を探したい人向けです。"
+@area_intro_text = "難波で喫煙所ありの飲食店をまとめています。喫煙場所が明確な店を探したい人向けに、使いやすい喫煙可能店を一覧で見られます。"
 @canonical_url = namba_smoking_url("separated")
 else
-@page_title = "難波で喫煙できる店一覧｜吸えログ in大阪"
-@page_description = "難波で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみなど、難波の喫煙可能店を探せます。"
+@page_title = "難波で喫煙可の店まとめ｜席で吸える・喫煙所あり【吸えログ】"
+@page_description = "難波で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、難波の喫煙可能店をまとめて探せます。"
 @page_heading = "難波で喫煙できる店"
 @page_subtitle = "難波エリアの喫煙可能店舗を一覧で確認できます"
-@area_intro_title = "難波で喫煙できる店を探す"
-@area_intro_text = "難波エリアで喫煙できる飲食店をまとめています。席で喫煙可の店、喫煙所ありの店、加熱式のみ対応の店などを探せます。"
+@area_intro_title = "難波で喫煙可の店を探す"
+@area_intro_text = "難波で喫煙できる飲食店をまとめています。席で吸える店、喫煙所ありの店、加熱式のみ対応の店などをまとめて探したい人向けの入口ページです。"
 @canonical_url = namba_url
 end
 
@@ -153,12 +153,12 @@ raise ActionController::RoutingError, "Not Found" if genre_label.blank?
 @search_form_url = namba_genre_path(params[:genre_slug])
 @area_nav_links = namba_nav_links
 
-@page_title = "難波で喫煙できる#{genre_label}一覧｜吸えログ in大阪"
-@page_description = "難波で喫煙できる#{genre_label}を掲載。喫煙エリア、喫煙タイプ、最寄駅、営業時間を確認できます。"
+@page_title = "難波で喫煙できる#{genre_label}まとめ｜喫煙可の店一覧【吸えログ】"
+@page_description = "難波で喫煙できる#{genre_label}を掲載。喫煙エリア、喫煙タイプ、最寄駅、営業時間を確認しながら使いやすい店を探せます。"
 @page_heading = "難波で喫煙できる#{genre_label}"
 @page_subtitle = "難波エリアの喫煙可能な#{genre_label}を一覧で確認できます"
 @area_intro_title = "難波で喫煙できる#{genre_label}を探す"
-@area_intro_text = "難波エリアで喫煙できる#{genre_label}をまとめています。飲み会、二軒目、休憩などに合わせて店を探しやすい入口ページです。"
+@area_intro_text = "難波で喫煙できる#{genre_label}をまとめています。飲み会、二軒目、休憩などに合わせて喫煙可能店を探しやすい一覧ページです。"
 @canonical_url = namba_genre_url(params[:genre_slug])
 
 build_listing!
