@@ -3,7 +3,7 @@
 <% page_description_parts << "#{@shop.name}の喫煙情報。" if @shop.name.present? %>
 <% page_description_parts << @shop.smoking_area_label if @shop.respond_to?(:smoking_area_label) %>
 <% page_description_parts << @shop.smoking_type_label if @shop.respond_to?(:smoking_type_label) %>
-<% page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_station.present? %>
+<% page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_statzion.present? %>
 <% page_description_parts << "住所：#{@shop.address}" if @shop.address.present? %>
 <% if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
 <% page_description_parts << "営業時間：#{@shop.display_opening_hours_text}" %>
@@ -17,6 +17,33 @@
 <% shop_location_text = [@shop.address, @shop.nearest_station, @shop.name].compact.join(" ") %>
 <% is_umeda_shop = shop_location_text.include?("梅田") %>
 <% is_namba_shop = shop_location_text.include?("難波") || shop_location_text.include?("なんば") %>
+
+<% back_path =
+if is_umeda_shop
+umeda_path
+elsif is_namba_shop
+namba_path
+else
+root_path
+end %>
+
+<% back_label =
+if is_umeda_shop
+"← 梅田の一覧に戻る"
+elsif is_namba_shop
+"← 難波の一覧に戻る"
+else
+"← 一覧に戻る"
+end %>
+
+<% footer_back_label =
+if is_umeda_shop
+"梅田の一覧に戻る"
+elsif is_namba_shop
+"難波の一覧に戻る"
+else
+"一覧に戻る"
+end %>
 
 <% content_for :head do %>
 <% photo_url = nil %>
@@ -501,7 +528,7 @@ height: 140px;
 </nav>
 
 <div class="shop-show__back">
-<%= link_to "← 一覧に戻る", root_path, class: "shop-show__backLink" %>
+<%= link_to back_label, back_path, class: "shop-show__backLink" %>
 </div>
 
 <section class="shop-show__hero">
@@ -787,7 +814,7 @@ bootShopMap();
 <section class="shop-show__section">
 <h2 class="shop-show__sectionTitle">このページについて</h2>
 <div class="shop-show__footerActions">
-<%= link_to "一覧に戻る", root_path, class: "ss-btn ss-btn--ghost" %>
+<%= link_to footer_back_label, back_path, class: "ss-btn ss-btn--ghost" %>
 <%= link_to "情報の修正依頼", new_shop_shop_edit_request_path(@shop), class: "ss-btn ss-btn--dark" %>
 <%= link_to "通報", new_shop_shop_report_path(@shop), class: "ss-btn ss-btn--muted" %>
 </div>
