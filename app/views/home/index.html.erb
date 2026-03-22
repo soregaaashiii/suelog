@@ -13,24 +13,34 @@
 </div>
 
 <div class="panel">
-<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-<%= link_to "梅田で喫煙できる店", umeda_path, class: "btn btn--ghost" %>
-<%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost" %>
-<%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost" %>
-<%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost" %>
-<%= link_to "梅田のバー", umeda_genre_path("bar"), class: "btn btn--ghost" %>
-<%= link_to "梅田のカフェ", umeda_genre_path("cafe"), class: "btn btn--ghost" %>
-<%= link_to "梅田の焼肉", umeda_genre_path("yakiniku"), class: "btn btn--ghost" %>
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
+<div style="border:1px solid #e8e3d7; border-radius:18px; padding:18px; background:#fffdf8;">
+<div style="font-size:20px; font-weight:800; color:#111111; margin-bottom:6px;">梅田</div>
+<p style="margin:0 0 14px; color:#666666; line-height:1.7;">
+席で吸える店、喫煙所ありの店、居酒屋やバーなどを梅田エリアから探せます。
+</p>
+
+<div style="display:flex; gap:8px; flex-wrap:wrap;">
+<%= link_to "梅田の一覧", umeda_path, class: "btn btn--dark" %>
+<%= link_to "席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost" %>
+<%= link_to "喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost" %>
+<%= link_to "居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost" %>
+</div>
 </div>
 
-<div style="display:flex; gap:10px; flex-wrap:wrap;">
-<%= link_to "難波で喫煙できる店", namba_path, class: "btn btn--ghost" %>
-<%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost" %>
-<%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost" %>
-<%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost" %>
-<%= link_to "難波のバー", namba_genre_path("bar"), class: "btn btn--ghost" %>
-<%= link_to "難波のカフェ", namba_genre_path("cafe"), class: "btn btn--ghost" %>
-<%= link_to "難波の焼肉", namba_genre_path("yakiniku"), class: "btn btn--ghost" %>
+<div style="border:1px solid #e8e3d7; border-radius:18px; padding:18px; background:#fffdf8;">
+<div style="font-size:20px; font-weight:800; color:#111111; margin-bottom:6px;">難波</div>
+<p style="margin:0 0 14px; color:#666666; line-height:1.7;">
+席で吸える店、喫煙所ありの店、居酒屋やバーなどを難波エリアから探せます。
+</p>
+
+<div style="display:flex; gap:8px; flex-wrap:wrap;">
+<%= link_to "難波の一覧", namba_path, class: "btn btn--dark" %>
+<%= link_to "席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost" %>
+<%= link_to "喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost" %>
+<%= link_to "居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost" %>
+</div>
+</div>
 </div>
 </div>
 </section>
