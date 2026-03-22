@@ -8,6 +8,9 @@
 <% confirmed = shop.last_confirmed_on %>
 <% very_old = confirmed.present? && confirmed < 2.years.ago.to_date %>
 <% thumb = nil %>
+<% area_text = [shop.address, shop.nearest_station, shop.name].compact.join(" ") %>
+<% is_umeda_shop = area_text.include?("梅田") %>
+<% is_namba_shop = area_text.include?("難波") || area_text.include?("なんば") %>
 
 <% if shop.respond_to?(:thumbnail_attachment) %>
 <% begin %>
@@ -89,6 +92,18 @@ loading: "lazy" %>
 <% end %>
 </div>
 
+<% if is_umeda_shop || is_namba_shop %>
+<div class="shop-card__areaLinks">
+<% if is_umeda_shop %>
+<%= link_to "梅田の一覧へ", umeda_path, class: "shop-card__areaLink" %>
+<% end %>
+
+<% if is_namba_shop %>
+<%= link_to "難波の一覧へ", namba_path, class: "shop-card__areaLink" %>
+<% end %>
+</div>
+<% end %>
+
 <div class="shop-card__actions">
 <%= link_to "詳細を見る", shop_path(shop), class: "btn btn--small btn--dark" %>
 <%= link_to "情報修正を提案", new_shop_shop_edit_request_path(shop), class: "btn btn--small btn--ghost" %>
@@ -141,6 +156,24 @@ border: 1px solid #f0c98a;
 background: #eef4ff;
 color: #1f4ea3;
 border: 1px solid #c8d8fb;
+}
+
+.shop-card__areaLinks {
+margin-top: 10px;
+display: flex;
+gap: 8px;
+flex-wrap: wrap;
+}
+
+.shop-card__areaLink {
+font-size: 12px;
+color: #7a5a12;
+text-decoration: none;
+font-weight: 700;
+}
+
+.shop-card__areaLink:hover {
+text-decoration: underline;
 }
 </style>
 <% else %>
