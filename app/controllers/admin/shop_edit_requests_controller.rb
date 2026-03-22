@@ -14,7 +14,15 @@ menu_photos_attachments: :blob
 )
 .order(created_at: :desc)
 
-scope = scope.where(status: 0) if params[:status] == "pending"
+case params[:status].to_s
+when "pending"
+scope = scope.where(status: :pending)
+when "approved"
+scope = scope.where(status: :approved)
+when "rejected"
+scope = scope.where(status: :rejected)
+end
+
 @edit_requests = scope
 end
 
@@ -45,6 +53,7 @@ end
 
 def reject
 @req.update!(status: :rejected)
+
 redirect_to admin_shop_edit_requests_path(status: "pending"),
 alert: "却下しました"
 rescue ActiveRecord::RecordInvalid => e
@@ -73,38 +82,36 @@ attrs[:nearest_station] = station if station.present?
 phone = safe_str(req.proposed_phone)
 attrs[:phone] = phone if phone.present?
 
-# ===== 新方式（テキスト営業時間）=====
 opening_hours_text =
-if req.respond_to?(:opening_hours_text)
-safe_str(req.opening_hours_text)
-elsif req.respond_to?(:proposed_opening_hours_text)
+if req.respond_to?(:proposed_opening_hours_text)
 safe_str(req.proposed_opening_hours_text)
+elsif req.respond_to?(:opening_hours_text)
+safe_str(req.opening_hours_text)
 else
 ""
 end
 attrs[:opening_hours_text] = opening_hours_text if opening_hours_text.present?
 
 holiday_hours_text =
-if req.respond_to?(:holiday_hours_text)
-safe_str(req.holiday_hours_text)
-elsif req.respond_to?(:proposed_holiday_hours_text)
+if req.respond_to?(:proposed_holiday_hours_text)
 safe_str(req.proposed_holiday_hours_text)
+elsif req.respond_to?(:holiday_hours_text)
+safe_str(req.holiday_hours_text)
 else
 ""
 end
 attrs[:holiday_hours_text] = holiday_hours_text if holiday_hours_text.present?
 
 closed_days_text =
-if req.respond_to?(:closed_days_text)
-safe_str(req.closed_days_text)
-elsif req.respond_to?(:proposed_closed_days_text)
+if req.respond_to?(:proposed_closed_days_text)
 safe_str(req.proposed_closed_days_text)
+elsif req.respond_to?(:closed_days_text)
+safe_str(req.closed_days_text)
 else
 ""
 end
 attrs[:closed_days_text] = closed_days_text if closed_days_text.present?
 
-# ===== 旧方式互換（JSON営業時間）=====
 if req.respond_to?(:proposed_opening_hours_json) &&
 req.proposed_opening_hours_json.present? &&
 req.proposed_opening_hours_json.to_h.any?
