@@ -147,11 +147,30 @@ session[:contribution_count] ||= 0
 session[:contribution_count] += 1
 end
 
-def contribution_message
-count = session[:contribution_count]
-badge = view_context.contribution_badge(count)
+def contribution_badge_data(count)
+n = count.to_i
+return { name: "未達成", threshold: 0 } if n <= 0
 
-return "🔥 #{count}回達成！超ご協力ありがとうございます！！" if (count % 100).zero?
+badges = [
+{ threshold: 1, name: "はじめてのご協力" },
+{ threshold: 5, name: "協力者" },
+{ threshold: 10, name: "常連協力者" },
+{ threshold: 30, name: "ベテラン協力者" },
+{ threshold: 100, name: "レジェンド協力者" }
+]
+
+badges.reverse_each do |badge|
+return badge if n >= badge[:threshold]
+end
+
+{ name: "未達成", threshold: 0 }
+end
+
+def contribution_message
+count = session[:contribution_count].to_i
+badge = contribution_badge_data(count)
+
+return "🔥 #{count}回達成！超ご協力ありがとうございます！！" if count.positive? && (count % 100).zero?
 
 case count
 when 1, 5, 10, 30, 100
