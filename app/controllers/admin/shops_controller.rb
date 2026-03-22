@@ -141,9 +141,6 @@ flash.now[:alert] = e.record.errors.full_messages.join(" / ")
 render :edit, status: :unprocessable_entity
 end
 
-# ✅ CSVインポート
-# - 新方式: opening_hours_text / holiday_hours_text / closed_days_text
-# - 旧方式: opening_hours_json / opening_hours も互換で受ける
 def import
 file = params[:file]
 return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
@@ -210,7 +207,6 @@ name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
 phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
 address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
 
-# 新方式
 opening_hours_text = normalize_str.call(
 pick.call(row, [:opening_hours_text, "opening_hours_text", "通常営業時間", "営業時間テキスト"])
 )
@@ -221,7 +217,6 @@ closed_days_text = normalize_str.call(
 pick.call(row, [:closed_days_text, "closed_days_text", "定休日"])
 )
 
-# 旧方式互換
 opening_json_raw = pick.call(row, [:opening_hours_json, "opening_hours_json", "営業時間JSON"])
 opening_text_legacy = normalize_str.call(
 pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"])
@@ -250,6 +245,13 @@ genre_other = normalize_str.call(pick.call(row, [:genre_other, "genre_other", "�
 
 smoking_area = map_smoking_area.call(pick.call(row, [:smoking_area, "smoking_area", "喫煙エリア"]))
 smoking_type = map_smoking_type.call(pick.call(row, [:smoking_type, "smoking_type", "喫煙タイプ"]))
+
+tabelog_url = normalize_str.call(
+pick.call(row, [:tabelog_url, "tabelog_url", "食べログURL", "tabelog"])
+)
+hotpepper_url = normalize_str.call(
+pick.call(row, [:hotpepper_url, "hotpepper_url", "ホットペッパーURL", "hotpepper"])
+)
 
 last_raw = normalize_str.call(pick.call(row, [:last_confirmed_on, "last_confirmed_on", "最終確認日"]))
 last_confirmed_on =
@@ -284,10 +286,11 @@ genre: genre.presence,
 genre_other: genre_other.presence,
 smoking_area: smoking_area,
 smoking_type: smoking_type,
+tabelog_url: tabelog_url.presence,
+hotpepper_url: hotpepper_url.presence,
 last_confirmed_on: last_confirmed_on
 )
 
-# 新方式の営業時間が空で、旧方式だけある場合の補完
 if shop.opening_hours_text.blank? && shop.respond_to?(:derived_opening_hours_text, true)
 derived_text = shop.send(:derived_opening_hours_text)
 shop.opening_hours_text = derived_text if derived_text.present?
@@ -330,6 +333,8 @@ params.require(:shop).permit(
 :opening_hours_text,
 :holiday_hours_text,
 :closed_days_text,
+:tabelog_url,
+:hotpepper_url,
 opening_hours_json: {}
 )
 end
