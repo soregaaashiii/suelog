@@ -48,8 +48,17 @@ end
 
 def genre_other_required_when_other
 return unless genre.to_s == "その他"
+return if genre_other.to_s.strip.present?
 
-errors.add(:genre_other, "を入力してください（ジャンルが「その他」の場合）") if genre_other.to_s.strip.blank?
+# 既存店舗側も「その他」かつ genre_other 空なら、
+# 今回は“変更していないだけ”なので編集依頼では弾かない
+if shop.present? &&
+shop.genre.to_s == "その他" &&
+shop.genre_other.to_s.strip.blank?
+return
+end
+
+errors.add(:genre_other, "を入力してください（ジャンルが「その他」の場合）")
 end
 
 def proposed_thumbnail_values
