@@ -112,6 +112,7 @@ end
 
 def update
 @shop = Shop.find(params[:id])
+Rails.logger.warn("SHOP_PARAMS_RAW=#{params[:shop].inspect}")
 
 action = params[:commit_action].to_s
 notice = "更新しました"
@@ -161,6 +162,7 @@ area_map = {
 
 normalize_str = lambda do |v|
 return "" if v.nil?
+
 s = v.is_a?(String) ? v : v.to_s
 s = s.tr("０-９", "0-9")
 s.gsub(/\A[[:space:]]+|[[:space:]]+\z/, "")
