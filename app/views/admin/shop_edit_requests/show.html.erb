@@ -38,6 +38,30 @@ end
 current_note = @shop.note.to_s
 requested_note = @req.note.to_s.strip
 after_note = requested_note.present? ? requested_note : current_note
+
+final_name = @req.proposed_name.to_s.strip.presence || @shop.name
+final_address = @req.proposed_address.to_s.strip.presence || @shop.address
+final_area = @req.proposed_area.to_s.strip.presence || @shop.area
+final_nearest_station = @req.proposed_nearest_station.to_s.strip.presence || @shop.nearest_station
+final_phone = @req.proposed_phone.to_s.strip.presence || @shop.phone
+final_last_confirmed_on = @req.proposed_last_confirmed_on.presence || @shop.last_confirmed_on
+final_smoking_area = @req.proposed_smoking_area.to_s.strip.presence || @shop.smoking_area
+final_smoking_type = @req.proposed_smoking_type.to_s.strip.presence || @shop.smoking_type
+final_genre = @req.genre.to_s.strip.presence || @shop.genre
+final_genre_other =
+if final_genre == "その他"
+@req.genre_other.to_s.strip.presence || @shop.genre_other
+else
+""
+end
+final_opening_hours_text = opening_hours_text.presence || @shop.try(:opening_hours_text)
+final_holiday_hours_text = holiday_hours_text.presence || @shop.try(:holiday_hours_text)
+final_closed_days_text = closed_days_text.presence || @shop.try(:closed_days_text)
+final_note = requested_note.presence || @shop.note
+final_thumbnail_kind = (@req.try(:proposed_thumbnail_kind).presence || @shop.try(:thumbnail_kind) || "auto").to_s
+final_thumbnail_index = (@req.try(:proposed_thumbnail_index).presence || @shop.try(:thumbnail_index) || 1).to_i
+
+status_pending = @req.pending?
 %>
 
 <h1>編集依頼 詳細（管理）</h1>
@@ -55,7 +79,7 @@ after_note = requested_note.present? ? requested_note : current_note
 admin_shop_edit_requests_path(status: "pending"),
 style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
 
-<% if @req.pending? %>
+<% if status_pending %>
 <%= button_to "却下",
 reject_admin_shop_edit_request_path(@req),
 method: :patch,
@@ -63,6 +87,18 @@ form: { data: { turbo: false } },
 data: { turbo_confirm: "却下しますか？" } %>
 <% end %>
 </div>
+
+<% if flash[:alert].present? %>
+<div style="padding:10px; border:1px solid #f5c2c7; background:#f8d7da; border-radius:10px; margin:10px 0;">
+<%= flash[:alert] %>
+</div>
+<% end %>
+
+<% if flash[:notice].present? %>
+<div style="padding:10px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:10px; margin:10px 0;">
+<%= flash[:notice] %>
+</div>
+<% end %>
 
 <hr>
 
@@ -78,12 +114,7 @@ data: { turbo_confirm: "却下しますか？" } %>
 </p>
 
 <p style="margin:0 0 8px;"><strong>住所：</strong><%= @req.proposed_address.presence || "（未変更）" %></p>
-
-<p style="margin:0 0 8px;">
-<strong>エリア：</strong>
-<%= @req.proposed_area.presence || "（未変更）" %>
-</p>
-
+<p style="margin:0 0 8px;"><strong>エリア：</strong><%= @req.proposed_area.presence || "（未変更）" %></p>
 <p style="margin:0 0 8px;"><strong>最寄駅：</strong><%= @req.proposed_nearest_station.presence || "（未変更）" %></p>
 <p style="margin:0 0 8px;"><strong>電話：</strong><%= @req.proposed_phone.presence || "（未変更）" %></p>
 <p style="margin:0 0 8px;"><strong>最終確認日：</strong><%= @req.proposed_last_confirmed_on.presence || "（未変更）" %></p>
@@ -148,14 +179,105 @@ data: { turbo_confirm: "却下しますか？" } %>
 
 <hr>
 
-<h2 style="margin:0 0 8px;">添付写真（編集依頼に紐づく）</h2>
-<p style="color:#666; font-size:12px; margin:0 0 10px;">
-※ ここで「反映する」にチェックした写真だけ、店舗に追加で取り込みます（既存写真は消しません）
-</p>
+<h2 style="margin:0 0 8px;">承認時に反映する内容（ここで編集可）</h2>
 
-<% if @req.pending? %>
+<% if status_pending %>
 <%= form_with url: approve_admin_shop_edit_request_path(@req),
 method: :patch, local: true, data: { turbo: false } do %>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:1100px;">
+
+<div>
+<div style="font-weight:700;">店名</div>
+<input type="text" name="shop[name]" value="<%= final_name %>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+</div>
+
+<div>
+<div style="font-weight:700;">電話</div>
+<input type="text" name="shop[phone]" value="<%= final_phone %>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+</div>
+
+<div style="grid-column:1/-1;">
+<div style="font-weight:700;">住所</div>
+<input type="text" name="shop[address]" value="<%= final_address %>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+</div>
+
+<div>
+<div style="font-weight:700;">エリア</div>
+<input type="text" name="shop[area]" value="<%= final_area %>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+</div>
+
+<div>
+<div style="font-weight:700;">最寄駅</div>
+<input type="text" name="shop[nearest_station]" value="<%= final_nearest_station %>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+</div>
+
+<div>
+<div style="font-weight:700;">最終確認日</div>
+<input type="date" name="shop[last_confirmed_on]" value="<%= final_last_confirmed_on %>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+</div>
+
+<div>
+<div style="font-weight:700;">ジャンル</div>
+<select name="shop[genre]" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+<% [["未設定", ""], ["居酒屋", "居酒屋"], ["焼肉", "焼肉"], ["焼鳥", "焼鳥"], ["ラーメン", "ラーメン"], ["中華", "中華"], ["韓国料理", "韓国料理"], ["イタリアン", "イタリアン"], ["フレンチ", "フレンチ"], ["和食", "和食"], ["寿司", "寿司"], ["バー", "バー"], ["カフェ", "カフェ"], ["喫茶店", "喫茶店"], ["スナック", "スナック"], ["ダイニングバー", "ダイニングバー"], ["その他", "その他"]].each do |label, value| %>
+<option value="<%= value %>" <%= "selected" if final_genre.to_s == value.to_s %>><%= label %></option>
+<% end %>
+</select>
+</div>
+
+<div>
+<div style="font-weight:700;">ジャンルその他</div>
+<input type="text" name="shop[genre_other]" value="<%= final_genre_other %>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+</div>
+
+<div>
+<div style="font-weight:700;">喫煙エリア</div>
+<select name="shop[smoking_area]" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+<option value="">選択してください</option>
+<option value="all_smoking" <%= "selected" if final_smoking_area.to_s == "all_smoking" %>>席で喫煙可</option>
+<option value="separated" <%= "selected" if final_smoking_area.to_s == "separated" %>>喫煙所あり</option>
+</select>
+</div>
+
+<div>
+<div style="font-weight:700;">喫煙タイプ</div>
+<select name="shop[smoking_type]" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+<option value="">選択してください</option>
+<option value="both_ok" <%= "selected" if final_smoking_type.to_s == "both_ok" %>>紙・加熱式どちらもOK</option>
+<option value="electronic_only" <%= "selected" if final_smoking_type.to_s == "electronic_only" %>>加熱式タバコのみOK</option>
+<option value="paper_only" <%= "selected" if final_smoking_type.to_s == "paper_only" %>>紙タバコのみOK</option>
+</select>
+</div>
+
+<div style="grid-column:1/-1;">
+<div style="font-weight:700;">通常営業時間</div>
+<textarea name="shop[opening_hours_text]" rows="3" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;"><%= final_opening_hours_text %></textarea>
+</div>
+
+<div style="grid-column:1/-1;">
+<div style="font-weight:700;">祝日営業時間</div>
+<textarea name="shop[holiday_hours_text]" rows="2" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;"><%= final_holiday_hours_text %></textarea>
+</div>
+
+<div style="grid-column:1/-1;">
+<div style="font-weight:700;">定休日</div>
+<input type="text" name="shop[closed_days_text]" value="<%= final_closed_days_text %>" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
+</div>
+
+<div style="grid-column:1/-1;">
+<div style="font-weight:700;">メモ</div>
+<textarea name="shop[note]" rows="5" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;"><%= final_note %></textarea>
+</div>
+</div>
+
+<hr>
+
+<h2 style="margin:0 0 8px;">添付写真（編集依頼に紐づく）</h2>
+<p style="color:#666; font-size:12px; margin:0 0 10px;">
+※ 画像表示が重いので、サムネではなくリンク表示にしています。クリックで別タブ表示できます。<br>
+※ ここで「反映する」にチェックした写真だけ、店舗に追加で取り込みます（既存写真は消しません）
+</p>
 
 <% [
 ["料理", "food", (@req.respond_to?(:food_photos) ? @req.food_photos : nil)],
@@ -170,15 +292,17 @@ method: :patch, local: true, data: { turbo: false } do %>
 <div style="display:flex; gap:10px; flex-wrap:wrap;">
 <% attachments.attachments.each_with_index do |att, i| %>
 <div style="width:170px;">
-<div style="border:1px solid #ddd; border-radius:12px; overflow:hidden; background:#fff;">
-<%= image_tag rails_blob_path(att, only_path: true), style: "width:170px; height:170px; object-fit:cover; display:block;" %>
+<%= link_to rails_blob_path(att, only_path: true), target: "_blank", rel: "noopener", style: "text-decoration:none;" do %>
+<div style="width:170px; height:120px; display:flex; align-items:center; justify-content:center; background:#f7f7f7; color:#666; font-size:12px; text-align:center; padding:8px; box-sizing:border-box; border:1px solid #ddd; border-radius:12px;">
+画像を開く<br>（<%= i + 1 %>枚目）
 </div>
+<% end %>
 
 <label style="display:flex; gap:8px; align-items:center; margin-top:8px;">
 <input type="checkbox"
 name="apply[<%= key %>_blob_ids][]"
 value="<%= att.blob_id %>">
-<span style="font-size:12px;">反映する（<%= i + 1 %>枚目）</span>
+<span style="font-size:12px;">反映する</span>
 </label>
 </div>
 <% end %>
@@ -199,19 +323,18 @@ value="<%= att.blob_id %>">
 <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
 <div>
 <label>サムネ種類</label><br>
-<select name="apply[thumbnail_kind]">
-<option value="">（依頼の希望 or 変更なし）</option>
-<option value="auto">自動</option>
-<option value="food">料理</option>
-<option value="exterior">外観</option>
-<option value="interior">内観</option>
-<option value="menu">メニュー</option>
+<select name="shop[thumbnail_kind]">
+<option value="auto" <%= "selected" if final_thumbnail_kind == "auto" %>>自動</option>
+<option value="food" <%= "selected" if final_thumbnail_kind == "food" %>>料理</option>
+<option value="exterior" <%= "selected" if final_thumbnail_kind == "exterior" %>>外観</option>
+<option value="interior" <%= "selected" if final_thumbnail_kind == "interior" %>>内観</option>
+<option value="menu" <%= "selected" if final_thumbnail_kind == "menu" %>>メニュー</option>
 </select>
 </div>
 
 <div>
 <label>何枚目（1〜）</label><br>
-<input type="number" name="apply[thumbnail_index]" min="1" max="20" style="width:140px;">
+<input type="number" name="shop[thumbnail_index]" min="1" max="20" value="<%= final_thumbnail_index %>" style="width:140px;">
 </div>
 </div>
 
