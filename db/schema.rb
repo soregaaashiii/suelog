@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_17_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_22_111121) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -96,11 +96,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_17_000100) do
     t.text "note"
     t.string "proposed_address"
     t.string "proposed_area"
+    t.string "proposed_closed_days_text"
+    t.text "proposed_holiday_hours_text"
     t.date "proposed_last_confirmed_on"
     t.string "proposed_name"
     t.string "proposed_nearest_station"
     t.text "proposed_opening_hours"
     t.json "proposed_opening_hours_json", default: {}, null: false
+    t.text "proposed_opening_hours_text"
     t.string "proposed_phone"
     t.integer "proposed_smoking_area"
     t.integer "proposed_smoking_type"
@@ -135,6 +138,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_17_000100) do
     t.string "genre"
     t.string "genre_other"
     t.text "holiday_hours_text"
+    t.string "hotpepper_url"
     t.date "last_confirmed_on"
     t.float "latitude"
     t.float "longitude"
@@ -151,6 +155,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_17_000100) do
     t.integer "smoking_area"
     t.integer "smoking_type"
     t.string "source"
+    t.string "tabelog_url"
     t.integer "taste"
     t.integer "thumbnail_index"
     t.string "thumbnail_kind"
