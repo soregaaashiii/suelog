@@ -34,6 +34,10 @@ if @req.respond_to?(:proposed_opening_hours)
 else
 ""
 end
+
+current_note = @shop.note.to_s
+requested_note = @req.note.to_s.strip
+after_note = requested_note.present? ? requested_note : current_note
 %>
 
 <h1>編集依頼 詳細（管理）</h1>
@@ -51,7 +55,7 @@ end
 admin_shop_edit_requests_path(status: "pending"),
 style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
 
-<% if @req.status.to_s == "pending" %>
+<% if @req.pending? %>
 <%= button_to "却下",
 reject_admin_shop_edit_request_path(@req),
 method: :patch,
@@ -119,10 +123,6 @@ data: { turbo_confirm: "却下しますか？" } %>
 
 <h2 style="margin:0 0 8px;">メモ反映の見え方（重要）</h2>
 
-<% current_note = @shop.note.to_s %>
-<% requested_note = @req.note.to_s.strip %>
-<% after_note = requested_note.present? ? requested_note : current_note %>
-
 <div style="border:1px solid #eee; border-radius:12px; padding:12px; background:#fafafa;">
 <p style="margin:0 0 8px;"><strong>現在の店舗 note：</strong></p>
 <% if current_note.present? %>
@@ -153,7 +153,7 @@ data: { turbo_confirm: "却下しますか？" } %>
 ※ ここで「反映する」にチェックした写真だけ、店舗に追加で取り込みます（既存写真は消しません）
 </p>
 
-<% if @req.status.to_s == "pending" %>
+<% if @req.pending? %>
 <%= form_with url: approve_admin_shop_edit_request_path(@req),
 method: :patch, local: true, data: { turbo: false } do %>
 
@@ -171,7 +171,7 @@ method: :patch, local: true, data: { turbo: false } do %>
 <% attachments.attachments.each_with_index do |att, i| %>
 <div style="width:170px;">
 <div style="border:1px solid #ddd; border-radius:12px; overflow:hidden; background:#fff;">
-<%= image_tag url_for(att), style: "width:170px; height:170px; object-fit:cover; display:block;" %>
+<%= image_tag rails_blob_path(att, only_path: true), style: "width:170px; height:170px; object-fit:cover; display:block;" %>
 </div>
 
 <label style="display:flex; gap:8px; align-items:center; margin-top:8px;">
