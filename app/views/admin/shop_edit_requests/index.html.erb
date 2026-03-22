@@ -1,156 +1,57 @@
-# frozen_string_literal: true
+<h1>編集依頼一覧</h1>
 
-class Admin::ShopEditRequestsController < Admin::BaseController
-before_action :set_req, only: [:show, :approve, :reject]
+<p style="color:#666; margin-bottom:16px;">
+ステータス：
+<%= link_to "承認待ち", admin_shop_edit_requests_path(status: "pending") %> /
+<%= link_to "承認済み", admin_shop_edit_requests_path(status: "approved") %> /
+<%= link_to "却下", admin_shop_edit_requests_path(status: "rejected") %> /
+<%= link_to "すべて", admin_shop_edit_requests_path(status: "all") %>
+</p>
 
-def index
-scope = ShopEditRequest
-.includes(
-:shop,
-food_photos_attachments: :blob,
-interior_photos_attachments: :blob,
-exterior_photos_attachments: :blob,
-menu_photos_attachments: :blob
-)
-.order(created_at: :desc)
+<% if flash[:notice].present? %>
+<div style="padding:10px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:10px; margin:10px 0;">
+<%= flash[:notice] %>
+</div>
+<% end %>
 
-scope = scope.where(status: 0) if params[:status] == "pending"
-@edit_requests = scope
-end
+<% if flash[:alert].present? %>
+<div style="padding:10px; border:1px solid #f5c2c7; background:#f8d7da; border-radius:10px; margin:10px 0;">
+<%= flash[:alert] %>
+</div>
+<% end %>
 
-def show
-@shop = @req.shop
-end
+<% if @edit_requests.present? %>
+<div style="display:grid; gap:12px;">
+<% @edit_requests.each do |req| %>
+<div style="border:1px solid #ddd; border-radius:12px; padding:14px; background:#fff;">
+<div style="font-weight:800; font-size:18px; margin-bottom:6px;">
+<%= req.shop&.name || "店舗名不明" %>
+</div>
 
-def approve
-shop = @req.shop
-attrs = build_shop_attrs_from_request(@req)
+<div style="color:#666; font-size:13px; margin-bottom:10px;">
+ID: <%= req.id %> /
+状態: <%= req.status %> /
+作成日: <%= req.created_at.strftime("%Y-%m-%d %H:%M") %>
+</div>
 
-area = @req.proposed_area.to_s.strip
-attrs[:area] = area if area.present?
+<div style="line-height:1.8;">
+<div><strong>提案者:</strong> <%= req.proposer_name.presence || "未入力" %></div>
+<div><strong>店名:</strong> <%= req.proposed_name.presence || "変更なし" %></div>
+<div><strong>住所:</strong> <%= req.proposed_address.presence || "変更なし" %></div>
+<div><strong>最寄駅:</strong> <%= req.proposed_nearest_station.presence || "変更なし" %></div>
+<div><strong>電話:</strong> <%= req.proposed_phone.presence || "変更なし" %></div>
+<div><strong>喫煙エリア:</strong> <%= req.proposed_smoking_area.presence || "未入力" %></div>
+<div><strong>喫煙タイプ:</strong> <%= req.proposed_smoking_type.presence || "未入力" %></div>
+<div><strong>ジャンル:</strong> <%= req.genre.presence || "変更なし" %></div>
+<div><strong>ジャンルその他:</strong> <%= req.genre_other.presence || "変更なし" %></div>
+</div>
 
-ActiveRecord::Base.transaction do
-shop.update!(attrs) if attrs.present?
-apply_selected_attachments!(@req, shop)
-@req.update!(status: :approved)
-end
-
-redirect_to admin_shop_edit_requests_path(status: "pending"),
-notice: "承認して反映しました"
-rescue ActiveRecord::RecordInvalid => e
-redirect_to admin_shop_edit_requests_path(status: "pending"),
-alert: "反映に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
-end
-
-def reject
-@req.update!(status: :rejected)
-redirect_to admin_shop_edit_requests_path(status: "pending"),
-alert: "却下しました"
-rescue ActiveRecord::RecordInvalid => e
-redirect_to admin_shop_edit_requests_path(status: "pending"),
-alert: "却下に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
-end
-
-private
-
-def set_req
-@req = ShopEditRequest.includes(:shop).find(params[:id])
-end
-
-def build_shop_attrs_from_request(req)
-attrs = {}
-
-name = req.proposed_name.to_s.strip
-attrs[:name] = name if name.present?
-
-address = req.proposed_address.to_s.strip
-attrs[:address] = address if address.present?
-
-station = req.proposed_nearest_station.to_s.strip
-attrs[:nearest_station] = station if station.present?
-
-phone = req.proposed_phone.to_s.strip
-attrs[:phone] = phone if phone.present?
-
-# 新方式
-opening_hours_text =
-if req.respond_to?(:opening_hours_text)
-req.opening_hours_text.to_s.strip
-elsif req.respond_to?(:proposed_opening_hours_text)
-req.proposed_opening_hours_text.to_s.strip
-else
-""
-end
-attrs[:opening_hours_text] = opening_hours_text if opening_hours_text.present?
-
-holiday_hours_text =
-if req.respond_to?(:holiday_hours_text)
-req.holiday_hours_text.to_s.strip
-elsif req.respond_to?(:proposed_holiday_hours_text)
-req.proposed_holiday_hours_text.to_s.strip
-else
-""
-end
-attrs[:holiday_hours_text] = holiday_hours_text if holiday_hours_text.present?
-
-closed_days_text =
-if req.respond_to?(:closed_days_text)
-req.closed_days_text.to_s.strip
-elsif req.respond_to?(:proposed_closed_days_text)
-req.proposed_closed_days_text.to_s.strip
-else
-""
-end
-attrs[:closed_days_text] = closed_days_text if closed_days_text.present?
-
-# 旧方式互換
-if req.respond_to?(:proposed_opening_hours_json) &&
-req.proposed_opening_hours_json.present? &&
-req.proposed_opening_hours_json.to_h.any?
-attrs[:opening_hours_json] = req.proposed_opening_hours_json
-end
-
-attrs[:last_confirmed_on] = req.proposed_last_confirmed_on if req.proposed_last_confirmed_on.present?
-
-smoking_area = req.proposed_smoking_area.to_s.strip
-attrs[:smoking_area] = smoking_area if smoking_area.present?
-
-smoking_type = req.proposed_smoking_type.to_s.strip
-attrs[:smoking_type] = smoking_type if smoking_type.present?
-
-genre = req.genre.to_s.strip
-if genre.present?
-attrs[:genre] = genre
-attrs[:genre_other] = (genre == "その他" ? req.genre_other.to_s.strip : nil)
-end
-
-req_note = req.note.to_s.strip
-attrs[:note] = req_note if req_note.present?
-
-attrs
-end
-
-def apply_selected_attachments!(req, shop)
-apply = params[:apply] || {}
-
-attach_by_blob_ids(req, shop, :food_photos, apply[:food_blob_ids])
-attach_by_blob_ids(req, shop, :interior_photos, apply[:interior_blob_ids])
-attach_by_blob_ids(req, shop, :exterior_photos, apply[:exterior_blob_ids])
-attach_by_blob_ids(req, shop, :menu_photos, apply[:menu_blob_ids])
-end
-
-def attach_by_blob_ids(req, shop, name, blob_ids)
-return unless req.respond_to?(name) && shop.respond_to?(name)
-
-ids = Array(blob_ids).map { |v| v.to_s.strip }.reject(&:blank?).uniq
-return if ids.empty?
-
-allowed = req.public_send(name).attachments.map { |a| a.blob_id.to_s }
-ids &= allowed
-return if ids.empty?
-
-ActiveStorage::Blob.where(id: ids).find_each do |b|
-shop.public_send(name).attach(b)
-end
-end
-end
+<div style="margin-top:12px;">
+<%= link_to "詳細を見る", admin_shop_edit_request_path(req), style: "padding:8px 12px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; text-decoration:none;" %>
+</div>
+</div>
+<% end %>
+</div>
+<% else %>
+<p>編集依頼はありません。</p>
+<% end %>
