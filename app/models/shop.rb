@@ -73,10 +73,19 @@ validates :genre, presence: { message: "を選択してください" }
 validates :smoking_area, presence: { message: "を選択してください" }, if: :approved?
 validates :smoking_type, presence: { message: "を選択してください" }, if: :approved?
 
+validates :tabelog_url,
+format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]), message: "は正しいURLを入力してください" },
+allow_blank: true
+
+validates :hotpepper_url,
+format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]), message: "は正しいURLを入力してください" },
+allow_blank: true
+
 validate :last_confirmed_on_cannot_be_future
 
 # 電話番号の重複防止（digitsのみ）
 before_validation :set_normalized_phone
+
 validates :normalized_phone, uniqueness: true, allow_nil: true, allow_blank: true
 
 # opening_hours_json は既存データ互換のため残す
@@ -107,6 +116,7 @@ end
 # ===== Display helpers =====
 def display_genre
 return "" if genre.blank?
+
 genre == "その他" ? genre_other.to_s : genre.to_s
 end
 
@@ -251,6 +261,7 @@ private
 
 def normalize_opening_hours_json
 return unless respond_to?(:opening_hours_json)
+
 self.opening_hours_json = OpeningHoursParser.normalize_json(opening_hours_json)
 end
 
@@ -316,6 +327,7 @@ end
 
 def last_confirmed_on_cannot_be_future
 return if last_confirmed_on.blank?
+
 errors.add(:last_confirmed_on, "は未来の日付にできません") if last_confirmed_on > Date.current
 end
 

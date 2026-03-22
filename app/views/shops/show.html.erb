@@ -3,7 +3,7 @@
 <% page_description_parts << "#{@shop.name}の喫煙情報。" if @shop.name.present? %>
 <% page_description_parts << @shop.smoking_area_label if @shop.respond_to?(:smoking_area_label) %>
 <% page_description_parts << @shop.smoking_type_label if @shop.respond_to?(:smoking_type_label) %>
-<% page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_statzion.present? %>
+<% page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_station.present? %>
 <% page_description_parts << "住所：#{@shop.address}" if @shop.address.present? %>
 <% if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
 <% page_description_parts << "営業時間：#{@shop.display_opening_hours_text}" %>
@@ -317,6 +317,13 @@ text-decoration: none;
 font-weight: 800;
 }
 
+.shop-show__bookingActions {
+display: flex;
+gap: 10px;
+flex-wrap: wrap;
+margin-top: 8px;
+}
+
 .shop-show__map {
 height: 320px;
 min-height: 320px;
@@ -496,7 +503,8 @@ grid-template-columns: 1fr;
 }
 
 .shop-show__footerActions,
-.shop-show__relatedLinks {
+.shop-show__relatedLinks,
+.shop-show__bookingActions {
 flex-direction: column;
 }
 
@@ -656,6 +664,34 @@ height: 140px;
 </div>
 </section>
 <% else %>
+<section class="shop-show__section">
+<h2 class="shop-show__sectionTitle">予約・詳細</h2>
+
+<div class="shop-show__bookingActions">
+<% if @shop.phone.present? %>
+<a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="ss-btn ss-btn--dark">
+電話予約する
+</a>
+<% end %>
+
+<% if @shop.tabelog_url.present? %>
+<%= link_to "食べログで見る",
+@shop.tabelog_url,
+target: "_blank",
+rel: "nofollow noopener",
+class: "ss-btn ss-btn--ghost" %>
+<% end %>
+
+<% if @shop.hotpepper_url.present? %>
+<%= link_to "ホットペッパーで予約",
+@shop.hotpepper_url,
+target: "_blank",
+rel: "nofollow noopener",
+class: "ss-btn ss-btn--dark" %>
+<% end %>
+</div>
+</section>
+
 <section class="shop-show__section">
 <h2 class="shop-show__sectionTitle">補足情報</h2>
 
