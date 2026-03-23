@@ -35,6 +35,10 @@ style="padding:10px 14px; border:1px solid #ddd; border-radius:999px; background
 
 <div id="map" style="width:100%; height:70vh; min-height:520px; border:1px solid #ddd; border-radius:12px;"></div>
 
+<div style="margin-top:12px;">
+<%= link_to "一覧に戻る", root_path, style: "color:#666; text-decoration:none; font-weight:700;" %>
+</div>
+
 <script>
 const shops = <%= raw map_shops.map { |s|
 {
@@ -100,8 +104,14 @@ return;
 }
 
 const bounds = new google.maps.LatLngBounds();
-markers.forEach((marker) => bounds.extend(marker.getPosition()));
-if (myLocationMarker) bounds.extend(myLocationMarker.getPosition());
+
+markers.forEach((marker) => {
+bounds.extend(marker.getPosition());
+});
+
+if (myLocationMarker) {
+bounds.extend(myLocationMarker.getPosition());
+}
 
 map.fitBounds(bounds);
 
@@ -161,7 +171,10 @@ maximumAge: 0
 }
 
 function initMap() {
-map = new google.maps.Map(document.getElementById("map"), {
+const mapEl = document.getElementById("map");
+if (!mapEl) return;
+
+map = new google.maps.Map(mapEl, {
 center: { lat: 34.7025, lng: 135.4959 },
 zoom: 13,
 mapTypeControl: false,
@@ -174,7 +187,7 @@ infoWindow = new google.maps.InfoWindow();
 markers = shops.map((shop) => {
 const marker = new google.maps.Marker({
 map: map,
-position: { lat: shop.lat, lng: shop.lng },
+position: { lat: Number(shop.lat), lng: Number(shop.lng) },
 title: shop.name
 });
 
@@ -186,11 +199,21 @@ infoWindow.open(map, marker);
 return marker;
 });
 
-document.getElementById("show-all-shops-btn")?.addEventListener("click", fitAllShops);
-document.getElementById("show-my-location-btn")?.addEventListener("click", showMyLocation);
+const allBtn = document.getElementById("show-all-shops-btn");
+const myBtn = document.getElementById("show-my-location-btn");
+
+if (allBtn) {
+allBtn.addEventListener("click", fitAllShops);
+}
+
+if (myBtn) {
+myBtn.addEventListener("click", showMyLocation);
+}
 
 fitAllShops();
 }
+
+window.initMap = initMap;
 </script>
 
 <script async defer
