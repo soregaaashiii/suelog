@@ -6,6 +6,7 @@ def index
 @shops = Shop
 .approved
 .where.not(latitude: nil, longitude: nil)
+.where.not(longitude: nil)
 .order(created_at: :desc)
 
 @shops_count = @shops.size
