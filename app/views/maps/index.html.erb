@@ -1,24 +1,51 @@
 <%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/maps/index.html.erb %>
 
+<%
+map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
+%>
+
 <h1>近くの店舗（地図）</h1>
 
-<p style="color:#666; font-size:12px;">
-※ 住所から位置を推定してピンを立てます（初回は少し時間がかかります）
+<p style="color:#666; font-size:12px; line-height:1.7;">
+※ 登録済みの緯度経度を使って、地図上に全店舗を表示します。<br>
+※ 現在地が許可されていれば、現在地マーカーも表示します。
 </p>
 
 <p style="margin:6px 0; color:#666; font-size:12px;">
-店舗数：<%= @shops_count %>
+店舗数：<%= @shops_count %> ／ 地図表示可能：<%= map_shops.size %>
 </p>
 
-<div id="map" style="width:100%; height:70vh; border:1px solid #ddd; border-radius:12px;"></div>
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 14px;">
+<button
+type="button"
+id="show-all-shops-btn"
+style="padding:10px 14px; border:1px solid #111; border-radius:999px; background:#111; color:#fff; font-weight:700; cursor:pointer;">
+全店舗を表示
+</button>
+
+<button
+type="button"
+id="show-my-location-btn"
+style="padding:10px 14px; border:1px solid #ddd; border-radius:999px; background:#fff; color:#111; font-weight:700; cursor:pointer;">
+現在地を表示
+</button>
+</div>
+
+<p id="map-status" style="margin:0 0 12px; color:#666; font-size:12px;"></p>
+
+<div id="map" style="width:100%; height:70vh; min-height:520px; border:1px solid #ddd; border-radius:12px;"></div>
 
 <script>
-// Rails から店舗データ（住所/名前/URL）を渡す
-const shops = <%= raw @shops.map { |s|
+const shops = <%= raw map_shops.map { |s|
 {
 id: s.id,
 name: s.name.to_s,
 address: s.address.to_s,
+nearest_station: s.nearest_station.to_s,
+smoking_area_label: (s.respond_to?(:smoking_area_label) ? s.smoking_area_label.to_s : ""),
+smoking_type_label: (s.respond_to?(:smoking_type_label) ? s.smoking_type_label.to_s : ""),
+lat: s.latitude.to_f,
+lng: s.longitude.to_f,
 url: shop_path(s)
 }
 }.to_json %>;
@@ -26,81 +53,143 @@ url: shop_path(s)
 
 <script>
 let map;
-let geocoder;
+let infoWindow;
+let markers = [];
+let myLocationMarker = null;
 
-function initMap() {
-geocoder = new google.maps.Geocoder();
+function setStatus(text) {
+const el = document.getElementById("map-status");
+if (el) el.textContent = text || "";
+}
 
-map = new google.maps.Map(document.getElementById("map"), {
-center: { lat: 34.7025, lng: 135.4959 }, // 大阪中心
-zoom: 13
-});
+function escapeHtml(str) {
+return String(str || "")
+.replace(/&/g, "&amp;")
+.replace(/</g, "&lt;")
+.replace(/>/g, "&gt;")
+.replace(/"/g, "&quot;")
+.replace(/'/g, "&#39;");
+}
+
+function buildInfoHtml(shop) {
+return `
+<div style="min-width:220px; line-height:1.7;">
+<div style="font-weight:800; margin-bottom:6px;">${escapeHtml(shop.name)}</div>
+${shop.address ? `<div style="font-size:12px; color:#444;">住所：${escapeHtml(shop.address)}</div>` : ""}
+${shop.nearest_station ? `<div style="font-size:12px; color:#444;">最寄駅：${escapeHtml(shop.nearest_station)}</div>` : ""}
+${shop.smoking_area_label ? `<div style="font-size:12px; color:#444;">喫煙エリア：${escapeHtml(shop.smoking_area_label)}</div>` : ""}
+${shop.smoking_type_label ? `<div style="font-size:12px; color:#444;">喫煙タイプ：${escapeHtml(shop.smoking_type_label)}</div>` : ""}
+<div style="margin-top:8px;">
+<a href="${escapeHtml(shop.url)}"
+style="display:inline-block; padding:8px 12px; background:#111; color:#fff; border-radius:999px; text-decoration:none; font-weight:700; font-size:12px;">
+詳細を見る
+</a>
+</div>
+</div>
+`;
+}
+
+function fitAllShops() {
+if (!map) return;
+
+if (markers.length === 0) {
+map.setCenter({ lat: 34.7025, lng: 135.4959 });
+map.setZoom(13);
+setStatus("地図に表示できる店舗がありません。");
+return;
+}
 
 const bounds = new google.maps.LatLngBounds();
+markers.forEach((marker) => bounds.extend(marker.getPosition()));
+if (myLocationMarker) bounds.extend(myLocationMarker.getPosition());
 
-// ---- 現在地マーカー（許可されれば表示） ----
-if (navigator.geolocation) {
-navigator.geolocation.getCurrentPosition(
-(pos) => {
-const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+map.fitBounds(bounds);
 
-new google.maps.Marker({
-map,
-position: me,
-title: "現在地"
+google.maps.event.addListenerOnce(map, "bounds_changed", function() {
+if (map.getZoom() > 16) map.setZoom(16);
 });
 
-bounds.extend(me);
-map.fitBounds(bounds);
+setStatus(`全 ${markers.length} 店舗を表示しています。`);
+}
+
+function showMyLocation() {
+if (!navigator.geolocation) {
+setStatus("このブラウザでは現在地を取得できません。");
+return;
+}
+
+setStatus("現在地を取得中です...");
+
+navigator.geolocation.getCurrentPosition(
+(pos) => {
+const me = {
+lat: pos.coords.latitude,
+lng: pos.coords.longitude
+};
+
+if (myLocationMarker) {
+myLocationMarker.setMap(null);
+}
+
+myLocationMarker = new google.maps.Marker({
+map: map,
+position: me,
+title: "現在地",
+icon: {
+path: google.maps.SymbolPath.CIRCLE,
+scale: 8,
+fillColor: "#2563eb",
+fillOpacity: 1,
+strokeColor: "#ffffff",
+strokeWeight: 2
+}
+});
+
+map.setCenter(me);
+map.setZoom(15);
+setStatus("現在地を表示しています。");
 },
-() => {}
+() => {
+setStatus("現在地を取得できませんでした。ブラウザの位置情報許可を確認してください。");
+},
+{
+enableHighAccuracy: true,
+timeout: 10000,
+maximumAge: 0
+}
 );
 }
 
-// ---- 住所 → ピン ----
-let pinned = 0;
-const delayMs = 160;
+function initMap() {
+map = new google.maps.Map(document.getElementById("map"), {
+center: { lat: 34.7025, lng: 135.4959 },
+zoom: 13,
+mapTypeControl: false,
+streetViewControl: false,
+fullscreenControl: true
+});
 
-const pinOne = (shop) => {
-const addr = (shop.address || "").trim();
-if (!addr) return;
+infoWindow = new google.maps.InfoWindow();
 
-geocoder.geocode({ address: addr }, (results, status) => {
-if (status !== "OK" || !results || !results[0]) return;
-
-const loc = results[0].geometry.location;
-
+markers = shops.map((shop) => {
 const marker = new google.maps.Marker({
-map,
-position: loc,
+map: map,
+position: { lat: shop.lat, lng: shop.lng },
 title: shop.name
 });
 
 marker.addListener("click", () => {
-window.open(shop.url, "_blank", "noopener");
+infoWindow.setContent(buildInfoHtml(shop));
+infoWindow.open(map, marker);
 });
 
-bounds.extend(loc);
-pinned += 1;
-
-if (pinned >= 1) map.fitBounds(bounds);
+return marker;
 });
-};
 
-let i = 0;
-const timer = setInterval(() => {
-if (i >= shops.length) {
-clearInterval(timer);
+document.getElementById("show-all-shops-btn")?.addEventListener("click", fitAllShops);
+document.getElementById("show-my-location-btn")?.addEventListener("click", showMyLocation);
 
-if (pinned === 0) {
-alert("地図に表示できる店舗がありません（住所が不完全な可能性があります）");
-}
-return;
-}
-
-pinOne(shops[i]);
-i += 1;
-}, delayMs);
+fitAllShops();
 }
 </script>
 
