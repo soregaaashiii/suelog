@@ -711,12 +711,14 @@ class: "ss-btn ss-btn--dark" %>
 <section class="shop-show__section">
 <h2 class="shop-show__sectionTitle">地図</h2>
 
+<% map_query = ERB::Util.url_encode([@shop.name, @shop.address].compact.join(" ")) %>
+<% address_query = ERB::Util.url_encode(@shop.address.to_s) %>
+
 <% if @shop.latitude.present? && @shop.longitude.present? %>
 <div id="shop-map" class="shop-show__map"></div>
 
 <p class="shop-show__mapLink">
-<% q = ERB::Util.url_encode([@shop.name, @shop.address].compact.join(" ")) %>
-<a href="https://www.google.com/maps?q=<%= q %>" target="_blank" rel="noopener">Googleマップで開く</a>
+<a href="https://www.google.com/maps?q=<%= map_query %>" target="_blank" rel="noopener">Googleマップで開く</a>
 </p>
 
 <script>
@@ -794,8 +796,28 @@ el._leaflet_map_instance = null;
 bootShopMap();
 })();
 </script>
+<% elsif @shop.address.present? %>
+<div class="shop-show__map">
+<iframe
+src="https://maps.google.com/maps?q=<%= address_query %>&z=16&output=embed"
+width="100%"
+height="320"
+style="border:0; display:block;"
+loading="lazy"
+referrerpolicy="no-referrer-when-downgrade"
+allowfullscreen>
+</iframe>
+</div>
+
+<p class="shop-show__mapLink">
+<a href="https://www.google.com/maps/search/?api=1&query=<%= address_query %>" target="_blank" rel="noopener">Googleマップで開く</a>
+</p>
+
+<p class="shop-show__hoursNote">
+※ 緯度・経度が未設定のため、住所から地図を表示しています
+</p>
 <% else %>
-<p style="color:#666;">この店舗は位置情報（緯度・経度）が未設定です。</p>
+<p style="color:#666;">この店舗は位置情報（緯度・経度）も住所も未設定です。</p>
 <% end %>
 </section>
 
