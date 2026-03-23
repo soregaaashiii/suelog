@@ -1,12 +1,14 @@
-# /config/initializers/geocoder.rb
+# frozen_string_literal: true
+
 Geocoder.configure(
 lookup: :google,
-api_key: ENV.fetch("GOOGLE_MAPS_SERVER_KEY", ""),
+api_key: ENV["GOOGLE_MAPS_API_KEY"], # ← ここ修正（これが超重要）
+
+use_https: true,
 timeout: 5,
 units: :km,
 language: :ja,
 
-# これが空だと絶対に取れないので、起動時に気づけるようにする
 always_raise: [
 Geocoder::OverQueryLimitError,
 Geocoder::RequestDenied,
