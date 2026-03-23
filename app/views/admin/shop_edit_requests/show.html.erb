@@ -48,12 +48,14 @@ final_last_confirmed_on = @req.proposed_last_confirmed_on.presence || @shop.last
 final_smoking_area = @req.proposed_smoking_area.to_s.strip.presence || @shop.smoking_area
 final_smoking_type = @req.proposed_smoking_type.to_s.strip.presence || @shop.smoking_type
 final_genre = @req.genre.to_s.strip.presence || @shop.genre
+
 final_genre_other =
 if final_genre == "その他"
 @req.genre_other.to_s.strip.presence || @shop.genre_other
 else
 ""
 end
+
 final_opening_hours_text = opening_hours_text.presence || @shop.try(:opening_hours_text)
 final_holiday_hours_text = holiday_hours_text.presence || @shop.try(:holiday_hours_text)
 final_closed_days_text = closed_days_text.presence || @shop.try(:closed_days_text)

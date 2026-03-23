@@ -1,3 +1,4 @@
+# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/models/shop.rb
 # frozen_string_literal: true
 
 class Shop < ApplicationRecord
@@ -85,7 +86,6 @@ validate :last_confirmed_on_cannot_be_future
 
 # 電話番号の重複防止（digitsのみ）
 before_validation :set_normalized_phone
-
 validates :normalized_phone, uniqueness: true, allow_nil: true, allow_blank: true
 
 # opening_hours_json は既存データ互換のため残す
@@ -111,6 +111,23 @@ Rails.logger.warn("[geocode skipped] #{e.class}: #{e.message}")
 self.latitude = nil if latitude_changed?
 self.longitude = nil if longitude_changed?
 true
+end
+
+def ensure_geocoded!
+return false if geocode_address.blank?
+return false unless geocoding_enabled?
+
+geocode
+
+if latitude.present? && longitude.present?
+save!(validate: false)
+true
+else
+false
+end
+rescue Geocoder::Error => e
+Rails.logger.warn("[ensure_geocoded!] #{e.class}: #{e.message}")
+false
 end
 
 # ===== Display helpers =====
