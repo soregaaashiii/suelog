@@ -9,15 +9,17 @@
 </h1>
 
 <p class="hero__lead">
-吸えログは、喫煙可能な飲食店だけを集めた大阪向けの店舗情報サイトです。
-エリア・喫煙条件・最寄駅から、探したい店を絞り込めます。
+喫煙可能な飲食店だけを集めた大阪特化の検索サービス。
+地図・エリア・喫煙条件から、今すぐ行ける店を見つけられます。
 </p>
 
+<!-- CTA（最重要） -->
 <div class="hero__actions">
-<%= link_to "掲載店舗を見る", root_path(anchor: nil), class: "btn btn--dark" %>
-<%= link_to "新しいお店を登録", new_shop_path, class: "btn btn--gold" %>
+<%= link_to "近くで探す", map_path, class: "btn btn--dark" %>
+<%= link_to "お店を登録", new_shop_path, class: "btn btn--gold" %>
 </div>
 
+<!-- 信頼/実績 -->
 <div class="hero__stats">
 <div class="hero-stat">
 <div class="hero-stat__label">掲載件数</div>
@@ -31,19 +33,25 @@
 
 <div class="hero-stat">
 <div class="hero-stat__label">更新形式</div>
-<div class="hero-stat__value">みんなで更新</div>
+<div class="hero-stat__value">ユーザー投稿型</div>
 </div>
 </div>
 </div>
 
+<!-- 右側カード -->
 <div class="hero__panel">
 <div class="hero-card">
 <div class="hero-card__top">吸えログ in 大阪</div>
-<div class="hero-card__main">喫煙可能店だけを、見やすく整理。</div>
+
+<div class="hero-card__main">
+喫煙可能店だけを、<br>
+シンプルに。
+</div>
+
 <ul class="hero-card__list">
 <li>席で喫煙可 / 喫煙所あり を判別</li>
-<li>紙・加熱式・加熱式のみ も確認</li>
-<li>最寄駅・エリアから絞り込み</li>
+<li>紙・加熱式・電子のみ を区別</li>
+<li>地図・駅・エリアで絞り込み</li>
 </ul>
 </div>
 </div>
