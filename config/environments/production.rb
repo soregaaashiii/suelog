@@ -12,7 +12,7 @@ config.public_file_server.headers = {
 "cache-control" => "public, max-age=#{1.year.to_i}"
 }
 
-config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", "local")
+config.active_storage.service = :render
 
 config.log_tags = [:request_id]
 config.logger = ActiveSupport::TaggedLogging.logger(STDOUT)
@@ -23,7 +23,10 @@ config.active_support.report_deprecations = false
 config.cache_store = :solid_cache_store
 config.active_job.queue_adapter = :async
 
-config.action_mailer.default_url_options = { host: "suelog.onrender.com", protocol: "https" }
+config.action_mailer.default_url_options = {
+host: "suelog.onrender.com",
+protocol: "https"
+}
 
 config.i18n.fallbacks = true
 config.active_record.dump_schema_after_migration = false
