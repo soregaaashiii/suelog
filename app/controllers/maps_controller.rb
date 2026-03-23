@@ -1,7 +1,13 @@
+# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/controllers/maps_controller.rb
+# frozen_string_literal: true
+
 class MapsController < ApplicationController
-  def index
-    # 住所がある店だけ。承認済みだけにしたいなら approved を付ける
-    @shops = Shop.where.not(address: [nil, ""]).order(created_at: :desc)
-    @shops_count = @shops.size
-  end
+def index
+@shops = Shop
+.approved
+.where.not(latitude: nil, longitude: nil)
+.order(created_at: :desc)
+
+@shops_count = @shops.size
+end
 end
