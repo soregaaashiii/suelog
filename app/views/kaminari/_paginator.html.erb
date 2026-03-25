@@ -1,37 +1,37 @@
 <%= paginator.render do %>
-  <nav class="km-pagination" role="navigation" aria-label="ページネーション">
-    <div class="km-pagination__inner">
-      <% if paginator.current_page > 1 %>
-        <span class="km-pagination__item">
-          <%= first_page_tag unless current_page.first? %>
-        </span>
-      <% end %>
+<nav class="km-pagination" role="navigation" aria-label="ページネーション">
+<div class="km-pagination__inner">
+<% unless current_page.first? %>
+<span class="km-pagination__item">
+<%= first_page_tag %>
+</span>
+<% end %>
 
-      <span class="km-pagination__item">
-        <%= prev_page_tag unless current_page.first? %>
-      </span>
+<span class="km-pagination__item">
+<%= prev_page_tag unless current_page.first? %>
+</span>
 
-      <% each_page do |page| %>
-        <% if page.display_tag? %>
-          <span class="km-pagination__item">
-            <%= page_tag page %>
-          </span>
-        <% elsif !page.was_truncated? %>
-          <span class="km-pagination__item">
-            <%= gap_tag %>
-          </span>
-        <% end %>
-      <% end %>
+<% each_page do |page| %>
+<% if page.display_tag? %>
+<span class="km-pagination__item">
+<%= page_tag page %>
+</span>
+<% elsif !page.was_truncated? %>
+<span class="km-pagination__item">
+<%= gap_tag %>
+</span>
+<% end %>
+<% end %>
 
-      <span class="km-pagination__item">
-        <%= next_page_tag unless current_page.last? %>
-      </span>
+<span class="km-pagination__item">
+<%= next_page_tag unless current_page.last? %>
+</span>
 
-      <% if paginator.current_page < paginator.total_pages %>
-        <span class="km-pagination__item">
-          <%= last_page_tag unless current_page.last? %>
-        </span>
-      <% end %>
-    </div>
-  </nav>
+<% unless current_page.last? %>
+<span class="km-pagination__item">
+<%= last_page_tag %>
+</span>
+<% end %>
+</div>
+</nav>
 <% end %>
