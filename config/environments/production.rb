@@ -1,3 +1,4 @@
+# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/config/environments/production.rb
 # frozen_string_literal: true
 
 require "active_support/core_ext/integer/time"
@@ -24,9 +25,14 @@ config.cache_store = :solid_cache_store
 config.active_job.queue_adapter = :async
 
 config.action_mailer.default_url_options = {
-host: "suelog.onrender.com",
+host: "suelog.jp",
 protocol: "https"
 }
+
+routes.default_url_options[:host] = "suelog.jp"
+routes.default_url_options[:protocol] = "https"
+
+config.force_ssl = true
 
 config.i18n.fallbacks = true
 config.active_record.dump_schema_after_migration = false
