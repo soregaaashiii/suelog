@@ -1,88 +1,55 @@
-# frozen_string_literal: true
-
+# /Users/kawamuratakuya/dev/suelog/config/routes.rb
 Rails.application.routes.draw do
-root "home#index"
-
-get "umeda", to: "home#umeda", as: :umeda
-get "umeda/genre/:genre_slug", to: "home#umeda_genre", as: :umeda_genre
-get "umeda/:smoking_area", to: "home#umeda", as: :umeda_smoking
-
-get "namba", to: "home#namba", as: :namba
-get "namba/genre/:genre_slug", to: "home#namba_genre", as: :namba_genre
-get "namba/:smoking_area", to: "home#namba", as: :namba_smoking
-
-get "map", to: "shops#map"
-get "/sitemap.xml", to: "sitemaps#show"
-
-resources :shops do
-collection do
-get :possible_duplicates
+# onrender.com で来たアクセスを独自ドメインへ恒久リダイレクト
+constraints(host: /(?:.+\.)?onrender\.com\z/) do
+match "*path",
+to: redirect(status: 301) { |params, _req| "https://suelog.jp/#{params[:path]}" },
+via: :all
 end
 
+root "home#index"
+
+get "map", to: "maps#index"
+
+resources :shops do
 resources :reviews, only: [:create]
 
 resources :shop_edit_requests, only: [:new, :create] do
-collection { get :done }
+collection do
+get :done
+end
 end
 
 resources :shop_reports, only: [:new, :create] do
-collection { get :done }
+collection do
+get :done
+end
 end
 end
 
-resources :reviews, only: [:edit, :update] do
+resources :reviews, only: [] do
 resources :review_reports, only: [:new, :create] do
-collection { get :done }
+collection do
+get :done
 end
 end
-
-resources :contact_messages, only: [:new, :create] do
-collection { get :done }
 end
-
-get "terms", to: "static_pages#terms"
-get "privacy", to: "static_pages#privacy"
 
 namespace :admin do
-get "analytics", to: "analytics#index"
-resources :contact_messages, only: [:index, :show, :destroy]
-
-resources :shops, only: [:index, :edit, :update] do
+resources :shops, only: [:index] do
 member do
 patch :approve
 patch :reject
 end
 
 collection do
-patch :bulk_update
-post :import
+post :import_csv
 end
 end
 
-resources :reviews, only: [:index, :show, :edit, :update] do
+resources :reviews, only: [:index] do
 member do
 patch :approve
-patch :reject
-end
-end
-
-resources :shop_edit_requests, only: [:index, :show] do
-member do
-patch :approve
-patch :reject
-end
-end
-
-resources :shop_reports, only: [:index, :show] do
-member do
-patch :resolve
-patch :reject
-end
-end
-
-resources :review_reports, only: [:index, :show] do
-member do
-patch :resolve
 patch :reject
 end
 end
