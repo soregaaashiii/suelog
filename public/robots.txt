@@ -1,6 +1,5 @@
-# https://www.robotstxt.org/robotstxt.html
-
+# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/public/robots.txt
 User-agent: *
 Allow: /
 
-Sitemap: https://suelog.onrender.com/sitemap.xml
+Sitemap: https://suelog.jp/sitemap.xml

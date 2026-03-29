@@ -1,6 +1,7 @@
+# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/config/sitemap.rb
 # frozen_string_literal: true
 
-SitemapGenerator::Sitemap.default_host = "https://suelog.onrender.com"
+SitemapGenerator::Sitemap.default_host = "https://suelog.jp"
 SitemapGenerator::Sitemap.public_path = "public/"
 SitemapGenerator::Sitemap.compress = false
 
