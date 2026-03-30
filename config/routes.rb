@@ -75,14 +75,15 @@ end
 end
 
 namespace :admin do
-resources :shops, only: [:index] do
+resources :shops, only: [:index, :edit, :update] do
 member do
 patch :approve
 patch :reject
 end
 
 collection do
-post :import_csv
+post :bulk_update
+post :import
 end
 end
 
