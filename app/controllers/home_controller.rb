@@ -1,3 +1,4 @@
+# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/controllers/home_controller.rb
 # frozen_string_literal: true
 
 class HomeController < ApplicationController
@@ -12,6 +13,60 @@ def index
 track_page_view
 create_page_view_safely
 
+set_default_page_meta!
+apply_area_page_context_from_params!
+
+build_listing!
+render :index
+end
+
+def umeda
+track_page_view
+create_page_view_safely
+
+set_default_page_meta!
+apply_umeda_context!
+
+build_listing!
+render :index
+end
+
+def umeda_genre
+track_page_view
+create_page_view_safely
+
+set_default_page_meta!
+apply_umeda_genre_context!
+
+build_listing!
+render :index
+end
+
+def namba
+track_page_view
+create_page_view_safely
+
+set_default_page_meta!
+apply_namba_context!
+
+build_listing!
+render :index
+end
+
+def namba_genre
+track_page_view
+create_page_view_safely
+
+set_default_page_meta!
+apply_namba_genre_context!
+
+build_listing!
+render :index
+end
+
+private
+
+def set_default_page_meta!
 @search_form_url = root_path
 @page_title = "吸えログ in大阪｜喫煙できる飲食店を探せる"
 @page_description = "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。"
@@ -24,15 +79,26 @@ create_page_view_safely
 @area_nav_links = []
 @forced_area_keyword = nil
 @forced_genre = nil
-
-build_listing!
-render :index
 end
 
-def umeda
-track_page_view
-create_page_view_safely
+def apply_area_page_context_from_params!
+case params[:area].to_s
+when "umeda"
+if current_genre_slug.present?
+apply_umeda_genre_context!
+else
+apply_umeda_context!
+end
+when "namba"
+if current_genre_slug.present?
+apply_namba_genre_context!
+else
+apply_namba_context!
+end
+end
+end
 
+def apply_umeda_context!
 @forced_area_keyword = "梅田"
 @forced_genre = nil
 @is_area_page = true
@@ -67,22 +133,16 @@ else
 @area_intro_text = "梅田で喫煙できる飲食店をまとめています。席で吸える店、喫煙所ありの店、加熱式のみ対応の店などをまとめて探したい人向けの入口ページです。"
 @canonical_url = umeda_url
 end
-
-build_listing!
-render :index
 end
 
-def umeda_genre
-track_page_view
-create_page_view_safely
-
-genre_label = AREA_GENRE_MAP[params[:genre_slug].to_s]
+def apply_umeda_genre_context!
+genre_label = AREA_GENRE_MAP[current_genre_slug.to_s]
 raise ActionController::RoutingError, "Not Found" if genre_label.blank?
 
 @forced_area_keyword = "梅田"
 @forced_genre = genre_label
 @is_area_page = true
-@search_form_url = umeda_genre_path(params[:genre_slug])
+@search_form_url = umeda_genre_path(current_genre_slug)
 @area_nav_links = umeda_nav_links
 
 @page_title = "梅田で喫煙できる#{genre_label}まとめ｜喫煙可の店一覧【吸えログ】"
@@ -91,16 +151,10 @@ raise ActionController::RoutingError, "Not Found" if genre_label.blank?
 @page_subtitle = "梅田エリアの喫煙可能な#{genre_label}を一覧で確認できます"
 @area_intro_title = "梅田で喫煙できる#{genre_label}を探す"
 @area_intro_text = "梅田で喫煙できる#{genre_label}をまとめています。飲み会、仕事帰り、1人利用などに合わせて喫煙可能店を探しやすい一覧ページです。"
-@canonical_url = umeda_genre_url(params[:genre_slug])
-
-build_listing!
-render :index
+@canonical_url = umeda_genre_url(current_genre_slug)
 end
 
-def namba
-track_page_view
-create_page_view_safely
-
+def apply_namba_context!
 @forced_area_keyword = "難波"
 @forced_genre = nil
 @is_area_page = true
@@ -135,22 +189,16 @@ else
 @area_intro_text = "難波で喫煙できる飲食店をまとめています。席で吸える店、喫煙所ありの店、加熱式のみ対応の店などをまとめて探したい人向けの入口ページです。"
 @canonical_url = namba_url
 end
-
-build_listing!
-render :index
 end
 
-def namba_genre
-track_page_view
-create_page_view_safely
-
-genre_label = AREA_GENRE_MAP[params[:genre_slug].to_s]
+def apply_namba_genre_context!
+genre_label = AREA_GENRE_MAP[current_genre_slug.to_s]
 raise ActionController::RoutingError, "Not Found" if genre_label.blank?
 
 @forced_area_keyword = "難波"
 @forced_genre = genre_label
 @is_area_page = true
-@search_form_url = namba_genre_path(params[:genre_slug])
+@search_form_url = namba_genre_path(current_genre_slug)
 @area_nav_links = namba_nav_links
 
 @page_title = "難波で喫煙できる#{genre_label}まとめ｜喫煙可の店一覧【吸えログ】"
@@ -159,13 +207,12 @@ raise ActionController::RoutingError, "Not Found" if genre_label.blank?
 @page_subtitle = "難波エリアの喫煙可能な#{genre_label}を一覧で確認できます"
 @area_intro_title = "難波で喫煙できる#{genre_label}を探す"
 @area_intro_text = "難波で喫煙できる#{genre_label}をまとめています。飲み会、二軒目、休憩などに合わせて喫煙可能店を探しやすい一覧ページです。"
-@canonical_url = namba_genre_url(params[:genre_slug])
-
-build_listing!
-render :index
+@canonical_url = namba_genre_url(current_genre_slug)
 end
 
-private
+def current_genre_slug
+params[:genre_slug].presence || params[:genre].presence
+end
 
 def create_page_view_safely
 PageView.create!(path: request.path)
