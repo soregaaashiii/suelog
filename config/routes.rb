@@ -11,6 +11,11 @@ root "home#index"
 
 get "map", to: "maps#index"
 
+# ===== 固定ページ =====
+get "terms", to: "static#terms", as: :terms
+get "privacy", to: "static#privacy", as: :privacy
+get "contact", to: "contact_messages#new", as: :new_contact_message
+
 # ===== Area landing / filtered pages =====
 get "umeda",
 to: "home#index",
