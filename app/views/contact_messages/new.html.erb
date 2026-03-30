@@ -18,7 +18,6 @@
 <% end %>
 
 <%= form_with model: @contact_message, local: true, html: { novalidate: true } do |f| %>
-
 <div style="margin-top:14px;">
 <%= f.label :name do %>
 お名前 <span style="color:#b00020; font-weight:900;">※必須</span>
@@ -57,7 +56,6 @@ placeholder: "できるだけ具体的に書いてください（店舗名・URL
 <div style="margin-top:18px;">
 <%= f.submit "送信する", class: "nav-btn" %>
 </div>
-
 <% end %>
 
 <p style="margin-top:16px;">

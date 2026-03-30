@@ -1,6 +1,5 @@
 # /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/config/routes.rb
 Rails.application.routes.draw do
-# onrender.com で来たアクセスを独自ドメインへ恒久リダイレクト
 constraints(host: /(?:.+\.)?onrender\.com\z/) do
 match "*path",
 to: redirect(status: 301) { |params, _req| "https://suelog.jp/#{params[:path]}" },
@@ -11,12 +10,12 @@ root "home#index"
 
 get "map", to: "maps#index"
 
-# ===== 固定ページ =====
-get "terms", to: "static#terms", as: :terms
-get "privacy", to: "static#privacy", as: :privacy
+# 固定ページ
+get "terms", to: "static_pages#terms", as: :terms
+get "privacy", to: "static_pages#privacy", as: :privacy
 get "contact", to: "contact_messages#new", as: :new_contact_message
 
-# ===== Area landing / filtered pages =====
+# Area landing / filtered pages
 get "umeda",
 to: "home#index",
 as: :umeda,
