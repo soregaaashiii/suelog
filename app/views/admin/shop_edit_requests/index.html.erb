@@ -1,9 +1,9 @@
-<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shop_edit_requests/show.html.erb %>
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shop_edit_requests/index.html.erb %>
 
-<h1>編集依頼の確認</h1>
+<h1>編集依頼一覧</h1>
 
 <p style="color:#666; margin-bottom:16px;">
-<%= link_to "← 一覧に戻る", admin_shop_edit_requests_path(status: params[:status].presence || "pending") %>
+店舗情報の編集依頼を確認できます。
 </p>
 
 <% if flash[:notice].present? %>
@@ -18,172 +18,41 @@
 </div>
 <% end %>
 
-<div style="display:grid; gap:16px; max-width:1100px;">
-<section style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff;">
-<h2 style="margin-top:0;">基本情報</h2>
+<% requests = @requests || @reqs || @shop_edit_requests || [] %>
 
+<% if requests.present? %>
+<div style="display:grid; gap:12px; max-width:1100px;">
+<% requests.each do |req| %>
+<% next if req.nil? %>
+
+<section style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff;">
 <div style="display:grid; grid-template-columns:180px 1fr; gap:8px 12px; line-height:1.8;">
 <div><strong>依頼ID</strong></div>
-<div><%= @req.id %></div>
+<div><%= req.id %></div>
 
 <div><strong>状態</strong></div>
-<div><%= @req.status %></div>
+<div><%= req.status.presence || "未設定" %></div>
 
 <div><strong>店舗</strong></div>
-<div><%= @shop&.name %></div>
+<div><%= req.respond_to?(:shop) ? (req.shop&.name || "不明") : "不明" %></div>
 
 <div><strong>提案者</strong></div>
-<div><%= @req.proposer_name.presence || "未入力" %></div>
+<div><%= req.respond_to?(:proposer_name) ? (req.proposer_name.presence || "未入力") : "未入力" %></div>
 
 <div><strong>作成日時</strong></div>
-<div><%= @req.created_at.strftime("%Y-%m-%d %H:%M") %></div>
+<div><%= req.created_at.present? ? req.created_at.strftime("%Y-%m-%d %H:%M") : "未設定" %></div>
+</div>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+<%= link_to "詳細を見る",
+admin_shop_edit_request_path(req, status: params[:status].presence || "pending"),
+style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; color:#111;" %>
 </div>
 </section>
-
-<section style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff;">
-<h2 style="margin-top:0;">変更内容の確認</h2>
-
-<div style="display:grid; grid-template-columns:180px 1fr 1fr; gap:8px 12px; line-height:1.8;">
-<div><strong>項目</strong></div>
-<div><strong>現在の店舗情報</strong></div>
-<div><strong>編集依頼の内容</strong></div>
-
-<div>店名</div>
-<div><%= @shop.name.presence || "未設定" %></div>
-<div><%= @req.proposed_name.presence || "変更なし" %></div>
-
-<div>住所</div>
-<div><%= @shop.address.presence || "未設定" %></div>
-<div><%= @req.proposed_address.presence || "変更なし" %></div>
-
-<div>最寄駅</div>
-<div><%= @shop.nearest_station.presence || "未設定" %></div>
-<div><%= @req.proposed_nearest_station.presence || "変更なし" %></div>
-
-<div>電話番号</div>
-<div><%= @shop.phone.presence || "未設定" %></div>
-<div><%= @req.proposed_phone.presence || "変更なし" %></div>
-
-<div>最終確認日</div>
-<div><%= @shop.last_confirmed_on.presence || "未設定" %></div>
-<div><%= @req.proposed_last_confirmed_on.presence || "変更なし" %></div>
-
-<div>喫煙エリア</div>
-<div><%= @shop.smoking_area.presence || "未設定" %></div>
-<div><%= @req.proposed_smoking_area.presence || "未入力" %></div>
-
-<div>喫煙タイプ</div>
-<div><%= @shop.smoking_type.presence || "未設定" %></div>
-<div><%= @req.proposed_smoking_type.presence || "未入力" %></div>
-
-<div>ジャンル</div>
-<div><%= @shop.genre.presence || "未設定" %></div>
-<div><%= @req.genre.presence || "変更なし" %></div>
-
-<div>ジャンルその他</div>
-<div><%= @shop.genre_other.presence || "未設定" %></div>
-<div><%= @req.genre_other.presence || "変更なし" %></div>
-
-<div>通常営業時間</div>
-<div><%= @shop.respond_to?(:opening_hours_text) ? (@shop.opening_hours_text.presence || "未設定") : "未設定" %></div>
-<div><%= @req.respond_to?(:proposed_opening_hours_text) ? (@req.proposed_opening_hours_text.presence || "変更なし") : "変更なし" %></div>
-
-<div>祝日営業時間</div>
-<div><%= @shop.respond_to?(:holiday_hours_text) ? (@shop.holiday_hours_text.presence || "未設定") : "未設定" %></div>
-<div><%= @req.respond_to?(:proposed_holiday_hours_text) ? (@req.proposed_holiday_hours_text.presence || "変更なし") : "変更なし" %></div>
-
-<div>定休日</div>
-<div><%= @shop.respond_to?(:closed_days_text) ? (@shop.closed_days_text.presence || "未設定") : "未設定" %></div>
-<div><%= @req.respond_to?(:proposed_closed_days_text) ? (@req.proposed_closed_days_text.presence || "変更なし") : "変更なし" %></div>
-
-<div>補足メモ</div>
-<div><%= @shop.note.presence || "未設定" %></div>
-<div><%= @req.note.presence || "変更なし" %></div>
-</div>
-</section>
-
-<%= form_with url: approve_admin_shop_edit_request_path(@req), method: :patch, local: true do %>
-<section style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff;">
-<h2 style="margin-top:0;">添付写真（編集依頼に紐づく）</h2>
-<p style="color:#666; font-size:13px;">
-※ 「反映する」にチェックした写真だけ、店舗に追加で取り込みます（既存写真は消しません）
-</p>
-
-<% [
-[:food_photos, "料理", :food_blob_ids],
-[:interior_photos, "内観", :interior_blob_ids],
-[:exterior_photos, "外観", :exterior_blob_ids],
-[:menu_photos, "メニュー", :menu_blob_ids]
-].each do |name, label, param_key| %>
-<div style="margin-bottom:22px;">
-<h3 style="margin-bottom:10px;"><%= label %></h3>
-
-<% attachments = @req.public_send(name) %>
-
-<% if attachments.attached? %>
-<div style="display:flex; gap:12px; flex-wrap:wrap;">
-<% attachments.each_with_index do |photo, idx| %>
-<label style="display:block; width:180px;">
-<div style="border:1px solid #ddd; border-radius:10px; padding:8px; background:#fafafa;">
-<div style="width:160px; height:160px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin:0 auto 8px; background:#fff;">
-<%= image_tag url_for(photo), style: "max-width:160px; max-height:160px; object-fit:cover;" %>
-</div>
-
-<div style="font-size:12px; color:#666; margin-bottom:6px;">
-<%= idx + 1 %>枚目
-</div>
-
-<div>
-<%= check_box_tag "apply[#{param_key}][]", photo.blob_id, true %>
-<span>反映する</span>
-</div>
-</div>
-</label>
 <% end %>
 </div>
 <% else %>
-<p style="color:#666;">添付なし</p>
-<% end %>
+<div style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff;">
+現在、編集依頼はありません。
 </div>
 <% end %>
-</section>
-
-<section style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff;">
-<h2 style="margin-top:0;">サムネ反映（任意）</h2>
-<p style="color:#666; font-size:13px;">
-※ ここで指定すると、店舗側の thumbnail_kind / thumbnail_index を更新します
-</p>
-
-<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-<div>
-<div style="font-weight:700; margin-bottom:6px;">サムネ種類</div>
-<select name="shop[thumbnail_kind]" style="padding:8px; border:1px solid #ddd; border-radius:10px;">
-<option value="">（依頼の希望 or 変更なし）</option>
-<option value="auto">自動</option>
-<option value="food">料理</option>
-<option value="interior">内観</option>
-<option value="exterior">外観</option>
-<option value="menu">メニュー</option>
-</select>
-</div>
-
-<div>
-<div style="font-weight:700; margin-bottom:6px;">何枚目（1〜）</div>
-<input type="number" name="shop[thumbnail_index]" min="1" step="1" style="width:120px; padding:8px; border:1px solid #ddd; border-radius:10px;">
-</div>
-</div>
-</section>
-
-<div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
-<%= submit_tag "承認して反映", data: { turbo_confirm: "この編集依頼を承認して反映しますか？" }, style: "padding:10px 14px; border:1px solid #137333; border-radius:10px; background:#e6f4ea; color:#137333; font-weight:700;" %>
-
-<%= link_to "一覧に戻る", admin_shop_edit_requests_path(status: params[:status].presence || "pending"), style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; color:#111;" %>
-</div>
-<% end %>
-
-<%= button_to "却下する",
-reject_admin_shop_edit_request_path(@req),
-method: :patch,
-form: { data: { turbo_confirm: "この編集依頼を却下しますか？" } },
-style: "padding:10px 14px; border:1px solid #b00020; border-radius:10px; background:#fdecea; color:#b00020; font-weight:700;" %>
-</div>
