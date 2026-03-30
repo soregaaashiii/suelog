@@ -110,6 +110,6 @@ patch :reject
 end
 end
 
-resources :contact_messages, only: [:index]
+resources :contact_messages, only: [:index, :show, :destroy]
 end
 end
