@@ -13,7 +13,11 @@ get "map", to: "maps#index"
 # 固定ページ
 get "terms", to: "static_pages#terms", as: :terms
 get "privacy", to: "static_pages#privacy", as: :privacy
+
+# お問い合わせ
 get "contact", to: "contact_messages#new", as: :new_contact_message
+post "contact", to: "contact_messages#create", as: :contact_messages
+get "contact/done", to: "contact_messages#done", as: :done_contact_messages
 
 # Area landing / filtered pages
 get "umeda",
