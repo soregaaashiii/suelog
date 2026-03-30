@@ -93,5 +93,12 @@ patch :approve
 patch :reject
 end
 end
+
+resources :shop_edit_requests, only: [:index, :show] do
+member do
+patch :approve
+patch :reject
+end
+end
 end
 end
