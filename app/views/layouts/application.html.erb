@@ -96,6 +96,10 @@ params[:per].present? %>
 </div>
 </main>
 
+
+
+
+
 <footer class="site-footer">
 <div class="container">
 <div style="font-weight:800; letter-spacing:0.02em;">
@@ -103,13 +107,19 @@ params[:per].present? %>
 </div>
 
 <div style="margin-top:14px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-<%= link_to "お問い合わせ", "#", style: "color:#e7d7a7; text-decoration:none;" %>
+<%= link_to "お問い合わせ", new_contact_message_path, style: "color:#e7d7a7; text-decoration:none;" %>
 <span style="color:#666;">｜</span>
-<%= link_to "利用規約", "#", style: "color:#e7d7a7; text-decoration:none;" %>
+<%= link_to "利用規約", terms_path, style: "color:#e7d7a7; text-decoration:none;" %>
 <span style="color:#666;">｜</span>
-<%= link_to "プライバシーポリシー", "#", style: "color:#e7d7a7; text-decoration:none;" %>
+<%= link_to "プライバシーポリシー", privacy_path, style: "color:#e7d7a7; text-decoration:none;" %>
 </div>
 </div>
 </footer>
+
+
+
+
+
+
 </body>
 </html>
