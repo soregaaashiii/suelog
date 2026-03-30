@@ -6,6 +6,13 @@
 店舗情報の編集依頼を確認できます。
 </p>
 
+<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+<%= link_to "承認待ち", admin_shop_edit_requests_path(status: "pending"), style: "padding:8px 12px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:#111;" %>
+<%= link_to "承認済み", admin_shop_edit_requests_path(status: "approved"), style: "padding:8px 12px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:#111;" %>
+<%= link_to "却下", admin_shop_edit_requests_path(status: "rejected"), style: "padding:8px 12px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:#111;" %>
+<%= link_to "すべて", admin_shop_edit_requests_path(status: "all"), style: "padding:8px 12px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:#111;" %>
+</div>
+
 <% if flash[:notice].present? %>
 <div style="padding:10px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:10px; margin:10px 0;">
 <%= flash[:notice] %>
@@ -18,7 +25,7 @@
 </div>
 <% end %>
 
-<% requests = @requests || @reqs || @shop_edit_requests || [] %>
+<% requests = @requests || @edit_requests || @reqs || @shop_edit_requests || [] %>
 
 <% if requests.present? %>
 <div style="display:grid; gap:12px; max-width:1100px;">
@@ -34,7 +41,7 @@
 <div><%= req.status.presence || "未設定" %></div>
 
 <div><strong>店舗</strong></div>
-<div><%= req.respond_to?(:shop) ? (req.shop&.name || "不明") : "不明" %></div>
+<div><%= req.shop&.name || "不明" %></div>
 
 <div><strong>提案者</strong></div>
 <div><%= req.respond_to?(:proposer_name) ? (req.proposer_name.presence || "未入力") : "未入力" %></div>

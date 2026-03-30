@@ -4,6 +4,8 @@ class Admin::ShopEditRequestsController < Admin::BaseController
 before_action :set_req, only: [:show, :approve, :reject]
 
 def index
+@status = params[:status].presence || "pending"
+
 scope = ShopEditRequest
 .includes(
 :shop,
@@ -14,16 +16,22 @@ menu_photos_attachments: :blob
 )
 .order(created_at: :desc)
 
-case params[:status].to_s
+scope =
+case @status
 when "pending"
-scope = scope.where(status: :pending)
+scope.where(status: :pending)
 when "approved"
-scope = scope.where(status: :approved)
+scope.where(status: :approved)
 when "rejected"
-scope = scope.where(status: :rejected)
+scope.where(status: :rejected)
+when "all"
+scope
+else
+scope.where(status: :pending)
 end
 
 @edit_requests = scope
+@requests = scope
 end
 
 def show
