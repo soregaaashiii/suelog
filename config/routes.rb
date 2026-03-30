@@ -75,6 +75,8 @@ end
 end
 
 namespace :admin do
+get "analytics", to: "analytics#index", as: :analytics
+
 resources :shops, only: [:index, :edit, :update] do
 member do
 patch :approve
@@ -100,5 +102,14 @@ patch :approve
 patch :reject
 end
 end
+
+resources :shop_reports, only: [:index] do
+member do
+patch :approve
+patch :reject
+end
+end
+
+resources :contact_messages, only: [:index]
 end
 end
