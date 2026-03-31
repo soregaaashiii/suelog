@@ -59,13 +59,38 @@
 "paper_only" => "紙のみ"
 } %>
 
+<% genre_label = {
+"izakaya" => "居酒屋",
+"bar" => "バー / パブ",
+"cafe" => "喫茶店 / カフェ",
+"yakiniku" => "焼肉",
+"ramen" => "ラーメン",
+"chinese" => "中華",
+"washoku" => "和食",
+"yoshoku" => "洋食",
+"tachinomi" => "立ち飲み",
+"snack" => "スナック",
+"other" => "その他",
+"居酒屋" => "居酒屋",
+"バー / パブ" => "バー / パブ",
+"喫茶店 / カフェ" => "喫茶店 / カフェ",
+"焼肉" => "焼肉",
+"ラーメン" => "ラーメン",
+"中華" => "中華",
+"和食" => "和食",
+"洋食" => "洋食",
+"立ち飲み" => "立ち飲み",
+"スナック" => "スナック",
+"その他" => "その他"
+} %>
+
 <% chips = [] %>
 <% chips << ["キーワード：#{params[:q]}", :q] if params[:q].present? %>
-<% chips << ["ジャンル：#{params[:genre]}", :genre] if params[:genre].present? && @forced_genre.blank? %>
+<% chips << ["ジャンル：#{genre_label[params[:genre]] || params[:genre]}", :genre] if params[:genre].present? && @forced_genre.blank? %>
 <% chips << ["最寄駅：#{params[:station]}", :station] if params[:station].present? %>
 
 <% if @forced_genre.present? %>
-<% chips << ["ジャンル：#{@forced_genre}", :forced_genre] %>
+<% chips << ["ジャンル：#{genre_label[@forced_genre] || @forced_genre}", :forced_genre] %>
 <% end %>
 
 <% if params[:smoking_area].present? %>
@@ -113,7 +138,20 @@
 <label class="field-label">ジャンル</label>
 <%= select_tag :genre,
 options_for_select(
-[["指定なし", ""]] + ["居酒屋", "バー / パブ", "喫茶店 / カフェ", "焼肉", "ラーメン", "中華", "和食", "洋食", "立ち飲み", "スナック", "その他"],
+[
+["指定なし", ""],
+["居酒屋", "izakaya"],
+["バー / パブ", "bar"],
+["喫茶店 / カフェ", "cafe"],
+["焼肉", "yakiniku"],
+["ラーメン", "ramen"],
+["中華", "chinese"],
+["和食", "washoku"],
+["洋食", "yoshoku"],
+["立ち飲み", "tachinomi"],
+["スナック", "snack"],
+["その他", "other"]
+],
 @forced_genre.presence || params[:genre]
 ),
 class: "field-input",
@@ -135,14 +173,20 @@ class: "field-input" %>
 <div class="field">
 <label class="field-label">喫煙エリア</label>
 <%= select_tag :smoking_area,
-options_for_select([["指定なし", ""], ["喫煙所あり", "separated"], ["席で喫煙可", "all_smoking"]], params[:smoking_area]),
+options_for_select(
+[["指定なし", ""], ["喫煙所あり", "separated"], ["席で喫煙可", "all_smoking"]],
+params[:smoking_area]
+),
 class: "field-input" %>
 </div>
 
 <div class="field">
 <label class="field-label">喫煙タイプ</label>
 <%= select_tag :smoking_type,
-options_for_select([["指定なし", ""], ["紙・加熱式OK", "both_ok"], ["加熱式のみ", "electronic_only"], ["紙のみ", "paper_only"]], params[:smoking_type]),
+options_for_select(
+[["指定なし", ""], ["紙・加熱式OK", "both_ok"], ["加熱式のみ", "electronic_only"], ["紙のみ", "paper_only"]],
+params[:smoking_type]
+),
 class: "field-input" %>
 </div>
 
@@ -344,11 +388,11 @@ class: "btn #{(@per == 100 ? 'btn--dark' : 'btn--ghost')}" %>
 </p>
 <% elsif @forced_genre.present? && @search_form_url.to_s.include?("/umeda/genre/") %>
 <p style="margin:0 0 12px;">
-このページでは、梅田エリアで喫煙できる<%= @forced_genre %>を一覧で見られます。
+このページでは、梅田エリアで喫煙できる<%= genre_label[@forced_genre] || @forced_genre %>を一覧で見られます。
 ジャンルを絞ることで、居酒屋なら飲み会、バーなら二軒目、カフェなら休憩など、目的に合わせて探しやすくなります。
 </p>
 <p style="margin:0 0 12px;">
-同じ<%= @forced_genre %>でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
+同じ<%= genre_label[@forced_genre] || @forced_genre %>でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
 気になる店は個別ページで詳細を確認してから選ぶのがおすすめです。
 </p>
 
@@ -359,15 +403,15 @@ class: "btn #{(@per == 100 ? 'btn--dark' : 'btn--ghost')}" %>
 </div>
 
 <p style="margin:0;">
-梅田で喫煙可能な<%= @forced_genre %>を探す入口ページとして活用してください。
+梅田で喫煙可能な<%= genre_label[@forced_genre] || @forced_genre %>を探す入口ページとして活用してください。
 </p>
 <% elsif @forced_genre.present? && @search_form_url.to_s.include?("/namba/genre/") %>
 <p style="margin:0 0 12px;">
-このページでは、難波エリアで喫煙できる<%= @forced_genre %>を一覧で見られます。
+このページでは、難波エリアで喫煙できる<%= genre_label[@forced_genre] || @forced_genre %>を一覧で見られます。
 ジャンルを絞ることで、飲み会、二軒目、休憩など目的に合わせて店を探しやすくなります。
 </p>
 <p style="margin:0 0 12px;">
-同じ<%= @forced_genre %>でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
+同じ<%= genre_label[@forced_genre] || @forced_genre %>でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
 気になる店は個別ページで詳細を確認してから選ぶのがおすすめです。
 </p>
 
@@ -378,7 +422,7 @@ class: "btn #{(@per == 100 ? 'btn--dark' : 'btn--ghost')}" %>
 </div>
 
 <p style="margin:0;">
-難波で喫煙可能な<%= @forced_genre %>を探す入口ページとして活用してください。
+難波で喫煙可能な<%= genre_label[@forced_genre] || @forced_genre %>を探す入口ページとして活用してください。
 </p>
 <% end %>
 </div>

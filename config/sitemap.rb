@@ -12,6 +12,7 @@ add map_path, changefreq: "weekly", priority: 0.7
 add new_shop_path, changefreq: "monthly", priority: 0.5
 add terms_path, changefreq: "yearly", priority: 0.2
 add privacy_path, changefreq: "yearly", priority: 0.2
+add new_contact_message_path, changefreq: "monthly", priority: 0.3 if defined?(new_contact_message_path)
 
 # ===== 梅田 =====
 add umeda_path, changefreq: "daily", priority: 0.9
