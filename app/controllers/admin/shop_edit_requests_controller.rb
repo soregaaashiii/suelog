@@ -45,6 +45,10 @@ attrs = build_shop_attrs_from_request(@req)
 area = safe_str(@req.proposed_area)
 attrs[:area] = area if area.present?
 
+if attrs[:last_confirmed_on].present?
+attrs[:smoking_unverified] = false
+end
+
 ActiveRecord::Base.transaction do
 shop.update!(attrs) if attrs.present?
 apply_selected_attachments!(@req, shop)
@@ -128,10 +132,32 @@ end
 
 attrs[:last_confirmed_on] = req.proposed_last_confirmed_on if req.proposed_last_confirmed_on.present?
 
-smoking_area = safe_str(req.proposed_smoking_area)
+smoking_area =
+case safe_str(req.proposed_smoking_area)
+when "area_separated", "proposed_area_separated"
+"separated"
+when "area_all_smoking", "proposed_area_all_smoking"
+"all_smoking"
+when "area_unknown", "proposed_area_unknown"
+"unknown"
+else
+""
+end
 attrs[:smoking_area] = smoking_area if smoking_area.present?
 
-smoking_type = safe_str(req.proposed_smoking_type)
+smoking_type =
+case safe_str(req.proposed_smoking_type)
+when "type_both_ok", "proposed_type_both_ok"
+"both_ok"
+when "type_electronic_only", "proposed_type_electronic_only"
+"electronic_only"
+when "type_paper_only", "proposed_type_paper_only"
+"paper_only"
+when "type_unknown", "proposed_type_unknown"
+"unknown"
+else
+""
+end
 attrs[:smoking_type] = smoking_type if smoking_type.present?
 
 genre = safe_str(req.genre)
