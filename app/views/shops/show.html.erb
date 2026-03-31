@@ -74,8 +74,8 @@ end %>
 "description": page_description_parts.join(" "),
 "smokingAllowed": (@shop.smoking_area == "all_smoking"),
 "keywords": [
-@shop.smoking_area_label,
-@shop.smoking_type_label,
+(@shop.smoking_area_label if @shop.respond_to?(:smoking_area_label)),
+(@shop.smoking_type_label if @shop.respond_to?(:smoking_type_label)),
 @shop.display_genre.presence,
 @shop.nearest_station.presence,
 "大阪",
@@ -560,7 +560,7 @@ height: 140px;
 <span class="ss-badge ss-badge--gold">紙のみ</span>
 <% end %>
 
-<% if @shop.open_now? %>
+<% if @shop.respond_to?(:open_now?) && @shop.open_now? %>
 <span class="ss-badge ss-badge--green">営業中</span>
 <% end %>
 
@@ -571,12 +571,12 @@ height: 140px;
 
 <p class="shop-show__lead">
 <%= @shop.name %>は
-<%= @shop.smoking_area_label %>、
-<%= @shop.smoking_type_label %>の店舗です。
+<%= @shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "喫煙情報未設定" %>、
+<%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "喫煙タイプ未設定" %>の店舗です。
 <% if @shop.nearest_station.present? %>
 最寄駅は<%= @shop.nearest_station %>。
 <% end %>
-<% if @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
+<% if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
 通常営業時間は「<%= @shop.display_opening_hours_text %>」です。
 <% end %>
 大阪で喫煙できる飲食店を探している方の参考用ページです。
@@ -621,12 +621,16 @@ height: 140px;
 
 <div class="shop-show__metaItem">
 <span class="shop-show__metaLabel">喫煙エリア</span>
-<div class="shop-show__metaValue"><%= @shop.smoking_area_label %></div>
+<div class="shop-show__metaValue">
+<%= @shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "未設定" %>
+</div>
 </div>
 
 <div class="shop-show__metaItem">
 <span class="shop-show__metaLabel">喫煙タイプ</span>
-<div class="shop-show__metaValue"><%= @shop.smoking_type_label %></div>
+<div class="shop-show__metaValue">
+<%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定" %>
+</div>
 </div>
 </div>
 </section>
@@ -637,17 +641,23 @@ height: 140px;
 <div class="shop-show__hoursBox">
 <div class="shop-show__hoursCard">
 <p class="shop-show__hoursCardTitle">通常営業時間</p>
-<div class="shop-show__hoursCardValue"><%= @shop.display_opening_hours_text %></div>
+<div class="shop-show__hoursCardValue">
+<%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text : "未設定" %>
+</div>
 </div>
 
 <div class="shop-show__hoursCard">
 <p class="shop-show__hoursCardTitle">祝日営業時間</p>
-<div class="shop-show__hoursCardValue"><%= @shop.display_holiday_hours_text %></div>
+<div class="shop-show__hoursCardValue">
+<%= @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text : "未設定" %>
+</div>
 </div>
 
 <div class="shop-show__hoursCard">
 <p class="shop-show__hoursCardTitle">定休日</p>
-<div class="shop-show__hoursCardValue"><%= @shop.display_closed_days_text %></div>
+<div class="shop-show__hoursCardValue">
+<%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text : "未設定" %>
+</div>
 </div>
 </div>
 
@@ -674,7 +684,7 @@ height: 140px;
 </a>
 <% end %>
 
-<% if @shop.tabelog_url.present? %>
+<% if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present? %>
 <%= link_to "食べログで見る",
 @shop.tabelog_url,
 target: "_blank",
@@ -682,7 +692,7 @@ rel: "nofollow noopener",
 class: "ss-btn ss-btn--ghost" %>
 <% end %>
 
-<% if @shop.hotpepper_url.present? %>
+<% if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present? %>
 <%= link_to "ホットペッパーで予約",
 @shop.hotpepper_url,
 target: "_blank",
@@ -698,7 +708,9 @@ class: "ss-btn ss-btn--dark" %>
 <div class="shop-show__metaGrid">
 <div class="shop-show__metaItem">
 <span class="shop-show__metaLabel">メモ</span>
-<div class="shop-show__metaValue"><%= @shop.note.presence || "未設定" %></div>
+<div class="shop-show__metaValue">
+<%= @shop.respond_to?(:note) ? (@shop.note.presence || "未設定") : "未設定" %>
+</div>
 </div>
 
 <div class="shop-show__metaItem">

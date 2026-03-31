@@ -1,0 +1,71 @@
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/contact_messages/index.html.erb %>
+
+<h1>お問い合わせ一覧</h1>
+
+<p style="color:#666; margin-bottom:16px;">
+ユーザーから届いたお問い合わせを確認できます。
+</p>
+
+<% if flash[:notice].present? %>
+<div style="padding:10px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:10px; margin:10px 0;">
+<%= flash[:notice] %>
+</div>
+<% end %>
+
+<% if flash[:alert].present? %>
+<div style="padding:10px; border:1px solid #f5c2c7; background:#f8d7da; border-radius:10px; margin:10px 0;">
+<%= flash[:alert] %>
+</div>
+<% end %>
+
+<% messages = @contact_messages || [] %>
+
+<% if messages.present? %>
+<div style="display:grid; gap:12px; max-width:1100px;">
+<% messages.each do |message| %>
+<% next if message.nil? %>
+
+<section style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff;">
+<div style="display:grid; grid-template-columns:180px 1fr; gap:8px 12px; line-height:1.8;">
+<div><strong>ID</strong></div>
+<div><%= message.id %></div>
+
+<div><strong>日時</strong></div>
+<div><%= message.created_at.present? ? message.created_at.strftime("%Y-%m-%d %H:%M") : "未設定" %></div>
+
+<div><strong>名前</strong></div>
+<div><%= message.respond_to?(:name) ? (message.name.presence || "未入力") : "未入力" %></div>
+
+<div><strong>メール</strong></div>
+<div><%= message.respond_to?(:email) ? (message.email.presence || "未入力") : "未入力" %></div>
+
+<div><strong>件名</strong></div>
+<div><%= message.respond_to?(:subject) ? (message.subject.presence || "未入力") : "未入力" %></div>
+
+<div><strong>内容</strong></div>
+<div style="white-space:pre-wrap;"><%= message.respond_to?(:body) ? (message.body.presence || "未入力") : "未入力" %></div>
+</div>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+<% if defined?(admin_contact_message_path) %>
+<%= link_to "詳細",
+admin_contact_message_path(message),
+style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; color:#111;" %>
+<% end %>
+
+<% if defined?(admin_contact_message_path) %>
+<%= button_to "削除",
+admin_contact_message_path(message),
+method: :delete,
+form: { data: { turbo_confirm: "このお問い合わせを削除しますか？" } },
+style: "padding:10px 14px; border:1px solid #b00020; border-radius:10px; background:#fdecea; color:#b00020; font-weight:700;" %>
+<% end %>
+</div>
+</section>
+<% end %>
+</div>
+<% else %>
+<div style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff;">
+現在、お問い合わせはありません。
+</div>
+<% end %>
