@@ -45,8 +45,33 @@ final_area = @req.proposed_area.to_s.strip.presence || @shop.area
 final_nearest_station = @req.proposed_nearest_station.to_s.strip.presence || @shop.nearest_station
 final_phone = @req.proposed_phone.to_s.strip.presence || @shop.phone
 final_last_confirmed_on = @req.proposed_last_confirmed_on.presence || @shop.last_confirmed_on
-final_smoking_area = @req.proposed_smoking_area.to_s.strip.presence || @shop.smoking_area
-final_smoking_type = @req.proposed_smoking_type.to_s.strip.presence || @shop.smoking_type
+
+final_smoking_area =
+case @req.proposed_smoking_area.to_s.strip
+when "area_all_smoking", "proposed_area_all_smoking"
+"all_smoking"
+when "area_separated", "proposed_area_separated"
+"separated"
+when "area_unknown", "proposed_area_unknown"
+"unknown"
+else
+@shop.smoking_area
+end
+
+final_smoking_type =
+case @req.proposed_smoking_type.to_s.strip
+when "type_both_ok", "proposed_type_both_ok"
+"both_ok"
+when "type_electronic_only", "proposed_type_electronic_only"
+"electronic_only"
+when "type_paper_only", "proposed_type_paper_only"
+"paper_only"
+when "type_unknown", "proposed_type_unknown"
+"unknown"
+else
+@shop.smoking_type
+end
+
 final_genre = @req.genre.to_s.strip.presence || @shop.genre
 
 final_genre_other =
@@ -143,8 +168,26 @@ data: { turbo_confirm: "却下しますか？" } %>
 </p>
 <% end %>
 
-<p style="margin:0 0 8px;"><strong>喫煙エリア：</strong><%= @req.proposed_smoking_area.presence || "（未変更）" %></p>
-<p style="margin:0 0 8px;"><strong>喫煙タイプ：</strong><%= @req.proposed_smoking_type.presence || "（未変更）" %></p>
+<p style="margin:0 0 8px;">
+<strong>喫煙エリア：</strong>
+<%= case @req.proposed_smoking_area.to_s
+when "area_all_smoking", "proposed_area_all_smoking" then "席で喫煙可"
+when "area_separated", "proposed_area_separated" then "喫煙所あり"
+when "area_unknown", "proposed_area_unknown" then "不明"
+else "（未変更）"
+end %>
+</p>
+
+<p style="margin:0 0 8px;">
+<strong>喫煙タイプ：</strong>
+<%= case @req.proposed_smoking_type.to_s
+when "type_both_ok", "proposed_type_both_ok" then "紙・加熱式どちらもOK"
+when "type_electronic_only", "proposed_type_electronic_only" then "加熱式タバコのみOK"
+when "type_paper_only", "proposed_type_paper_only" then "紙タバコのみOK"
+when "type_unknown", "proposed_type_unknown" then "不明"
+else "（未変更）"
+end %>
+</p>
 
 <p style="margin:0;">
 <strong>補足（この依頼の note）：</strong><br>
@@ -239,6 +282,7 @@ method: :patch, local: true, data: { turbo: false } do %>
 <option value="">選択してください</option>
 <option value="all_smoking" <%= "selected" if final_smoking_area.to_s == "all_smoking" %>>席で喫煙可</option>
 <option value="separated" <%= "selected" if final_smoking_area.to_s == "separated" %>>喫煙所あり</option>
+<option value="unknown" <%= "selected" if final_smoking_area.to_s == "unknown" %>>不明</option>
 </select>
 </div>
 
@@ -249,6 +293,7 @@ method: :patch, local: true, data: { turbo: false } do %>
 <option value="both_ok" <%= "selected" if final_smoking_type.to_s == "both_ok" %>>紙・加熱式どちらもOK</option>
 <option value="electronic_only" <%= "selected" if final_smoking_type.to_s == "electronic_only" %>>加熱式タバコのみOK</option>
 <option value="paper_only" <%= "selected" if final_smoking_type.to_s == "paper_only" %>>紙タバコのみOK</option>
+<option value="unknown" <%= "selected" if final_smoking_type.to_s == "unknown" %>>不明</option>
 </select>
 </div>
 
@@ -325,7 +370,7 @@ value="<%= att.blob_id %>">
 <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
 <div>
 <label>サムネ種類</label><br>
-<select name="shop[thumbnail_kind]">
+<select name="apply[thumbnail_kind]">
 <option value="auto" <%= "selected" if final_thumbnail_kind == "auto" %>>自動</option>
 <option value="food" <%= "selected" if final_thumbnail_kind == "food" %>>料理</option>
 <option value="exterior" <%= "selected" if final_thumbnail_kind == "exterior" %>>外観</option>
@@ -336,7 +381,7 @@ value="<%= att.blob_id %>">
 
 <div>
 <label>何枚目（1〜）</label><br>
-<input type="number" name="shop[thumbnail_index]" min="1" max="20" value="<%= final_thumbnail_index %>" style="width:140px;">
+<input type="number" name="apply[thumbnail_index]" min="1" max="20" value="<%= final_thumbnail_index %>" style="width:140px;">
 </div>
 </div>
 
