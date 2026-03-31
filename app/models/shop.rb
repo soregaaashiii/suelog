@@ -16,14 +16,16 @@ has_many_attached :menu_photos
 # ===== Smoking status =====
 enum :smoking_area, {
 separated: 0, # 喫煙所あり
-all_smoking: 1 # 席で喫煙可
-}
+all_smoking: 1, # 席で喫煙可
+unknown: 2 # 不明
+}, prefix: true
 
 enum :smoking_type, {
 both_ok: 0, # 紙・加熱式OK
 electronic_only: 1, # 加熱式のみ
-paper_only: 2 # 紙のみ
-}
+paper_only: 2, # 紙のみ
+unknown: 3 # 不明
+}, prefix: true
 
 # ===== Scopes =====
 scope :approved, -> { where(approved: true) }
@@ -143,6 +145,8 @@ when "all_smoking"
 "席で喫煙可"
 when "separated"
 "喫煙所あり"
+when "unknown"
+"不明"
 else
 "未設定"
 end
@@ -156,6 +160,8 @@ when "electronic_only"
 "加熱式タバコのみOK"
 when "paper_only"
 "紙タバコのみOK"
+when "unknown"
+"不明"
 else
 "未設定"
 end

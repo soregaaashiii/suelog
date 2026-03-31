@@ -77,6 +77,8 @@ loading: "lazy" %>
 <span class="badge badge--dark">席で喫煙可</span>
 <% elsif shop.smoking_area == "separated" %>
 <span class="badge badge--line">喫煙所あり</span>
+<% elsif shop.smoking_area == "unknown" %>
+<span class="badge badge--type-unknown">喫煙エリア不明</span>
 <% end %>
 
 <% if shop.smoking_type == "both_ok" %>
@@ -85,6 +87,12 @@ loading: "lazy" %>
 <span class="badge badge--type-paper">紙のみ</span>
 <% elsif shop.smoking_type == "electronic_only" %>
 <span class="badge badge--type-electronic">加熱式のみ</span>
+<% elsif shop.smoking_type == "unknown" %>
+<span class="badge badge--type-unknown">喫煙タイプ不明</span>
+<% end %>
+
+<% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
+<span class="badge badge--unverified">未確認</span>
 <% end %>
 
 <% if very_old %>
@@ -156,6 +164,18 @@ border: 1px solid #f0c98a;
 background: #eef4ff;
 color: #1f4ea3;
 border: 1px solid #c8d8fb;
+}
+
+.badge--type-unknown {
+background: #f5f5f5;
+color: #555555;
+border: 1px solid #d8d8d8;
+}
+
+.badge--unverified {
+background: #fff6db;
+color: #8a6500;
+border: 1px solid #f0de9c;
 }
 
 .shop-card__areaLinks {

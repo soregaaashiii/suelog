@@ -84,7 +84,7 @@ patch :reject
 end
 
 collection do
-post :bulk_update
+patch :bulk_update
 post :import
 end
 end

@@ -23,6 +23,8 @@ when "rejected"
 scope = scope.where(rejected: true)
 when "all"
 # all
+when "unverified"
+scope = scope.where(smoking_unverified: true)
 else
 scope = scope.where(approved: false).where(rejected: [false, nil])
 end
@@ -96,6 +98,10 @@ when "reject"
 scope.update_all(approved: false, rejected: true, updated_at: Time.current)
 redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
 alert: "一括却下しました（#{ids.size}件）"
+when "unverify"
+scope.update_all(smoking_unverified: false, updated_at: Time.current)
+redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+notice: "未確認を解除しました（#{ids.size}件）"
 else
 redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
 alert: "不正な操作です"
@@ -331,6 +337,7 @@ params.require(:shop).permit(
 :note,
 :smoking_area,
 :smoking_type,
+:smoking_unverified,
 :last_confirmed_on,
 :opening_hours_text,
 :holiday_hours_text,
