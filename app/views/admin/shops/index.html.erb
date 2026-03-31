@@ -32,15 +32,23 @@ style: "padding:8px 12px; border:1px solid #111; border-radius:10px; background:
 <% if @status == "all" %>
 <strong>すべて</strong>｜
 <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-<%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>
+<%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+<%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>
 <% elsif @status == "rejected" %>
 <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
 <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-<strong>却下</strong>
+<strong>却下</strong>｜
+<%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>
+<% elsif @status == "unverified" %>
+<%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+<%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+<%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+<strong>未確認のみ</strong>
 <% else %>
 <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
 <strong>承認待ち</strong>｜
-<%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>
+<%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+<%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>
 <% end %>
 </div>
 
@@ -143,6 +151,15 @@ style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#
 一括却下
 </button>
 
+<button type="submit"
+name="operation"
+value="unverify"
+data-turbo="false"
+data-turbo-confirm="選択した店舗の未確認を解除しますか？"
+style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+未確認を解除
+</button>
+
 <span style="color:#999; font-size:12px;">
 ※ 一括操作は「このページでチェックされた店舗のみ」
 </span>
@@ -171,6 +188,15 @@ style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#
 
 <td style="padding:8px 0;">
 <strong><%= shop.name %></strong>
+
+<% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
+<div style="margin-top:6px;">
+<span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#fff6db; color:#8a6500; border:1px solid #f0de9c;">
+未確認
+</span>
+</div>
+<% end %>
+
 <% if Shop.column_names.include?("source") && shop.respond_to?(:source) && shop.source.present? %>
 <div style="color:#666; font-size:12px; margin-top:4px;">source：<%= shop.source %></div>
 <% end %>
@@ -185,6 +211,12 @@ style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#
 <span style="color:#b00020; font-weight:bold;">却下</span>
 <% else %>
 <span style="color:#b00020; font-weight:bold;">承認待ち</span>
+<% end %>
+
+<% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
+<div style="margin-top:4px; color:#8a6500; font-size:12px; font-weight:700;">
+喫煙情報未確認
+</div>
 <% end %>
 </td>
 
@@ -201,6 +233,10 @@ reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: 
 method: :patch,
 data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
 
+<%= link_to "編集",
+edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+<% else %>
 <%= link_to "編集",
 edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
 style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>

@@ -1,3 +1,5 @@
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/shops/show.html.erb %>
+
 <% page_title_parts = [@shop.name.presence, "喫煙できる店", "吸えログ in大阪"].compact %>
 <% page_description_parts = [] %>
 <% page_description_parts << "#{@shop.name}の喫煙情報。" if @shop.name.present? %>
@@ -423,6 +425,18 @@ color: #2f6b3b;
 border-color: #d8e7d7;
 }
 
+.ss-badge--warn {
+background: #fff6db;
+color: #8a6500;
+border-color: #f0de9c;
+}
+
+.ss-badge--muted {
+background: #f5f5f5;
+color: #555555;
+border-color: #d8d8d8;
+}
+
 .ss-btn {
 display: inline-flex;
 align-items: center;
@@ -471,6 +485,12 @@ color: #2f6b3b;
 border: 1px solid #f0d1d1;
 background: #fff6f6;
 color: #b00020;
+}
+
+.ss-alert--warn {
+border: 1px solid #f0de9c;
+background: #fffaf0;
+color: #8a6500;
 }
 
 .ss-pending {
@@ -550,6 +570,8 @@ height: 140px;
 <span class="ss-badge ss-badge--dark">席で喫煙可</span>
 <% elsif @shop.smoking_area == "separated" %>
 <span class="ss-badge ss-badge--line">喫煙所あり</span>
+<% elsif @shop.smoking_area == "unknown" %>
+<span class="ss-badge ss-badge--muted">喫煙エリア不明</span>
 <% end %>
 
 <% if @shop.smoking_type == "both_ok" %>
@@ -558,6 +580,12 @@ height: 140px;
 <span class="ss-badge ss-badge--gold">加熱式のみ</span>
 <% elsif @shop.smoking_type == "paper_only" %>
 <span class="ss-badge ss-badge--gold">紙のみ</span>
+<% elsif @shop.smoking_type == "unknown" %>
+<span class="ss-badge ss-badge--muted">喫煙タイプ不明</span>
+<% end %>
+
+<% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
+<span class="ss-badge ss-badge--warn">喫煙情報未確認</span>
 <% end %>
 
 <% if @shop.respond_to?(:open_now?) && @shop.open_now? %>
@@ -589,6 +617,12 @@ height: 140px;
 
 <% if flash[:alert].present? %>
 <div class="ss-alert ss-alert--alert"><%= flash[:alert] %></div>
+<% end %>
+
+<% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
+<div class="ss-alert ss-alert--warn">
+この店舗の喫煙情報は未確認です。来店前に店舗へご確認ください。
+</div>
 <% end %>
 
 <div class="shop-show__layout">
@@ -632,6 +666,13 @@ height: 140px;
 <%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定" %>
 </div>
 </div>
+
+<% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
+<div class="shop-show__metaItem">
+<span class="shop-show__metaLabel">喫煙情報ステータス</span>
+<div class="shop-show__metaValue">未確認</div>
+</div>
+<% end %>
 </div>
 </section>
 
