@@ -1,6 +1,8 @@
 # /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/config/routes.rb
 Rails.application.routes.draw do
 constraints(host: /(?:.+\.)?onrender\.com\z/) do
+get "/", to: redirect("https://suelog.jp", status: 301)
+
 match "*path",
 to: redirect(status: 301) { |params, _req| "https://suelog.jp/#{params[:path]}" },
 via: :all
