@@ -5,3 +5,5 @@ import "controllers"
 
 
 console.log("[app] application.js loaded")
+import "trix"
+import "@rails/actiontext"

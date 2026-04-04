@@ -1,0 +1,21 @@
+<h1>記事一覧</h1>
+
+<% @articles.each do |article| %>
+  <article style="margin-bottom:24px; padding-bottom:24px; border-bottom:1px solid #eee;">
+    <% if article.eyecatch.attached? %>
+      <div style="margin-bottom:12px;">
+        <%= image_tag article.eyecatch, style: "max-width:320px; border-radius:12px;" %>
+      </div>
+    <% end %>
+
+    <h2><%= link_to article.title, article_path(article) %></h2>
+
+    <% if article.summary.present? %>
+      <p><%= article.summary %></p>
+    <% end %>
+
+    <p style="color:#666; font-size:14px;">
+      公開日: <%= l(article.published_at.to_date) if article.published_at.present? %>
+    </p>
+  </article>
+<% end %>

@@ -1,0 +1,28 @@
+<h1>記事管理</h1>
+
+<p><%= link_to "新規作成", new_admin_article_path %></p>
+
+<table style="width:100%; border-collapse:collapse;">
+  <thead>
+    <tr>
+      <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">タイトル</th>
+      <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">公開</th>
+      <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">公開日時</th>
+      <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @articles.each do |article| %>
+      <tr>
+        <td style="padding:8px; border-bottom:1px solid #eee;"><%= article.title %></td>
+        <td style="padding:8px; border-bottom:1px solid #eee;"><%= article.published? ? "公開" : "下書き" %></td>
+        <td style="padding:8px; border-bottom:1px solid #eee;"><%= article.published_at %></td>
+        <td style="padding:8px; border-bottom:1px solid #eee;">
+          <%= link_to "編集", edit_admin_article_path(article) %>
+          |
+          <%= link_to "削除", admin_article_path(article), data: { turbo_method: :delete, turbo_confirm: "削除しますか？" } %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

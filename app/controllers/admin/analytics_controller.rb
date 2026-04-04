@@ -1,21 +1,62 @@
-class Admin::AnalyticsController < Admin::BaseController
+# /Users/kawamuratakuya/dev/suelog/app/controllers/admin/articles_controller.rb
+class Admin::ArticlesController < Admin::BaseController
+  before_action :set_article, only: [:show, :edit, :update, :destroy]
+
   def index
-    # 全体
-    @total_views = PageView.count
+    @articles = Article.order(created_at: :desc)
+  end
 
-    # 店舗別（上位50）
-    @by_shop = PageView
-      .joins(:shop)
-      .group("shops.id")
-      .select("shops.id, shops.name, COUNT(page_views.id) AS views")
-      .order(Arel.sql("views DESC"))
-      .limit(50)
+  def show
+  end
 
-    # 直近7日（日別）
-    @daily = PageView
-      .where("created_at >= ?", 7.days.ago)
-      .group("date(created_at)")
-      .order(Arel.sql("date(created_at) ASC"))
-      .count
+  def new
+    @article = Article.new(published: false)
+  end
+
+  def create
+    @article = Article.new(article_params)
+
+    if @article.save
+      redirect_to admin_articles_path, notice: "記事を作成しました"
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  def edit
+  end
+
+  def update
+    if @article.update(article_params)
+      redirect_to admin_articles_path, notice: "記事を更新しました"
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @article.destroy
+    redirect_to admin_articles_path, notice: "記事を削除しました"
+  end
+
+  private
+
+  def set_article
+    @article = Article.find_by!(slug: params[:id])
+  end
+
+  def article_params
+    params.require(:article).permit(
+      :title,
+      :slug,
+      :summary,
+      :published,
+      :published_at,
+      :admin_note,
+      :seo_title,
+      :meta_description,
+      :eyecatch,
+      :body
+    )
   end
 end
