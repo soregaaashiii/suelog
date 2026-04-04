@@ -1,3 +1,4 @@
+# /Users/kawamuratakuya/dev/suelog/app/models/shop_edit_request.rb
 # frozen_string_literal: true
 
 class ShopEditRequest < ApplicationRecord
@@ -12,6 +13,7 @@ has_many_attached :menu_photos
 
 THUMB_KINDS = %w[auto food exterior interior menu].freeze
 
+# 既存DB/既存承認処理との互換性を維持するため、enumキー自体は area_* / type_* のまま維持
 enum :proposed_smoking_area, {
 area_separated: 0,
 area_all_smoking: 1,
@@ -35,39 +37,83 @@ validate :proposed_thumbnail_values
 before_validation :normalize_proposed_opening_hours_json
 before_validation :normalize_proposed_smoking_values
 
+# --------------------------------------------------
+# enum代入時点で ArgumentError が出ないように、setter で先に正規化する
+# controller の build(...) や assign_attributes(...) でも効く
+# --------------------------------------------------
+def proposed_smoking_area=(value)
+normalized = normalize_smoking_area_token(value)
+super(normalized)
+end
+
+def proposed_smoking_type=(value)
+normalized = normalize_smoking_type_token(value)
+super(normalized)
+end
+
 private
 
 def normalize_proposed_opening_hours_json
 return unless respond_to?(:proposed_opening_hours_json=)
 
-self.proposed_opening_hours_json = OpeningHoursParser.normalize_json(proposed_opening_hours_json)
+self.proposed_opening_hours_json =
+if defined?(OpeningHoursParser)
+OpeningHoursParser.normalize_json(proposed_opening_hours_json)
+else
+normalize_json_fallback(proposed_opening_hours_json)
+end
+end
+
+def normalize_json_fallback(value)
+case value
+when nil
+{}
+when ActionController::Parameters
+value.to_unsafe_h
+when Hash
+value
+else
+value.respond_to?(:to_h) ? value.to_h : {}
+end
 end
 
 def normalize_proposed_smoking_values
-self.proposed_smoking_area =
-case proposed_smoking_area.to_s
-when "separated", "proposed_separated", "area_separated", "proposed_area_separated"
-"area_separated"
-when "all_smoking", "proposed_all_smoking", "area_all_smoking", "proposed_area_all_smoking"
-"area_all_smoking"
-when "unknown", "proposed_unknown", "area_unknown", "proposed_area_unknown"
-"area_unknown"
-else
-proposed_smoking_area
+# setter経由でもう正規化されるが、念のため再正規化して整合性を保つ
+self[:proposed_smoking_area] = self.class.proposed_smoking_areas[normalize_smoking_area_token(proposed_smoking_area)] if normalize_smoking_area_token(proposed_smoking_area).present?
+self[:proposed_smoking_type] = self.class.proposed_smoking_types[normalize_smoking_type_token(proposed_smoking_type)] if normalize_smoking_type_token(proposed_smoking_type).present?
 end
 
-self.proposed_smoking_type =
-case proposed_smoking_type.to_s
-when "both_ok", "proposed_both_ok", "type_both_ok", "proposed_type_both_ok"
+def normalize_smoking_area_token(value)
+raw = value.to_s.strip
+return nil if raw.blank?
+
+case raw
+when "area_separated", "proposed_area_separated", "separated", "proposed_separated"
+"area_separated"
+when "area_all_smoking", "proposed_area_all_smoking", "all_smoking", "proposed_all_smoking"
+"area_all_smoking"
+when "area_unknown", "proposed_area_unknown", "unknown", "proposed_unknown"
+"area_unknown"
+else
+self.class.proposed_smoking_areas.key?(raw) ? raw : nil
+end
+end
+
+def normalize_smoking_type_token(value)
+raw = value.to_s.strip
+return nil if raw.blank?
+
+case raw
+when "type_both_ok", "proposed_type_both_ok", "both_ok", "proposed_both_ok"
 "type_both_ok"
-when "electronic_only", "proposed_electronic_only", "type_electronic_only", "proposed_type_electronic_only"
+when "type_electronic_only", "proposed_type_electronic_only", "electronic_only", "proposed_electronic_only"
 "type_electronic_only"
-when "paper_only", "proposed_paper_only", "type_paper_only", "proposed_type_paper_only"
+when "type_paper_only", "proposed_type_paper_only", "paper_only", "proposed_paper_only"
 "type_paper_only"
-when "unknown", "proposed_unknown", "type_unknown", "proposed_type_unknown"
+when "type_unknown", "proposed_type_unknown", "unknown", "proposed_unknown"
 "type_unknown"
 else
-proposed_smoking_type
+self.class.proposed_smoking_types.key?(raw) ? raw : nil
 end
 end
 
