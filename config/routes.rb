@@ -21,6 +21,9 @@ get "contact", to: "contact_messages#new", as: :new_contact_message
 post "contact", to: "contact_messages#create", as: :contact_messages
 get "contact/done", to: "contact_messages#done", as: :done_contact_messages
 
+# 記事
+resources :articles, only: [:index, :show]
+
 # Area landing / filtered pages
 get "umeda",
 to: "home#index",
@@ -113,5 +116,8 @@ end
 end
 
 resources :contact_messages, only: [:index, :show, :destroy]
+
+# 記事管理
+resources :articles
 end
 end

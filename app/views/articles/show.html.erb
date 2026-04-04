@@ -1,0 +1,15 @@
+<h1><%= @article.title %></h1>
+
+<% if @article.eyecatch.attached? %>
+  <div style="margin-bottom:16px;">
+    <%= image_tag @article.eyecatch, style: "max-width:100%; border-radius:12px;" %>
+  </div>
+<% end %>
+
+<% if @article.summary.present? %>
+  <p style="font-size:18px; color:#555;"><%= @article.summary %></p>
+<% end %>
+
+<div class="article-body">
+  <%= @article.body %>
+</div>

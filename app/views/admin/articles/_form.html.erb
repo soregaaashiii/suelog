@@ -1,0 +1,63 @@
+<% if article.errors.any? %>
+  <div style="border:1px solid #f5c2c7; background:#f8d7da; padding:12px; border-radius:8px; margin-bottom:16px;">
+    <strong>入力エラーがあります</strong>
+    <ul>
+      <% article.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: [:admin, article], local: true, html: { multipart: true } do |f| %>
+  <div style="margin-bottom:12px;">
+    <div>タイトル</div>
+    <%= f.text_field :title, style: "width:100%; padding:10px;" %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>スラッグ</div>
+    <%= f.text_field :slug, style: "width:100%; padding:10px;" %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>概要</div>
+    <%= f.text_area :summary, rows: 3, style: "width:100%; padding:10px;" %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>アイキャッチ画像</div>
+    <%= f.file_field :eyecatch %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>本文</div>
+    <%= f.rich_textarea :body %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label><%= f.check_box :published %> 公開する</label>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>公開日時</div>
+    <%= f.datetime_local_field :published_at %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>SEOタイトル</div>
+    <%= f.text_field :seo_title, style: "width:100%; padding:10px;" %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>meta description</div>
+    <%= f.text_area :meta_description, rows: 3, style: "width:100%; padding:10px;" %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>管理メモ</div>
+    <%= f.text_area :admin_note, rows: 3, style: "width:100%; padding:10px;" %>
+  </div>
+
+  <%= f.submit "保存", style: "padding:10px 16px;" %>
+<% end %>
