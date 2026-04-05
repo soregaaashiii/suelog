@@ -1,121 +1,121 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<% page_title = content_for?(:title) ? yield(:title) : "吸えログ｜大阪で喫煙できる飲食店検索（梅田・難波）" %>
-<% page_description = content_for?(:meta_description) ? yield(:meta_description) : "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。" %>
-<% page_url = content_for?(:canonical_url) ? yield(:canonical_url) : request.original_url %>
+  <% page_title = content_for?(:title) ? yield(:title) : "吸えログ｜大阪で喫煙できる飲食店検索（梅田・難波）" %>
+  <% page_description = content_for?(:meta_description) ? yield(:meta_description) : "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。" %>
+  <% page_url = content_for?(:canonical_url) ? yield(:canonical_url) : request.original_url %>
 
-<% noindex_params_present =
-params[:q].present? ||
-params[:station].present? ||
-params[:genre].present? ||
-params[:smoking_area].present? ||
-params[:smoking_type].present? ||
-params[:needs_review].present? ||
-params[:sort].present? ||
-params[:page].present? ||
-params[:per].present? %>
+  <% noindex_params_present =
+    params[:q].present? ||
+    params[:station].present? ||
+    params[:genre].present? ||
+    params[:smoking_area].present? ||
+    params[:smoking_type].present? ||
+    params[:needs_review].present? ||
+    params[:sort].present? ||
+    params[:page].present? ||
+    params[:per].present? %>
 
-<title><%= page_title %></title>
-<meta name="description" content="<%= page_description %>">
+  <title><%= page_title %></title>
+  <meta name="description" content="<%= page_description %>">
 
-<%= favicon_link_tag "/favicon.png" %>
-<link rel="apple-touch-icon" href="/favicon.png">
+  <%= favicon_link_tag "/favicon.png" %>
+  <link rel="apple-touch-icon" href="/favicon.png">
 
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="<%= noindex_params_present ? "noindex,follow" : "index,follow" %>">
-<meta name="format-detection" content="telephone=no">
-<link rel="canonical" href="<%= page_url %>">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="<%= noindex_params_present ? "noindex,follow" : "index,follow" %>">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="<%= page_url %>">
 
-<meta property="og:type" content="website">
-<meta property="og:locale" content="ja_JP">
-<meta property="og:site_name" content="吸えログ in大阪">
-<meta property="og:title" content="<%= page_title %>">
-<meta property="og:description" content="<%= page_description %>">
-<meta property="og:url" content="<%= page_url %>">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:site_name" content="吸えログ in大阪">
+  <meta property="og:title" content="<%= page_title %>">
+  <meta property="og:description" content="<%= page_description %>">
+  <meta property="og:url" content="<%= page_url %>">
 
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="<%= page_title %>">
-<meta name="twitter:description" content="<%= page_description %>">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= page_title %>">
+  <meta name="twitter:description" content="<%= page_description %>">
 
-<%# Google Search Console 用。確認コードを入手したら content を差し替え %>
-<%# <meta name="google-site-verification" content="ここに確認コードを入れる"> %>
+  <%# Google Search Console 用。確認コードを入手したら content を差し替え %>
+  <%# <meta name="google-site-verification" content="ここに確認コードを入れる"> %>
 
-<%= csrf_meta_tags %>
-<%= csp_meta_tag %>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
 
-<%= yield :head %>
+  <%= yield :head %>
 
-<%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-<%= javascript_importmap_tags %>
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_importmap_tags %>
 </head>
 
 <body>
-<% count = session[:contribution_count].to_i %>
-<% badge = contribution_badge(count) %>
+  <% count = session[:contribution_count].to_i %>
+  <% badge = contribution_badge(count) %>
 
-<% if count > 0 %>
-<div style="background:#111111; color:#ffffff; border-bottom:1px solid #2a2a2a;">
-<div class="container" style="padding-top:8px; padding-bottom:8px; text-align:center; font-size:13px;">
-ご協力回数：<strong><%= count %>回</strong>
+  <% if count > 0 %>
+    <div style="background:#111111; color:#ffffff; border-bottom:1px solid #2a2a2a;">
+      <div class="container" style="padding-top:8px; padding-bottom:8px; text-align:center; font-size:13px;">
+        ご協力回数：<strong><%= count %>回</strong>
 
-<% if badge %>
-<span style="display:inline-flex; align-items:center; margin-left:10px; padding:4px 10px; border-radius:999px; background:<%= badge[:color] %>; color:#111111; font-weight:800;">
-<%= badge[:icon] %>&nbsp;<%= badge[:name] %>
-</span>
-<% end %>
-</div>
-</div>
-<% end %>
+        <% if badge %>
+          <span style="display:inline-flex; align-items:center; margin-left:10px; padding:4px 10px; border-radius:999px; background:<%= badge[:color] %>; color:#111111; font-weight:800;">
+            <%= badge[:icon] %>&nbsp;<%= badge[:name] %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
-<header class="site-header">
-<div class="header-inner">
-<%= link_to root_path, class: "logo", style: "text-decoration:none;" do %>
-<span style="color:#111111;">吸えログ</span>
-<span style="color:#C6A75E;"> in大阪</span>
-<% end %>
+  <header class="site-header">
+    <div class="header-inner">
+      <%= link_to root_path, class: "logo logo--wrap", style: "text-decoration:none;" do %>
+        <span class="logo-main">吸えログ</span>
+        <span class="logo-sub">in大阪</span>
+      <% end %>
 
-<nav class="nav">
-<%= link_to "ホーム", root_path, class: "nav-link" %>
-<%= link_to "地図で探す", map_path, class: "nav-link" %>
-<%= link_to "記事", articles_path, class: "nav-link" %>
-<%= link_to "店舗登録", new_shop_path, class: "nav-primary" %>
-</nav>
-</div>
-</header>
+      <nav class="nav">
+        <%= link_to "ホーム", root_path, class: "nav-link" %>
+        <%= link_to "地図で探す", map_path, class: "nav-link" %>
+        <%= link_to "記事", articles_path, class: "nav-link" %>
+        <%= link_to "店舗登録", new_shop_path, class: "nav-primary nav-primary--cta" %>
+      </nav>
+    </div>
+  </header>
 
-<main class="main-content">
-<div class="container">
-<% if notice.present? %>
-<div style="margin:12px 0; padding:12px 14px; border:1px solid #d8e7d7; background:#eef7ee; color:#2f6b3b; border-radius:12px; font-weight:700;">
-<%= notice %>
-</div>
-<% end %>
+  <main class="main-content">
+    <div class="container">
+      <% if notice.present? %>
+        <div style="margin:12px 0; padding:12px 14px; border:1px solid #d8e7d7; background:#eef7ee; color:#2f6b3b; border-radius:12px; font-weight:700;">
+          <%= notice %>
+        </div>
+      <% end %>
 
-<% if alert.present? %>
-<div style="margin:12px 0; padding:12px 14px; border:1px solid #f0d1d1; background:#fff6f6; color:#b00020; border-radius:12px; font-weight:700;">
-<%= alert %>
-</div>
-<% end %>
+      <% if alert.present? %>
+        <div style="margin:12px 0; padding:12px 14px; border:1px solid #f0d1d1; background:#fff6f6; color:#b00020; border-radius:12px; font-weight:700;">
+          <%= alert %>
+        </div>
+      <% end %>
 
-<%= yield %>
-</div>
-</main>
+      <%= yield %>
+    </div>
+  </main>
 
-<footer class="site-footer">
-<div class="container">
-<div style="font-weight:800; letter-spacing:0.02em;">
-© <%= Time.current.year %> 吸えログ in大阪
-</div>
+  <footer class="site-footer">
+    <div class="container">
+      <div style="font-weight:800; letter-spacing:0.02em;">
+        © <%= Time.current.year %> 吸えログ in大阪
+      </div>
 
-<div style="margin-top:14px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-<%= link_to "お問い合わせ", new_contact_message_path, style: "color:#e7d7a7; text-decoration:none;" %>
-<span style="color:#666;">｜</span>
-<%= link_to "利用規約", terms_path, style: "color:#e7d7a7; text-decoration:none;" %>
-<span style="color:#666;">｜</span>
-<%= link_to "プライバシーポリシー", privacy_path, style: "color:#e7d7a7; text-decoration:none;" %>
-</div>
-</div>
-</footer>
+      <div style="margin-top:14px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+        <%= link_to "お問い合わせ", new_contact_message_path, style: "color:#e7d7a7; text-decoration:none;" %>
+        <span style="color:#666;">｜</span>
+        <%= link_to "利用規約", terms_path, style: "color:#e7d7a7; text-decoration:none;" %>
+        <span style="color:#666;">｜</span>
+        <%= link_to "プライバシーポリシー", privacy_path, style: "color:#e7d7a7; text-decoration:none;" %>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>
