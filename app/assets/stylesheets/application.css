@@ -491,7 +491,6 @@ display: none;
 
 
 
-
 /* =========================
 Area Cards
 ========================= */
@@ -501,6 +500,10 @@ display: grid;
 grid-template-columns: repeat(2, minmax(0, 1fr));
 gap: 18px;
 align-items: stretch;
+}
+
+.area-grid--top {
+margin-top: 4px;
 }
 
 .area-card {
@@ -525,17 +528,17 @@ background: linear-gradient(90deg, #111111 0%, #c6a75e 100%);
 opacity: 0.95;
 }
 
+.area-card--top {
+gap: 0;
+}
+
 .area-card__head,
 .area-card__top {
 display: flex;
 align-items: flex-start;
 justify-content: space-between;
 gap: 12px;
-margin-bottom: 12px;
-}
-
-.area-card__eyebrow {
-display: none;
+margin-bottom: 18px;
 }
 
 .area-card__title {
@@ -561,55 +564,66 @@ font-weight: 800;
 white-space: nowrap;
 }
 
-.area-card__desc {
-margin: 0 0 18px;
-color: #5f5a52;
-font-size: 15px;
-line-height: 1.8;
-}
-
-.area-card__actions,
-.area-card__main,
-.area-card__mainAction {
+.area-card__actions {
 margin-bottom: 14px;
 }
 
-.area-card__primary,
-.area-card__cta {
-min-width: 180px;
+.area-card__actions--stack {
+margin-bottom: 14px;
 }
 
-.area-card__links,
-.area-card__chips,
-.area-card__subLinks {
-display: flex;
-flex-wrap: wrap;
+.area-card__main-btn {
+width: 100%;
+min-height: 52px;
+font-size: 16px;
+font-weight: 800;
+}
+
+.area-card__quick-grid {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 10px;
+}
+
+.area-card__quick-btn {
+width: 100%;
+min-height: 46px;
+font-size: 15px;
+font-weight: 800;
+justify-content: center;
+}
+
+@media (max-width: 640px) {
+.area-grid {
+grid-template-columns: 1fr;
+}
+
+.area-card {
+padding: 20px 18px;
+border-radius: 18px;
+}
+
+.area-card__title {
+font-size: 24px;
+}
+
+.area-card__main-btn {
+min-height: 50px;
+font-size: 15px;
+}
+
+.area-card__quick-grid {
+grid-template-columns: repeat(2, minmax(0, 1fr));
 gap: 8px;
 }
 
-.area-link-pill,
-.area-pill,
-.chip {
-display: inline-flex;
-align-items: center;
-min-height: 38px;
-padding: 0 12px;
-border-radius: 999px;
-border: 1px solid #e8e3d7;
-background: #ffffff;
-color: #111111;
-font-size: 13px;
-font-weight: 700;
-transition: 0.18s ease;
+.area-card__quick-btn {
+min-height: 44px;
+font-size: 14px;
+padding: 0 10px;
+}
 }
 
-.area-link-pill:hover,
-.area-pill:hover,
-.chip:hover {
-border-color: #d7c7a0;
-background: #faf8f2;
-transform: translateY(-1px);
-}
 
 /* =========================
 Search
