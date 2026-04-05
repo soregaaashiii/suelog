@@ -452,6 +452,44 @@ color: #111111;
 display: none;
 }
 
+
+.hero__stats--inline {
+  display: flex;
+  gap: 16px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.hero-stat--inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.85);
+  border: 1px solid #e7dcc3;
+  min-height: auto;
+}
+
+.hero-stat--inline .hero-stat__label {
+  font-size: 12px;
+  color: #7b756c;
+  margin: 0;
+}
+
+.hero-stat--inline .hero-stat__value {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111;
+}
+
+
+
+
+
+
+
+
 /* =========================
 Area Cards
 ========================= */
@@ -1370,7 +1408,10 @@ display: none;
 
 
 
-
+.hero__stats--inline {
+  justify-content: center;
+  gap: 10px;
+}
 
 
 

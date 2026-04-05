@@ -26,17 +26,20 @@
 <span class="hero__featureChip hero__featureChip--info">地図・駅で絞り込み</span>
 </div>
 
-<div class="hero__stats hero__stats--compact">
-<div class="hero-stat">
-<div class="hero-stat__label">掲載件数</div>
-<div class="hero-stat__value"><%= @shops_count || 0 %>件</div>
+<div class="hero__stats hero__stats--inline">
+  <div class="hero-stat hero-stat--inline">
+    <span class="hero-stat__label">掲載件数</span>
+    <span class="hero-stat__value"><%= @shops_count || 0 %>件</span>
+  </div>
+
+  <div class="hero-stat hero-stat--inline">
+    <span class="hero-stat__label">更新形式</span>
+    <span class="hero-stat__value">ユーザー投稿型</span>
+  </div>
 </div>
 
-<div class="hero-stat">
-<div class="hero-stat__label">更新形式</div>
-<div class="hero-stat__value">ユーザー投稿型</div>
-</div>
-</div>
+
+
 </div>
 </div>
 </section>
