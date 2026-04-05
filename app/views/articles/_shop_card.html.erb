@@ -1,0 +1,21 @@
+<div style="border:1px solid #ddd; border-radius:10px; padding:12px; margin:16px 0;">
+  <div style="font-weight:700; font-size:16px;">
+    <%= shop.name %>
+  </div>
+
+  <div style="font-size:13px; color:#666; margin-top:4px;">
+    <%= shop.address %>
+  </div>
+
+  <div style="margin-top:6px;">
+    <% if shop.all_smoking? %>
+      <span style="color:#c6a75e;">席で喫煙可</span>
+    <% elsif shop.separated? %>
+      <span>喫煙所あり</span>
+    <% end %>
+  </div>
+
+  <div style="margin-top:10px;">
+    <%= link_to "店舗ページを見る", shop_path(shop), style: "color:#007bff;" %>
+  </div>
+</div>
