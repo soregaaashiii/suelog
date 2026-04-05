@@ -347,12 +347,37 @@ gap: 12px;
 margin-top: 24px;
 }
 
+.hero__actions--ctaRow {
+  align-items: center;
+}
+
+.hero__cta {
+  min-width: 220px;
+  min-height: 56px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.hero__cta--primary {
+  box-shadow: 0 10px 24px rgba(17, 17, 17, 0.14);
+}
+
+.hero__cta--secondary {
+  border-width: 1px;
+}
+
+
+
+
+
+
 .hero__featureChips {
 display: flex;
 flex-wrap: wrap;
 gap: 10px;
 margin-top: 18px;
 }
+
 
 .hero__featureChip {
 display: inline-flex;
@@ -368,12 +393,34 @@ font-weight: 700;
 white-space: nowrap;
 }
 
-.hero__stats {
-display: grid;
-grid-template-columns: repeat(3, minmax(0, 1fr));
-gap: 14px;
-margin-top: 24px;
+
+.hero__featureChips--info {
+  margin-top: 16px;
 }
+
+.hero__featureChip--info {
+  min-height: 32px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid #ece3cf;
+  color: #5f5a52;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+
+.hero__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.hero__stats--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 
 .hero-stat {
 background: rgba(255, 255, 255, 0.92);
@@ -1292,6 +1339,45 @@ font-size: 13px;
 .km-pagination__item--edge {
 display: none;
 }
+
+
+
+
+
+
+.hero__actions--ctaRow {
+  flex-direction: row;
+  gap: 10px;
+}
+
+.hero__cta {
+  width: calc(50% - 5px);
+  min-width: 0;
+  min-height: 52px;
+  font-size: 16px;
+}
+
+.hero__featureChip--info {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
+}
+
+.hero__stats--compact {
+  grid-template-columns: 1fr;
+}
+
+
+
+
+
+
+
+
+
+
+
 }
 
 @media (max-width: 420px) {
@@ -1308,4 +1394,8 @@ gap: 10px;
 width: 100%;
 justify-content: center;
 }
+}
+
+.hero-stat__label:contains("対象エリア") {
+  display: none; !important;
 }
