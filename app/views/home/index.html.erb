@@ -4,6 +4,10 @@
 
 <%= render "shared/hero" %>
 
+
+
+
+
 <section class="home-section">
 <div class="section-head">
 <div>
@@ -12,38 +16,66 @@
 </div>
 </div>
 
-<div class="panel">
-<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
-<div style="border:1px solid #e8e3d7; border-radius:18px; padding:18px; background:#fffdf8;">
-<div style="font-size:20px; font-weight:800; color:#111111; margin-bottom:6px;">梅田</div>
-<p style="margin:0 0 14px; color:#666666; line-height:1.7;">
+<div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:18px;">
+<article style="background:linear-gradient(135deg, #fffdf8 0%, #ffffff 78%); border:1px solid #e8e3d7; border-radius:22px; padding:22px; box-shadow:0 10px 26px rgba(17, 17, 17, 0.04);">
+<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;">
+<div>
+<div style="font-size:28px; line-height:1.05; font-weight:900; color:#111111; letter-spacing:-0.03em;">梅田</div>
+</div>
+<span style="display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border-radius:999px; background:#f6edd7; color:#7a5a12; border:1px solid #eadbb5; font-size:12px; font-weight:800; white-space:nowrap;">人気</span>
+</div>
+
+<p style="margin:0 0 18px; color:#5f5a52; font-size:15px; line-height:1.8;">
 席で吸える店、喫煙所ありの店、居酒屋やバーなどを梅田エリアから探せます。
 </p>
 
-<div style="display:flex; gap:8px; flex-wrap:wrap;">
-<%= link_to "梅田の一覧", umeda_path, class: "btn btn--dark" %>
-<%= link_to "席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost" %>
-<%= link_to "喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost" %>
-<%= link_to "居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost" %>
-</div>
+<div style="margin-bottom:14px;">
+<%= link_to "梅田の一覧を見る", umeda_path, class: "btn btn--dark", style: "min-width:190px;" %>
 </div>
 
-<div style="border:1px solid #e8e3d7; border-radius:18px; padding:18px; background:#fffdf8;">
-<div style="font-size:20px; font-weight:800; color:#111111; margin-bottom:6px;">難波</div>
-<p style="margin:0 0 14px; color:#666666; line-height:1.7;">
+<div style="display:flex; flex-wrap:wrap; gap:8px;">
+<%= link_to "席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost btn--small" %>
+<%= link_to "喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost btn--small" %>
+<%= link_to "居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost btn--small" %>
+</div>
+</article>
+
+<article style="background:linear-gradient(135deg, #fffdf8 0%, #ffffff 78%); border:1px solid #e8e3d7; border-radius:22px; padding:22px; box-shadow:0 10px 26px rgba(17, 17, 17, 0.04);">
+<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;">
+<div>
+<div style="font-size:28px; line-height:1.05; font-weight:900; color:#111111; letter-spacing:-0.03em;">難波</div>
+</div>
+<span style="display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border-radius:999px; background:#f6edd7; color:#7a5a12; border:1px solid #eadbb5; font-size:12px; font-weight:800; white-space:nowrap;">定番</span>
+</div>
+
+<p style="margin:0 0 18px; color:#5f5a52; font-size:15px; line-height:1.8;">
 席で吸える店、喫煙所ありの店、居酒屋やバーなどを難波エリアから探せます。
 </p>
 
-<div style="display:flex; gap:8px; flex-wrap:wrap;">
-<%= link_to "難波の一覧", namba_path, class: "btn btn--dark" %>
-<%= link_to "席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost" %>
-<%= link_to "喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost" %>
-<%= link_to "居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost" %>
+<div style="margin-bottom:14px;">
+<%= link_to "難波の一覧を見る", namba_path, class: "btn btn--dark", style: "min-width:190px;" %>
 </div>
+
+<div style="display:flex; flex-wrap:wrap; gap:8px;">
+<%= link_to "席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost btn--small" %>
+<%= link_to "喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost btn--small" %>
+<%= link_to "居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost btn--small" %>
 </div>
+</article>
 </div>
-</div>
+
+<style>
+@media (max-width: 640px) {
+.home-section > div[style*="grid-template-columns:repeat(2, minmax(0, 1fr))"] {
+grid-template-columns: 1fr !important;
+}
+}
+</style>
 </section>
+
+
+
+
 
 <% q = request.query_parameters.to_h.deep_dup %>
 
