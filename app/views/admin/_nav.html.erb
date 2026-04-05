@@ -1,4 +1,4 @@
-<%# app/views/admin/_nav.html.erb %>
+<%# /Users/kawamuratakuya/dev/suelog/app/views/admin/_nav.html.erb %>
 
 <nav class="admin-nav">
 <div class="admin-nav__inner">
@@ -10,60 +10,57 @@
 <%= admin_nav_link "編集依頼", admin_shop_edit_requests_path(status: "pending"), badge: pending_edit_requests_count %>
 <%= admin_nav_link "通報", admin_shop_reports_path(status: "pending"), badge: pending_reports_count %>
 <%= admin_nav_link "アクセス", admin_analytics_path, badge: nil %>
-
-<%# ✅ 追加：お問い合わせ %>
+<%= admin_nav_link "記事管理", admin_articles_path, badge: nil %>
 <%= admin_nav_link "お問い合わせ", admin_contact_messages_path, badge: nil %>
 </div>
 </div>
 </nav>
 
 <style>
-.admin-nav__links{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-align-items:center;
+.admin-nav__links {
+display: flex;
+gap: 10px;
+flex-wrap: wrap;
+align-items: center;
 }
 
-/* ✅ helperが出してるクラス名に合わせる */
-.admin-nav__link{
-text-decoration:none;
-padding:8px 12px;
-border:1px solid #ddd;
-border-radius:10px;
-display:inline-flex;
-gap:8px;
-align-items:center;
-color:#111;
-font-weight:700;
-background:#fff;
+.admin-nav__link {
+text-decoration: none;
+padding: 8px 12px;
+border: 1px solid #ddd;
+border-radius: 10px;
+display: inline-flex;
+gap: 8px;
+align-items: center;
+color: #111;
+font-weight: 700;
+background: #fff;
 }
 
-.admin-nav__link.is-active{
-border-color:#111;
+.admin-nav__link.is-active {
+border-color: #111;
 }
 
-.admin-nav__text{
-line-height:1.2;
+.admin-nav__text {
+line-height: 1.2;
 }
 
-.admin-badge{
-background:#b00020;
-color:#fff;
-font-size:12px;
-font-weight:800;
-border-radius:999px;
-padding:2px 8px;
-min-width:22px;
-text-align:center;
-line-height:1.4;
-display:inline-flex;
-justify-content:center;
-align-items:center;
+.admin-badge {
+background: #b00020;
+color: #fff;
+font-size: 12px;
+font-weight: 800;
+border-radius: 999px;
+padding: 2px 8px;
+min-width: 22px;
+text-align: center;
+line-height: 1.4;
+display: inline-flex;
+justify-content: center;
+align-items: center;
 }
 
-/* 0でも見えるように薄く表示 */
-.admin-badge.is-zero{
-background:#666;
+.admin-badge.is-zero {
+background: #666;
 }
 </style>
