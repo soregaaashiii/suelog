@@ -1,6 +1,10 @@
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/shared/_hero.html.erb %>
+
 <section class="hero">
 <div class="hero__inner" style="display:grid; grid-template-columns:1fr; gap:0; width:100%; max-width:1180px; margin:0 auto; padding:0 16px;">
+
 <div class="hero__content hero__content--single" style="width:100%; max-width:none; margin:0;">
+
 <div class="hero__topline">
 <div class="hero__eyebrow">SMOKING MAP OSAKA</div>
 </div>
@@ -8,7 +12,66 @@
 <h1 class="hero-title">今、吸える店。</h1>
 <p class="hero-sub">大阪で喫煙可能な飲食店をすぐ検索</p>
 
+<!-- ===== 検索フォーム ===== -->
+<div class="hero__search">
+<%= form_with url: (@search_form_url || root_path), method: :get, local: true, class: "search-form" do %>
 
+<div class="search-grid">
+
+<!-- キーワード -->
+<div class="search-field">
+<%= label_tag :q, "キーワード" %>
+<%= text_field_tag :q, params[:q], placeholder: "店名・駅・住所など", class: "search-input" %>
+</div>
+
+<!-- ジャンル（ここが今回の本体） -->
+<div class="search-field">
+<%= label_tag :genre, "ジャンル" %>
+<%= select_tag :genre,
+options_for_select([["すべて", ""]] + Shop.genre_options.map { |g| [g, g] }, params[:genre]),
+class: "search-select" %>
+</div>
+
+<!-- 駅 -->
+<div class="search-field">
+<%= label_tag :station, "駅" %>
+<%= text_field_tag :station, params[:station], placeholder: "例：梅田", class: "search-input" %>
+</div>
+
+<!-- 喫煙エリア -->
+<div class="search-field">
+<%= label_tag :smoking_area, "喫煙エリア" %>
+<%= select_tag :smoking_area,
+options_for_select([
+["すべて", ""],
+["席で喫煙可", "all_smoking"],
+["喫煙所あり", "separated"]
+], params[:smoking_area]),
+class: "search-select" %>
+</div>
+
+<!-- 喫煙タイプ -->
+<div class="search-field">
+<%= label_tag :smoking_type, "喫煙タイプ" %>
+<%= select_tag :smoking_type,
+options_for_select([
+["すべて", ""],
+["紙・加熱式OK", "both_ok"],
+["加熱式のみ", "electronic_only"],
+["紙のみ", "paper_only"]
+], params[:smoking_type]),
+class: "search-select" %>
+</div>
+
+</div>
+
+<div class="search-actions">
+<%= submit_tag "検索する", class: "btn btn--dark search-btn" %>
+</div>
+
+<% end %>
+</div>
+<!-- ===== 検索フォームここまで ===== -->
 
 <div class="hero__actions hero__actions--ctaRow">
 <%= link_to "近くで探す", map_path, class: "btn btn--dark hero__cta hero__cta--primary" %>
@@ -22,18 +85,16 @@
 </div>
 
 <div class="hero__stats hero__stats--inline">
-  <div class="hero-stat hero-stat--inline">
-    <span class="hero-stat__label">掲載件数</span>
-    <span class="hero-stat__value"><%= @shops_count || 0 %>件</span>
-  </div>
-
-  <div class="hero-stat hero-stat--inline">
-    <span class="hero-stat__label">更新形式</span>
-    <span class="hero-stat__value">ユーザー投稿型</span>
-  </div>
+<div class="hero-stat hero-stat--inline">
+<span class="hero-stat__label">掲載件数</span>
+<span class="hero-stat__value"><%= @shops_count || 0 %>件</span>
 </div>
 
-
+<div class="hero-stat hero-stat--inline">
+<span class="hero-stat__label">更新形式</span>
+<span class="hero-stat__value">ユーザー投稿型</span>
+</div>
+</div>
 
 </div>
 </div>
