@@ -3,201 +3,270 @@
 <% shops ||= [] %>
 
 <% if shops.present? %>
-<div class="shop-grid">
-<% shops.each do |shop| %>
-<% confirmed = shop.last_confirmed_on %>
-<% very_old = confirmed.present? && confirmed < 2.years.ago.to_date %>
-<% thumb = nil %>
-<% area_text = [shop.address, shop.nearest_station, shop.name].compact.join(" ") %>
-<% is_umeda_shop = area_text.include?("梅田") %>
-<% is_namba_shop = area_text.include?("難波") || area_text.include?("なんば") %>
+  <div class="shop-grid">
+    <% shops.each do |shop| %>
+      <% confirmed = shop.last_confirmed_on %>
+      <% very_old = confirmed.present? && confirmed < 2.years.ago.to_date %>
+      <% thumb = nil %>
+      <% area_text = [shop.address, shop.nearest_station, shop.name].compact.join(" ") %>
+      <% is_umeda_shop = area_text.include?("梅田") %>
+      <% is_namba_shop = area_text.include?("難波") || area_text.include?("なんば") %>
 
-<% if shop.respond_to?(:thumbnail_attachment) %>
-<% begin %>
-<% candidate = shop.thumbnail_attachment %>
-<% thumb = candidate if candidate.present? %>
-<% rescue StandardError %>
-<% thumb = nil %>
-<% end %>
-<% end %>
+      <% card_avg_rating =
+           if shop.respond_to?(:avg_rating) && shop.avg_rating.present?
+             shop.avg_rating.to_f
+           else
+             nil
+           end %>
 
-<article class="shop-card <%= "shop-card--stale" if very_old %>">
-<%= link_to shop_path(shop), class: "shop-card__mediaLink" do %>
-<div class="shop-card__media">
-<% if thumb.present? %>
-<% begin %>
-<%= image_tag url_for(thumb),
-class: "shop-card__img",
-alt: shop.name,
-loading: "lazy" %>
-<% rescue StandardError %>
-<div class="shop-card__placeholder">
-<div class="shop-card__placeholderTitle"><%= shop.name %></div>
-<div class="shop-card__placeholderSub">写真がまだありません</div>
-</div>
-<% end %>
+      <% card_reviews_count =
+           if shop.respond_to?(:reviews_count) && shop.reviews_count.present?
+             shop.reviews_count.to_i
+           else
+             0
+           end %>
+
+      <% card_star_count =
+           if card_avg_rating.present?
+             rounded = card_avg_rating.round
+             rounded = 0 if rounded < 0
+             rounded = 5 if rounded > 5
+             rounded
+           else
+             0
+           end %>
+
+      <% if shop.respond_to?(:thumbnail_attachment) %>
+        <% begin %>
+          <% candidate = shop.thumbnail_attachment %>
+          <% thumb = candidate if candidate.present? %>
+        <% rescue StandardError %>
+          <% thumb = nil %>
+        <% end %>
+      <% end %>
+
+      <article class="shop-card <%= "shop-card--stale" if very_old %>">
+        <%= link_to shop_path(shop), class: "shop-card__mediaLink" do %>
+          <div class="shop-card__media">
+            <% if thumb.present? %>
+              <% begin %>
+                <%= image_tag url_for(thumb),
+                      class: "shop-card__img",
+                      alt: shop.name,
+                      loading: "lazy" %>
+              <% rescue StandardError %>
+                <div class="shop-card__placeholder">
+                  <div class="shop-card__placeholderTitle"><%= shop.name %></div>
+                  <div class="shop-card__placeholderSub">写真がまだありません</div>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="shop-card__placeholder">
+                <div class="shop-card__placeholderTitle"><%= shop.name %></div>
+                <div class="shop-card__placeholderSub">写真がまだありません</div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="shop-card__body">
+          <div class="shop-card__meta">
+            <span class="shop-card__genre">
+              <%= shop.display_genre.presence || "未設定" %>
+            </span>
+
+            <% if confirmed.present? %>
+              <span class="shop-card__confirmed">
+                最終確認：<%= confirmed.strftime("%Y.%m.%d") %>
+              </span>
+            <% end %>
+          </div>
+
+          <h3 class="shop-card__title">
+            <%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink" %>
+
+            <% if shop.open_now? %>
+              <span class="badge badge--open-inline">営業中</span>
+            <% else %>
+              <span class="badge badge--closed-inline">営業終了</span>
+            <% end %>
+          </h3>
+
+          <% if card_avg_rating.present? && card_reviews_count.positive? %>
+            <div class="shop-card__rating" aria-label="平均評価">
+              <span class="shop-card__ratingStars">
+                <%= "★" * card_star_count %><%= "☆" * (5 - card_star_count) %>
+              </span>
+              <span class="shop-card__ratingValue"><%= card_avg_rating.round(1) %></span>
+              <span class="shop-card__ratingCount">（<%= card_reviews_count %>件）</span>
+            </div>
+          <% else %>
+            <div class="shop-card__rating shop-card__rating--empty">
+              まだ評価なし
+            </div>
+          <% end %>
+
+          <p class="shop-card__address">
+            <%= shop.nearest_station.presence || "最寄駅未設定" %>
+          </p>
+
+          <div class="shop-card__badges">
+            <% if shop.smoking_area == "all_smoking" %>
+              <span class="badge badge--dark">席で喫煙可</span>
+            <% elsif shop.smoking_area == "separated" %>
+              <span class="badge badge--line">喫煙所あり</span>
+            <% elsif shop.smoking_area == "unknown" %>
+              <span class="badge badge--type-unknown">喫煙エリア不明</span>
+            <% end %>
+
+            <% if shop.smoking_type == "both_ok" %>
+              <span class="badge badge--type-both">紙・加熱式OK</span>
+            <% elsif shop.smoking_type == "paper_only" %>
+              <span class="badge badge--type-paper">紙のみ</span>
+            <% elsif shop.smoking_type == "electronic_only" %>
+              <span class="badge badge--type-electronic">加熱式のみ</span>
+            <% elsif shop.smoking_type == "unknown" %>
+              <span class="badge badge--type-unknown">喫煙タイプ不明</span>
+            <% end %>
+
+            <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
+              <span class="badge badge--unverified">未確認</span>
+            <% end %>
+
+            <% if very_old %>
+              <span class="badge badge--muted">確認日が古い可能性</span>
+            <% end %>
+          </div>
+
+          <% if is_umeda_shop || is_namba_shop %>
+            <div class="shop-card__areaLinks">
+              <% if is_umeda_shop %>
+                <%= link_to "梅田の一覧へ", umeda_path, class: "shop-card__areaLink" %>
+              <% end %>
+
+              <% if is_namba_shop %>
+                <%= link_to "難波の一覧へ", namba_path, class: "shop-card__areaLink" %>
+              <% end %>
+            </div>
+          <% end %>
+
+          <div class="shop-card__actions">
+            <%= link_to "詳細を見る", shop_path(shop), class: "btn btn--small btn--dark" %>
+            <%= link_to "情報修正を提案", new_shop_shop_edit_request_path(shop), class: "btn btn--small btn--ghost" %>
+          </div>
+        </div>
+      </article>
+    <% end %>
+  </div>
+
+  <style>
+    .badge--open-inline {
+      margin-left: 8px;
+      vertical-align: middle;
+      background: #e6f4ea;
+      color: #137333;
+      border: 1px solid #b7dfbf;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge--closed-inline {
+      margin-left: 8px;
+      vertical-align: middle;
+      background: #f4f4f4;
+      color: #666666;
+      border: 1px solid #dddddd;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge--type-both {
+      background: #f6edd7;
+      color: #7a5a12;
+      border: 1px solid #eadbb5;
+    }
+
+    .badge--type-paper {
+      background: #fff4e5;
+      color: #9a5a00;
+      border: 1px solid #f0c98a;
+    }
+
+    .badge--type-electronic {
+      background: #eef4ff;
+      color: #1f4ea3;
+      border: 1px solid #c8d8fb;
+    }
+
+    .badge--type-unknown {
+      background: #f5f5f5;
+      color: #555555;
+      border: 1px solid #d8d8d8;
+    }
+
+    .badge--unverified {
+      background: #fff6db;
+      color: #8a6500;
+      border: 1px solid #f0de9c;
+    }
+
+    .shop-card__rating {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .shop-card__ratingStars {
+      font-size: 14px;
+      font-weight: 900;
+      color: #111111;
+      letter-spacing: 0.02em;
+    }
+
+    .shop-card__ratingValue {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111111;
+    }
+
+    .shop-card__ratingCount {
+      font-size: 12px;
+      color: #666666;
+    }
+
+    .shop-card__rating--empty {
+      font-size: 12px;
+      color: #999999;
+    }
+
+    .shop-card__areaLinks {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .shop-card__areaLink {
+      font-size: 12px;
+      color: #7a5a12;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .shop-card__areaLink:hover {
+      text-decoration: underline;
+    }
+  </style>
 <% else %>
-<div class="shop-card__placeholder">
-<div class="shop-card__placeholderTitle"><%= shop.name %></div>
-<div class="shop-card__placeholderSub">写真がまだありません</div>
-</div>
-<% end %>
-</div>
-<% end %>
-
-<div class="shop-card__body">
-<div class="shop-card__meta">
-<span class="shop-card__genre">
-<%= shop.display_genre.presence || "未設定" %>
-</span>
-
-<% if confirmed.present? %>
-<span class="shop-card__confirmed">
-最終確認：<%= confirmed.strftime("%Y.%m.%d") %>
-</span>
-<% end %>
-</div>
-
-<h3 class="shop-card__title">
-<%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink" %>
-
-<% if shop.open_now? %>
-<span class="badge badge--open-inline">営業中</span>
-<% else %>
-<span class="badge badge--closed-inline">営業終了</span>
-<% end %>
-</h3>
-
-<p class="shop-card__address">
-<%= shop.nearest_station.presence || "最寄駅未設定" %>
-</p>
-
-<div class="shop-card__badges">
-<% if shop.smoking_area == "all_smoking" %>
-<span class="badge badge--dark">席で喫煙可</span>
-<% elsif shop.smoking_area == "separated" %>
-<span class="badge badge--line">喫煙所あり</span>
-<% elsif shop.smoking_area == "unknown" %>
-<span class="badge badge--type-unknown">喫煙エリア不明</span>
-<% end %>
-
-<% if shop.smoking_type == "both_ok" %>
-<span class="badge badge--type-both">紙・加熱式OK</span>
-<% elsif shop.smoking_type == "paper_only" %>
-<span class="badge badge--type-paper">紙のみ</span>
-<% elsif shop.smoking_type == "electronic_only" %>
-<span class="badge badge--type-electronic">加熱式のみ</span>
-<% elsif shop.smoking_type == "unknown" %>
-<span class="badge badge--type-unknown">喫煙タイプ不明</span>
-<% end %>
-
-<% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
-<span class="badge badge--unverified">未確認</span>
-<% end %>
-
-<% if very_old %>
-<span class="badge badge--muted">確認日が古い可能性</span>
-<% end %>
-</div>
-
-<% if is_umeda_shop || is_namba_shop %>
-<div class="shop-card__areaLinks">
-<% if is_umeda_shop %>
-<%= link_to "梅田の一覧へ", umeda_path, class: "shop-card__areaLink" %>
-<% end %>
-
-<% if is_namba_shop %>
-<%= link_to "難波の一覧へ", namba_path, class: "shop-card__areaLink" %>
-<% end %>
-</div>
-<% end %>
-
-<div class="shop-card__actions">
-<%= link_to "詳細を見る", shop_path(shop), class: "btn btn--small btn--dark" %>
-<%= link_to "情報修正を提案", new_shop_shop_edit_request_path(shop), class: "btn btn--small btn--ghost" %>
-</div>
-</div>
-</article>
-<% end %>
-</div>
-
-<style>
-.badge--open-inline {
-margin-left: 8px;
-vertical-align: middle;
-background: #e6f4ea;
-color: #137333;
-border: 1px solid #b7dfbf;
-font-size: 11px;
-padding: 2px 7px;
-border-radius: 999px;
-font-weight: 800;
-white-space: nowrap;
-}
-
-.badge--closed-inline {
-margin-left: 8px;
-vertical-align: middle;
-background: #f4f4f4;
-color: #666666;
-border: 1px solid #dddddd;
-font-size: 11px;
-padding: 2px 7px;
-border-radius: 999px;
-font-weight: 800;
-white-space: nowrap;
-}
-
-.badge--type-both {
-background: #f6edd7;
-color: #7a5a12;
-border: 1px solid #eadbb5;
-}
-
-.badge--type-paper {
-background: #fff4e5;
-color: #9a5a00;
-border: 1px solid #f0c98a;
-}
-
-.badge--type-electronic {
-background: #eef4ff;
-color: #1f4ea3;
-border: 1px solid #c8d8fb;
-}
-
-.badge--type-unknown {
-background: #f5f5f5;
-color: #555555;
-border: 1px solid #d8d8d8;
-}
-
-.badge--unverified {
-background: #fff6db;
-color: #8a6500;
-border: 1px solid #f0de9c;
-}
-
-.shop-card__areaLinks {
-margin-top: 10px;
-display: flex;
-gap: 8px;
-flex-wrap: wrap;
-}
-
-.shop-card__areaLink {
-font-size: 12px;
-color: #7a5a12;
-text-decoration: none;
-font-weight: 700;
-}
-
-.shop-card__areaLink:hover {
-text-decoration: underline;
-}
-</style>
-<% else %>
-<div class="empty-state">
-<p>該当する店舗がありません。</p>
-</div>
+  <div class="empty-state">
+    <p>該当する店舗がありません。</p>
+  </div>
 <% end %>
