@@ -3,7 +3,7 @@
 <h1><%= @article.title %></h1>
 
 <% if @article.eyecatch.attached? %>
-<div style="margin-bottom:16px;">
+<div style="margin-bottom:16px; text-align:center;">
 <%= image_tag @article.eyecatch, style: "max-width:100%; border-radius:12px;" %>
 </div>
 <% end %>
@@ -12,7 +12,7 @@
 <p style="font-size:18px; color:#555;"><%= @article.summary %></p>
 <% end %>
 
-<div class="article-body">
+<div class="article-body" data-article-body="true">
 <%= render_article_body(@article.body.to_s) %>
 </div>
 
@@ -26,19 +26,198 @@ text-decoration: underline;
 opacity: 0.85;
 }
 
-.article-body img {
-max-width: 100%;
+.article-body figure {
+margin: 20px 0;
+text-align: center;
+}
+
+.article-body figure img {
+max-width: 560px;
+width: 100%;
 height: auto;
 border-radius: 12px;
+display: inline-block;
 }
 
-.article-body figure {
-margin: 16px 0;
+.article-body .image-row {
+display: flex;
+flex-wrap: wrap;
+gap: 12px;
+align-items: flex-start;
+margin: 20px 0;
 }
 
-.article-body figcaption {
-color: #666;
-font-size: 13px;
-margin-top: 6px;
+.article-body .image-row figure {
+flex: 1 1 240px;
+margin: 0;
+}
+
+.article-body .image-row figure img {
+max-width: 100%;
+width: 100%;
+}
+
+.article-body figure.image-small img {
+max-width: 300px;
+width: auto;
+}
+
+.article-body figure.image-medium img {
+max-width: 560px;
+width: 100%;
+}
+
+.article-body figure.image-large img {
+max-width: 900px;
+width: 100%;
+}
+
+.article-body figure.align-left {
+text-align: left;
+}
+
+.article-body figure.align-center {
+text-align: center;
+}
+
+.article-body figure.align-right {
+text-align: right;
 }
 </style>
+
+<script>
+(() => {
+function isMarkerNode(node) {
+if (!node || node.nodeType !== 1) return false;
+if (!["P", "DIV"].includes(node.tagName)) return false;
+return node.children.length === 0;
+}
+
+function normalizeText(node) {
+return (node.textContent || "").replace(/\u00A0/g, " ").trim();
+}
+
+function nextMeaningfulSibling(node) {
+let current = node.nextSibling;
+
+while (current) {
+if (current.nodeType === 1) {
+return current;
+}
+if (current.nodeType === 3 && current.textContent.trim() !== "") {
+return current;
+}
+current = current.nextSibling;
+}
+
+return null;
+}
+
+function nextFigureAfter(node) {
+let current = nextMeaningfulSibling(node);
+
+while (current) {
+if (current.nodeType === 1) {
+if (current.tagName === "FIGURE") return current;
+
+const nested = current.querySelector && current.querySelector("figure");
+if (nested) return nested;
+}
+current = nextMeaningfulSibling(current);
+}
+
+return null;
+}
+
+function applyImageOptions(figure, size, align) {
+if (!figure) return;
+
+figure.classList.remove("image-small", "image-medium", "image-large");
+figure.classList.remove("align-left", "align-center", "align-right");
+
+if (size === "small") figure.classList.add("image-small");
+if (size === "medium") figure.classList.add("image-medium");
+if (size === "large") figure.classList.add("image-large");
+
+if (align === "left") figure.classList.add("align-left");
+if (align === "center") figure.classList.add("align-center");
+if (align === "right") figure.classList.add("align-right");
+}
+
+function processArticleBody() {
+const root = document.querySelector('[data-article-body="true"]');
+if (!root) return;
+
+const nodes = Array.from(root.children);
+let currentRow = null;
+
+nodes.forEach((node) => {
+if (!isMarkerNode(node)) return;
+
+const text = normalizeText(node);
+
+const imageMatch = text.match(/^\[image\s+size=(small|medium|large)\s+align=(left|center|right)\]$/i);
+if (imageMatch) {
+const figure = nextFigureAfter(node);
+applyImageOptions(figure, imageMatch[1].toLowerCase(), imageMatch[2].toLowerCase());
+node.remove();
+return;
+}
+
+if (/^\[image-row-start\]$/i.test(text)) {
+const row = document.createElement("div");
+row.className = "image-row";
+node.parentNode.insertBefore(row, node.nextSibling);
+currentRow = row;
+node.remove();
+return;
+}
+
+if (/^\[image-row-end\]$/i.test(text)) {
+currentRow = null;
+node.remove();
+return;
+}
+});
+
+// row start/end の間にある figure を image-row の中へ移動
+let activeRow = null;
+Array.from(root.children).forEach((node) => {
+if (node.classList && node.classList.contains("image-row")) {
+activeRow = node;
+return;
+}
+
+if (!activeRow) return;
+
+if (node.tagName === "FIGURE") {
+activeRow.appendChild(node);
+return;
+}
+
+const text = normalizeText(node);
+if (/^\[image-row-start\]$/i.test(text)) return;
+if (/^\[image-row-end\]$/i.test(text)) {
+activeRow = null;
+node.remove();
+return;
+}
+
+// image-row の後ろに普通の本文が来たら終了
+if (text !== "") {
+activeRow = null;
+}
+});
+
+// 空の p/div を掃除
+root.querySelectorAll("p, div").forEach((node) => {
+if (node.classList.contains("image-row")) return;
+if (node.children.length > 0) return;
+if (normalizeText(node) === "") node.remove();
+});
+}
+
+document.addEventListener("DOMContentLoaded", processArticleBody);
+document.addEventListener("turbo:load", processArticleBody);
+})();
+</script>

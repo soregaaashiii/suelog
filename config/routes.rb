@@ -71,6 +71,10 @@ end
 end
 end
 
+# 口コミ本人編集用
+resources :reviews, only: [:edit, :update]
+
+# 口コミ通報用
 resources :reviews, only: [] do
 resources :review_reports, only: [:new, :create] do
 collection do

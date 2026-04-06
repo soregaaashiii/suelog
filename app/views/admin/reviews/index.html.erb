@@ -1,18 +1,8 @@
 <h1>口コミ（管理）</h1>
 
-<%# ===== 星表示（0〜5） ===== %>
-<% def stars(n)
-i = n.to_i
-i = 0 if i < 0
-i = 5 if i > 5
-"★" * i + "☆" * (5 - i)
-end %>
-
-<%# ===== フィルタ ===== %>
 <div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
 <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
 
-<%# 通報フィルタ %>
 <div>
 <strong>通報：</strong>
 <% if params[:filter] == "reported" %>
@@ -28,7 +18,6 @@ end %>
 
 <span style="color:#ddd;">/</span>
 
-<%# 承認待ちフィルタ %>
 <div>
 <strong>承認：</strong>
 <% if params[:status] == "pending" %>
@@ -44,7 +33,6 @@ end %>
 
 <span style="color:#ddd;">/</span>
 
-<%# クリア %>
 <div>
 <%= link_to "条件クリア", admin_reviews_path, style: "color:#666;" %>
 </div>
@@ -58,6 +46,27 @@ end %>
 <% @reviews.each do |r| %>
 <% pending_reports = r.review_reports.pending.count rescue 0 %>
 <% rating = r.respond_to?(:rating) ? r.rating.to_i : 0 %>
+<% rating = 0 if rating < 0 %>
+<% rating = 5 if rating > 5 %>
+<% stars_text = ("★" * rating) + ("☆" * (5 - rating)) %>
+
+<% reviewer_name =
+if r.respond_to?(:author_name) && r.author_name.present?
+r.author_name
+elsif r.respond_to?(:name) && r.name.present?
+r.name
+else
+nil
+end %>
+
+<% body_text =
+if r.respond_to?(:comment) && r.comment.present?
+r.comment.to_s
+elsif r.respond_to?(:body) && r.body.present?
+r.body.to_s
+else
+""
+end %>
 
 <div style="border:1px solid #ccc; padding:12px; margin:12px 0; border-radius:12px; background:#fff;">
 <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
@@ -70,6 +79,9 @@ end %>
 <p style="margin:6px 0 0; color:#666; font-size:12px;">
 投稿：<%= r.created_at.strftime("%Y-%m-%d %H:%M") %>
 ／ 承認：<%= r.approved? ? "公開" : "承認待ち" %>
+<% if reviewer_name.present? %>
+／ 投稿者名：<%= reviewer_name %>
+<% end %>
 </p>
 </div>
 
@@ -84,28 +96,42 @@ end %>
 
 <p style="margin:0;">
 <strong>評価：</strong>
-<span style="font-weight:900;"><%= stars(rating) %></span>
+<span style="font-weight:900;"><%= stars_text %></span>
 <span style="color:#666; font-size:12px;">（<%= rating %>/5）</span>
 </p>
 
-<% if r.comment.present? %>
+<% if body_text.present? %>
 <div style="margin-top:6px;">
-<%= simple_format(h(r.comment.to_s)) %>
+<%= simple_format(h(body_text)) %>
 </div>
 <% else %>
 <p style="margin-top:6px; color:#666;">コメントなし</p>
 <% end %>
 
+<% [
+["料理", r.food_photos],
+["外観", r.exterior_photos],
+["内観", r.interior_photos],
+["メニュー", r.menu_photos]
+].each do |label, photos| %>
+<div style="margin-top:10px;">
+<div style="font-size:12px; font-weight:bold; color:#666; margin-bottom:4px;"><%= label %>写真</div>
+<% if photos.attached? %>
+<div style="display:flex; gap:8px; flex-wrap:wrap;">
+<% photos.each do |photo| %>
+<%= link_to url_for(photo), target: "_blank", rel: "noopener" do %>
+<%= image_tag url_for(photo),
+style: "width:90px; height:90px; object-fit:cover; border-radius:10px; border:1px solid #ddd;" %>
+<% end %>
+<% end %>
+</div>
+<% else %>
+<p style="margin:0; color:#999; font-size:12px;">なし</p>
+<% end %>
+</div>
+<% end %>
+
 <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;">
-<%# ✅ プレビュー（詳細）＝ 通報理由・店舗情報をここで確認 %>
-<%= link_to "プレビュー（詳細）",
-admin_review_path(r, filter: params[:filter], status: params[:status]),
-style: "padding:10px 14px; border:1px solid #111; border-radius:10px; text-decoration:none; display:inline-block;" %>
-
-<%= link_to "編集",
-edit_admin_review_path(r, filter: params[:filter], status: params[:status]),
-style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-
 <% unless r.approved? %>
 <%= button_to "承認",
 approve_admin_review_path(r, filter: params[:filter], status: params[:status]),
