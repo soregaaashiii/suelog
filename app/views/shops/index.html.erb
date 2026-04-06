@@ -1,83 +1,101 @@
+<%# /Users/kawamuratakuya/dev/suelog/app/views/shops/index.html.erb %>
 <%= render partial: "shared/hero" %>
 
 <p style="margin:10px 0;">
-<%= link_to "近くの店舗から探す（地図）", map_path, class: "nav-btn" %>
+  <%= link_to "近くの店舗から探す（地図）", map_path, class: "nav-btn" %>
 </p>
 
 <h2 style="margin-top:12px;">検索</h2>
 
 <%= form_with url: shops_path, method: :get, local: true do %>
-<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin:10px 0;">
+  <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin:10px 0;">
 
-<% q = request.query_parameters.deep_dup %>
+    <% q = request.query_parameters.deep_dup %>
 
-<% smoking_area_label = { "separated" => "喫煙所あり", "smoking_allowed" => "席で喫煙可" } %>
-<% smoking_type_label = { "both_ok" => "紙・加熱式OK", "electronic_only" => "加熱式のみ", "paper_only" => "紙のみ" } %>
+    <% smoking_area_label = {
+      "separated" => "喫煙所あり",
+      "smoking_allowed" => "席で喫煙可",
+      "all_smoking" => "席で喫煙可"
+    } %>
 
-<% chips = [] %>
-<% chips << ["ジャンル：#{params[:genre]}", :genre] if params[:genre].present? %>
-<% chips << ["最寄駅：#{params[:station]}", :station] if params[:station].present? %>
+    <% smoking_type_label = {
+      "both_ok" => "紙・加熱式OK",
+      "electronic_only" => "加熱式のみ",
+      "paper_only" => "紙のみ"
+    } %>
 
-<% if params[:smoking_area].present? %>
-<% label = smoking_area_label[params[:smoking_area]] || params[:smoking_area] %>
-<% chips << ["喫煙エリア：#{label}", :smoking_area] %>
-<% end %>
+    <% chips = [] %>
+    <% chips << ["ジャンル：#{params[:genre]}", :genre] if params[:genre].present? %>
+    <% chips << ["最寄駅：#{params[:station]}", :station] if params[:station].present? %>
 
-<% if params[:smoking_type].present? %>
-<% label = smoking_type_label[params[:smoking_type]] || params[:smoking_type] %>
-<% chips << ["喫煙タイプ：#{label}", :smoking_type] %>
-<% end %>
+    <% if params[:smoking_area].present? %>
+      <% label = smoking_area_label[params[:smoking_area]] || params[:smoking_area] %>
+      <% chips << ["喫煙エリア：#{label}", :smoking_area] %>
+    <% end %>
 
-<% if chips.any? %>
-<div style="width:100%; margin:10px 0;">
-<div style="color:#666; font-size:12px;">検索条件（タップで解除）</div>
-<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
-<% chips.each do |text, key| %>
-<% new_q = q.deep_dup; new_q.delete(key.to_s) %>
-<%= link_to shops_path(new_q),
-style: "padding:8px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none;" do %>
-<%= text %> ×
-<% end %>
-<% end %>
+    <% if params[:smoking_type].present? %>
+      <% label = smoking_type_label[params[:smoking_type]] || params[:smoking_type] %>
+      <% chips << ["喫煙タイプ：#{label}", :smoking_type] %>
+    <% end %>
 
-<%= link_to "条件をすべてクリア", shops_path,
-style: "padding:8px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:#666;" %>
-</div>
-</div>
-<% end %>
+    <% if chips.any? %>
+      <div style="width:100%; margin:10px 0;">
+        <div style="color:#666; font-size:12px;">検索条件（タップで解除）</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+          <% chips.each do |text, key| %>
+            <% new_q = q.deep_dup %>
+            <% new_q.delete(key.to_s) %>
 
-<div>
-<label>ジャンル</label><br>
-<%= select_tag :genre,
-options_for_select(
-[["指定なし", ""]] + ["居酒屋", "バー / パブ", "喫茶店 / カフェ", "焼肉", "ラーメン", "中華", "和食", "洋食", "立ち飲み", "スナック", "その他"],
-params[:genre]
-) %>
-</div>
+            <%= link_to shops_path(new_q),
+                style: "padding:8px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none;" do %>
+              <%= text %> ×
+            <% end %>
+          <% end %>
 
-<div>
-<label>最寄駅</label><br>
-<%= text_field_tag :station, params[:station] %>
-</div>
+          <%= link_to "条件をすべてクリア", shops_path,
+              style: "padding:8px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:#666;" %>
+        </div>
+      </div>
+    <% end %>
 
-<div>
-<label>喫煙エリア</label><br>
-<%= select_tag :smoking_area,
-options_for_select([["指定なし", ""], ["喫煙所あり", "separated"], ["席で喫煙可", "smoking_allowed"]], params[:smoking_area]) %>
-</div>
+    <div>
+      <label>ジャンル</label><br>
+      <%= select_tag :genre,
+          options_for_select(
+            [["指定なし", ""]] + Shop.genre_options.map { |g| [g, g] },
+            params[:genre]
+          ) %>
+    </div>
 
-<div>
-<label>喫煙タイプ</label><br>
-<%= select_tag :smoking_type,
-options_for_select([["指定なし", ""], ["紙・加熱式OK", "both_ok"], ["加熱式のみ", "electronic_only"], ["紙のみ", "paper_only"]], params[:smoking_type]) %>
-</div>
+    <div>
+      <label>最寄駅</label><br>
+      <%= text_field_tag :station, params[:station] %>
+    </div>
 
-<div>
-<%= submit_tag "検索", class: "nav-btn" %>
-<%= link_to "クリア", shops_path, class: "nav-btn" %>
-</div>
+    <div>
+      <label>喫煙エリア</label><br>
+      <%= select_tag :smoking_area,
+          options_for_select(
+            [["指定なし", ""], ["喫煙所あり", "separated"], ["席で喫煙可", "smoking_allowed"]],
+            params[:smoking_area]
+          ) %>
+    </div>
 
-</div>
+    <div>
+      <label>喫煙タイプ</label><br>
+      <%= select_tag :smoking_type,
+          options_for_select(
+            [["指定なし", ""], ["紙・加熱式OK", "both_ok"], ["加熱式のみ", "electronic_only"], ["紙のみ", "paper_only"]],
+            params[:smoking_type]
+          ) %>
+    </div>
+
+    <div>
+      <%= submit_tag "検索", class: "nav-btn" %>
+      <%= link_to "クリア", shops_path, class: "nav-btn" %>
+    </div>
+
+  </div>
 <% end %>
 
 <hr>
