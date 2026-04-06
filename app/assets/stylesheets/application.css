@@ -487,7 +487,13 @@ display: none;
 
 
 
+.hero-title {
+margin-bottom: 4px; /* ←ここが重要（今より詰める） */
+}
 
+.hero-sub {
+margin-top: 0;
+}
 
 
 
