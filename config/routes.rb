@@ -98,7 +98,7 @@ post :import
 end
 end
 
-resources :reviews, only: [:index] do
+resources :reviews, only: [:index, :destroy] do
 member do
 patch :approve
 patch :reject
