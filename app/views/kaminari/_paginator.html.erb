@@ -1,37 +1,42 @@
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/kaminari/_paginator.html.erb %>
 <%= paginator.render do %>
-<nav class="km-pagination" role="navigation" aria-label="ページネーション">
-<div class="km-pagination__inner">
-<% unless current_page.first? %>
-<span class="km-pagination__item km-pagination__item--edge">
-<%= first_page_tag %>
-</span>
-<% end %>
+  <nav class="km-pagination" role="navigation" aria-label="ページネーション">
+    <div class="km-pagination__inner">
+      <% unless current_page.first? %>
+        <span class="km-pagination__item km-pagination__item--edge">
+          <%= first_page_tag %>
+        </span>
+      <% end %>
 
-<span class="km-pagination__item km-pagination__item--nav">
-<%= prev_page_tag unless current_page.first? %>
-</span>
+      <% unless current_page.first? %>
+        <span class="km-pagination__item km-pagination__item--nav">
+          <%= prev_page_tag %>
+        </span>
+      <% end %>
 
-<% each_page do |page| %>
-<% if page.display_tag? %>
-<span class="km-pagination__item">
-<%= page_tag page %>
-</span>
-<% elsif !page.was_truncated? %>
-<span class="km-pagination__item km-pagination__item--gap">
-<%= gap_tag %>
-</span>
-<% end %>
-<% end %>
+      <% each_page do |page| %>
+        <% if page.display_tag? %>
+          <span class="km-pagination__item">
+            <%= page_tag page %>
+          </span>
+        <% elsif !page.was_truncated? %>
+          <span class="km-pagination__item km-pagination__item--gap">
+            <%= gap_tag %>
+          </span>
+        <% end %>
+      <% end %>
 
-<span class="km-pagination__item km-pagination__item--nav">
-<%= next_page_tag unless current_page.last? %>
-</span>
+      <% unless current_page.last? %>
+        <span class="km-pagination__item km-pagination__item--nav">
+          <%= next_page_tag %>
+        </span>
+      <% end %>
 
-<% unless current_page.last? %>
-<span class="km-pagination__item km-pagination__item--edge">
-<%= last_page_tag %>
-</span>
-<% end %>
-</div>
-</nav>
+      <% unless current_page.last? %>
+        <span class="km-pagination__item km-pagination__item--edge">
+          <%= last_page_tag %>
+        </span>
+      <% end %>
+    </div>
+  </nav>
 <% end %>

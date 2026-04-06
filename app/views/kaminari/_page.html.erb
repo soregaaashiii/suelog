@@ -1,5 +1,6 @@
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/kaminari/_page.html.erb %>
 <% if page.current? %>
-  <span class="km-page km-page--current" aria-current="page"><%= page %></span>
+  <span class="km-page km-page--current" aria-current="page">現在 <%= page %></span>
 <% else %>
   <%= link_to page, url, remote: remote, rel: page.rel, class: "km-page" %>
 <% end %>
