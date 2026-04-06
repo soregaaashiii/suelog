@@ -1,10 +1,45 @@
-<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/shared/_hero.html.erb %>
+<%# /Users/kawamuratakuya/dev/suelog/app/views/shared/_hero.html.erb %>
+
+<% hero_query = request.query_parameters.to_h.deep_dup %>
+
+<% smoking_area_label = {
+"separated" => "喫煙所あり",
+"all_smoking" => "席で喫煙可",
+"smoking_allowed" => "席で喫煙可"
+} %>
+
+<% smoking_type_label = {
+"both_ok" => "紙・加熱式OK",
+"electronic_only" => "加熱式のみ",
+"paper_only" => "紙のみ"
+} %>
+
+<% genre_label = {} %>
+<% Shop.genre_options.each { |g| genre_label[g] = g } %>
+<% genre_label["izakaya"] = "居酒屋" %>
+<% genre_label["bar"] = "バー・パブ" %>
+<% genre_label["cafe"] = "カフェ" %>
+<% genre_label["yakiniku"] = "焼肉" %>
+
+<% hero_chips = [] %>
+<% hero_chips << ["ジャンル：#{genre_label[params[:genre]] || params[:genre]}", :genre] if params[:genre].present? %>
+<% hero_chips << ["最寄駅：#{params[:station]}", :station] if params[:station].present? %>
+
+<% if params[:smoking_area].present? %>
+<% label = smoking_area_label[params[:smoking_area]] || params[:smoking_area] %>
+<% hero_chips << ["喫煙エリア：#{label}", :smoking_area] %>
+<% end %>
+
+<% if params[:smoking_type].present? %>
+<% label = smoking_type_label[params[:smoking_type]] || params[:smoking_type] %>
+<% hero_chips << ["喫煙タイプ：#{label}", :smoking_type] %>
+<% end %>
+
+<% hero_chips << ["キーワード：#{params[:q]}", :q] if params[:q].present? %>
 
 <section class="hero">
 <div class="hero__inner" style="display:grid; grid-template-columns:1fr; gap:0; width:100%; max-width:1180px; margin:0 auto; padding:0 16px;">
-
 <div class="hero__content hero__content--single" style="width:100%; max-width:none; margin:0;">
-
 <div class="hero__topline">
 <div class="hero__eyebrow">SMOKING MAP OSAKA</div>
 </div>
@@ -12,66 +47,81 @@
 <h1 class="hero-title">今、吸える店。</h1>
 <p class="hero-sub">大阪で喫煙可能な飲食店をすぐ検索</p>
 
-<!-- ===== 検索フォーム ===== -->
 <div class="hero__search">
 <%= form_with url: (@search_form_url || root_path), method: :get, local: true, class: "search-form" do %>
+<%= hidden_field_tag :per, (@per.presence || 30) %>
 
 <div class="search-grid">
-
-<!-- キーワード -->
 <div class="search-field">
 <%= label_tag :q, "キーワード" %>
-<%= text_field_tag :q, params[:q], placeholder: "店名・駅・住所など", class: "search-input" %>
+<%= text_field_tag :q, params[:q], placeholder: "店名・住所など", class: "search-input" %>
 </div>
 
-<!-- ジャンル（ここが今回の本体） -->
 <div class="search-field">
 <%= label_tag :genre, "ジャンル" %>
 <%= select_tag :genre,
-options_for_select([["すべて", ""]] + Shop.genre_options.map { |g| [g, g] }, params[:genre]),
+options_for_select([["指定なし", ""]] + Shop.genre_options.map { |g| [g, g] }, params[:genre]),
 class: "search-select" %>
 </div>
 
-<!-- 駅 -->
 <div class="search-field">
-<%= label_tag :station, "駅" %>
-<%= text_field_tag :station, params[:station], placeholder: "例：梅田", class: "search-input" %>
+<%= label_tag :station, "最寄駅" %>
+<%= text_field_tag :station, params[:station], placeholder: "指定なし", class: "search-input" %>
 </div>
 
-<!-- 喫煙エリア -->
 <div class="search-field">
 <%= label_tag :smoking_area, "喫煙エリア" %>
 <%= select_tag :smoking_area,
 options_for_select([
-["すべて", ""],
-["席で喫煙可", "all_smoking"],
-["喫煙所あり", "separated"]
+["指定なし", ""],
+["喫煙所あり", "separated"],
+["席で喫煙可", "all_smoking"]
 ], params[:smoking_area]),
 class: "search-select" %>
 </div>
 
-<!-- 喫煙タイプ -->
 <div class="search-field">
 <%= label_tag :smoking_type, "喫煙タイプ" %>
 <%= select_tag :smoking_type,
 options_for_select([
-["すべて", ""],
+["指定なし", ""],
 ["紙・加熱式OK", "both_ok"],
 ["加熱式のみ", "electronic_only"],
 ["紙のみ", "paper_only"]
 ], params[:smoking_type]),
 class: "search-select" %>
 </div>
-
 </div>
 
 <div class="search-actions">
 <%= submit_tag "検索する", class: "btn btn--dark search-btn" %>
+<%= link_to "条件をクリア",
+(@search_form_url || root_path).to_s + "?per=#{(@per.presence || 30)}",
+class: "btn btn--ghost" %>
 </div>
+<% end %>
 
+<% if hero_chips.any? %>
+<div class="active-filters">
+<div class="active-filters__label">検索条件</div>
+<div class="active-filters__list">
+<% hero_chips.each do |text, key| %>
+<% new_q = hero_query.deep_dup %>
+<% new_q.delete(key.to_s) %>
+
+<%= link_to "#{(@search_form_url || root_path)}?#{new_q.to_query}", class: "filter-chip" do %>
+<span><%= text %></span>
+<span>×</span>
+<% end %>
+<% end %>
+
+<%= link_to "すべてクリア",
+(@search_form_url || root_path).to_s + "?per=#{(@per.presence || 30)}",
+class: "filter-chip filter-chip--clear" %>
+</div>
+</div>
 <% end %>
 </div>
-<!-- ===== 検索フォームここまで ===== -->
 
 <div class="hero__actions hero__actions--ctaRow">
 <%= link_to "近くで探す", map_path, class: "btn btn--dark hero__cta hero__cta--primary" %>
@@ -95,7 +145,6 @@ class: "search-select" %>
 <span class="hero-stat__value">ユーザー投稿型</span>
 </div>
 </div>
-
 </div>
 </div>
 </section>
