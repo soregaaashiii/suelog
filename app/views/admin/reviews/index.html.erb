@@ -145,6 +145,12 @@ data: { turbo_confirm: "却下して削除します。よろしいですか？" 
 <% end %>
 
 <% if pending_reports.to_i > 0 %>
+<%= button_to "通報で削除",
+admin_review_path(r, filter: params[:filter], status: params[:status]),
+method: :delete,
+data: { turbo_confirm: "通報された口コミを削除します。本当によろしいですか？" },
+style: "background:#b00020; color:#fff; border:1px solid #b00020; border-radius:8px; padding:8px 12px; cursor:pointer;" %>
+
 <span style="padding:4px 10px; border-radius:999px; background:#fff5f5; border:1px solid #f5c2c7; color:#b00020; font-size:12px; font-weight:bold;">
 通報あり
 </span>

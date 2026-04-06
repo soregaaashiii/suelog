@@ -1,6 +1,6 @@
 # app/controllers/admin/reviews_controller.rb
 class Admin::ReviewsController < Admin::BaseController
-before_action :set_review, only: [:show, :approve, :reject, :edit, :update]
+before_action :set_review, only: [:show, :approve, :reject, :edit, :update, :destroy]
 before_action :set_shop_and_reports, only: [:show, :edit, :update]
 
 def index
@@ -33,6 +33,15 @@ def reject
 redirect_back(
 fallback_location: admin_reviews_path(filter: params[:filter], status: params[:status]),
 alert: "却下しました"
+)
+end
+
+def destroy
+@review.destroy!
+
+redirect_back(
+fallback_location: admin_reviews_path(filter: params[:filter], status: params[:status]),
+alert: "口コミを削除しました"
 )
 end
 
