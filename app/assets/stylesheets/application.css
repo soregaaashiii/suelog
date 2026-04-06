@@ -1452,6 +1452,39 @@ justify-content: center;
 }
 }
 
-.hero-stat__label:contains("対象エリア") {
-  display: none; !important;
+
+
+
+
+
+
+
+.article-body a {
+  color: #2563eb; /* 青 */
+  text-decoration: underline;
+}
+
+.article-body a:hover {
+  opacity: 0.8;
+}
+
+
+
+
+
+
+
+
+
+.article-body figure {
+margin: 20px 0;
+text-align: center;
+}
+
+.article-body figure img {
+max-width: 560px;
+width: 100%;
+height: auto;
+border-radius: 12px;
+display: inline-block;
 }

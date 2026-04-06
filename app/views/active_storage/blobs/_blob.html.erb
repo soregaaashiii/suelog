@@ -1,14 +1,22 @@
-<figure class="attachment attachment--<%= blob.representable? ? "preview" : "file" %> attachment--<%= blob.filename.extension %>">
-  <% if blob.representable? %>
-    <%= image_tag blob.representation(resize_to_limit: local_assigns[:in_gallery] ? [ 800, 600 ] : [ 1024, 768 ]) %>
-  <% end %>
+<%# /Users/kawamuratakuya/dev/suelog/app/views/active_storage/blobs/_blob.html.erb %>
 
-  <figcaption class="attachment__caption">
-    <% if caption = blob.try(:caption) %>
-      <%= caption %>
-    <% else %>
-      <span class="attachment__name"><%= blob.filename %></span>
-      <span class="attachment__size"><%= number_to_human_size blob.byte_size %></span>
-    <% end %>
-  </figcaption>
+<figure class="attachment attachment--<%= blob.representable? ? "preview" : "file" %> attachment--<%= blob.filename.extension %>">
+<% if blob.image? %>
+<div style="margin: 12px 0;">
+<%= image_tag url_for(blob), style: "max-width: 100%; height: auto; border-radius: 12px; display: block;" %>
+</div>
+<% elsif blob.representable? %>
+<div style="margin: 12px 0;">
+<%= image_tag blob.representation(resize_to_limit: (local_assigns[:in_gallery] ? [800, 600] : [1024, 768])), style: "max-width: 100%; height: auto; border-radius: 12px; display: block;" %>
+</div>
+<% end %>
+
+<figcaption class="attachment__caption" style="color:#666; font-size:13px; margin-top:6px;">
+<% if caption = blob.try(:caption) %>
+<%= caption %>
+<% else %>
+<span class="attachment__name"><%= blob.filename %></span>
+<span class="attachment__size"><%= number_to_human_size(blob.byte_size) %></span>
+<% end %>
+</figcaption>
 </figure>
