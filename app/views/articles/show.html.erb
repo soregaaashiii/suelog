@@ -15,3 +15,30 @@
 <div class="article-body">
 <%= render_article_body(@article.body.to_s) %>
 </div>
+
+<style>
+.article-body a {
+color: #2563eb;
+text-decoration: underline;
+}
+
+.article-body a:hover {
+opacity: 0.85;
+}
+
+.article-body img {
+max-width: 100%;
+height: auto;
+border-radius: 12px;
+}
+
+.article-body figure {
+margin: 16px 0;
+}
+
+.article-body figcaption {
+color: #666;
+font-size: 13px;
+margin-top: 6px;
+}
+</style>
