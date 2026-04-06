@@ -1,3 +1,5 @@
+<%# /Users/kawamuratakuya/dev/suelog/app/views/reviews/edit.html.erb %>
+
 <h1>口コミを編集</h1>
 
 <p style="color:#666; margin:0 0 10px;">
@@ -5,40 +7,80 @@
 </p>
 
 <% if @review.errors.any? %>
-  <div style="border:1px solid #f99; padding:12px; border-radius:12px; background:#fff5f5;">
-    <p style="font-weight:bold; margin:0 0 6px;">入力エラーがあります：</p>
-    <ul style="margin:0; padding-left:18px;">
-      <% @review.errors.full_messages.each do |msg| %>
-        <li><%= msg %></li>
-      <% end %>
-    </ul>
-  </div>
+<div style="border:1px solid #f99; padding:12px; border-radius:12px; background:#fff5f5;">
+<p style="font-weight:bold; margin:0 0 6px;">入力エラーがあります：</p>
+<ul style="margin:0; padding-left:18px;">
+<% @review.errors.full_messages.each do |msg| %>
+<li><%= msg %></li>
+<% end %>
+</ul>
+</div>
 <% end %>
 
-<%= form_with model: [@shop, @review], method: :patch, local: true do |f| %>
-  <div style="margin-top:12px;">
-    <%= f.label :rating, "評価（1〜5）" %><br>
-    <%= f.number_field :rating, in: 1..5, step: 1, style: "width:120px;" %>
-  </div>
+<%= form_with model: @review, local: true do |f| %>
+<div style="margin-top:12px;">
+<%= f.label :rating, "評価（1〜5）" %><br>
+<%= f.number_field :rating, in: 1..5, step: 1, style: "width:120px;" %>
+</div>
 
-  <div style="margin-top:12px;">
-    <%= f.label :author_name, "投稿者名（任意）" %><br>
-    <%= f.text_field :author_name, style: "width:100%; max-width:420px;" %>
-  </div>
+<div style="margin-top:12px;">
+<%= f.label :author_name, "投稿者名（任意）" %><br>
+<%= f.text_field :author_name, style: "width:100%; max-width:420px;" %>
+</div>
 
-  <div style="margin-top:12px;">
-    <%= f.label :comment, "本文" %><br>
-    <%= f.text_area :comment, rows: 6, style: "width:100%; max-width:680px;" %>
-  </div>
+<div style="margin-top:12px;">
+<%= f.label :comment, "本文" %><br>
+<%= f.text_area :comment, rows: 6, style: "width:100%; max-width:680px;" %>
+</div>
 
-  <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
-    <%= f.submit "更新する" %>
-    <%= link_to "店舗ページに戻る", shop_path(@shop),
-      style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-  </div>
+<div style="margin-top:12px;">
+<%= f.label :food_photos, "料理の写真" %><br>
+<%= f.file_field :food_photos, multiple: true, accept: "image/*", style: "width:100%; max-width:420px;" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :exterior_photos, "外観の写真" %><br>
+<%= f.file_field :exterior_photos, multiple: true, accept: "image/*", style: "width:100%; max-width:420px;" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :interior_photos, "内観の写真" %><br>
+<%= f.file_field :interior_photos, multiple: true, accept: "image/*", style: "width:100%; max-width:420px;" %>
+</div>
+
+<div style="margin-top:12px;">
+<%= f.label :menu_photos, "メニューの写真" %><br>
+<%= f.file_field :menu_photos, multiple: true, accept: "image/*", style: "width:100%; max-width:420px;" %>
+</div>
+
+<% [
+["料理", @review.food_photos],
+["外観", @review.exterior_photos],
+["内観", @review.interior_photos],
+["メニュー", @review.menu_photos]
+].each do |label, photos| %>
+<div style="margin-top:14px;">
+<div style="font-weight:700; margin-bottom:6px;"><%= label %>の現在画像</div>
+<% if photos.attached? %>
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+<% photos.each do |photo| %>
+<%= image_tag url_for(photo),
+style: "width:120px; height:120px; object-fit:cover; border-radius:12px; border:1px solid #ddd;" %>
+<% end %>
+</div>
+<% else %>
+<p style="margin:0; color:#666;">まだありません</p>
+<% end %>
+</div>
+<% end %>
+
+<div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+<%= f.submit "更新する" %>
+<%= link_to "店舗ページに戻る", shop_path(@shop),
+style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+</div>
 <% end %>
 
 <p style="color:#666; font-size:12px; margin-top:10px;">
 ※ 更新後は再承認が必要になる場合があります（運用次第で調整できます）
 </p>
-

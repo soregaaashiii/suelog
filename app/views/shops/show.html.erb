@@ -1,4 +1,4 @@
-<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/shops/show.html.erb %>
+<%# /Users/kawamuratakuya/dev/suelog/app/views/shops/show.html.erb %>
 
 <% page_title_parts = [@shop.name.presence, "喫煙できる店", "吸えログ in大阪"].compact %>
 <% page_description_parts = [] %>
@@ -893,6 +893,215 @@ allowfullscreen>
 </div>
 <% end %>
 </section>
+
+<section class="shop-show__section">
+  <h2 class="shop-show__sectionTitle">口コミ</h2>
+
+  <% approved_reviews_count = @approved_reviews.size %>
+<% average_rating_value =
+     if approved_reviews_count.positive?
+       @approved_reviews.sum { |r| r.rating.to_f } / approved_reviews_count
+     else
+       0
+     end %>
+<% average_rating_rounded = average_rating_value.round(1) %>
+<% average_rating_stars = "★" * average_rating_value.round + "☆" * (5 - average_rating_value.round) %>
+
+<div style="margin:0 0 14px; padding:12px 14px; border:1px solid #e8e3d7; border-radius:14px; background:#faf8f2;">
+  <% if approved_reviews_count.positive? %>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span style="font-size:20px; font-weight:900; color:#111111;"><%= average_rating_stars %></span>
+      <span style="font-size:15px; font-weight:800; color:#111111;">
+        平均 <%= average_rating_rounded %>/5
+      </span>
+      <span style="font-size:13px; color:#666666;">
+        （口コミ <%= approved_reviews_count %>件）
+      </span>
+    </div>
+  <% else %>
+    <span style="font-size:13px; color:#666666;">まだ評価はありません</span>
+  <% end %>
+</div>
+
+
+
+  <% if @approved_reviews.present? && @approved_reviews.any? %>
+    <div style="display:grid; gap:12px;">
+      <% @approved_reviews.each do |review| %>
+        <% review_author = review.author_name.presence || "匿名" %>
+        <% review_text = review.comment.to_s %>
+
+        <article style="border:1px solid #e8e3d7; border-radius:16px; padding:14px; background:#faf8f2;">
+          <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:8px; flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:800; color:#111111;">
+                <%= review_author %>
+              </div>
+              <div style="font-size:12px; color:#777777; margin-top:2px;">
+                <%= l(review.created_at.to_date) rescue review.created_at.strftime("%Y-%m-%d") %>
+              </div>
+            </div>
+
+           <div class="ss-badge ss-badge--gold">
+  <%= "★" * review.rating.to_i %><%= "☆" * (5 - review.rating.to_i) %>
+</div>
+
+          </div>
+
+          <% if review_text.present? %>
+            <div style="color:#333333; line-height:1.8; white-space:pre-wrap; word-break:break-word;">
+              <%= h(review_text) %>
+            </div>
+          <% else %>
+            <p style="margin:0; color:#666666;">コメントなし</p>
+          <% end %>
+
+          <% [
+            ["料理", review.food_photos],
+            ["外観", review.exterior_photos],
+            ["内観", review.interior_photos],
+            ["メニュー", review.menu_photos]
+          ].each do |label, photos| %>
+            <% if photos.attached? %>
+              <div style="margin-top:10px;">
+                <div style="font-size:12px; font-weight:800; color:#666; margin-bottom:6px;"><%= label %></div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <% photos.each do |photo| %>
+                    <%= image_tag url_for(photo),
+                          style: "width:120px; height:120px; object-fit:cover; border-radius:12px; border:1px solid #ddd;" %>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+
+          <div style="margin-top:10px;">
+            <%= link_to "この口コミを通報",
+                        new_review_review_report_path(review),
+                        class: "ss-btn ss-btn--muted",
+                        style: "min-height:36px; padding:0 12px; font-size:13px;" %>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p style="margin:0; color:#666666;">まだ口コミはありません。</p>
+  <% end %>
+</section>
+
+<section class="shop-show__section">
+  <h2 class="shop-show__sectionTitle">口コミを投稿する</h2>
+
+  <% if @my_review.present? %>
+    <div class="ss-alert ss-alert--warn" id="review-form">
+      この端末からはこの店舗に口コミを投稿済みです。編集する場合は下のリンクから更新してください。
+    </div>
+
+    <div style="margin-top:12px;">
+      <%= link_to "あなたの口コミを編集",
+                  edit_review_path(@my_review),
+                  class: "ss-btn ss-btn--dark" %>
+    </div>
+  <% else %>
+    <% if @review.present? && @review.errors.any? %>
+      <div class="ss-alert ss-alert--alert" id="review-form">
+        <div style="font-weight:800; margin-bottom:6px;">口コミを送信できませんでした</div>
+        <ul style="margin:0; padding-left:18px;">
+          <% @review.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with model: [@shop, @review], local: true, html: { id: "review-form" } do |f| %>
+      <div style="display:grid; gap:14px;">
+        <div>
+          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+            お名前（任意）
+          </label>
+          <%= f.text_field :author_name,
+                maxlength: 30,
+                placeholder: "匿名でも投稿できます",
+                style: "width:100%; padding:12px 14px; border:1px solid #e8e3d7; border-radius:12px; font:inherit; background:#fff;" %>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+            評価
+          </label>
+          <%= f.select :rating,
+                [["1", 1], ["2", 2], ["3", 3], ["4", 4], ["5", 5]],
+                { include_blank: "選択してください" },
+                style: "width:100%; max-width:240px; padding:12px 14px; border:1px solid #e8e3d7; border-radius:12px; font:inherit; background:#fff;" %>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+            口コミ内容
+          </label>
+          <%= f.text_area :comment,
+                rows: 5,
+                maxlength: 1000,
+                placeholder: "店内の雰囲気、喫煙しやすさ、使ってみた感想など",
+                style: "width:100%; padding:12px 14px; border:1px solid #e8e3d7; border-radius:12px; font:inherit; background:#fff; resize:vertical;" %>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+            料理の写真
+          </label>
+          <%= f.file_field :food_photos,
+                multiple: true,
+                accept: "image/*",
+                style: "width:100%; max-width:420px;" %>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+            外観の写真
+          </label>
+          <%= f.file_field :exterior_photos,
+                multiple: true,
+                accept: "image/*",
+                style: "width:100%; max-width:420px;" %>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+            内観の写真
+          </label>
+          <%= f.file_field :interior_photos,
+                multiple: true,
+                accept: "image/*",
+                style: "width:100%; max-width:420px;" %>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+            メニューの写真
+          </label>
+          <%= f.file_field :menu_photos,
+                multiple: true,
+                accept: "image/*",
+                style: "width:100%; max-width:420px;" %>
+        </div>
+
+        <p style="margin:0; font-size:12px; color:#777777; line-height:1.7;">
+          ※ 口コミは確認後に公開されます。<br>
+          ※ 画像は料理・外観・内観・メニューに分けて投稿できます。<br>
+          ※ 誹謗中傷・虚偽投稿・個人情報を含む内容は掲載されません。
+        </p>
+
+        <div>
+          <%= f.submit "口コミを送信する", class: "ss-btn ss-btn--dark" %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</section>
+
+
 <% end %>
 
 <% if is_umeda_shop || is_namba_shop %>
