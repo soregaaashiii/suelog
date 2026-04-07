@@ -176,8 +176,8 @@ CSV一括インポート
       <% @shops.each do |shop| %>
         <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
 
-        <% duplicate_state =
-            if shop.respond_to?(:duplicate_flag_state)
+                <% duplicate_state =
+            if @status == "pending" && shop.respond_to?(:duplicate_flag_state)
               shop.duplicate_flag_state
             else
               :none
@@ -253,6 +253,14 @@ CSV一括インポート
                     reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     method: :patch,
                     data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
+
+                <% if @status == "pending" && duplicate_state != :none %>
+                  <%= button_to "重複として却下",
+                      reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                      method: :patch,
+                      data: { turbo: false, turbo_confirm: "重複として却下しますか？" },
+                      style: "background:#fff1f1; border:1px solid #b00020; color:#b00020;" %>
+                <% end %>
               <% end %>
 
               <%= link_to detail_label,
@@ -270,6 +278,8 @@ CSV一括インポート
                   style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
             </div>
           </td>
+
+          
         </tr>
       <% end %>
     </tbody>

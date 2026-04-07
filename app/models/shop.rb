@@ -783,60 +783,7 @@ class Shop < ApplicationRecord
     :none
   end
 
-  def duplicate_status_label(other)
-
-def self.duplicate_exists_for_import?(attrs)
-  phone = attrs[:phone].to_s.gsub(/[^0-9]/, "")
-  name  = attrs[:name].to_s.strip
-  address = attrs[:address].to_s.strip
-
-  scope = Shop.all
-
-  # =========================
-  # ① 電話番号がある場合 → 電話だけで判定
-  # =========================
-  if phone.present?
-    return true if scope.where(normalized_phone: phone).exists?
-    return false
-  end
-
-  # =========================
-  # ② 電話番号がない場合のみ → 名前・住所で判定
-  # =========================
-  if name.present?
-    return true if scope.where(name: name).exists?
-  end
-
-  if address.present?
-    return true if scope.where(address: address).exists?
-  end
-
-  # 表記ゆれ
-  normalized_name = normalize_duplicate_text(name)
-  normalized_address = normalize_duplicate_text(address)
-
-  scope.limit(5000).pluck(:name, :address).any? do |n, a|
-    cn = normalize_duplicate_text(n)
-    ca = normalize_duplicate_text(a)
-
-    name_match =
-      normalized_name.present? &&
-      cn.present? &&
-      normalized_name == cn
-
-    address_match =
-      normalized_address.present? &&
-      ca.present? &&
-      (
-        normalized_address == ca ||
-        normalized_address.include?(ca) ||
-        ca.include?(normalized_address)
-      )
-
-    name_match || address_match
-  end
-end
-
+    def duplicate_status_label(other)
     if other.approved?
       "承認済み"
     elsif other.respond_to?(:rejected?) && other.rejected?
@@ -846,5 +793,47 @@ end
     end
   rescue StandardError
     "状態不明"
+  end
+
+    def self.duplicate_exists_for_import?(attrs, exclude_id: nil)
+    phone = attrs[:phone].to_s.gsub(/[^0-9]/, "")
+    name = attrs[:name].to_s.strip
+    address = attrs[:address].to_s.strip
+
+    scope = exclude_id.present? ? Shop.where.not(id: exclude_id) : Shop.all
+
+    # ① 電話番号がある場合 → 電話だけで判定
+    if phone.present?
+      return true if scope.where(normalized_phone: phone).exists?
+      return false
+    end
+
+    # ② 電話番号がない場合のみ → 名前・住所で判定
+    return true if name.present? && scope.where(name: name).exists?
+    return true if address.present? && scope.where(address: address).exists?
+
+    normalized_name = normalize_duplicate_text(name)
+    normalized_address = normalize_duplicate_text(address)
+
+    scope.limit(5000).pluck(:name, :address).any? do |n, a|
+      cn = normalize_duplicate_text(n)
+      ca = normalize_duplicate_text(a)
+
+      name_match =
+        normalized_name.present? &&
+        cn.present? &&
+        normalized_name == cn
+
+      address_match =
+        normalized_address.present? &&
+        ca.present? &&
+        (
+          normalized_address == ca ||
+          normalized_address.include?(ca) ||
+          ca.include?(normalized_address)
+        )
+
+      name_match || address_match
+    end
   end
 end
