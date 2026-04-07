@@ -495,4 +495,161 @@ class Shop < ApplicationRecord
       nil
     end
   end
+
+
+
+  scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
+
+  def duplicate_candidates(limit: 10)
+    candidate_ids = []
+
+    base_scope = Shop.excluding_shop(self)
+
+    if self.class.column_names.include?("place_id") && respond_to?(:place_id) && place_id.present?
+      candidate_ids.concat(base_scope.where(place_id: place_id).limit(limit).pluck(:id))
+    end
+
+    if respond_to?(:normalized_phone) && normalized_phone.present?
+      candidate_ids.concat(base_scope.where(normalized_phone: normalized_phone).limit(limit).pluck(:id))
+    end
+
+    normalized_name = self.class.normalize_duplicate_text(name)
+    normalized_address = self.class.normalize_duplicate_text(address)
+
+    if normalized_name.present? || normalized_address.present?
+      base_scope.limit(300).find_each do |candidate|
+        next if candidate.id == id
+
+        candidate_name = self.class.normalize_duplicate_text(candidate.name)
+        candidate_address = self.class.normalize_duplicate_text(candidate.address)
+
+        name_match =
+          normalized_name.present? &&
+          candidate_name.present? &&
+          normalized_name == candidate_name
+
+        address_match =
+          normalized_address.present? &&
+          candidate_address.present? &&
+          (
+            normalized_address == candidate_address ||
+            normalized_address.include?(candidate_address) ||
+            candidate_address.include?(normalized_address)
+          )
+
+        candidate_ids << candidate.id if name_match || address_match
+      end
+    end
+
+    candidate_ids = candidate_ids.compact.uniq.first(limit)
+    candidates = Shop.where(id: candidate_ids).index_by(&:id)
+
+    candidate_ids.map do |candidate_id|
+      candidate = candidates[candidate_id]
+      next unless candidate
+
+      {
+        shop: candidate,
+        score: duplicate_score_against(candidate),
+        reasons: duplicate_reasons_against(candidate)
+      }
+    end.compact.sort_by { |row| -row[:score] }
+  end
+
+  def duplicate_score_against(other)
+    score = 0
+
+    if self.class.column_names.include?("place_id") &&
+       respond_to?(:place_id) &&
+       other.respond_to?(:place_id) &&
+       place_id.present? &&
+       other.place_id.present? &&
+       place_id == other.place_id
+      score += 100
+    end
+
+    if respond_to?(:normalized_phone) &&
+       other.respond_to?(:normalized_phone) &&
+       normalized_phone.present? &&
+       other.normalized_phone.present? &&
+       normalized_phone == other.normalized_phone
+      score += 60
+    end
+
+    my_name = self.class.normalize_duplicate_text(name)
+    other_name = self.class.normalize_duplicate_text(other.name)
+    if my_name.present? && other_name.present? && my_name == other_name
+      score += 30
+    end
+
+    my_address = self.class.normalize_duplicate_text(address)
+    other_address = self.class.normalize_duplicate_text(other.address)
+    if my_address.present? && other_address.present?
+      if my_address == other_address
+        score += 30
+      elsif my_address.include?(other_address) || other_address.include?(my_address)
+        score += 15
+      end
+    end
+
+    score
+  end
+
+  def duplicate_reasons_against(other)
+    reasons = []
+
+    if self.class.column_names.include?("place_id") &&
+       respond_to?(:place_id) &&
+       other.respond_to?(:place_id) &&
+       place_id.present? &&
+       other.place_id.present? &&
+       place_id == other.place_id
+      reasons << "place_id一致"
+    end
+
+    if respond_to?(:normalized_phone) &&
+       other.respond_to?(:normalized_phone) &&
+       normalized_phone.present? &&
+       other.normalized_phone.present? &&
+       normalized_phone == other.normalized_phone
+      reasons << "電話番号一致"
+    end
+
+    my_name = self.class.normalize_duplicate_text(name)
+    other_name = self.class.normalize_duplicate_text(other.name)
+    if my_name.present? && other_name.present? && my_name == other_name
+      reasons << "店名一致"
+    end
+
+    my_address = self.class.normalize_duplicate_text(address)
+    other_address = self.class.normalize_duplicate_text(other.address)
+    if my_address.present? && other_address.present?
+      if my_address == other_address
+        reasons << "住所一致"
+      elsif my_address.include?(other_address) || other_address.include?(my_address)
+        reasons << "住所近似"
+      end
+    end
+
+    reasons.uniq
+  end
+
+  def self.normalize_duplicate_text(text)
+    return "" if text.blank?
+
+    text.to_s
+        .tr("０-９Ａ-Ｚａ-ｚ", "0-9A-Za-z")
+        .downcase
+        .gsub(/[[:space:]]+/, "")
+        .gsub(/[()（）\[\]【】「」『』・･,，.。\-ー−―]/, "")
+        .strip
+  end
+
+
+
+
+
+
+
+
 end

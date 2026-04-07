@@ -1,59 +1,72 @@
-<%# app/views/shops/_list.html.erb %>
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shops/_list.html.erb %>
 
-<%# 期待：shops というローカル変数で配列が渡ってくる %>
-<%# render "shops/list", shops: @shops %>
-
-<% if shops.present? %>
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
-    <% shops.each do |shop| %>
+<% if @shops.present? %>
+  <div style="display:grid; gap:12px;">
+    <% @shops.each do |shop| %>
       <div style="border:1px solid #ddd; border-radius:14px; padding:12px; background:#fff;">
-        <div style="font-weight:800; font-size:16px; margin-bottom:6px;">
-          <%= link_to shop.name, shop_path(shop), style: "text-decoration:none;" %>
-        </div>
+        <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:flex-start;">
+          <div style="min-width:0; flex:1;">
+            <div style="font-weight:800; font-size:16px; margin-bottom:6px;">
+              <%= link_to shop.name,
+                  admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                  style: "text-decoration:none;" %>
+            </div>
 
-        <div style="color:#666; font-size:12px; margin-bottom:8px;">
-          <%= shop.address.presence || "住所未設定" %>
-        </div>
+            <div style="color:#666; font-size:12px; margin-bottom:8px;">
+              <%= shop.address.presence || "住所未設定" %>
+            </div>
 
-        <% if shop.respond_to?(:display_genre) && shop.display_genre.present? %>
-          <div style="font-size:12px; color:#333; margin-bottom:6px;">
-            ジャンル：<%= shop.display_genre %>
+            <% if shop.respond_to?(:display_genre) && shop.display_genre.present? %>
+              <div style="font-size:12px; color:#333; margin-bottom:6px;">
+                ジャンル：<%= shop.display_genre %>
+              </div>
+            <% end %>
+
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+              <% smoking_area =
+                  case shop.try(:smoking_area).to_s
+                  when "separated" then "喫煙所あり"
+                  when "all_smoking", "smoking_allowed" then "席で喫煙可"
+                  else nil
+                  end %>
+
+              <% smoking_type =
+                  case shop.try(:smoking_type).to_s
+                  when "both_ok" then "紙・加熱式OK"
+                  when "electronic_only" then "加熱式のみ"
+                  when "paper_only" then "紙のみ"
+                  else nil
+                  end %>
+
+              <% if smoking_area.present? %>
+                <span style="font-size:12px; padding:4px 10px; border-radius:999px; background:#f3f4f6;">
+                  <%= smoking_area %>
+                </span>
+              <% end %>
+
+              <% if smoking_type.present? %>
+                <span style="font-size:12px; padding:4px 10px; border-radius:999px; background:#f3f4f6;">
+                  <%= smoking_type %>
+                </span>
+              <% end %>
+
+              <% if shop.respond_to?(:smoking_unverified) && shop.smoking_unverified? %>
+                <span style="font-size:12px; padding:4px 10px; border-radius:999px; background:#fff3cd;">
+                  未確認
+                </span>
+              <% end %>
+            </div>
           </div>
-        <% end %>
 
-        <%# 喫煙表示（enumがある前提） %>
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
-          <% smoking_area =
-              case shop.try(:smoking_area).to_s
-              when "separated" then "喫煙所あり"
-              when "all_smoking", "smoking_allowed" then "席で喫煙可"
-              else nil
-              end %>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <%= link_to "詳細",
+                admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                style: "display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
-          <% smoking_type =
-              case shop.try(:smoking_type).to_s
-              when "both_ok" then "紙・加熱式OK"
-              when "electronic_only" then "加熱式のみ"
-              when "paper_only" then "紙のみ"
-              else nil
-              end %>
-
-          <% if smoking_area.present? %>
-            <span style="font-size:12px; padding:4px 10px; border-radius:999px; background:#f3f4f6;">
-              <%= smoking_area %>
-            </span>
-          <% end %>
-
-          <% if smoking_type.present? %>
-            <span style="font-size:12px; padding:4px 10px; border-radius:999px; background:#f3f4f6;">
-              <%= smoking_type %>
-            </span>
-          <% end %>
-        </div>
-
-        <div style="margin-top:10px;">
-          <%= link_to "詳細を見る", shop_path(shop),
-              style: "display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+            <%= link_to "編集",
+                edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                style: "display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+          </div>
         </div>
       </div>
     <% end %>
@@ -61,4 +74,3 @@
 <% else %>
   <p style="color:#666;">店舗がまだありません。</p>
 <% end %>
-

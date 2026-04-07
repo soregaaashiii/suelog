@@ -1,0 +1,33 @@
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shops/show.html.erb %>
+
+<h1 style="margin:0 0 16px;"><%= @shop.name %></h1>
+
+<div style="display:grid; gap:16px;">
+  <div style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff;">
+    <h2 style="margin:0 0 12px; font-size:18px;">基本情報</h2>
+
+    <div style="display:grid; gap:8px;">
+      <div><strong>ID:</strong> <%= @shop.id %></div>
+      <div><strong>住所:</strong> <%= @shop.address.presence || "なし" %></div>
+      <div><strong>エリア:</strong> <%= @shop.area.presence || "なし" %></div>
+      <div><strong>最寄駅:</strong> <%= @shop.nearest_station.presence || "なし" %></div>
+      <div><strong>電話:</strong> <%= @shop.phone.presence || "なし" %></div>
+      <div><strong>ジャンル:</strong> <%= (@shop.respond_to?(:display_genre) ? @shop.display_genre : @shop.genre).presence || "なし" %></div>
+      <div><strong>喫煙エリア:</strong> <%= @shop.smoking_area.presence || "なし" %></div>
+      <div><strong>喫煙タイプ:</strong> <%= @shop.smoking_type.presence || "なし" %></div>
+      <div><strong>最終確認日:</strong> <%= @shop.last_confirmed_on.presence || "なし" %></div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <%= link_to "編集する",
+        edit_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),
+        style: "display:inline-block; padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+
+    <%= link_to "一覧に戻る",
+        admin_shops_path(status: @status, source: @source, per: @per, page: @page),
+        style: "display:inline-block; padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+  </div>
+
+  <%= render "duplicate_candidates", duplicate_candidates: @duplicate_candidates %>
+</div>

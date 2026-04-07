@@ -1,0 +1,54 @@
+<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shops/_duplicate_candidates.html.erb %>
+
+<div style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff8e8;">
+  <h2 style="margin:0 0 12px; font-size:18px;">重複候補</h2>
+
+  <% if duplicate_candidates.present? %>
+    <div style="display:grid; gap:12px;">
+      <% duplicate_candidates.each do |row| %>
+        <% candidate = row[:shop] || row["shop"] %>
+        <% score = row[:score] || row["score"] %>
+        <% reasons = row[:reasons] || row["reasons"] || [] %>
+        <% next unless candidate %>
+
+        <div style="padding:12px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:16px;">
+                <%= link_to candidate.name,
+                    admin_shop_path(candidate, status: @status, source: @source, per: @per, page: @page),
+                    style: "text-decoration:none;" %>
+              </div>
+              <div style="font-size:13px; color:#666; margin-top:4px;">
+                ID: <%= candidate.id %>
+              </div>
+            </div>
+
+            <div style="font-weight:700;">
+              スコア: <%= score %>
+            </div>
+          </div>
+
+          <div style="margin-top:8px; font-size:14px;">
+            <strong>理由:</strong>
+            <%= Array(reasons).join(" / ").presence || "候補一致" %>
+          </div>
+
+          <div style="margin-top:8px; font-size:14px; color:#444; display:grid; gap:4px;">
+            <div><strong>住所:</strong> <%= candidate.address.presence || "なし" %></div>
+            <div><strong>電話:</strong> <%= candidate.phone.presence || "なし" %></div>
+            <div><strong>最寄駅:</strong> <%= candidate.nearest_station.presence || "なし" %></div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <%= link_to "この候補を開く",
+                admin_shop_path(candidate, status: @status, source: @source, per: @per, page: @page),
+                style: "display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p style="margin:0; color:#666;">重複候補はありません。</p>
+  <% end %>
+</div>
