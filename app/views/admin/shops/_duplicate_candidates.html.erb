@@ -1,4 +1,4 @@
-<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shops/_duplicate_candidates.html.erb %>
+<%# /Users/kawamuratakuya/dev/suelog/app/views/admin/shops/_duplicate_candidates.html.erb %>
 
 <div style="border:1px solid #ddd; border-radius:12px; padding:16px; background:#fff8e8;">
   <h2 style="margin:0 0 12px; font-size:18px;">重複候補</h2>
@@ -7,7 +7,7 @@
     <div style="display:grid; gap:12px;">
       <% duplicate_candidates.each do |row| %>
         <% candidate = row[:shop] || row["shop"] %>
-        <% score = row[:score] || row["score"] %>
+        <% score = row[:score] || row["score"] || 0 %>
         <% reasons = row[:reasons] || row["reasons"] || [] %>
         <% next unless candidate %>
 
