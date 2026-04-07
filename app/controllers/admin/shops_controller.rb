@@ -226,6 +226,18 @@ end
 end
 
 CSV.foreach(file.path, headers: true) do |row|
+attrs = {
+  name: row["name"],
+  address: row["address"],
+  phone: row["phone"]
+}
+
+if Shop.duplicate_exists_for_import?(attrs)
+  Rails.logger.info("[SKIP DUPLICATE] #{attrs[:name]} / #{attrs[:address]}")
+  next
+end
+
+
 begin
 name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
 phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
