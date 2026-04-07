@@ -1,0 +1,74 @@
+<h1>保留店舗一覧</h1>
+
+<div style="margin:12px 0; padding:12px; border:1px solid #ddd; border-radius:12px; background:#fafafa;">
+  <div style="font-weight:800; margin-bottom:6px;">保留理由つき店舗</div>
+  <div style="color:#666; font-size:13px; line-height:1.7;">
+    編集依頼の承認時に「営業終了」「移転」「休業」「禁煙店だった」「禁煙店になった」として保留に入った店舗です。
+  </div>
+</div>
+
+<p style="color:#666; margin:8px 0;">
+  件数：<%= @shops.size %> 件
+</p>
+
+<% if @shops.any? %>
+  <table style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr style="border-bottom:2px solid #111;">
+        <th align="left">店名</th>
+        <th align="left">住所</th>
+        <th align="left">理由</th>
+        <th align="left">補足</th>
+        <th align="left">保留日時</th>
+        <th align="left">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @shops.each do |shop| %>
+        <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
+          <td style="padding:10px 0;">
+            <strong><%= shop.name %></strong>
+          </td>
+
+          <td style="padding:10px 0;">
+            <%= shop.address.presence || "未設定" %>
+          </td>
+
+          <td style="padding:10px 0;">
+            <span style="display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:800; background:#fff6db; color:#8a6500; border:1px solid #f0de9c;">
+              <%= shop.hold_reason_label %>
+            </span>
+          </td>
+
+          <td style="padding:10px 0;">
+            <%= simple_format(h(shop.hold_note.presence || "—")) %>
+          </td>
+
+          <td style="padding:10px 0;">
+            <%= shop.held_at&.strftime("%Y-%m-%d %H:%M") || "—" %>
+          </td>
+
+          <td style="padding:10px 0;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <%= link_to "詳細",
+                  admin_shop_path(shop),
+                  style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+
+              <%= link_to "編集",
+                  edit_admin_shop_path(shop),
+                  style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+
+              <%= link_to "公開ページ",
+                  shop_path(shop),
+                  target: "_blank",
+                  rel: "noopener",
+                  style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>保留中の店舗はありません。</p>
+<% end %>

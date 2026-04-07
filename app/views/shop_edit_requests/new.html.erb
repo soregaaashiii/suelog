@@ -139,16 +139,50 @@ style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border
 </div>
 
 <div style="margin:12px 0;">
-<div style="font-weight:700;">補足（任意）</div>
-<%= f.text_area :note,
-rows: 4,
-placeholder: "例：席で吸える / 21時以降だけOK など",
-style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+  <div style="font-weight:700;">補足（任意）</div>
+  <%= f.text_area :note,
+  rows: 4,
+  placeholder: "例：席で吸える / 21時以降だけOK など",
+  style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+</div>
+
+<div style="margin:16px 0; padding:14px; border:1px solid #eee; border-radius:12px; background:#fffdf8;">
+  <div style="font-weight:800; font-size:16px; margin-bottom:8px;">店舗状態の報告</div>
+  <p style="margin:0 0 10px; color:#666; font-size:13px; line-height:1.7;">
+    営業終了・移転・休業・禁煙化などを見つけた場合はこちらから報告できます。<br>
+    こちらを選んだ場合は、承認後に店舗は管理画面の保留一覧へ入ります。
+  </p>
+
+  <div style="margin:12px 0;">
+    <div style="font-weight:700;">報告理由</div>
+    <%= f.select :status_report_type,
+      [
+        ["（選択しない）", ""],
+        ["営業終了", "closed"],
+        ["移転", "relocated"],
+        ["休業", "temporarily_closed"],
+        ["禁煙店だった", "was_non_smoking"],
+        ["禁煙店になった", "became_non_smoking"]
+      ],
+      {},
+      style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+  </div>
+
+  <div style="margin:12px 0 0;">
+    <div style="font-weight:700;">報告メモ（任意）</div>
+    <%= f.text_area :status_report_note,
+      rows: 4,
+      placeholder: "例：現地で閉店を確認 / 張り紙に移転先あり / 電話で禁煙化を確認 など",
+      style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+  </div>
 </div>
 
 <hr>
 
 <h3>喫煙ステータス（必須）</h3>
+<p style="color:#666; font-size:12px; line-height:1.6;">
+  ※ 上の「店舗状態の報告」を使う場合は、喫煙ステータス未入力でも送信できます
+</p>
 
 <div style="margin:12px 0;">
 <div style="font-weight:700;">喫煙エリア（必須）</div>

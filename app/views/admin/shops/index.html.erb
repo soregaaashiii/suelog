@@ -28,29 +28,39 @@ CSV一括インポート
 <div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
   <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
     <div>
-      <strong>表示：</strong>
-      <% if @status == "all" %>
-        <strong>すべて</strong>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>
-      <% elsif @status == "rejected" %>
-        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <strong>却下</strong>｜
-        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>
-      <% elsif @status == "unverified" %>
-        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-        <strong>未確認のみ</strong>
-      <% else %>
-        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-        <strong>承認待ち</strong>｜
-        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>
-      <% end %>
-    </div>
+  <strong>表示：</strong>
+  <% if @status == "all" %>
+    <strong>すべて</strong>｜
+    <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "保留一覧", holds_admin_shops_path %>
+  <% elsif @status == "rejected" %>
+    <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+    <strong>却下</strong>｜
+    <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "保留一覧", holds_admin_shops_path %>
+  <% elsif @status == "unverified" %>
+    <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+    <strong>未確認のみ</strong>｜
+    <%= link_to "保留一覧", holds_admin_shops_path %>
+  <% elsif @status == "hold" %>
+    <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+    <strong>保留一覧</strong>
+  <% else %>
+    <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+    <strong>承認待ち</strong>｜
+    <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+    <%= link_to "保留一覧", holds_admin_shops_path %>
+  <% end %>
+</div>
 
     <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
       <div style="display:flex; gap:8px; align-items:center;">
@@ -219,12 +229,20 @@ CSV一括インポート
             </div>
 
             <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
-              <div style="margin-top:6px;">
-                <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#fff6db; color:#8a6500; border:1px solid #f0de9c;">
-                  未確認
-                </span>
-              </div>
-            <% end %>
+  <div style="margin-top:6px;">
+    <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#fff6db; color:#8a6500; border:1px solid #f0de9c;">
+      未確認
+    </span>
+  </div>
+<% end %>
+
+<% if shop.respond_to?(:on_hold?) && shop.on_hold? %>
+  <div style="margin-top:6px;">
+    <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#ffe9e9; color:#b00020; border:1px solid #f3b2b2;">
+      保留：<%= shop.hold_reason_label %>
+    </span>
+  </div>
+<% end %>
 
             <% if Shop.column_names.include?("source") && shop.respond_to?(:source) && shop.source.present? %>
               <div style="color:#666; font-size:12px; margin-top:4px;">source：<%= shop.source %></div>
@@ -247,13 +265,15 @@ CSV一括インポート
           </td>
 
           <td style="padding:8px 0;">
-            <% if shop.approved? %>
-              <span style="color:#137333; font-weight:bold;">承認済み</span>
-            <% elsif rejected %>
-              <span style="color:#b00020; font-weight:bold;">却下</span>
-            <% else %>
-              <span style="color:#b00020; font-weight:bold;">承認待ち</span>
-            <% end %>
+            <% if shop.respond_to?(:on_hold?) && shop.on_hold? %>
+  <span style="color:#b00020; font-weight:bold;">保留中</span>
+<% elsif shop.approved? %>
+  <span style="color:#137333; font-weight:bold;">承認済み</span>
+<% elsif rejected %>
+  <span style="color:#b00020; font-weight:bold;">却下</span>
+<% else %>
+  <span style="color:#b00020; font-weight:bold;">承認待ち</span>
+<% end %>
 
             <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
               <div style="margin-top:4px; color:#8a6500; font-size:12px; font-weight:700;">
