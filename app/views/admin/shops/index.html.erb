@@ -1,9 +1,9 @@
-<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shops/index.html.erb %>
+<%# /Users/kawamuratakuya/dev/suelog/app/views/admin/shops/index.html.erb %>
 
 <h1>店舗管理</h1>
 
 <%# =========================
-✅ CSV一括インポート
+CSV一括インポート
 ========================= %>
 <div style="margin:10px 0; padding:12px; border:1px solid #ddd; border-radius:12px; background:#fafafa;">
 <div style="font-weight:900; margin-bottom:8px;">CSV一括インポート</div>
@@ -53,7 +53,6 @@ style: "padding:8px 12px; border:1px solid #111; border-radius:10px; background:
 </div>
 
 <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-<%# ✅ 表示件数(per) %>
 <div style="display:flex; gap:8px; align-items:center;">
 <strong>表示件数：</strong>
 <form action="<%= admin_shops_path %>" method="get" style="display:flex; gap:8px; align-items:center;">
@@ -71,7 +70,6 @@ style: "padding:8px 12px; border:1px solid #111; border-radius:10px; background:
 </form>
 </div>
 
-<%# ✅ sourceフィルタ %>
 <% if Shop.column_names.include?("source") %>
 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
 <strong>source：</strong>
@@ -97,7 +95,6 @@ style: "padding:8px 12px; border:1px solid #111; border-radius:10px; background:
 件数：<%= (@total_count || @shops.count) %> 件 ／ ページ：<%= (@page || 1) %> / <%= (@total_pages || 1) %>
 </p>
 
-<%# ✅ 前へ/次へ（ページャ） %>
 <% if (@total_pages || 1) > 1 %>
 <div style="margin:10px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
 <% if (@page || 1) > 1 %>
@@ -115,8 +112,6 @@ style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decora
 <% end %>
 
 <% if @shops.any? %>
-
-<%# ✅ 一括操作フォーム（入れ子form禁止。tableの外に置く） %>
 <%= form_with url: bulk_update_admin_shops_path, method: :patch, local: true, id: "bulk_form" do %>
 <input type="hidden" name="status" value="<%= @status %>">
 <input type="hidden" name="source" value="<%= @source %>">
@@ -180,6 +175,14 @@ style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#
 <tbody>
 <% @shops.each do |shop| %>
 <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
+<% detail_has_duplicates = shop.respond_to?(:duplicate_flag_present?) && shop.duplicate_flag_present? %>
+<% detail_label = detail_has_duplicates ? "詳細（重複候補あり）" : "詳細" %>
+<% detail_style =
+if detail_has_duplicates
+"padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; font-weight:700; border-radius:10px; text-decoration:none;"
+else
+"padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;"
+end %>
 
 <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
 <td style="padding:10px 0;">
@@ -220,46 +223,40 @@ style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#
 <% end %>
 </td>
 
-
-
-
 <td style="padding:8px 0;">
-  <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-    <% if !shop.approved? && !shop.rejected? %>
-      <%= button_to "承認",
-      approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-      method: :patch,
-      data: { turbo: false, turbo_confirm: "承認しますか？" } %>
+<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+<% if !shop.approved? && !shop.rejected? %>
+<%= button_to "承認",
+approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+method: :patch,
+data: { turbo: false, turbo_confirm: "承認しますか？" } %>
 
-      <%= button_to "却下",
-      reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-      method: :patch,
-      data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
-    <% end %>
+<%= button_to "却下",
+reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+method: :patch,
+data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
+<% end %>
 
-    <%= link_to "詳細",
-    admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+<%= link_to detail_label,
+admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+style: detail_style %>
 
-    <%= link_to "編集",
-    edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+<%= link_to "編集",
+edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
-    <%= link_to "公開ページ",
-    shop_path(shop),
-    target: "_blank",
-    rel: "noopener",
-    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-  </div>
+<%= link_to "公開ページ",
+shop_path(shop),
+target: "_blank",
+rel: "noopener",
+style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+</div>
 </td>
-
-
 </tr>
 <% end %>
 </tbody>
 </table>
 
-<%# ✅ 下部ページャ %>
 <% if (@total_pages || 1) > 1 %>
 <div style="margin:12px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
 <% if (@page || 1) > 1 %>
@@ -321,7 +318,6 @@ alert("店舗が選択されていません");
 update();
 })();
 </script>
-
 <% else %>
 <p>該当する店舗はありません。</p>
 <% end %>
