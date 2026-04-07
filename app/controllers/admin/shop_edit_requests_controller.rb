@@ -39,28 +39,35 @@ def show
 end
 
 def approve
-shop = @req.shop
-attrs = build_shop_attrs_from_request(@req)
+  shop = @req.shop
+  attrs = build_shop_attrs_from_request(@req)
 
-area = safe_str(@req.proposed_area)
-attrs[:area] = area if area.present?
+  area = safe_str(@req.proposed_area)
+  attrs[:area] = area if area.present?
 
-if attrs[:last_confirmed_on].present?
-attrs[:smoking_unverified] = false
-end
+  if attrs[:last_confirmed_on].present?
+    attrs[:smoking_unverified] = false
+  end
 
-ActiveRecord::Base.transaction do
-shop.update!(attrs) if attrs.present?
-apply_selected_attachments!(@req, shop)
-apply_thumbnail_if_present!(shop)
-@req.update!(status: :approved)
-end
+  ActiveRecord::Base.transaction do
+    if @req.status_report_type.to_s.present?
+      attrs[:on_hold] = true
+      attrs[:hold_reason] = @req.status_report_type
+      attrs[:hold_note] = safe_str(@req.status_report_note)
+      attrs[:held_at] = Time.current
+    end
 
-redirect_to admin_shop_edit_requests_path(status: "pending"),
-notice: "承認して反映しました"
+    shop.update!(attrs) if attrs.present?
+    apply_selected_attachments!(@req, shop)
+    apply_thumbnail_if_present!(shop)
+    @req.update!(status: :approved)
+  end
+
+  redirect_to admin_shop_edit_requests_path(status: "pending"),
+  notice: (@req.status_report_type.to_s.present? ? "承認して保留一覧へ反映しました" : "承認して反映しました")
 rescue ActiveRecord::RecordInvalid => e
-redirect_to admin_shop_edit_requests_path(status: "pending"),
-alert: "反映に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+  redirect_to admin_shop_edit_requests_path(status: "pending"),
+  alert: "反映に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
 end
 
 def reject

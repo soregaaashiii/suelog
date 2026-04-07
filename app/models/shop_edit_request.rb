@@ -12,23 +12,39 @@ has_many_attached :exterior_photos
 has_many_attached :menu_photos
 
 THUMB_KINDS = %w[auto food exterior interior menu].freeze
+STATUS_REPORT_TYPES = %w[
+  closed
+  relocated
+  temporarily_closed
+  was_non_smoking
+  became_non_smoking
+].freeze
 
 # 既存DB/既存承認処理との互換性を維持するため、enumキー自体は area_* / type_* のまま維持
 enum :proposed_smoking_area, {
-area_separated: 0,
-area_all_smoking: 1,
-area_unknown: 2
+  area_separated: 0,
+  area_all_smoking: 1,
+  area_unknown: 2
 }, prefix: :proposed
 
 enum :proposed_smoking_type, {
-type_both_ok: 0,
-type_electronic_only: 1,
-type_paper_only: 2,
-type_unknown: 3
+  type_both_ok: 0,
+  type_electronic_only: 1,
+  type_paper_only: 2,
+  type_unknown: 3
 }, prefix: :proposed
 
-validates :proposed_smoking_area, presence: { message: "を選択してください（編集依頼では必須）" }
-validates :proposed_smoking_type, presence: { message: "を選択してください（編集依頼では必須）" }
+validates :proposed_smoking_area,
+  presence: { message: "を選択してください（編集依頼では必須）" },
+  unless: :status_report?
+
+validates :proposed_smoking_type,
+  presence: { message: "を選択してください（編集依頼では必須）" },
+  unless: :status_report?
+
+validates :status_report_type,
+  inclusion: { in: STATUS_REPORT_TYPES, message: "が不正です" },
+  allow_blank: true
 
 validate :proposed_last_confirmed_on_not_future
 validate :genre_other_required_when_other
@@ -49,6 +65,27 @@ end
 def proposed_smoking_type=(value)
 normalized = normalize_smoking_type_token(value)
 super(normalized)
+end
+
+def status_report?
+status_report_type.to_s.present?
+end
+
+def status_report_type_label
+case status_report_type.to_s
+when "closed"
+"営業終了"
+when "relocated"
+"移転"
+when "temporarily_closed"
+"休業"
+when "was_non_smoking"
+"禁煙店だった"
+when "became_non_smoking"
+"禁煙店になった"
+else
+nil
+end
 end
 
 private
@@ -137,13 +174,13 @@ errors.add(:genre_other, "を入力してください（ジャンルが「その
 end
 
 def proposed_thumbnail_values
-if proposed_thumbnail_kind.present? && !THUMB_KINDS.include?(proposed_thumbnail_kind.to_s)
-errors.add(:proposed_thumbnail_kind, "が不正です")
-end
+  if proposed_thumbnail_kind.present? && !THUMB_KINDS.include?(proposed_thumbnail_kind.to_s)
+    errors.add(:proposed_thumbnail_kind, "が不正です")
+  end
 
-if proposed_thumbnail_index.present?
-i = proposed_thumbnail_index.to_i
-errors.add(:proposed_thumbnail_index, "は1以上で入力してください") if i < 1
-end
+  if proposed_thumbnail_index.present?
+    i = proposed_thumbnail_index.to_i
+    errors.add(:proposed_thumbnail_index, "は1以上で入力してください") if i < 1
+  end
 end
 end

@@ -21,13 +21,15 @@ scope = Shop.order(created_at: :desc)
 
 case @status
 when "rejected"
-scope = scope.where(rejected: true)
+  scope = scope.where(rejected: true)
 when "all"
-# all
+  # all
 when "unverified"
-scope = scope.where(smoking_unverified: true)
+  scope = scope.where(smoking_unverified: true)
+when "hold"
+  scope = scope.where(on_hold: true)
 else
-scope = scope.where(approved: false).where(rejected: [false, nil])
+  scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
 end
 
 if @source.present? && Shop.column_names.include?("source")
@@ -47,6 +49,12 @@ menu_photos_attachments: :blob
 
 offset = (@page - 1) * @per
 @shops = scope.offset(offset).limit(@per)
+end
+
+def holds
+  @shops = Shop
+    .where(on_hold: true)
+    .order(held_at: :desc, updated_at: :desc)
 end
 
 def show

@@ -99,8 +99,9 @@ class Shop < ApplicationRecord
   }, prefix: true
 
   # ===== Scopes =====
-  scope :approved, -> { where(approved: true) }
-  scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
+ scope :approved, -> { where(approved: true, on_hold: false) }
+scope :on_hold_only, -> { where(on_hold: true) }
+scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
 
   scope :keyword, lambda { |q|
     kw = q.to_s.strip
@@ -302,19 +303,36 @@ class Shop < ApplicationRecord
   end
 
   def smoking_type_label
-    case smoking_type
-    when "both_ok"
-      "紙・加熱式どちらもOK"
-    when "electronic_only"
-      "加熱式タバコのみOK"
-    when "paper_only"
-      "紙タバコのみOK"
-    when "unknown"
-      "不明"
-    else
-      "未設定"
-    end
+  case smoking_type
+  when "both_ok"
+    "紙・加熱式どちらもOK"
+  when "electronic_only"
+    "加熱式タバコのみOK"
+  when "paper_only"
+    "紙タバコのみOK"
+  when "unknown"
+    "不明"
+  else
+    "未設定"
   end
+end
+
+def hold_reason_label
+  case hold_reason.to_s
+  when "closed"
+    "営業終了"
+  when "relocated"
+    "移転"
+  when "temporarily_closed"
+    "休業"
+  when "was_non_smoking"
+    "禁煙店だった"
+  when "became_non_smoking"
+    "禁煙店になった"
+  else
+    "保留"
+  end
+end
 
   # =========================
   # サムネイル（安全版）

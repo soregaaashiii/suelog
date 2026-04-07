@@ -101,6 +101,21 @@ status_pending = @req.pending?
 状態：<strong><%= @req.status %></strong>
 </p>
 
+<% if @req.status_report_type.to_s.present? %>
+<div style="margin:0 0 12px; padding:12px; border:1px solid #f3b2b2; background:#fff5f5; border-radius:12px;">
+<div style="margin-bottom:8px;">
+<span style="display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:800; background:#ffe9e9; color:#b00020; border:1px solid #f3b2b2;">
+状態報告：<%= @req.status_report_type_label %>
+</span>
+</div>
+
+<div style="color:#555; font-size:13px;">
+<strong>報告メモ：</strong>
+<%= @req.status_report_note.present? ? @req.status_report_note : "（なし）" %>
+</div>
+</div>
+<% end %>
+
 <div style="display:flex; gap:10px; flex-wrap:wrap; margin:0 0 12px;">
 <%= link_to "一覧に戻る",
 admin_shop_edit_requests_path(status: "pending"),
@@ -126,6 +141,127 @@ data: { turbo_confirm: "却下しますか？" } %>
 <%= flash[:notice] %>
 </div>
 <% end %>
+
+<h2 style="margin:0 0 8px;">変更比較</h2>
+
+<table style="width:100%; border-collapse:collapse; margin:0 0 16px;">
+  <thead>
+    <tr style="border-bottom:2px solid #111;">
+      <th align="left" style="padding:8px;">項目</th>
+      <th align="left" style="padding:8px;">現在</th>
+      <th align="left" style="padding:8px;">提案</th>
+      <th align="left" style="padding:8px;">判定</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% compare_rows = [
+      ["店名", @shop.name.to_s, @req.proposed_name.to_s],
+      ["住所", @shop.address.to_s, @req.proposed_address.to_s],
+      ["エリア", @shop.area.to_s, @req.proposed_area.to_s],
+      ["最寄駅", @shop.nearest_station.to_s, @req.proposed_nearest_station.to_s],
+      ["電話", @shop.phone.to_s, @req.proposed_phone.to_s],
+      ["通常営業時間", @shop.try(:opening_hours_text).to_s, opening_hours_text.to_s],
+      ["祝日営業時間", @shop.try(:holiday_hours_text).to_s, holiday_hours_text.to_s],
+      ["定休日", @shop.try(:closed_days_text).to_s, closed_days_text.to_s],
+      ["補足", @shop.note.to_s, @req.note.to_s]
+    ] %>
+
+    <% compare_rows.each do |label, current_value, proposed_value| %>
+      <% current_text = current_value.to_s.strip %>
+      <% proposed_text = proposed_value.to_s.strip %>
+      <% changed = proposed_text.present? && proposed_text != current_text %>
+
+      <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
+        <td style="padding:8px; font-weight:700;"><%= label %></td>
+        <td style="padding:8px;"><%= current_text.presence || "—" %></td>
+        <td style="padding:8px;"><%= proposed_text.presence || "—" %></td>
+        <td style="padding:8px;">
+          <% if changed %>
+            <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#eef8f0; color:#137333; border:1px solid #b7dfbf;">
+              変更あり
+            </span>
+          <% else %>
+            <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#f5f5f5; color:#666; border:1px solid #ddd;">
+              変更なし
+            </span>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+
+    <% current_smoking_area_label =
+      case @shop.smoking_area.to_s
+      when "all_smoking" then "席で喫煙可"
+      when "separated" then "喫煙所あり"
+      when "unknown" then "不明"
+      else "—"
+      end %>
+
+    <% proposed_smoking_area_label =
+      case @req.proposed_smoking_area.to_s
+      when "area_all_smoking", "proposed_area_all_smoking" then "席で喫煙可"
+      when "area_separated", "proposed_area_separated" then "喫煙所あり"
+      when "area_unknown", "proposed_area_unknown" then "不明"
+      else ""
+      end %>
+
+    <% area_changed = proposed_smoking_area_label.present? && proposed_smoking_area_label != current_smoking_area_label %>
+
+    <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
+      <td style="padding:8px; font-weight:700;">喫煙エリア</td>
+      <td style="padding:8px;"><%= current_smoking_area_label %></td>
+      <td style="padding:8px;"><%= proposed_smoking_area_label.presence || "—" %></td>
+      <td style="padding:8px;">
+        <% if area_changed %>
+          <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#eef8f0; color:#137333; border:1px solid #b7dfbf;">
+            変更あり
+          </span>
+        <% else %>
+          <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#f5f5f5; color:#666; border:1px solid #ddd;">
+            変更なし
+          </span>
+        <% end %>
+      </td>
+    </tr>
+
+    <% current_smoking_type_label =
+      case @shop.smoking_type.to_s
+      when "both_ok" then "紙・加熱式どちらもOK"
+      when "electronic_only" then "加熱式タバコのみOK"
+      when "paper_only" then "紙タバコのみOK"
+      when "unknown" then "不明"
+      else "—"
+      end %>
+
+    <% proposed_smoking_type_label =
+      case @req.proposed_smoking_type.to_s
+      when "type_both_ok", "proposed_type_both_ok" then "紙・加熱式どちらもOK"
+      when "type_electronic_only", "proposed_type_electronic_only" then "加熱式タバコのみOK"
+      when "type_paper_only", "proposed_type_paper_only" then "紙タバコのみOK"
+      when "type_unknown", "proposed_type_unknown" then "不明"
+      else ""
+      end %>
+
+    <% type_changed = proposed_smoking_type_label.present? && proposed_smoking_type_label != current_smoking_type_label %>
+
+    <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
+      <td style="padding:8px; font-weight:700;">喫煙タイプ</td>
+      <td style="padding:8px;"><%= current_smoking_type_label %></td>
+      <td style="padding:8px;"><%= proposed_smoking_type_label.presence || "—" %></td>
+      <td style="padding:8px;">
+        <% if type_changed %>
+          <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#eef8f0; color:#137333; border:1px solid #b7dfbf;">
+            変更あり
+          </span>
+        <% else %>
+          <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#f5f5f5; color:#666; border:1px solid #ddd;">
+            変更なし
+          </span>
+        <% end %>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 <hr>
 

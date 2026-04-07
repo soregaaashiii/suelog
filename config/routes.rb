@@ -87,15 +87,16 @@ namespace :admin do
 get "analytics", to: "analytics#index", as: :analytics
 
 resources :shops, only: [:index, :show, :edit, :update] do
-member do
-patch :approve
-patch :reject
-end
+  member do
+    patch :approve
+    patch :reject
+  end
 
-collection do
-patch :bulk_update
-post :import
-end
+  collection do
+    get :holds
+    patch :bulk_update
+    post :import
+  end
 end
 
 resources :reviews, only: [:index, :destroy] do
