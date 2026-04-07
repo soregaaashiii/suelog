@@ -1,4 +1,4 @@
-# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/models/shop.rb
+# /Users/kawamuratakuya/dev/suelog/app/models/shop.rb
 # frozen_string_literal: true
 
 class Shop < ApplicationRecord
@@ -75,16 +75,16 @@ class Shop < ApplicationRecord
 
   # ===== Smoking status =====
   enum :smoking_area, {
-    separated: 0,   # 喫煙所あり
-    all_smoking: 1, # 席で喫煙可
-    unknown: 2      # 不明
+    separated: 0,
+    all_smoking: 1,
+    unknown: 2
   }, prefix: true
 
   enum :smoking_type, {
-    both_ok: 0,        # 紙・加熱式OK
-    electronic_only: 1, # 加熱式のみ
-    paper_only: 2,     # 紙のみ
-    unknown: 3         # 不明
+    both_ok: 0,
+    electronic_only: 1,
+    paper_only: 2,
+    unknown: 3
   }, prefix: true
 
   # ===== Scopes =====
@@ -136,6 +136,8 @@ class Shop < ApplicationRecord
 
     where(conditions.join(" OR "), bind_values)
   }
+
+  scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
 
   # ===== Validations =====
   validates :name, :address, :last_confirmed_on, presence: { message: "を入力してください" }
@@ -215,6 +217,17 @@ class Shop < ApplicationRecord
     normalized = GENRE_ALIASES[v] || v
 
     ([normalized] + Array(GENRE_SEARCH_EXPANSIONS[normalized])).map { |term| term.to_s.strip }.reject(&:blank?).uniq
+  end
+
+  def self.normalize_duplicate_text(text)
+    return "" if text.blank?
+
+    text.to_s
+        .tr("０-９Ａ-Ｚａ-ｚ", "0-9A-Za-z")
+        .downcase
+        .gsub(/[[:space:]]+/, "")
+        .gsub(/[()（）\[\]【】「」『』・･,，.。\-ー−―]/, "")
+        .strip
   end
 
   # ===== Display helpers =====
@@ -354,6 +367,212 @@ class Shop < ApplicationRecord
     end
   end
 
+  # =========================
+  # 重複候補
+  # =========================
+  def duplicate_candidates(limit: 10)
+    ids = []
+    base_scope = Shop.excluding_shop(self)
+
+    # 1. 最優先: place_id 完全一致
+    if place_id_column_available? && place_id_value.present?
+      ids.concat(
+        base_scope
+          .where(place_id: place_id_value)
+          .order(created_at: :desc)
+          .limit(limit)
+          .pluck(:id)
+      )
+    end
+
+    # 2. 電話番号 完全一致
+    if normalized_phone.present?
+      ids.concat(
+        base_scope
+          .where(normalized_phone: normalized_phone)
+          .order(created_at: :desc)
+          .limit(limit * 3)
+          .pluck(:id)
+      )
+    end
+
+    # 3. 店名 完全一致
+    if name.present?
+      ids.concat(
+        base_scope
+          .where(name: name)
+          .order(created_at: :desc)
+          .limit(limit * 5)
+          .pluck(:id)
+      )
+    end
+
+    # 4. 住所 完全一致
+    if address.present?
+      ids.concat(
+        base_scope
+          .where(address: address)
+          .order(created_at: :desc)
+          .limit(limit * 5)
+          .pluck(:id)
+      )
+    end
+
+    normalized_name = self.class.normalize_duplicate_text(name)
+    normalized_address = self.class.normalize_duplicate_text(address)
+
+    # 5. 表記ゆれ対応（実質ほぼ全件を見る）
+    if normalized_name.present? || normalized_address.present?
+      base_scope.order(created_at: :desc).limit(5000).to_a.each do |candidate|
+        next if candidate.id == id
+
+        candidate_name = self.class.normalize_duplicate_text(candidate.name)
+        candidate_address = self.class.normalize_duplicate_text(candidate.address)
+
+        name_match =
+          normalized_name.present? &&
+          candidate_name.present? &&
+          normalized_name == candidate_name
+
+        address_match =
+          normalized_address.present? &&
+          candidate_address.present? &&
+          (
+            normalized_address == candidate_address ||
+            normalized_address.include?(candidate_address) ||
+            candidate_address.include?(normalized_address)
+          )
+
+        ids << candidate.id if name_match || address_match
+      end
+    end
+
+    ids = ids.compact.uniq.first(limit * 3)
+    return [] if ids.blank?
+
+    candidates = Shop.where(id: ids).index_by(&:id)
+
+    ids.map do |candidate_id|
+      candidate = candidates[candidate_id]
+      next unless candidate
+
+      {
+        shop: candidate,
+        score: duplicate_score_against(candidate),
+        reasons: duplicate_reasons_against(candidate)
+      }
+    end
+       .compact
+       .sort_by { |row| -row[:score] }
+       .first(limit)
+  rescue StandardError => e
+    Rails.logger.warn("[duplicate_candidates] #{e.class}: #{e.message}")
+    []
+  end
+
+  def duplicate_score_against(other)
+    score = 0
+
+    if place_id_column_available? &&
+       other.respond_to?(:place_id) &&
+       place_id_value.present? &&
+       other.place_id.present? &&
+       place_id_value == other.place_id
+      score += 100
+    end
+
+    if other.respond_to?(:normalized_phone) &&
+       normalized_phone.present? &&
+       other.normalized_phone.present? &&
+       normalized_phone == other.normalized_phone
+      score += 60
+    end
+
+    if name.present? && other.name.present? && name == other.name
+      score += 40
+    end
+
+    if address.present? && other.address.present? && address == other.address
+      score += 40
+    end
+
+    my_name = self.class.normalize_duplicate_text(name)
+    other_name = self.class.normalize_duplicate_text(other.name)
+    if my_name.present? && other_name.present? && my_name == other_name
+      score += 30
+    end
+
+    my_address = self.class.normalize_duplicate_text(address)
+    other_address = self.class.normalize_duplicate_text(other.address)
+    if my_address.present? && other_address.present?
+      if my_address == other_address
+        score += 30
+      elsif my_address.include?(other_address) || other_address.include?(my_address)
+        score += 15
+      end
+    end
+
+    if other.approved?
+      score += 5
+    elsif other.respond_to?(:rejected?) && other.rejected?
+      score += 1
+    end
+
+    score
+  rescue StandardError => e
+    Rails.logger.warn("[duplicate_score_against] #{e.class}: #{e.message}")
+    0
+  end
+
+  def duplicate_reasons_against(other)
+    reasons = []
+
+    if place_id_column_available? &&
+       other.respond_to?(:place_id) &&
+       place_id_value.present? &&
+       other.place_id.present? &&
+       place_id_value == other.place_id
+      reasons << "place_id一致"
+    end
+
+    if other.respond_to?(:normalized_phone) &&
+       normalized_phone.present? &&
+       other.normalized_phone.present? &&
+       normalized_phone == other.normalized_phone
+      reasons << "電話番号一致"
+    end
+
+    if name.present? && other.name.present? && name == other.name
+      reasons << "店名完全一致"
+    end
+
+    if address.present? && other.address.present? && address == other.address
+      reasons << "住所完全一致"
+    end
+
+    my_name = self.class.normalize_duplicate_text(name)
+    other_name = self.class.normalize_duplicate_text(other.name)
+    if my_name.present? && other_name.present? && my_name == other_name
+      reasons << "店名一致"
+    end
+
+    my_address = self.class.normalize_duplicate_text(address)
+    other_address = self.class.normalize_duplicate_text(other.address)
+    if my_address.present? && other_address.present?
+      if my_address == other_address
+        reasons << "住所一致"
+      elsif my_address.include?(other_address) || other_address.include?(my_address)
+        reasons << "住所近似"
+      end
+    end
+
+    reasons << duplicate_status_label(other)
+    reasons.uniq
+  rescue StandardError => e
+    Rails.logger.warn("[duplicate_reasons_against] #{e.class}: #{e.message}")
+    []
+  end
+
   AREAS = [
     "阿倍野", "阿倍野橋", "旭区清水", "朝潮橋", "淡路", "石橋阪大前", "泉大津", "泉ヶ丘", "泉佐野", "和泉中央",
     "今里", "茨木", "茨木市", "梅田", "江坂", "難波", "大阪阿部野橋", "大阪上本町", "大阪狭山市", "大阪天満宮",
@@ -374,7 +593,6 @@ class Shop < ApplicationRecord
     self.genre = GENRE_ALIASES[genre] || genre
 
     return if genre.blank?
-
     return if GENRES.include?(genre)
 
     if respond_to?(:genre_other)
@@ -496,160 +714,27 @@ class Shop < ApplicationRecord
     end
   end
 
-
-
-  scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
-
-  def duplicate_candidates(limit: 10)
-    candidate_ids = []
-
-    base_scope = Shop.excluding_shop(self)
-
-    if self.class.column_names.include?("place_id") && respond_to?(:place_id) && place_id.present?
-      candidate_ids.concat(base_scope.where(place_id: place_id).limit(limit).pluck(:id))
-    end
-
-    if respond_to?(:normalized_phone) && normalized_phone.present?
-      candidate_ids.concat(base_scope.where(normalized_phone: normalized_phone).limit(limit).pluck(:id))
-    end
-
-    normalized_name = self.class.normalize_duplicate_text(name)
-    normalized_address = self.class.normalize_duplicate_text(address)
-
-    if normalized_name.present? || normalized_address.present?
-      base_scope.limit(300).find_each do |candidate|
-        next if candidate.id == id
-
-        candidate_name = self.class.normalize_duplicate_text(candidate.name)
-        candidate_address = self.class.normalize_duplicate_text(candidate.address)
-
-        name_match =
-          normalized_name.present? &&
-          candidate_name.present? &&
-          normalized_name == candidate_name
-
-        address_match =
-          normalized_address.present? &&
-          candidate_address.present? &&
-          (
-            normalized_address == candidate_address ||
-            normalized_address.include?(candidate_address) ||
-            candidate_address.include?(normalized_address)
-          )
-
-        candidate_ids << candidate.id if name_match || address_match
-      end
-    end
-
-    candidate_ids = candidate_ids.compact.uniq.first(limit)
-    candidates = Shop.where(id: candidate_ids).index_by(&:id)
-
-    candidate_ids.map do |candidate_id|
-      candidate = candidates[candidate_id]
-      next unless candidate
-
-      {
-        shop: candidate,
-        score: duplicate_score_against(candidate),
-        reasons: duplicate_reasons_against(candidate)
-      }
-    end.compact.sort_by { |row| -row[:score] }
+  def place_id_column_available?
+    self.class.column_names.include?("place_id") && respond_to?(:place_id)
   end
 
-  def duplicate_score_against(other)
-    score = 0
+  def place_id_value
+    return nil unless place_id_column_available?
 
-    if self.class.column_names.include?("place_id") &&
-       respond_to?(:place_id) &&
-       other.respond_to?(:place_id) &&
-       place_id.present? &&
-       other.place_id.present? &&
-       place_id == other.place_id
-      score += 100
-    end
-
-    if respond_to?(:normalized_phone) &&
-       other.respond_to?(:normalized_phone) &&
-       normalized_phone.present? &&
-       other.normalized_phone.present? &&
-       normalized_phone == other.normalized_phone
-      score += 60
-    end
-
-    my_name = self.class.normalize_duplicate_text(name)
-    other_name = self.class.normalize_duplicate_text(other.name)
-    if my_name.present? && other_name.present? && my_name == other_name
-      score += 30
-    end
-
-    my_address = self.class.normalize_duplicate_text(address)
-    other_address = self.class.normalize_duplicate_text(other.address)
-    if my_address.present? && other_address.present?
-      if my_address == other_address
-        score += 30
-      elsif my_address.include?(other_address) || other_address.include?(my_address)
-        score += 15
-      end
-    end
-
-    score
+    place_id
+  rescue StandardError
+    nil
   end
 
-  def duplicate_reasons_against(other)
-    reasons = []
-
-    if self.class.column_names.include?("place_id") &&
-       respond_to?(:place_id) &&
-       other.respond_to?(:place_id) &&
-       place_id.present? &&
-       other.place_id.present? &&
-       place_id == other.place_id
-      reasons << "place_id一致"
+  def duplicate_status_label(other)
+    if other.approved?
+      "承認済み"
+    elsif other.respond_to?(:rejected?) && other.rejected?
+      "却下済み"
+    else
+      "承認待ち"
     end
-
-    if respond_to?(:normalized_phone) &&
-       other.respond_to?(:normalized_phone) &&
-       normalized_phone.present? &&
-       other.normalized_phone.present? &&
-       normalized_phone == other.normalized_phone
-      reasons << "電話番号一致"
-    end
-
-    my_name = self.class.normalize_duplicate_text(name)
-    other_name = self.class.normalize_duplicate_text(other.name)
-    if my_name.present? && other_name.present? && my_name == other_name
-      reasons << "店名一致"
-    end
-
-    my_address = self.class.normalize_duplicate_text(address)
-    other_address = self.class.normalize_duplicate_text(other.address)
-    if my_address.present? && other_address.present?
-      if my_address == other_address
-        reasons << "住所一致"
-      elsif my_address.include?(other_address) || other_address.include?(my_address)
-        reasons << "住所近似"
-      end
-    end
-
-    reasons.uniq
+  rescue StandardError
+    "状態不明"
   end
-
-  def self.normalize_duplicate_text(text)
-    return "" if text.blank?
-
-    text.to_s
-        .tr("０-９Ａ-Ｚａ-ｚ", "0-9A-Za-z")
-        .downcase
-        .gsub(/[[:space:]]+/, "")
-        .gsub(/[()（）\[\]【】「」『』・･,，.。\-ー−―]/, "")
-        .strip
-  end
-
-
-
-
-
-
-
-
 end
