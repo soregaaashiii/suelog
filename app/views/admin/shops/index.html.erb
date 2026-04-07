@@ -207,8 +207,16 @@ CSV一括インポート
             <input type="checkbox" class="shop_checkbox" value="<%= shop.id %>">
           </td>
 
-          <td style="padding:8px 0;">
-            <strong><%= shop.name %></strong>
+                    <td style="padding:8px 0;">
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <strong><%= shop.name %></strong>
+
+              <%= link_to "Google検索",
+                  "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address].compact.join(' '))}",
+                  target: "_blank",
+                  rel: "noopener",
+                  style: "display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:8px; text-decoration:none; font-size:12px; background:#fff;" %>
+            </div>
 
             <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
               <div style="margin-top:6px;">
@@ -223,7 +231,20 @@ CSV一括インポート
             <% end %>
           </td>
 
-          <td style="padding:8px 0;"><%= shop.address.presence || "未設定" %></td>
+                    <td style="padding:8px 0;">
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <span><%= shop.address.presence || "未設定" %></span>
+
+              <% if shop.address.present? %>
+                <button type="button"
+                        class="copy-address-button"
+                        data-address="<%= shop.address %>"
+                        style="padding:4px 8px; border:1px solid #ddd; border-radius:8px; background:#fff; font-size:12px; cursor:pointer;">
+                  住所コピー
+                </button>
+              <% end %>
+            </div>
+          </td>
 
           <td style="padding:8px 0;">
             <% if shop.approved? %>
@@ -254,13 +275,13 @@ CSV一括インポート
                     method: :patch,
                     data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
 
-                <% if @status == "pending" && duplicate_state != :none %>
-                  <%= button_to "重複として却下",
-                      reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                      method: :patch,
-                      data: { turbo: false, turbo_confirm: "重複として却下しますか？" },
-                      style: "background:#fff1f1; border:1px solid #b00020; color:#b00020;" %>
-                <% end %>
+                <% if @status == "pending" && duplicate_state == :approved_or_rejected %>
+  <%= button_to "重複として却下",
+      reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+      method: :patch,
+      data: { turbo: false, turbo_confirm: "重複として却下しますか？" },
+      style: "background:#fff1f1; border:1px solid #b00020; color:#b00020;" %>
+<% end %>
               <% end %>
 
               <%= link_to detail_label,
@@ -279,7 +300,7 @@ CSV一括インポート
             </div>
           </td>
 
-          
+
         </tr>
       <% end %>
     </tbody>
@@ -308,6 +329,7 @@ CSV一括インポート
       const countEl = document.getElementById("selected_count");
       const csvEl = document.getElementById("shop_ids_csv");
       const bulkForm = document.getElementById("bulk_form");
+      const copyButtons = Array.from(document.querySelectorAll(".copy-address-button"));
 
       function selectedIds() {
         return boxes.filter(b => b.checked).map(b => b.value);
@@ -342,6 +364,24 @@ CSV一括インポート
           }
         });
       }
+
+      copyButtons.forEach((button) => {
+        button.addEventListener("click", async () => {
+          const address = button.dataset.address || "";
+          if (!address) return;
+
+          try {
+            await navigator.clipboard.writeText(address);
+            const originalText = button.textContent;
+            button.textContent = "コピー済み";
+            setTimeout(() => {
+              button.textContent = originalText;
+            }, 1200);
+          } catch (error) {
+            alert("コピーに失敗しました");
+          }
+        });
+      });
 
       update();
     })();
