@@ -73,6 +73,17 @@ class Shop < ApplicationRecord
     "バーベキュー" => ["バーベキュー", "BBQ", "バーベキュー料理"]
   }.freeze
 
+  AREAS = [
+    "阿倍野", "阿倍野橋", "旭区清水", "朝潮橋", "淡路", "石橋阪大前", "泉大津", "泉ヶ丘", "泉佐野", "和泉中央",
+    "今里", "茨木", "茨木市", "梅田", "江坂", "難波", "大阪阿部野橋", "大阪上本町", "大阪狭山市", "大阪天満宮",
+    "大日", "大東市", "大正", "岡町", "貝塚", "香里園", "柏原", "門真市", "岸和田", "京橋", "喜連瓜破", "九条",
+    "河内小阪", "河内国分", "河内長野", "河内松原", "岸辺", "北新地", "北千里", "北花田", "布施", "堺", "堺東",
+    "桜川", "新金岡", "新今宮", "新大阪", "心斎橋", "住道", "千里中央", "千林大宮", "高槻", "高槻市", "玉造",
+    "天下茶屋", "天王寺", "天満橋", "豊中", "中百舌鳥", "長居", "西梅田", "西九条", "野田", "東岸和田", "東三国",
+    "東梅田", "東大阪市", "東花園", "枚方市", "平野", "深井", "藤井寺", "古市", "弁天町", "本町", "松原", "箕面",
+    "都島", "守口市", "八尾", "山田", "淀屋橋", "四ツ橋"
+  ].freeze
+
   # ===== Smoking status =====
   enum :smoking_area, {
     separated: 0,
@@ -89,6 +100,7 @@ class Shop < ApplicationRecord
 
   # ===== Scopes =====
   scope :approved, -> { where(approved: true) }
+  scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
 
   scope :keyword, lambda { |q|
     kw = q.to_s.strip
@@ -136,8 +148,6 @@ class Shop < ApplicationRecord
 
     where(conditions.join(" OR "), bind_values)
   }
-
-  scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
 
   # ===== Validations =====
   validates :name, :address, :last_confirmed_on, presence: { message: "を入力してください" }
@@ -227,6 +237,48 @@ class Shop < ApplicationRecord
         .gsub(/[[:space:]]+/, "")
         .gsub(/[()（）\[\]【】「」『』・･,，.。\-ー−―]/, "")
         .strip
+  end
+
+  def self.duplicate_exists_for_import?(attrs, exclude_id: nil)
+    phone = attrs[:phone].to_s.gsub(/[^0-9]/, "")
+    name = attrs[:name].to_s.strip
+    address = attrs[:address].to_s.strip
+
+    scope = exclude_id.present? ? Shop.where.not(id: exclude_id) : Shop.all
+
+    # ① 電話番号がある場合 → 電話だけで判定
+    if phone.present?
+      return true if scope.where(normalized_phone: phone).exists?
+      return false
+    end
+
+    # ② 電話番号がない場合のみ → 名前・住所で判定
+    return true if name.present? && scope.where(name: name).exists?
+    return true if address.present? && scope.where(address: address).exists?
+
+    normalized_name = normalize_duplicate_text(name)
+    normalized_address = normalize_duplicate_text(address)
+
+    scope.limit(5000).pluck(:name, :address).any? do |n, a|
+      cn = normalize_duplicate_text(n)
+      ca = normalize_duplicate_text(a)
+
+      name_match =
+        normalized_name.present? &&
+        cn.present? &&
+        normalized_name == cn
+
+      address_match =
+        normalized_address.present? &&
+        ca.present? &&
+        (
+          normalized_address == ca ||
+          normalized_address.include?(ca) ||
+          ca.include?(normalized_address)
+        )
+
+      name_match || address_match
+    end
   end
 
   # ===== Display helpers =====
@@ -619,17 +671,6 @@ class Shop < ApplicationRecord
     []
   end
 
-  AREAS = [
-    "阿倍野", "阿倍野橋", "旭区清水", "朝潮橋", "淡路", "石橋阪大前", "泉大津", "泉ヶ丘", "泉佐野", "和泉中央",
-    "今里", "茨木", "茨木市", "梅田", "江坂", "難波", "大阪阿部野橋", "大阪上本町", "大阪狭山市", "大阪天満宮",
-    "大日", "大東市", "大正", "岡町", "貝塚", "香里園", "柏原", "門真市", "岸和田", "京橋", "喜連瓜破", "九条",
-    "河内小阪", "河内国分", "河内長野", "河内松原", "岸辺", "北新地", "北千里", "北花田", "布施", "堺", "堺東",
-    "桜川", "新金岡", "新今宮", "新大阪", "心斎橋", "住道", "千里中央", "千林大宮", "高槻", "高槻市", "玉造",
-    "天下茶屋", "天王寺", "天満橋", "豊中", "中百舌鳥", "長居", "西梅田", "西九条", "野田", "東岸和田", "東三国",
-    "東梅田", "東大阪市", "東花園", "枚方市", "平野", "深井", "藤井寺", "古市", "弁天町", "本町", "松原", "箕面",
-    "都島", "守口市", "八尾", "山田", "淀屋橋", "四ツ橋"
-  ].freeze
-
   private
 
   def normalize_genre_value
@@ -783,7 +824,7 @@ class Shop < ApplicationRecord
     :none
   end
 
-    def duplicate_status_label(other)
+  def duplicate_status_label(other)
     if other.approved?
       "承認済み"
     elsif other.respond_to?(:rejected?) && other.rejected?
@@ -793,47 +834,5 @@ class Shop < ApplicationRecord
     end
   rescue StandardError
     "状態不明"
-  end
-
-    def self.duplicate_exists_for_import?(attrs, exclude_id: nil)
-    phone = attrs[:phone].to_s.gsub(/[^0-9]/, "")
-    name = attrs[:name].to_s.strip
-    address = attrs[:address].to_s.strip
-
-    scope = exclude_id.present? ? Shop.where.not(id: exclude_id) : Shop.all
-
-    # ① 電話番号がある場合 → 電話だけで判定
-    if phone.present?
-      return true if scope.where(normalized_phone: phone).exists?
-      return false
-    end
-
-    # ② 電話番号がない場合のみ → 名前・住所で判定
-    return true if name.present? && scope.where(name: name).exists?
-    return true if address.present? && scope.where(address: address).exists?
-
-    normalized_name = normalize_duplicate_text(name)
-    normalized_address = normalize_duplicate_text(address)
-
-    scope.limit(5000).pluck(:name, :address).any? do |n, a|
-      cn = normalize_duplicate_text(n)
-      ca = normalize_duplicate_text(a)
-
-      name_match =
-        normalized_name.present? &&
-        cn.present? &&
-        normalized_name == cn
-
-      address_match =
-        normalized_address.present? &&
-        ca.present? &&
-        (
-          normalized_address == ca ||
-          normalized_address.include?(ca) ||
-          ca.include?(normalized_address)
-        )
-
-      name_match || address_match
-    end
   end
 end
