@@ -1,4 +1,4 @@
-# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/config/routes.rb
+# /Users/kawamuratakuya/dev/suelog/config/routes.rb
 Rails.application.routes.draw do
 constraints(host: /(?:.+\.)?onrender\.com\z/) do
 get "/", to: redirect("https://suelog.jp", status: 301)
@@ -86,7 +86,7 @@ end
 namespace :admin do
 get "analytics", to: "analytics#index", as: :analytics
 
-resources :shops, only: [:index, :edit, :update] do
+resources :shops, only: [:index, :show, :edit, :update] do
 member do
 patch :approve
 patch :reject
