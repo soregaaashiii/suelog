@@ -1,3 +1,4 @@
+# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/controllers/admin/shops_controller.rb
 # frozen_string_literal: true
 
 require "csv"
@@ -46,6 +47,21 @@ menu_photos_attachments: :blob
 
 offset = (@page - 1) * @per
 @shops = scope.offset(offset).limit(@per)
+end
+
+def show
+@shop = Shop.find(params[:id])
+@status = params[:status].presence || "pending"
+@source = params[:source].to_s.presence
+@per = (params[:per].presence || 50).to_i
+@page = (params[:page].presence || 1).to_i
+
+@duplicate_candidates =
+if @shop.respond_to?(:duplicate_candidates)
+@shop.duplicate_candidates(limit: 10)
+else
+[]
+end
 end
 
 def approve
