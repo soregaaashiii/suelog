@@ -83,7 +83,7 @@ end
 end
 end
 
-namespace :panel_8m4k do
+namespace :admin, path: "panel_8m4k" do
 get "analytics", to: "analytics#index", as: :analytics
 
 resources :shops, only: [:index, :show, :edit, :update] do
