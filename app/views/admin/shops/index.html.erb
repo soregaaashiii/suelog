@@ -220,40 +220,40 @@ style="padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#
 <% end %>
 </td>
 
+
+
+
 <td style="padding:8px 0;">
-<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-<% if !shop.approved? && !rejected %>
-<%= button_to "承認",
-approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-method: :patch,
-data: { turbo: false, turbo_confirm: "承認しますか？" } %>
+  <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+    <% if !shop.approved? && !shop.rejected? %>
+      <%= button_to "承認",
+      approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+      method: :patch,
+      data: { turbo: false, turbo_confirm: "承認しますか？" } %>
 
-<%= button_to "却下",
-reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-method: :patch,
-data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
+      <%= button_to "却下",
+      reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+      method: :patch,
+      data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
+    <% end %>
 
-<%= link_to "詳細",
-admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+    <%= link_to "詳細",
+    admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
-<% if shop.approved? && !shop.rejected? %>
-  <%= link_to "編集",
-  edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-  style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-<% else %>
-  <%= link_to "編集",
-  edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-  style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-<% end %>
+    <%= link_to "編集",
+    edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
-<%= link_to "公開ページ",
-shop_path(shop),
-target: "_blank",
-rel: "noopener",
-style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-</div>
+    <%= link_to "公開ページ",
+    shop_path(shop),
+    target: "_blank",
+    rel: "noopener",
+    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+  </div>
 </td>
+
+
 </tr>
 <% end %>
 </tbody>
