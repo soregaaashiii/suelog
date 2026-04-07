@@ -67,13 +67,27 @@ end
 def approve
 status = params[:status].presence || "pending"
 shop = Shop.find(params[:id])
+
+if Shop.duplicate_exists_for_import?(
+     {
+       name: shop.name,
+       address: shop.address,
+       phone: shop.phone
+     },
+     exclude_id: shop.id
+   )
+  redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+              alert: "重複の可能性があるため承認できません。詳細から重複候補を確認してください。"
+  return
+end
+
 shop.update!(approved: true, rejected: false)
 
 redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-notice: "承認しました"
+            notice: "承認しました"
 rescue ActiveRecord::RecordInvalid => e
 redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-alert: "承認に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+            alert: "承認に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
 end
 
 def reject
@@ -107,9 +121,32 @@ scope = Shop.where(id: ids)
 
 case op
 when "approve"
-scope.update_all(approved: true, rejected: false, updated_at: Time.current)
+approved_count = 0
+skipped_count = 0
+
+scope.find_each do |shop|
+  if Shop.duplicate_exists_for_import?(
+       {
+         name: shop.name,
+         address: shop.address,
+         phone: shop.phone
+       },
+       exclude_id: shop.id
+     )
+    Rails.logger.info("[SKIP DUPLICATE APPROVE] #{shop.id}")
+    skipped_count += 1
+    next
+  end
+
+  shop.update!(approved: true, rejected: false)
+  approved_count += 1
+end
+
+message = "一括承認しました（#{approved_count}件）"
+message += " / 重複の可能性でスキップ（#{skipped_count}件）" if skipped_count.positive?
+
 redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-notice: "一括承認しました（#{ids.size}件）"
+            notice: message
 when "reject"
 scope.update_all(approved: false, rejected: true, updated_at: Time.current)
 redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
@@ -144,11 +181,22 @@ ActiveRecord::Base.transaction do
 
 case action
 when "approve"
-@shop.update!(approved: true, rejected: false)
-notice = "更新して承認しました"
+  if Shop.duplicate_exists_for_import?(
+       {
+         name: @shop.name,
+         address: @shop.address,
+         phone: @shop.phone
+       },
+       exclude_id: @shop.id
+     )
+    raise ActiveRecord::RecordInvalid.new(@shop.tap { |s| s.errors.add(:base, "重複の可能性があるため承認できません。詳細から重複候補を確認してください。") })
+  end
+
+  @shop.update!(approved: true, rejected: false)
+  notice = "更新して承認しました"
 when "reject"
-@shop.update!(approved: false, rejected: true)
-notice = "更新して却下しました"
+  @shop.update!(approved: false, rejected: true)
+  notice = "更新して却下しました"
 end
 end
 
@@ -226,22 +274,21 @@ end
 end
 
 CSV.foreach(file.path, headers: true) do |row|
-attrs = {
-  name: row["name"],
-  address: row["address"],
-  phone: row["phone"]
-}
-
-if Shop.duplicate_exists_for_import?(attrs)
-  Rails.logger.info("[SKIP DUPLICATE] #{attrs[:name]} / #{attrs[:address]}")
-  next
-end
-
-
 begin
 name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
 phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
 address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
+
+attrs = {
+  name: name,
+  address: address,
+  phone: phone
+}
+
+if Shop.duplicate_exists_for_import?(attrs)
+  Rails.logger.info("[SKIP DUPLICATE] #{name} / #{address}")
+  next
+end
 
 opening_hours_text = normalize_str.call(
 pick.call(row, [:opening_hours_text, "opening_hours_text", "通常営業時間", "営業時間テキスト"])
