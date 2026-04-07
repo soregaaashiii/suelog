@@ -7,28 +7,112 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 <h1>近くの店舗（地図）</h1>
 
 <p style="color:#666; font-size:12px; line-height:1.7;">
-※ 登録済みの緯度経度を使って、地図上に全店舗を表示します。<br>
-※ 現在地が許可されていれば、現在地マーカーも表示します。
+  ※ 登録済みの緯度経度を使って、地図上に全店舗を表示します。<br>
+  ※ 現在地が許可されていれば、現在地マーカーも表示します。<br>
+  ※ 検索・絞り込みで地図上のピンを減らせます。
 </p>
 
-<p style="margin:6px 0; color:#666; font-size:12px;">
-店舗数：<%= @shops_count %> ／ 地図表示可能：<%= map_shops.size %>
+<p id="shops-summary" style="margin:6px 0; color:#666; font-size:12px;">
+  店舗数：<%= @shops_count %> ／ 地図表示可能：<%= map_shops.size %> ／ 表示中：<span id="visible-shops-count"><%= map_shops.size %></span>
 </p>
+
+<div style="margin:10px 0 14px; padding:12px; border:1px solid #ddd; border-radius:12px; background:#fafafa;">
+  <div style="font-weight:800; margin-bottom:10px;">地図の絞り込み</div>
+
+  <div class="map-filter-grid-fallback" style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px;">
+    <div>
+      <label for="map-smoking-area" style="display:block; font-size:12px; color:#555; font-weight:700; margin-bottom:4px;">
+        喫煙エリア
+      </label>
+      <select
+        id="map-smoking-area"
+        style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; background:#fff;"
+      >
+        <option value="">すべて</option>
+        <option value="all_smoking">席で喫煙可</option>
+        <option value="separated">喫煙所あり</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="map-smoking-type" style="display:block; font-size:12px; color:#555; font-weight:700; margin-bottom:4px;">
+        喫煙タイプ
+      </label>
+      <select
+        id="map-smoking-type"
+        style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; background:#fff;"
+      >
+        <option value="">すべて</option>
+        <option value="both_ok">紙・加熱式OK</option>
+        <option value="electronic_only">加熱式のみ</option>
+        <option value="paper_only">紙のみ</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="map-genre" style="display:block; font-size:12px; color:#555; font-weight:700; margin-bottom:4px;">
+        ジャンル
+      </label>
+      <select
+        id="map-genre"
+        style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; background:#fff;"
+      >
+        <option value="">すべて</option>
+        <% @genres.each do |genre| %>
+          <option value="<%= genre %>"><%= genre %></option>
+        <% end %>
+      </select>
+    </div>
+
+    <div>
+      <label for="map-station" style="display:block; font-size:12px; color:#555; font-weight:700; margin-bottom:4px;">
+        最寄駅
+      </label>
+      <input
+        type="text"
+        id="map-station"
+        placeholder="梅田 / なんば など"
+        style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; background:#fff;"
+      >
+    </div>
+
+    <div>
+      <label for="map-keyword" style="display:block; font-size:12px; color:#555; font-weight:700; margin-bottom:4px;">
+        キーワード
+      </label>
+      <input
+        type="text"
+        id="map-keyword"
+        placeholder="店名・住所で検索"
+        style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; background:#fff;"
+      >
+    </div>
+
+    <div style="display:flex; align-items:end;">
+      <button
+        type="button"
+        id="clear-map-filters-btn"
+        style="width:100%; padding:10px 14px; border:1px solid #111; border-radius:10px; background:#fff; color:#111; font-weight:700; cursor:pointer;">
+        絞り込みをクリア
+      </button>
+    </div>
+  </div>
+</div>
 
 <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 14px;">
-<button
-type="button"
-id="show-all-shops-btn"
-style="padding:10px 14px; border:1px solid #111; border-radius:999px; background:#111; color:#fff; font-weight:700; cursor:pointer;">
-全店舗を表示
-</button>
+  <button
+    type="button"
+    id="show-all-shops-btn"
+    style="padding:10px 14px; border:1px solid #111; border-radius:999px; background:#111; color:#fff; font-weight:700; cursor:pointer;">
+    全店舗を表示
+  </button>
 
-<button
-type="button"
-id="show-my-location-btn"
-style="padding:10px 14px; border:1px solid #ddd; border-radius:999px; background:#fff; color:#111; font-weight:700; cursor:pointer;">
-現在地を表示
-</button>
+  <button
+    type="button"
+    id="show-my-location-btn"
+    style="padding:10px 14px; border:1px solid #ddd; border-radius:999px; background:#fff; color:#111; font-weight:700; cursor:pointer;">
+    現在地を表示
+  </button>
 </div>
 
 <p id="map-status" style="margin:0 0 12px; color:#666; font-size:12px;"></p>
@@ -36,23 +120,23 @@ style="padding:10px 14px; border:1px solid #ddd; border-radius:999px; background
 <div id="map" style="width:100%; height:70vh; min-height:520px; border:1px solid #ddd; border-radius:12px;"></div>
 
 <div style="margin-top:12px;">
-<%= link_to "一覧に戻る", root_path, style: "color:#666; text-decoration:none; font-weight:700;" %>
+  <%= link_to "一覧に戻る", root_path, style: "color:#666; text-decoration:none; font-weight:700;" %>
 </div>
 
-<script>
-const shops = <%= raw map_shops.map { |s|
-{
-id: s.id,
-name: s.name.to_s,
-address: s.address.to_s,
-nearest_station: s.nearest_station.to_s,
-smoking_area_label: (s.respond_to?(:smoking_area_label) ? s.smoking_area_label.to_s : ""),
-smoking_type_label: (s.respond_to?(:smoking_type_label) ? s.smoking_type_label.to_s : ""),
-lat: s.latitude.to_f,
-lng: s.longitude.to_f,
-url: shop_path(s)
+<style>
+@media (max-width: 768px) {
+  #map {
+    min-height: 460px !important;
+  }
+
+  .map-filter-grid-fallback {
+    grid-template-columns: 1fr !important;
+  }
 }
-}.to_json %>;
+</style>
+
+<script>
+const allShops = <%= raw @map_shops_payload.to_json %>;
 </script>
 
 <script>
@@ -60,157 +144,280 @@ let map;
 let infoWindow;
 let markers = [];
 let myLocationMarker = null;
+let filteredShops = [...allShops];
 
 function setStatus(text) {
-const el = document.getElementById("map-status");
-if (el) el.textContent = text || "";
+  const el = document.getElementById("map-status");
+  if (el) el.textContent = text || "";
 }
 
 function escapeHtml(str) {
-return String(str || "")
-.replace(/&/g, "&amp;")
-.replace(/</g, "&lt;")
-.replace(/>/g, "&gt;")
-.replace(/"/g, "&quot;")
-.replace(/'/g, "&#39;");
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function buildInfoHtml(shop) {
-return `
-<div style="min-width:220px; line-height:1.7;">
-<div style="font-weight:800; margin-bottom:6px;">${escapeHtml(shop.name)}</div>
-${shop.address ? `<div style="font-size:12px; color:#444;">住所：${escapeHtml(shop.address)}</div>` : ""}
-${shop.nearest_station ? `<div style="font-size:12px; color:#444;">最寄駅：${escapeHtml(shop.nearest_station)}</div>` : ""}
-${shop.smoking_area_label ? `<div style="font-size:12px; color:#444;">喫煙エリア：${escapeHtml(shop.smoking_area_label)}</div>` : ""}
-${shop.smoking_type_label ? `<div style="font-size:12px; color:#444;">喫煙タイプ：${escapeHtml(shop.smoking_type_label)}</div>` : ""}
-<div style="margin-top:8px;">
-<a href="${escapeHtml(shop.url)}"
-style="display:inline-block; padding:8px 12px; background:#111; color:#fff; border-radius:999px; text-decoration:none; font-weight:700; font-size:12px;">
-詳細を見る
-</a>
-</div>
-</div>
-`;
+  return `
+    <div style="min-width:220px; line-height:1.7;">
+      <div style="font-weight:800; margin-bottom:6px;">${escapeHtml(shop.name)}</div>
+      ${shop.address ? `<div style="font-size:12px; color:#444;">住所：${escapeHtml(shop.address)}</div>` : ""}
+      ${shop.nearest_station ? `<div style="font-size:12px; color:#444;">最寄駅：${escapeHtml(shop.nearest_station)}</div>` : ""}
+      ${shop.genre_label ? `<div style="font-size:12px; color:#444;">ジャンル：${escapeHtml(shop.genre_label)}</div>` : ""}
+      ${shop.smoking_area_label ? `<div style="font-size:12px; color:#444;">喫煙エリア：${escapeHtml(shop.smoking_area_label)}</div>` : ""}
+      ${shop.smoking_type_label ? `<div style="font-size:12px; color:#444;">喫煙タイプ：${escapeHtml(shop.smoking_type_label)}</div>` : ""}
+      <div style="margin-top:8px;">
+        <a href="${escapeHtml(shop.url)}"
+           style="display:inline-block; padding:8px 12px; background:#111; color:#fff; border-radius:999px; text-decoration:none; font-weight:700; font-size:12px;">
+          詳細を見る
+        </a>
+      </div>
+    </div>
+  `;
 }
 
-function fitAllShops() {
-if (!map) return;
-
-if (markers.length === 0) {
-map.setCenter({ lat: 34.7025, lng: 135.4959 });
-map.setZoom(13);
-setStatus("地図に表示できる店舗がありません。");
-return;
+function updateVisibleCount(count) {
+  const el = document.getElementById("visible-shops-count");
+  if (el) el.textContent = String(count);
 }
 
-const bounds = new google.maps.LatLngBounds();
-
-markers.forEach((marker) => {
-bounds.extend(marker.getPosition());
-});
-
-if (myLocationMarker) {
-bounds.extend(myLocationMarker.getPosition());
+function clearMarkers() {
+  markers.forEach((marker) => marker.setMap(null));
+  markers = [];
 }
 
-map.fitBounds(bounds);
+function renderMarkers(shops) {
+  clearMarkers();
 
-google.maps.event.addListenerOnce(map, "bounds_changed", function() {
-if (map.getZoom() > 16) map.setZoom(16);
-});
+  shops.forEach((shop) => {
+    const marker = new google.maps.Marker({
+      map: map,
+      position: { lat: Number(shop.lat), lng: Number(shop.lng) },
+      title: shop.name
+    });
 
-setStatus(`全 ${markers.length} 店舗を表示しています。`);
+    marker.addListener("click", () => {
+      infoWindow.setContent(buildInfoHtml(shop));
+      infoWindow.open(map, marker);
+    });
+
+    markers.push(marker);
+  });
+
+  updateVisibleCount(shops.length);
+}
+
+function fitMarkersToBounds() {
+  if (!map) return;
+
+  if (markers.length === 0) {
+    map.setCenter({ lat: 34.7025, lng: 135.4959 });
+    map.setZoom(13);
+    setStatus("条件に一致する店舗がありません。");
+    return;
+  }
+
+  const bounds = new google.maps.LatLngBounds();
+
+  markers.forEach((marker) => {
+    bounds.extend(marker.getPosition());
+  });
+
+  if (myLocationMarker) {
+    bounds.extend(myLocationMarker.getPosition());
+  }
+
+  map.fitBounds(bounds);
+
+  google.maps.event.addListenerOnce(map, "bounds_changed", function() {
+    if (map.getZoom() > 16) map.setZoom(16);
+  });
+}
+
+function normalizedText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function applyFilters() {
+  const keyword = normalizedText(document.getElementById("map-keyword")?.value);
+  const station = normalizedText(document.getElementById("map-station")?.value);
+  const genre = document.getElementById("map-genre")?.value || "";
+  const smokingArea = document.getElementById("map-smoking-area")?.value || "";
+  const smokingType = document.getElementById("map-smoking-type")?.value || "";
+
+  filteredShops = allShops.filter((shop) => {
+    const keywordTarget = [
+      shop.name,
+      shop.address,
+      shop.genre_label,
+      shop.nearest_station
+    ].join(" ").toLowerCase();
+
+    const stationTarget = String(shop.nearest_station || "").toLowerCase();
+    const genreTokens = Array.isArray(shop.genre_tokens) ? shop.genre_tokens : [];
+
+    const keywordMatch = !keyword || keywordTarget.includes(keyword);
+    const stationMatch = !station || stationTarget.includes(station);
+    const genreMatch = !genre || genreTokens.includes(genre);
+    const smokingAreaMatch = !smokingArea || shop.smoking_area === smokingArea;
+    const smokingTypeMatch = !smokingType || shop.smoking_type === smokingType;
+
+    return keywordMatch && stationMatch && genreMatch && smokingAreaMatch && smokingTypeMatch;
+  });
+
+  renderMarkers(filteredShops);
+  fitMarkersToBounds();
+
+  if (filteredShops.length === 0) {
+    setStatus("条件に一致する店舗がありません。");
+  } else {
+    setStatus(`${filteredShops.length} 店舗を表示しています。`);
+  }
+}
+
+function clearFilters() {
+  const keywordEl = document.getElementById("map-keyword");
+  const stationEl = document.getElementById("map-station");
+  const genreEl = document.getElementById("map-genre");
+  const smokingAreaEl = document.getElementById("map-smoking-area");
+  const smokingTypeEl = document.getElementById("map-smoking-type");
+
+  if (keywordEl) keywordEl.value = "";
+  if (stationEl) stationEl.value = "";
+  if (genreEl) genreEl.value = "";
+  if (smokingAreaEl) smokingAreaEl.value = "";
+  if (smokingTypeEl) smokingTypeEl.value = "";
+}
+
+function resetAndShowAll() {
+  clearFilters();
+  filteredShops = [...allShops];
+  renderMarkers(filteredShops);
+  fitMarkersToBounds();
+  setStatus(`全 ${filteredShops.length} 店舗を表示しています。`);
 }
 
 function showMyLocation() {
-if (!navigator.geolocation) {
-setStatus("このブラウザでは現在地を取得できません。");
-return;
+  if (!navigator.geolocation) {
+    setStatus("このブラウザでは現在地を取得できません。");
+    return;
+  }
+
+  setStatus("現在地を取得中です...");
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const me = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      };
+
+      if (myLocationMarker) {
+        myLocationMarker.setMap(null);
+      }
+
+      myLocationMarker = new google.maps.Marker({
+        map: map,
+        position: me,
+        title: "現在地",
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: "#2563eb",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 2
+        }
+      });
+
+      map.setCenter(me);
+      map.setZoom(15);
+      setStatus("現在地を表示しています。");
+    },
+    () => {
+      setStatus("現在地を取得できませんでした。ブラウザの位置情報許可を確認してください。");
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
 }
 
-setStatus("現在地を取得中です...");
+function bindFilterEvents() {
+  const keywordEl = document.getElementById("map-keyword");
+  const stationEl = document.getElementById("map-station");
+  const genreEl = document.getElementById("map-genre");
+  const smokingAreaEl = document.getElementById("map-smoking-area");
+  const smokingTypeEl = document.getElementById("map-smoking-type");
+  const clearBtn = document.getElementById("clear-map-filters-btn");
+  const allBtn = document.getElementById("show-all-shops-btn");
+  const myBtn = document.getElementById("show-my-location-btn");
 
-navigator.geolocation.getCurrentPosition(
-(pos) => {
-const me = {
-lat: pos.coords.latitude,
-lng: pos.coords.longitude
-};
+  if (keywordEl) {
+    keywordEl.addEventListener("input", applyFilters);
+  }
 
-if (myLocationMarker) {
-myLocationMarker.setMap(null);
-}
+  if (stationEl) {
+    stationEl.addEventListener("input", applyFilters);
+  }
 
-myLocationMarker = new google.maps.Marker({
-map: map,
-position: me,
-title: "現在地",
-icon: {
-path: google.maps.SymbolPath.CIRCLE,
-scale: 8,
-fillColor: "#2563eb",
-fillOpacity: 1,
-strokeColor: "#ffffff",
-strokeWeight: 2
-}
-});
+  if (genreEl) {
+    genreEl.addEventListener("change", applyFilters);
+  }
 
-map.setCenter(me);
-map.setZoom(15);
-setStatus("現在地を表示しています。");
-},
-() => {
-setStatus("現在地を取得できませんでした。ブラウザの位置情報許可を確認してください。");
-},
-{
-enableHighAccuracy: true,
-timeout: 10000,
-maximumAge: 0
-}
-);
+  if (smokingAreaEl) {
+    smokingAreaEl.addEventListener("change", applyFilters);
+  }
+
+  if (smokingTypeEl) {
+    smokingTypeEl.addEventListener("change", applyFilters);
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      clearFilters();
+      applyFilters();
+    });
+  }
+
+  if (allBtn) {
+    allBtn.addEventListener("click", resetAndShowAll);
+  }
+
+  if (myBtn) {
+    myBtn.addEventListener("click", showMyLocation);
+  }
 }
 
 function initMap() {
-const mapEl = document.getElementById("map");
-if (!mapEl) return;
+  const mapEl = document.getElementById("map");
+  if (!mapEl) return;
 
-map = new google.maps.Map(mapEl, {
-center: { lat: 34.7025, lng: 135.4959 },
-zoom: 13,
-mapTypeControl: false,
-streetViewControl: false,
-fullscreenControl: true
-});
+  map = new google.maps.Map(mapEl, {
+    center: { lat: 34.7025, lng: 135.4959 },
+    zoom: 13,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: true
+  });
 
-infoWindow = new google.maps.InfoWindow();
+  infoWindow = new google.maps.InfoWindow();
+  bindFilterEvents();
 
-markers = shops.map((shop) => {
-const marker = new google.maps.Marker({
-map: map,
-position: { lat: Number(shop.lat), lng: Number(shop.lng) },
-title: shop.name
-});
+  filteredShops = [...allShops];
+  renderMarkers(filteredShops);
+  fitMarkersToBounds();
 
-marker.addListener("click", () => {
-infoWindow.setContent(buildInfoHtml(shop));
-infoWindow.open(map, marker);
-});
-
-return marker;
-});
-
-const allBtn = document.getElementById("show-all-shops-btn");
-const myBtn = document.getElementById("show-my-location-btn");
-
-if (allBtn) {
-allBtn.addEventListener("click", fitAllShops);
-}
-
-if (myBtn) {
-myBtn.addEventListener("click", showMyLocation);
-}
-
-fitAllShops();
+  if (filteredShops.length === 0) {
+    setStatus("地図に表示できる店舗がありません。");
+  } else {
+    setStatus(`全 ${filteredShops.length} 店舗を表示しています。`);
+  }
 }
 
 window.initMap = initMap;
