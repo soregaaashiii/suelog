@@ -189,9 +189,9 @@ color: #111111;
 background: linear-gradient(135deg, #fffdf8 0%, #ffffff 60%);
 border: 1px solid #e8e3d7;
 border-radius: 22px;
-padding: 22px;
+padding: 18px;
 box-shadow: 0 10px 30px rgba(17, 17, 17, 0.04);
-margin-bottom: 18px;
+margin-bottom: 16px;
 }
 
 .shop-show__title {
@@ -204,23 +204,17 @@ color: #111111;
 
 .shop-show__sub {
 margin: 0;
-color: #6b6b6b;
-font-size: 14px;
+color: #7a7a7a;
+font-size: 13px;
 }
 
 .shop-show__badges {
 display: flex;
 gap: 8px;
 flex-wrap: wrap;
-margin-top: 14px;
+margin-top: 12px;
 }
 
-.shop-show__lead {
-margin-top: 16px;
-color: #333333;
-font-size: 15px;
-line-height: 1.9;
-}
 
 .shop-show__layout {
 display: grid;
@@ -515,7 +509,7 @@ color: #666666;
 .shop-show__hero,
 .shop-show__section {
 border-radius: 16px;
-padding: 16px;
+padding: 14px;
 }
 
 .shop-show__metaGrid {
@@ -537,6 +531,8 @@ width: calc(50% - 5px);
 height: 140px;
 }
 }
+
+
 </style>
 
 <div class="shop-show">
@@ -597,18 +593,8 @@ height: 140px;
 <% end %>
 </div>
 
-<p class="shop-show__lead">
-<%= @shop.name %>は
-<%= @shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "喫煙情報未設定" %>、
-<%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "喫煙タイプ未設定" %>の店舗です。
-<% if @shop.nearest_station.present? %>
-最寄駅は<%= @shop.nearest_station %>。
-<% end %>
-<% if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
-通常営業時間は「<%= @shop.display_opening_hours_text %>」です。
-<% end %>
-大阪で喫煙できる飲食店を探している方の参考用ページです。
-</p>
+<%# 長い説明文は削除 %>
+
 </section>
 
 <% if flash[:notice].present? %>
