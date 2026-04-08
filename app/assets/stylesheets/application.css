@@ -1,4 +1,4 @@
-/* /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/assets/stylesheets/application.css */
+/* /Users/kawamuratakuya/dev/suelog/app/assets/stylesheets/application.css */
 
 /* =========================
 Theme
@@ -1371,12 +1371,37 @@ width: 100%;
 min-width: 0;
 }
 
+/* 検索フォームは通常1カラムのまま */
 .search-grid {
 grid-template-columns: 1fr;
 }
 
 .field--wide {
 grid-column: span 1;
+}
+
+/* ただしヒーロー内の検索だけはスマホで 2×2+1 */
+.hero__search .search-grid {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 10px;
+}
+
+.hero__search .search-grid .search-field:last-child {
+grid-column: 1 / -1;
+}
+
+.hero__search .search-grid .search-field {
+gap: 6px;
+}
+
+.hero__search .search-grid .search-field label {
+font-size: 12px;
+}
+
+.hero__search .search-input,
+.hero__search .search-select {
+min-height: 42px;
+padding: 10px 12px;
 }
 
 .section-head {
@@ -1491,5 +1516,5 @@ display: inline-block;
 }
 
 body {
-  background: #f8f6f1;
+background: #f8f6f1;
 }
