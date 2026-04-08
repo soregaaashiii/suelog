@@ -95,9 +95,7 @@
 
           <div class="search-actions">
             <%= submit_tag "検索する", class: "btn btn--dark search-btn" %>
-            <%= link_to "条件をクリア",
-                (@search_form_url || root_path).to_s + "?per=#{(@per.presence || 30)}",
-                class: "btn btn--ghost" %>
+            
           </div>
         <% end %>
 

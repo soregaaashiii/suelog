@@ -708,23 +708,25 @@ margin-top: 16px;
 }
 
 .search-btn {
-min-width: 160px;
-min-height: 52px;
-padding: 0 22px;
-font-size: 16px;
-font-weight: 900;
-letter-spacing: 0.02em;
-box-shadow: 0 10px 24px rgba(17, 17, 17, 0.16);
+min-width: 140px;
+min-height: 44px;
+padding: 0 16px;
+font-size: 14px;
+font-weight: 700;
+letter-spacing: 0.01em;
+background: #e6eefc;
+color: #2b4ea2;
+border: 1px solid #d6e2fa;
+box-shadow: none;
 }
 
 .search-btn:hover {
-transform: translateY(-2px);
-box-shadow: 0 14px 28px rgba(17, 17, 17, 0.2);
+background: #dbe7fd;
+transform: none;
 }
 
 .search-btn:active {
-transform: translateY(0);
-box-shadow: 0 6px 14px rgba(17, 17, 17, 0.14);
+background: #cfdffd;
 }
 
 /* =========================
@@ -1350,9 +1352,9 @@ padding: 22px 18px 18px;
 }
 
 .search-btn {
-min-height: 56px;
-font-size: 18px;
-font-weight: 900;
+min-height: 48px;
+font-size: 15px;
+font-weight: 700;
 }
 
 
