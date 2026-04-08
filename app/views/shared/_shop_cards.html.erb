@@ -45,7 +45,12 @@
         <% end %>
       <% end %>
 
-      <article class="shop-card <%= "shop-card--stale" if very_old %>">
+      <article
+  class="shop-card <%= "shop-card--stale" if very_old %> shop-card--clickable"
+  onclick="if (!event.target.closest('a, button')) { window.location.href='<%= shop_path(shop) %>'; }"
+  role="link"
+  tabindex="0"
+  onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button')) { event.preventDefault(); window.location.href='<%= shop_path(shop) %>'; }">
         <%= link_to shop_path(shop), class: "shop-card__mediaLink" do %>
           <div class="shop-card__media">
             <% if thumb.present? %>
@@ -260,6 +265,24 @@
     .shop-card__areaLink:hover {
       text-decoration: underline;
     }
+
+.shop-card--clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.shop-card--clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(17, 17, 17, 0.08);
+}
+
+.shop-card--clickable:focus-visible {
+  outline: 3px solid rgba(59, 109, 246, 0.28);
+  outline-offset: 2px;
+}
+
+
+
   </style>
 <% else %>
   <div class="empty-state">
