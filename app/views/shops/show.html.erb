@@ -238,34 +238,40 @@ color: #111111;
 letter-spacing: -0.02em;
 }
 
-.shop-show__metaGrid {
+.shop-show__infoTable {
+border-top: 1px solid #ece6d8;
+border-bottom: 1px solid #ece6d8;
+background: #ffffff;
+}
+
+.shop-show__infoRow {
 display: grid;
-grid-template-columns: repeat(2, minmax(0, 1fr));
-gap: 12px;
+grid-template-columns: 150px minmax(0, 1fr);
+border-top: 1px solid #ece6d8;
 }
 
-.shop-show__metaItem {
+.shop-show__infoRow:first-child {
+border-top: 0;
+}
+
+.shop-show__infoHead {
+padding: 16px 14px;
 background: #faf8f2;
-border: 1px solid #eee6d6;
-border-radius: 16px;
-padding: 14px;
-min-width: 0;
+color: #6f6f6f;
+font-size: 13px;
+font-weight: 800;
+line-height: 1.6;
+border-right: 1px solid #ece6d8;
 }
 
-.shop-show__metaLabel {
-display: block;
-margin-bottom: 6px;
-color: #7a7a7a;
-font-size: 12px;
-font-weight: 700;
-}
-
-.shop-show__metaValue {
+.shop-show__infoCell {
+padding: 16px 16px;
 color: #111111;
 font-size: 15px;
-line-height: 1.7;
+line-height: 1.8;
 word-break: break-word;
 white-space: pre-wrap;
+background: #ffffff;
 }
 
 .shop-show__hoursBox {
@@ -302,15 +308,13 @@ font-size: 12px;
 }
 
 .shop-show__phoneLink {
-display: inline-flex;
-align-items: center;
-padding: 10px 14px;
-background: #f6edd7;
-color: #7a5a12;
-border: 1px solid #eadbb5;
-border-radius: 10px;
+color: #1f4ea3;
 text-decoration: none;
 font-weight: 800;
+}
+
+.shop-show__phoneLink:hover {
+text-decoration: underline;
 }
 
 .shop-show__bookingActions {
@@ -512,8 +516,21 @@ border-radius: 16px;
 padding: 14px;
 }
 
-.shop-show__metaGrid {
-grid-template-columns: 1fr;
+
+
+.shop-show__infoRow {
+grid-template-columns: 96px minmax(0, 1fr);
+}
+
+.shop-show__infoHead {
+padding: 14px 10px;
+font-size: 12px;
+}
+
+.shop-show__infoCell {
+padding: 14px 12px;
+font-size: 14px;
+line-height: 1.7;
 }
 
 .shop-show__footerActions,
@@ -615,50 +632,50 @@ height: 140px;
 <section class="shop-show__section">
 <h2 class="shop-show__sectionTitle">基本情報</h2>
 
-<div class="shop-show__metaGrid">
-<div class="shop-show__metaItem">
-<span class="shop-show__metaLabel">住所</span>
-<div class="shop-show__metaValue"><%= @shop.address.presence || "未設定" %></div>
-</div>
+<div class="shop-show__infoTable">
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">住所</div>
+    <div class="shop-show__infoCell"><%= @shop.address.presence || "未設定" %></div>
+  </div>
 
-<div class="shop-show__metaItem">
-<span class="shop-show__metaLabel">最寄駅</span>
-<div class="shop-show__metaValue"><%= @shop.nearest_station.presence || "未設定" %></div>
-</div>
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">最寄駅</div>
+    <div class="shop-show__infoCell"><%= @shop.nearest_station.presence || "未設定" %></div>
+  </div>
 
-<div class="shop-show__metaItem">
-<span class="shop-show__metaLabel">電話番号</span>
-<div class="shop-show__metaValue">
-<% if @shop.phone.present? %>
-<a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="shop-show__phoneLink">
-<%= @shop.phone %>
-</a>
-<% else %>
-未設定
-<% end %>
-</div>
-</div>
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">電話番号</div>
+    <div class="shop-show__infoCell">
+      <% if @shop.phone.present? %>
+        <a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="shop-show__phoneLink">
+          <%= @shop.phone %>
+        </a>
+      <% else %>
+        未設定
+      <% end %>
+    </div>
+  </div>
 
-<div class="shop-show__metaItem">
-<span class="shop-show__metaLabel">喫煙エリア</span>
-<div class="shop-show__metaValue">
-<%= @shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "未設定" %>
-</div>
-</div>
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">喫煙エリア</div>
+    <div class="shop-show__infoCell">
+      <%= @shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "未設定" %>
+    </div>
+  </div>
 
-<div class="shop-show__metaItem">
-<span class="shop-show__metaLabel">喫煙タイプ</span>
-<div class="shop-show__metaValue">
-<%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定" %>
-</div>
-</div>
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">喫煙タイプ</div>
+    <div class="shop-show__infoCell">
+      <%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定" %>
+    </div>
+  </div>
 
-<% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
-<div class="shop-show__metaItem">
-<span class="shop-show__metaLabel">喫煙情報ステータス</span>
-<div class="shop-show__metaValue">未確認</div>
-</div>
-<% end %>
+  <% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
+    <div class="shop-show__infoRow">
+      <div class="shop-show__infoHead">喫煙情報ステータス</div>
+      <div class="shop-show__infoCell">未確認</div>
+    </div>
+  <% end %>
 </div>
 </section>
 
