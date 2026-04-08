@@ -255,22 +255,22 @@ border-top: 0;
 }
 
 .shop-show__infoHead {
-padding: 8px 10px;
+padding: 6px 8px;
 background: #faf8f2;
 color: #6f6f6f;
 font-size: 11px;
 font-weight: 700;
-line-height: 1.4;
+line-height: 1.35;
 border-right: 1px solid #ece6d8;
 }
 
 .shop-show__infoCell {
-padding: 8px 10px;
+padding: 6px 8px;
 color: #111111;
 font-size: 13px;
-line-height: 1.5;
+line-height: 1.4;
 word-break: break-word;
-white-space: pre-wrap;
+white-space: normal;
 background: #ffffff;
 }
 
@@ -684,19 +684,19 @@ height: 140px;
   <% end %>
 
   <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">営業時間</div>
-    <div class="shop-show__infoCell"><%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
-  </div>
+  <div class="shop-show__infoHead">営業時間</div>
+  <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+</div>
 
-  <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">祝日営業時間</div>
-    <div class="shop-show__infoCell"><%= @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
-  </div>
+<div class="shop-show__infoRow">
+  <div class="shop-show__infoHead">祝日営業時間</div>
+  <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+</div>
 
-  <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">定休日</div>
-    <div class="shop-show__infoCell"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
-  </div>
+<div class="shop-show__infoRow">
+  <div class="shop-show__infoHead">定休日</div>
+  <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+</div>
 </div>
 </section>
 
