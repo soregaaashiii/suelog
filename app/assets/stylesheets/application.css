@@ -1489,3 +1489,7 @@ height: auto;
 border-radius: 12px;
 display: inline-block;
 }
+
+body {
+  background: #f8f6f1;
+}
