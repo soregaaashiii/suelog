@@ -255,20 +255,20 @@ border-top: 0;
 }
 
 .shop-show__infoHead {
-padding: 16px 14px;
+padding: 12px 12px;
 background: #faf8f2;
 color: #6f6f6f;
-font-size: 13px;
+font-size: 12px;
 font-weight: 800;
-line-height: 1.6;
+line-height: 1.5;
 border-right: 1px solid #ece6d8;
 }
 
 .shop-show__infoCell {
-padding: 16px 16px;
+padding: 12px 14px;
 color: #111111;
-font-size: 15px;
-line-height: 1.8;
+font-size: 14px;
+line-height: 1.65;
 word-break: break-word;
 white-space: pre-wrap;
 background: #ffffff;
@@ -308,9 +308,11 @@ font-size: 12px;
 }
 
 .shop-show__phoneLink {
+display: inline;
 color: #1f4ea3;
 text-decoration: none;
-font-weight: 800;
+font-weight: 700;
+line-height: 1.6;
 }
 
 .shop-show__phoneLink:hover {
@@ -523,14 +525,14 @@ grid-template-columns: 96px minmax(0, 1fr);
 }
 
 .shop-show__infoHead {
-padding: 14px 10px;
-font-size: 12px;
+padding: 10px 8px;
+font-size: 11px;
 }
 
 .shop-show__infoCell {
-padding: 14px 12px;
-font-size: 14px;
-line-height: 1.7;
+padding: 10px 10px;
+font-size: 13px;
+line-height: 1.6;
 }
 
 .shop-show__footerActions,
@@ -629,8 +631,8 @@ height: 140px;
 <% end %>
 
 <div class="shop-show__layout">
-<section class="shop-show__section">
-<h2 class="shop-show__sectionTitle">基本情報</h2>
+<section class="shop-show__section shop-show__section--table">
+<h2 class="shop-show__sectionTitle shop-show__sectionTitle--table">基本情報</h2>
 
 <div class="shop-show__infoTable">
   <div class="shop-show__infoRow">
@@ -676,39 +678,25 @@ height: 140px;
       <div class="shop-show__infoCell">未確認</div>
     </div>
   <% end %>
+
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">営業時間</div>
+    <div class="shop-show__infoCell"><%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+  </div>
+
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">祝日営業時間</div>
+    <div class="shop-show__infoCell"><%= @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+  </div>
+
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">定休日</div>
+    <div class="shop-show__infoCell"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+  </div>
 </div>
 </section>
 
-<section class="shop-show__section">
-<h2 class="shop-show__sectionTitle">営業時間</h2>
 
-<div class="shop-show__hoursBox">
-<div class="shop-show__hoursCard">
-<p class="shop-show__hoursCardTitle">通常営業時間</p>
-<div class="shop-show__hoursCardValue">
-<%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text : "未設定" %>
-</div>
-</div>
-
-<div class="shop-show__hoursCard">
-<p class="shop-show__hoursCardTitle">祝日営業時間</p>
-<div class="shop-show__hoursCardValue">
-<%= @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text : "未設定" %>
-</div>
-</div>
-
-<div class="shop-show__hoursCard">
-<p class="shop-show__hoursCardTitle">定休日</p>
-<div class="shop-show__hoursCardValue">
-<%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text : "未設定" %>
-</div>
-</div>
-</div>
-
-<p class="shop-show__hoursNote">
-※ 営業時間は店舗情報・ユーザー投稿を元に表示しています。最新の情報は店舗へ直接ご確認ください。
-</p>
-</section>
 
 <% unless @shop.approved? %>
 <section class="shop-show__section">
