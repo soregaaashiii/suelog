@@ -1,4 +1,4 @@
-# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/controllers/home_controller.rb
+# /Users/kawamuratakuya/dev/suelog/app/controllers/home_controller.rb
 # frozen_string_literal: true
 
 class HomeController < ApplicationController
@@ -23,7 +23,6 @@ class HomeController < ApplicationController
 
   def index
     track_page_view
-    create_page_view_safely
 
     set_default_page_meta!
     apply_area_page_context_from_params!
@@ -34,7 +33,6 @@ class HomeController < ApplicationController
 
   def umeda
     track_page_view
-    create_page_view_safely
 
     set_default_page_meta!
     apply_umeda_context!
@@ -45,7 +43,6 @@ class HomeController < ApplicationController
 
   def umeda_genre
     track_page_view
-    create_page_view_safely
 
     set_default_page_meta!
     apply_umeda_genre_context!
@@ -56,7 +53,6 @@ class HomeController < ApplicationController
 
   def namba
     track_page_view
-    create_page_view_safely
 
     set_default_page_meta!
     apply_namba_context!
@@ -67,7 +63,6 @@ class HomeController < ApplicationController
 
   def namba_genre
     track_page_view
-    create_page_view_safely
 
     set_default_page_meta!
     apply_namba_genre_context!
@@ -242,12 +237,6 @@ class HomeController < ApplicationController
 
   def current_area_genre_config
     AREA_GENRE_MAP[current_genre_slug.to_s]
-  end
-
-  def create_page_view_safely
-    PageView.create!(path: request.path)
-  rescue => e
-    Rails.logger.warn "PageView error: #{e.message}"
   end
 
   def build_listing!

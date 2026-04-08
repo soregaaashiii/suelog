@@ -86,17 +86,21 @@ end
 namespace :admin, path: "panel_8m4k" do
 get "analytics", to: "analytics#index", as: :analytics
 
-resources :shops, only: [:index, :show, :edit, :update] do
-  member do
-    patch :approve
-    patch :reject
-  end
+# この端末のPV集計除外 ON / OFF
+post "page_view_tracking/exclude", to: "page_view_settings#exclude", as: :exclude_page_view_tracking
+delete "page_view_tracking/include", to: "page_view_settings#include", as: :include_page_view_tracking
 
-  collection do
-    get :holds
-    patch :bulk_update
-    post :import
-  end
+resources :shops, only: [:index, :show, :edit, :update] do
+member do
+patch :approve
+patch :reject
+end
+
+collection do
+get :holds
+patch :bulk_update
+post :import
+end
 end
 
 resources :reviews, only: [:index, :destroy] do
