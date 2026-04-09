@@ -881,6 +881,13 @@ gap: 14px;
 margin: 0;
 }
 
+/* ★追加（ここが本体） */
+@media (max-width: 900px) {
+  .shop-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .shop-grid > * {
 min-width: 0;
 }
