@@ -22,6 +22,7 @@ class HomeController < ApplicationController
   }.freeze
 
   SORT_OPTIONS = %w[recommended rating reviews_count newest].freeze
+  FULLWIDTH_SPACE = "\u3000"
 
   def index
     track_page_view
@@ -253,7 +254,7 @@ class HomeController < ApplicationController
     station_q = params[:station].to_s.strip
     smoking_area = normalized_smoking_area_param
     smoking_type = params[:smoking_type].to_s.strip
-    keyword_q = params[:q].to_s.strip
+    keyword_q = normalized_keyword_query(params[:q])
 
     base = Shop
       .approved
@@ -307,7 +308,10 @@ class HomeController < ApplicationController
     end
 
     if keyword_q.present?
-      base = base.merge(Shop.keyword(keyword_q))
+      keyword_tokens = keyword_q.split(" ")
+      keyword_tokens.each do |token|
+        base = base.merge(Shop.keyword(token))
+      end
     end
 
     if params[:needs_review].present?
@@ -362,6 +366,15 @@ class HomeController < ApplicationController
 
       hash[key] = value
     end
+  end
+
+  def normalized_keyword_query(value)
+    value.to_s
+         .unicode_normalize(:nfkc)
+         .tr(FULLWIDTH_SPACE, " ")
+         .downcase
+         .gsub(/\s+/, " ")
+         .strip
   end
 
   def sort_shop_records(records, sort_key)
