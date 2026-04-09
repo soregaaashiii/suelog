@@ -116,58 +116,82 @@
 
     <% sort_base_params = (@listing_query || {}).except("sort", "open_now_only") %>
 
-    <div class="panel" style="margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-        <div style="font-size:13px; color:#666; font-weight:700;">
-          検索結果を並び替え
-        </div>
+    <% current_query = (@listing_query || {}).dup %>
+<% sort_base_params = (@listing_query || {}).except("sort", "open_now_only") %>
 
-        <%= form_with url: (@search_form_url || root_path), method: :get, local: true, style: "display:flex; gap:12px; align-items:center; flex-wrap:wrap;" do %>
-          <% sort_base_params.each do |key, value| %>
-            <%= hidden_field_tag key, value %>
-          <% end %>
+<div class="panel sort-panel" style="margin-bottom:16px;">
+  <div class="sort-panel__head">
+    <div class="sort-panel__title">検索結果を並び替え</div>
+  </div>
 
-          <%= hidden_field_tag :per, (@per.presence || 30) unless sort_base_params.key?("per") %>
+  <div class="sort-panel__body">
+    <div class="sort-panel__group">
+      <div class="sort-panel__label">表示件数</div>
+      <div class="sort-panel__per">
+        <%= link_to "30件",
+            @search_form_url + "?" + current_query.merge(per: 30).to_query,
+            class: "sort-panel__perBtn #{(@per == 30 ? 'sort-panel__perBtn--active' : '')}" %>
 
-          <%= select_tag :sort,
-              options_for_select([
-                ["おすすめ順", "recommended"],
-                ["評価が高い順", "rating"],
-                ["口コミが多い順", "reviews_count"],
-                ["新しい順", "newest"]
-              ], (@current_sort.presence || "recommended")),
-              class: "search-select",
-              onchange: "this.form.requestSubmit()" %>
+        <%= link_to "50件",
+            @search_form_url + "?" + current_query.merge(per: 50).to_query,
+            class: "sort-panel__perBtn #{(@per == 50 ? 'sort-panel__perBtn--active' : '')}" %>
 
-          <label style="display:inline-flex; align-items:center; gap:8px; font-size:14px; color:#333;">
-            <%= check_box_tag :open_now_only, "1", @open_now_only, onchange: "this.form.requestSubmit()" %>
-            <span>営業中のみ</span>
-          </label>
-        <% end %>
+        <%= link_to "100件",
+            @search_form_url + "?" + current_query.merge(per: 100).to_query,
+            class: "sort-panel__perBtn #{(@per == 100 ? 'sort-panel__perBtn--active' : '')}" %>
       </div>
+    </div>
 
-      <% if (@current_sort.present? && @current_sort != "recommended") || @open_now_only %>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px;">
-          <span style="font-size:12px; color:#666;">適用中</span>
+    <div class="sort-panel__group">
+      <div class="sort-panel__label">並び替え</div>
 
-          <% if @current_sort.present? && @current_sort != "recommended" %>
-            <span class="filter-chip">
-              <span>並び順：<%= sort_label[@current_sort] || @current_sort %></span>
-            </span>
-          <% end %>
+      <%= form_with url: (@search_form_url || root_path), method: :get, local: true, class: "sort-panel__form" do %>
+        <% sort_base_params.each do |key, value| %>
+          <%= hidden_field_tag key, value %>
+        <% end %>
 
-          <% if @open_now_only %>
-            <span class="filter-chip">
-              <span>営業中のみ</span>
-            </span>
-          <% end %>
+        <%= hidden_field_tag :per, (@per.presence || 30) unless sort_base_params.key?("per") %>
 
-          <%= link_to "並び替えをリセット",
-              (@search_form_url || root_path).to_s + "?" + sort_base_params.merge(per: @per).to_query,
-              class: "filter-chip filter-chip--clear" %>
-        </div>
+        <%= select_tag :sort,
+            options_for_select([
+              ["おすすめ順", "recommended"],
+              ["評価が高い順", "rating"],
+              ["口コミが多い順", "reviews_count"],
+              ["新しい順", "newest"]
+            ], (@current_sort.presence || "recommended")),
+            class: "search-select sort-panel__select",
+            onchange: "this.form.requestSubmit()" %>
+
+        <label class="sort-panel__check">
+          <%= check_box_tag :open_now_only, "1", @open_now_only, onchange: "this.form.requestSubmit()" %>
+          <span>営業中のみ</span>
+        </label>
       <% end %>
     </div>
+  </div>
+
+  <% if (@current_sort.present? && @current_sort != "recommended") || @open_now_only %>
+    <div class="sort-panel__active">
+      <span class="sort-panel__activeLabel">適用中</span>
+
+      <% if @current_sort.present? && @current_sort != "recommended" %>
+        <span class="filter-chip">
+          <span>並び順：<%= sort_label[@current_sort] || @current_sort %></span>
+        </span>
+      <% end %>
+
+      <% if @open_now_only %>
+        <span class="filter-chip">
+          <span>営業中のみ</span>
+        </span>
+      <% end %>
+
+      <%= link_to "並び替えをリセット",
+          (@search_form_url || root_path).to_s + "?" + sort_base_params.merge(per: @per).to_query,
+          class: "filter-chip filter-chip--clear" %>
+    </div>
+  <% end %>
+</div>
 
     <% if @shops.present? && @shops.any? %>
       <%= render partial: "shared/shop_cards", locals: { shops: @shops } %>
