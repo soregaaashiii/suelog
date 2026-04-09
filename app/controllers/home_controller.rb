@@ -22,6 +22,16 @@ class HomeController < ApplicationController
   }.freeze
 
   SORT_OPTIONS = %w[recommended rating reviews_count newest].freeze
+  FULLWIDTH_SPACE = "\u3000"
+  SEARCHABLE_COLUMNS = %i[
+    name
+    address
+    area
+    nearest_station
+    genre
+    genre_other
+    phone
+  ].freeze
 
   def index
     track_page_view
@@ -253,7 +263,7 @@ class HomeController < ApplicationController
     station_q = params[:station].to_s.strip
     smoking_area = normalized_smoking_area_param
     smoking_type = params[:smoking_type].to_s.strip
-    keyword_q = params[:q].to_s.strip
+    keyword_q = params[:q].to_s
 
     base = Shop
       .approved
@@ -306,16 +316,17 @@ class HomeController < ApplicationController
       base = base.where(shops: { smoking_type: smoking_type_value }) if smoking_type_value.present?
     end
 
-    if keyword_q.present?
-      base = base.merge(Shop.keyword(keyword_q))
-    end
-
     if params[:needs_review].present?
       cutoff = 2.years.ago.to_date
       base = base.where("shops.last_confirmed_on IS NULL OR shops.last_confirmed_on < ?", cutoff)
     end
 
     records = base.to_a
+
+    if keyword_q.present?
+      tokens = normalized_keyword_tokens(keyword_q)
+      records.select! { |shop| matches_keyword_tokens?(shop, tokens) } if tokens.present?
+    end
 
     records.select!(&:open_now?) if @open_now_only
 
@@ -362,6 +373,29 @@ class HomeController < ApplicationController
 
       hash[key] = value
     end
+  end
+
+  def normalized_keyword_tokens(raw_keyword)
+    normalize_search_text(raw_keyword).split(" ").reject(&:blank?).uniq
+  end
+
+  def matches_keyword_tokens?(shop, tokens)
+    return true if tokens.blank?
+
+    haystack = normalized_search_text(
+      SEARCHABLE_COLUMNS.map { |column| shop.public_send(column) }.join(" ")
+    )
+
+    tokens.all? { |token| haystack.include?(token) }
+  end
+
+  def normalize_search_text(text)
+    text.to_s
+        .unicode_normalize(:nfkc)
+        .tr(FULLWIDTH_SPACE, " ")
+        .downcase
+        .squeeze(" ")
+        .strip
   end
 
   def sort_shop_records(records, sort_key)
