@@ -1350,7 +1350,7 @@ max-width: 100%;
 
 @media (max-width: 640px) {
 .home-page {
-padding: 0 10px 40px;
+padding: 0 12px 40px;
 }
 
 .hero__inner {
@@ -1483,8 +1483,8 @@ align-items: flex-start;
 
 .shop-grid {
 grid-template-columns: 1fr;
-margin-left: -4px;
-margin-right: -4px;
+margin-left: 0;
+margin-right: 0;
 }
 
 .shop-card {
