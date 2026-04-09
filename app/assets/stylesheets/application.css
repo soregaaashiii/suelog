@@ -1366,7 +1366,7 @@ border-radius: 14px;
 }
 
 .hero__content {
-padding: 20px 12px 18px;
+  padding: 20px 14px 18px;
 }
 
 .search-btn,
@@ -1798,8 +1798,22 @@ gap: 10px;
 
 @media (max-width: 640px) {
   .container {
-    padding: 0;
+    padding: 0 12px;
   }
+}
+
+@media (max-width: 640px) {
+
+  /* ヒーローだけ container 無視して広げる */
+  .hero {
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  }
+
+  .hero__inner {
+    padding: 0 12px;
+  }
+
 }
 
 
