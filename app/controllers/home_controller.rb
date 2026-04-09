@@ -247,6 +247,7 @@ class HomeController < ApplicationController
 
     @current_sort = normalized_sort_param
     @open_now_only = open_now_only_param?
+    @listing_query = cleaned_listing_query
 
     genre_terms = effective_genre_terms
     station_q = params[:station].to_s.strip
@@ -316,9 +317,7 @@ class HomeController < ApplicationController
 
     records = base.to_a
 
-    if @open_now_only
-      records.select!(&:open_now?)
-    end
+    records.select!(&:open_now?) if @open_now_only
 
     records = sort_shop_records(records, @current_sort)
 
@@ -355,6 +354,14 @@ class HomeController < ApplicationController
 
   def open_now_only_param?
     ActiveModel::Type::Boolean.new.cast(params[:open_now_only])
+  end
+
+  def cleaned_listing_query
+    request.query_parameters.to_h.except("page", "commit").each_with_object({}) do |(key, value), hash|
+      next if value.blank?
+
+      hash[key] = value
+    end
   end
 
   def sort_shop_records(records, sort_key)
