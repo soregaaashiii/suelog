@@ -946,7 +946,7 @@ font-size: 13px;
 }
 
 .shop-card__body {
-padding: 13px 14px 12px;
+padding: 13px 12px 12px;
 }
 
 .shop-card__meta {
@@ -1350,7 +1350,7 @@ max-width: 100%;
 
 @media (max-width: 640px) {
 .home-page {
-padding: 0 12px 40px;
+padding: 0 10px 40px;
 }
 
 .hero__inner {
@@ -1483,6 +1483,12 @@ align-items: flex-start;
 
 .shop-grid {
 grid-template-columns: 1fr;
+margin-left: -4px;
+margin-right: -4px;
+}
+
+.shop-card {
+border-radius: 16px;
 }
 
 .shop-card__actions,
