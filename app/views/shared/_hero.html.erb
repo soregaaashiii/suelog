@@ -37,9 +37,9 @@
 <% hero_chips << ["ジャンル：#{genre_label[params[:genre]] || params[:genre]}", :genre] if params[:genre].present? %>
 <% hero_chips << ["キーワード：#{params[:q]}", :q] if params[:q].present? %>
 
-<section class="hero">
-  <div class="hero__inner" style="display:grid; grid-template-columns:1fr; gap:0; width:100%; max-width:1180px; margin:0 auto; padding:0 16px;">
-    <div class="hero__content hero__content--single" style="width:100%; max-width:none; margin:0;">
+<section class="hero hero--fullbleed">
+  <div class="hero__inner">
+    <div class="hero__content hero__content--single">
       <div class="hero__topline">
         <div class="hero__eyebrow">SMOKING MAP OSAKA</div>
       </div>

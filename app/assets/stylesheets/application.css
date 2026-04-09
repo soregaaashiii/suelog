@@ -1801,23 +1801,6 @@ grid-column: 1 / -1;
 }
 }
 
-@media (max-width: 640px) {
-  .container {
-    padding: 0 12px;
-  }
-}
-
-@media (max-width: 640px) {
-  .hero {
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
-  }
-
-  .hero__inner {
-    padding: 0 12px;
-  }
-}
-
 .shop-show__infoCell--multiline {
 white-space: pre-wrap;
 }
