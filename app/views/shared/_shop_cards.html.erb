@@ -62,13 +62,13 @@
               <% rescue StandardError %>
                 <div class="shop-card__placeholder">
                   <div class="shop-card__placeholderTitle"><%= shop.name %></div>
-                  <div class="shop-card__placeholderSub">写真がまだありません</div>
+                  <div class="shop-card__placeholderSub">このお店の最新情報・写真を募集中！</div>
                 </div>
               <% end %>
             <% else %>
               <div class="shop-card__placeholder">
                 <div class="shop-card__placeholderTitle"><%= shop.name %></div>
-                <div class="shop-card__placeholderSub">写真がまだありません</div>
+                <div class="shop-card__placeholderSub">このお店の最新情報・写真を募集中！</div>
               </div>
             <% end %>
           </div>
@@ -218,12 +218,12 @@
     }
 
     .shop-card__rating {
-      margin-top: 8px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
 
     .shop-card__ratingStars {
       font-size: 14px;
@@ -249,11 +249,11 @@
     }
 
     .shop-card__areaLinks {
-      margin-top: 10px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
     .shop-card__areaLink {
       font-size: 12px;
