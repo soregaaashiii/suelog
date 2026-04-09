@@ -14,6 +14,13 @@
   "paper_only" => "紙のみ"
 } %>
 
+<% sort_label = {
+  "recommended" => "おすすめ順",
+  "rating" => "評価が高い順",
+  "reviews_count" => "口コミが多い順",
+  "newest" => "新しい順"
+} %>
+
 <% genre_label = {} %>
 <% Shop.genre_options.each { |g| genre_label[g] = g } %>
 <% genre_label["izakaya"] = "居酒屋" %>
@@ -36,6 +43,15 @@
 <% hero_chips << ["最寄駅：#{params[:station]}", :station] if params[:station].present? %>
 <% hero_chips << ["ジャンル：#{genre_label[params[:genre]] || params[:genre]}", :genre] if params[:genre].present? %>
 <% hero_chips << ["キーワード：#{params[:q]}", :q] if params[:q].present? %>
+
+<% current_sort_value = (@current_sort.presence || params[:sort].presence || "recommended").to_s %>
+<% if current_sort_value.present? && current_sort_value != "recommended" %>
+  <% hero_chips << ["並び順：#{sort_label[current_sort_value] || current_sort_value}", :sort] %>
+<% end %>
+
+<% if @open_now_only || ActiveModel::Type::Boolean.new.cast(params[:open_now_only]) %>
+  <% hero_chips << ["営業中のみ", :open_now_only] %>
+<% end %>
 
 <section class="hero">
   <div class="hero__inner" style="display:grid; grid-template-columns:1fr; gap:0; width:100%; max-width:1180px; margin:0 auto; padding:0 16px;">
@@ -91,11 +107,27 @@
               <%= label_tag :q, "キーワード" %>
               <%= text_field_tag :q, params[:q], placeholder: "店名・住所など", class: "search-input" %>
             </div>
+
+            <div class="search-field">
+              <%= label_tag :sort, "並び順" %>
+              <%= select_tag :sort,
+                  options_for_select([
+                    ["おすすめ順", "recommended"],
+                    ["評価が高い順", "rating"],
+                    ["口コミが多い順", "reviews_count"],
+                    ["新しい順", "newest"]
+                  ], current_sort_value),
+                  class: "search-select" %>
+            </div>
           </div>
 
-          <div class="search-actions">
+          <div class="search-actions" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <label style="display:inline-flex; align-items:center; gap:8px; font-size:14px; color:#333;">
+              <%= check_box_tag :open_now_only, "1", (@open_now_only || ActiveModel::Type::Boolean.new.cast(params[:open_now_only])) %>
+              <span>営業中のみ</span>
+            </label>
+
             <%= submit_tag "検索する", class: "btn btn--dark search-btn" %>
-            
           </div>
         <% end %>
 
