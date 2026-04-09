@@ -21,6 +21,8 @@ class HomeController < ApplicationController
     }
   }.freeze
 
+  SORT_OPTIONS = %w[recommended rating reviews_count newest].freeze
+
   def index
     track_page_view
 
@@ -243,6 +245,9 @@ class HomeController < ApplicationController
     @per = params[:per].to_i
     @per = 30 unless [30, 50, 100].include?(@per)
 
+    @current_sort = normalized_sort_param
+    @open_now_only = open_now_only_param?
+
     genre_terms = effective_genre_terms
     station_q = params[:station].to_s.strip
     smoking_area = normalized_smoking_area_param
@@ -260,8 +265,6 @@ class HomeController < ApplicationController
       )
       .group("shops.id")
 
-    count_scope = Shop.approved
-
     if @forced_area_keyword.present?
       like = "%#{@forced_area_keyword}%"
       area_sql = <<~SQL.squish
@@ -271,7 +274,6 @@ class HomeController < ApplicationController
       SQL
 
       base = base.where(area_sql, like: like)
-      count_scope = count_scope.where(area_sql, like: like)
     end
 
     if genre_terms.present?
@@ -285,58 +287,43 @@ class HomeController < ApplicationController
       end
 
       genre_sql = genre_sql_parts.join(" OR ")
-
       base = base.where(genre_sql, genre_bindings)
-      count_scope = count_scope.where(genre_sql, genre_bindings)
     end
 
     if station_q.present?
       like = "%#{station_q}%"
       base = base.where("shops.nearest_station LIKE ?", like)
-      count_scope = count_scope.where("shops.nearest_station LIKE ?", like)
     end
 
     if smoking_area.present?
       smoking_area_value = Shop.smoking_areas[smoking_area]
-      if smoking_area_value.present?
-        base = base.where(shops: { smoking_area: smoking_area_value })
-        count_scope = count_scope.where(smoking_area: smoking_area_value)
-      end
+      base = base.where(shops: { smoking_area: smoking_area_value }) if smoking_area_value.present?
     end
 
     if smoking_type.present?
       smoking_type_value = Shop.smoking_types[smoking_type]
-      if smoking_type_value.present?
-        base = base.where(shops: { smoking_type: smoking_type_value })
-        count_scope = count_scope.where(smoking_type: smoking_type_value)
-      end
+      base = base.where(shops: { smoking_type: smoking_type_value }) if smoking_type_value.present?
     end
 
     if keyword_q.present?
       base = base.merge(Shop.keyword(keyword_q))
-      count_scope = count_scope.merge(Shop.keyword(keyword_q))
     end
 
     if params[:needs_review].present?
       cutoff = 2.years.ago.to_date
       base = base.where("shops.last_confirmed_on IS NULL OR shops.last_confirmed_on < ?", cutoff)
-      count_scope = count_scope.where("last_confirmed_on IS NULL OR last_confirmed_on < ?", cutoff)
     end
 
-    sorted =
-      case params[:sort]
-      when "latest_review"
-        base.order(Arel.sql("latest_review_at IS NULL, latest_review_at DESC"))
-      when "rating"
-        base.order(Arel.sql("avg_rating DESC"))
-      when "reviews_count"
-        base.order(Arel.sql("reviews_count DESC"))
-      else
-        base.order(Arel.sql("shops.last_confirmed_on IS NULL, shops.last_confirmed_on DESC, shops.created_at DESC"))
-      end
+    records = base.to_a
 
-    @shops_count = count_scope.count
-    @shops = sorted.page(params[:page]).per(@per)
+    if @open_now_only
+      records.select!(&:open_now?)
+    end
+
+    records = sort_shop_records(records, @current_sort)
+
+    @shops_count = records.size
+    @shops = Kaminari.paginate_array(records).page(params[:page]).per(@per)
   end
 
   def effective_genre_param
@@ -356,6 +343,38 @@ class HomeController < ApplicationController
     return "all_smoking" if value == "smoking_allowed"
 
     value
+  end
+
+  def normalized_sort_param
+    value = params[:sort].to_s.strip
+    return "recommended" if value.blank?
+    return value if SORT_OPTIONS.include?(value)
+
+    "recommended"
+  end
+
+  def open_now_only_param?
+    ActiveModel::Type::Boolean.new.cast(params[:open_now_only])
+  end
+
+  def sort_shop_records(records, sort_key)
+    records.sort_by do |shop|
+      avg_rating = shop.try(:avg_rating).to_f
+      reviews_count = shop.try(:reviews_count).to_i
+      created_at_i = shop.created_at&.to_i || 0
+      open_penalty = shop.open_now? ? 0 : 1
+
+      case sort_key
+      when "rating"
+        [-avg_rating, -reviews_count, open_penalty, -created_at_i]
+      when "reviews_count"
+        [-reviews_count, -avg_rating, open_penalty, -created_at_i]
+      when "newest"
+        [-created_at_i, -avg_rating, -reviews_count, open_penalty]
+      else
+        [-avg_rating, -reviews_count, open_penalty, -created_at_i]
+      end
+    end
   end
 
   def umeda_nav_links
