@@ -5,67 +5,66 @@
 
 <%= render "shared/hero" %>
 
-<section class="home-section">
-  <div class="section-head">
-    <div>
-      <h2 class="section-title">人気エリアから探す</h2>
-    </div>
-  </div>
-
-  <div class="area-grid area-grid--top">
-    <article class="area-card area-card--top">
-      <div class="area-card__head">
-        <h3 class="area-card__title">梅田</h3>
-        <span class="area-card__badge">人気</span>
-      </div>
-
-      <div class="area-card__actions area-card__actions--stack">
-        <%= link_to "梅田の一覧を見る", umeda_path, class: "btn btn--dark area-card__main-btn" %>
-      </div>
-
-      <div class="area-card__quick-grid">
-        <%= link_to "席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
-        <%= link_to "喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost area-card__quick-btn" %>
-        <%= link_to "居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost area-card__quick-btn" %>
-        <%= link_to "バー", umeda_genre_path("bar"), class: "btn btn--ghost area-card__quick-btn" %>
-      </div>
-    </article>
-
-    <article class="area-card area-card--top">
-      <div class="area-card__head">
-        <h3 class="area-card__title">難波</h3>
-        <span class="area-card__badge">定番</span>
-      </div>
-
-      <div class="area-card__actions area-card__actions--stack">
-        <%= link_to "難波の一覧を見る", namba_path, class: "btn btn--dark area-card__main-btn" %>
-      </div>
-
-      <div class="area-card__quick-grid">
-        <%= link_to "席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
-        <%= link_to "喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost area-card__quick-btn" %>
-        <%= link_to "居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost area-card__quick-btn" %>
-        <%= link_to "バー", namba_genre_path("bar"), class: "btn btn--ghost area-card__quick-btn" %>
-      </div>
-    </article>
-  </div>
-</section>
-
-<% genre_label = {} %>
-<% Shop.genre_options.each { |g| genre_label[g] = g } %>
-<% genre_label["izakaya"] = "居酒屋" %>
-<% genre_label["bar"] = "バー・パブ" %>
-<% genre_label["cafe"] = "カフェ" %>
-<% genre_label["yakiniku"] = "焼肉" %>
-
-<% sort_label = {
-  "recommended" => "おすすめ順",
-  "rating" => "評価が高い順",
-  "reviews_count" => "口コミが多い順",
-  "newest" => "新しい順"
-} %>
-
 <div class="home-page">
+  <section class="home-section">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">人気エリアから探す</h2>
+      </div>
+    </div>
+
+    <div class="area-grid area-grid--top">
+      <article class="area-card area-card--top">
+        <div class="area-card__head">
+          <h3 class="area-card__title">梅田</h3>
+          <span class="area-card__badge">人気</span>
+        </div>
+
+        <div class="area-card__actions area-card__actions--stack">
+          <%= link_to "梅田の一覧を見る", umeda_path, class: "btn btn--dark area-card__main-btn" %>
+        </div>
+
+        <div class="area-card__quick-grid">
+          <%= link_to "席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
+          <%= link_to "喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost area-card__quick-btn" %>
+          <%= link_to "居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost area-card__quick-btn" %>
+          <%= link_to "バー", umeda_genre_path("bar"), class: "btn btn--ghost area-card__quick-btn" %>
+        </div>
+      </article>
+
+      <article class="area-card area-card--top">
+        <div class="area-card__head">
+          <h3 class="area-card__title">難波</h3>
+          <span class="area-card__badge">定番</span>
+        </div>
+
+        <div class="area-card__actions area-card__actions--stack">
+          <%= link_to "難波の一覧を見る", namba_path, class: "btn btn--dark area-card__main-btn" %>
+        </div>
+
+        <div class="area-card__quick-grid">
+          <%= link_to "席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
+          <%= link_to "喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost area-card__quick-btn" %>
+          <%= link_to "居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost area-card__quick-btn" %>
+          <%= link_to "バー", namba_genre_path("bar"), class: "btn btn--ghost area-card__quick-btn" %>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <% genre_label = {} %>
+  <% Shop.genre_options.each { |g| genre_label[g] = g } %>
+  <% genre_label["izakaya"] = "居酒屋" %>
+  <% genre_label["bar"] = "バー・パブ" %>
+  <% genre_label["cafe"] = "カフェ" %>
+  <% genre_label["yakiniku"] = "焼肉" %>
+
+  <% sort_label = {
+    "recommended" => "おすすめ順",
+    "rating" => "評価が高い順",
+    "reviews_count" => "口コミが多い順",
+    "newest" => "新しい順"
+  } %>
   <% if @is_area_page %>
     <section class="home-section">
       <div class="panel" style="margin-bottom:16px;">
