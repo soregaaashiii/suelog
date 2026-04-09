@@ -1788,3 +1788,7 @@ gap: 10px;
 grid-column: 1 / -1;
 }
 }
+
+.shop-show__infoCell--multiline {
+white-space: pre-wrap;
+}
