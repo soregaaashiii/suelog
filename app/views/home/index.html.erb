@@ -6,49 +6,49 @@
 <%= render "shared/hero" %>
 
 <section class="home-section">
-<div class="section-head">
-<div>
-<h2 class="section-title">人気エリアから探す</h2>
-</div>
-</div>
+  <div class="section-head">
+    <div>
+      <h2 class="section-title">人気エリアから探す</h2>
+    </div>
+  </div>
 
-<div class="area-grid area-grid--top">
-<article class="area-card area-card--top">
-<div class="area-card__head">
-<h3 class="area-card__title">梅田</h3>
-<span class="area-card__badge">人気</span>
-</div>
+  <div class="area-grid area-grid--top">
+    <article class="area-card area-card--top">
+      <div class="area-card__head">
+        <h3 class="area-card__title">梅田</h3>
+        <span class="area-card__badge">人気</span>
+      </div>
 
-<div class="area-card__actions area-card__actions--stack">
-<%= link_to "梅田の一覧を見る", umeda_path, class: "btn btn--dark area-card__main-btn" %>
-</div>
+      <div class="area-card__actions area-card__actions--stack">
+        <%= link_to "梅田の一覧を見る", umeda_path, class: "btn btn--dark area-card__main-btn" %>
+      </div>
 
-<div class="area-card__quick-grid">
-<%= link_to "席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
-<%= link_to "喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost area-card__quick-btn" %>
-<%= link_to "居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost area-card__quick-btn" %>
-<%= link_to "バー", umeda_genre_path("bar"), class: "btn btn--ghost area-card__quick-btn" %>
-</div>
-</article>
+      <div class="area-card__quick-grid">
+        <%= link_to "席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
+        <%= link_to "喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost area-card__quick-btn" %>
+        <%= link_to "居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost area-card__quick-btn" %>
+        <%= link_to "バー", umeda_genre_path("bar"), class: "btn btn--ghost area-card__quick-btn" %>
+      </div>
+    </article>
 
-<article class="area-card area-card--top">
-<div class="area-card__head">
-<h3 class="area-card__title">難波</h3>
-<span class="area-card__badge">定番</span>
-</div>
+    <article class="area-card area-card--top">
+      <div class="area-card__head">
+        <h3 class="area-card__title">難波</h3>
+        <span class="area-card__badge">定番</span>
+      </div>
 
-<div class="area-card__actions area-card__actions--stack">
-<%= link_to "難波の一覧を見る", namba_path, class: "btn btn--dark area-card__main-btn" %>
-</div>
+      <div class="area-card__actions area-card__actions--stack">
+        <%= link_to "難波の一覧を見る", namba_path, class: "btn btn--dark area-card__main-btn" %>
+      </div>
 
-<div class="area-card__quick-grid">
-<%= link_to "席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
-<%= link_to "喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost area-card__quick-btn" %>
-<%= link_to "居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost area-card__quick-btn" %>
-<%= link_to "バー", namba_genre_path("bar"), class: "btn btn--ghost area-card__quick-btn" %>
-</div>
-</article>
-</div>
+      <div class="area-card__quick-grid">
+        <%= link_to "席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
+        <%= link_to "喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost area-card__quick-btn" %>
+        <%= link_to "居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost area-card__quick-btn" %>
+        <%= link_to "バー", namba_genre_path("bar"), class: "btn btn--ghost area-card__quick-btn" %>
+      </div>
+    </article>
+  </div>
 </section>
 
 <% genre_label = {} %>
@@ -58,220 +58,282 @@
 <% genre_label["cafe"] = "カフェ" %>
 <% genre_label["yakiniku"] = "焼肉" %>
 
+<% sort_label = {
+  "recommended" => "おすすめ順",
+  "rating" => "評価が高い順",
+  "reviews_count" => "口コミが多い順",
+  "newest" => "新しい順"
+} %>
+
 <div class="home-page">
-<% if @is_area_page %>
-<section class="home-section">
-<div class="panel" style="margin-bottom:16px;">
-<h2 class="section-title" style="margin-bottom:8px;"><%= @area_intro_title %></h2>
-<p class="section-subtitle" style="margin:0 0 14px;"><%= @area_intro_text %></p>
+  <% if @is_area_page %>
+    <section class="home-section">
+      <div class="panel" style="margin-bottom:16px;">
+        <h2 class="section-title" style="margin-bottom:8px;"><%= @area_intro_title %></h2>
+        <p class="section-subtitle" style="margin:0 0 14px;"><%= @area_intro_text %></p>
 
-<% if @area_nav_links.present? %>
-<div style="display:flex; gap:8px; flex-wrap:wrap;">
-<% @area_nav_links.each do |item| %>
-<%= link_to item[:label], item[:path], class: "btn btn--ghost" %>
-<% end %>
-</div>
-<% end %>
-</div>
-</section>
-<% end %>
+        <% if @area_nav_links.present? %>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <% @area_nav_links.each do |item| %>
+              <%= link_to item[:label], item[:path], class: "btn btn--ghost" %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
 
-<section class="home-section">
-<div class="section-head">
-<div>
-<h2 class="section-title"><%= @page_heading %></h2>
-</div>
+  <section class="home-section">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title"><%= @page_heading %></h2>
+      </div>
 
-<div class="result-count">
-<span class="result-count__num"><%= @shops_count %></span>
-<span class="result-count__text">件</span>
-</div>
-</div>
+      <div class="result-count">
+        <span class="result-count__num"><%= @shops_count %></span>
+        <span class="result-count__text">件</span>
+      </div>
+    </div>
 
-<div class="panel" style="margin-bottom:16px;">
-<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-<span style="font-size:13px; color:#666; font-weight:700;">表示件数</span>
+    <div class="panel" style="margin-bottom:16px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <span style="font-size:13px; color:#666; font-weight:700;">表示件数</span>
 
-<% current_query = request.query_parameters.except(:page).to_h %>
+        <% current_query = (@listing_query || {}).dup %>
 
-<%= link_to "30件",
-@search_form_url + "?" + current_query.merge(per: 30).to_query,
-class: "btn #{(@per == 30 ? 'btn--dark' : 'btn--ghost')}" %>
+        <%= link_to "30件",
+            @search_form_url + "?" + current_query.merge(per: 30).to_query,
+            class: "btn #{(@per == 30 ? 'btn--dark' : 'btn--ghost')}" %>
 
-<%= link_to "50件",
-@search_form_url + "?" + current_query.merge(per: 50).to_query,
-class: "btn #{(@per == 50 ? 'btn--dark' : 'btn--ghost')}" %>
+        <%= link_to "50件",
+            @search_form_url + "?" + current_query.merge(per: 50).to_query,
+            class: "btn #{(@per == 50 ? 'btn--dark' : 'btn--ghost')}" %>
 
-<%= link_to "100件",
-@search_form_url + "?" + current_query.merge(per: 100).to_query,
-class: "btn #{(@per == 100 ? 'btn--dark' : 'btn--ghost')}" %>
-</div>
-</div>
+        <%= link_to "100件",
+            @search_form_url + "?" + current_query.merge(per: 100).to_query,
+            class: "btn #{(@per == 100 ? 'btn--dark' : 'btn--ghost')}" %>
+      </div>
+    </div>
 
-<% if @shops.present? && @shops.any? %>
-<%= render partial: "shared/shop_cards", locals: { shops: @shops } %>
+    <% sort_base_params = (@listing_query || {}).except("sort", "open_now_only") %>
 
-<div style="margin-top:20px; display:flex; justify-content:center;">
-<%= paginate @shops, params: request.query_parameters.except(:page) %>
-</div>
-<% else %>
-<div class="empty-state">
-<p>該当する店舗はありません。</p>
-</div>
-<% end %>
-</section>
+    <div class="panel" style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="font-size:13px; color:#666; font-weight:700;">
+          検索結果を並び替え
+        </div>
 
-<% if @is_area_page %>
-<section class="home-section">
-<div class="panel" style="line-height:1.9;">
-<h2 class="section-title" style="margin-bottom:12px;"><%= @page_heading %>の探し方</h2>
+        <%= form_with url: (@search_form_url || root_path), method: :get, local: true, style: "display:flex; gap:12px; align-items:center; flex-wrap:wrap;" do %>
+          <% sort_base_params.each do |key, value| %>
+            <%= hidden_field_tag key, value %>
+          <% end %>
 
-<% if @search_form_url == umeda_path %>
-<p style="margin:0 0 12px;">
-梅田は大阪の中でも飲食店が密集しているエリアで、居酒屋、バー、焼肉、カフェまで幅広いジャンルの店舗があります。
-そのぶん、喫煙できるかどうかが店ごとにかなり違うため、来店前に喫煙条件を確認しておくと探しやすいです。
-</p>
-<p style="margin:0 0 12px;">
-このページでは、梅田で喫煙できる店を一覧で見られます。
-「席で喫煙可」「喫煙所あり」「紙・加熱式OK」「加熱式のみ」などの条件で絞り込めるので、
-飲み会、仕事帰り、1人飲みなどシーンに合わせて使いやすい店舗を探せます。
-</p>
-<p style="margin:0 0 12px;">
-梅田で店を探すときは、まず喫煙エリアの違いを確認するのがおすすめです。
-そのうえで、居酒屋、バー、カフェ、焼肉などジャンル別ページも見ると、自分の目的に合う店舗を見つけやすくなります。
-</p>
+          <%= hidden_field_tag :per, (@per.presence || 30) unless sort_base_params.key?("per") %>
 
-<div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
-<%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost" %>
-<%= link_to "梅田のバー", umeda_genre_path("bar"), class: "btn btn--ghost" %>
-<%= link_to "梅田のカフェ", umeda_genre_path("cafe"), class: "btn btn--ghost" %>
-<%= link_to "梅田の焼肉", umeda_genre_path("yakiniku"), class: "btn btn--ghost" %>
-</div>
+          <%= select_tag :sort,
+              options_for_select([
+                ["おすすめ順", "recommended"],
+                ["評価が高い順", "rating"],
+                ["口コミが多い順", "reviews_count"],
+                ["新しい順", "newest"]
+              ], (@current_sort.presence || "recommended")),
+              class: "search-select",
+              onchange: "this.form.requestSubmit()" %>
 
-<p style="margin:0;">
-実際の喫煙条件や営業時間は変更されることがあるため、来店前には店舗への確認がおすすめです。
-梅田で喫煙可能な飲食店を探したい人向けの入口ページとして使ってください。
-</p>
-<% elsif @search_form_url == umeda_smoking_path("all_smoking") %>
-<p style="margin:0 0 12px;">
-梅田で席で喫煙可の店を探したい人向けの一覧ページです。
-店外の喫煙所まで移動せず、その場で吸える店を探したいときに使いやすいページです。
-</p>
-<p style="margin:0 0 12px;">
-同じ梅田エリアでも、紙タバコも吸える店と、加熱式のみの店では使い勝手が変わります。
-喫煙タイプや最寄駅もあわせて確認しながら、自分に合う店舗を探してみてください。
-</p>
-<p style="margin:0;">
-喫煙ルールは時間帯や席によって異なる場合もあるため、最新情報は来店前確認がおすすめです。
-</p>
-<% elsif @search_form_url == umeda_smoking_path("separated") %>
-<p style="margin:0 0 12px;">
-梅田で喫煙所ありの店を探したい人向けの一覧ページです。
-完全禁煙の店は避けたいけれど、店内のルールが分かりやすい店を選びたい場合に向いています。
-</p>
-<p style="margin:0 0 12px;">
-喫煙所ありでも、利用できる場所や時間帯は店舗ごとに異なります。
-最寄駅、営業時間、喫煙タイプもあわせてチェックしておくと失敗しにくいです。
-</p>
-<p style="margin:0;">
-梅田で分かりやすく喫煙可能な店舗を探したい人向けに、比較しやすい形で一覧化しています。
-</p>
-<% elsif @search_form_url == namba_path %>
-<p style="margin:0 0 12px;">
-難波は観光、買い物、飲み会利用が多い大阪の主要エリアで、居酒屋、バー、焼肉、カフェまで幅広い店があります。
-人通りが多いぶん、喫煙条件を事前に把握しておくと店選びがかなり楽になります。
-</p>
-<p style="margin:0 0 12px;">
-このページでは、難波で喫煙できる店を一覧で見られます。
-「席で喫煙可」「喫煙所あり」「紙・加熱式OK」「加熱式のみ」などの条件で絞り込めるので、
-予定や同行者に合わせて使いやすい店舗を探せます。
-</p>
-<p style="margin:0 0 12px;">
-難波で店を探すときも、喫煙エリアの違いとジャンルを先に絞るのがおすすめです。
-居酒屋、バー、カフェ、焼肉のページも使い分けると探しやすくなります。
-</p>
+          <label style="display:inline-flex; align-items:center; gap:8px; font-size:14px; color:#333;">
+            <%= check_box_tag :open_now_only, "1", @open_now_only, onchange: "this.form.requestSubmit()" %>
+            <span>営業中のみ</span>
+          </label>
+        <% end %>
+      </div>
 
-<div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
-<%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost" %>
-<%= link_to "難波のバー", namba_genre_path("bar"), class: "btn btn--ghost" %>
-<%= link_to "難波のカフェ", namba_genre_path("cafe"), class: "btn btn--ghost" %>
-<%= link_to "難波の焼肉", namba_genre_path("yakiniku"), class: "btn btn--ghost" %>
-</div>
+      <% if (@current_sort.present? && @current_sort != "recommended") || @open_now_only %>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px;">
+          <span style="font-size:12px; color:#666;">適用中</span>
 
-<p style="margin:0;">
-実際の喫煙条件や営業時間は変わることがあるため、来店前には最新情報の確認がおすすめです。
-難波で喫煙可能な飲食店を探したい人向けの入口ページとして使ってください。
-</p>
-<% elsif @search_form_url == namba_smoking_path("all_smoking") %>
-<p style="margin:0 0 12px;">
-難波で席で喫煙可の店を探したい人向けの一覧ページです。
-店を移動せず、その場で吸える店舗を探したいときに使いやすいページです。
-</p>
-<p style="margin:0 0 12px;">
-同じ難波でも、紙タバコも吸える店と、加熱式のみの店では利用感が変わります。
-喫煙タイプや最寄駅もあわせて見ながら、自分に合う店舗を探してください。
-</p>
-<p style="margin:0;">
-喫煙ルールは時間帯や席で変わる場合もあるため、来店前確認がおすすめです。
-</p>
-<% elsif @search_form_url == namba_smoking_path("separated") %>
-<p style="margin:0 0 12px;">
-難波で喫煙所ありの店を探したい人向けの一覧ページです。
-完全禁煙は避けたいけれど、分かりやすく吸える場所がある店を選びたい場合に向いています。
-</p>
-<p style="margin:0 0 12px;">
-喫煙所ありでも、利用場所や時間帯は店ごとに異なります。
-最寄駅、営業時間、喫煙タイプも確認しておくと店選びで失敗しにくいです。
-</p>
-<p style="margin:0;">
-難波で比較しやすい喫煙可能店一覧として活用してください。
-</p>
-<% elsif @forced_genre.present? && @search_form_url.to_s.include?("/umeda/genre/") %>
-<p style="margin:0 0 12px;">
-このページでは、梅田エリアで喫煙できる<%= genre_label[@forced_genre] || @forced_genre %>を一覧で見られます。
-ジャンルを絞ることで、居酒屋なら飲み会、バーなら二軒目、カフェなら休憩など、目的に合わせて探しやすくなります。
-</p>
-<p style="margin:0 0 12px;">
-同じ<%= genre_label[@forced_genre] || @forced_genre %>でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
-気になる店は個別ページで詳細を確認してから選ぶのがおすすめです。
-</p>
+          <% if @current_sort.present? && @current_sort != "recommended" %>
+            <span class="filter-chip">
+              <span>並び順：<%= sort_label[@current_sort] || @current_sort %></span>
+            </span>
+          <% end %>
 
-<div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
-<%= link_to "梅田で喫煙できる店", umeda_path, class: "btn btn--ghost" %>
-<%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost" %>
-<%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost" %>
-</div>
+          <% if @open_now_only %>
+            <span class="filter-chip">
+              <span>営業中のみ</span>
+            </span>
+          <% end %>
 
-<p style="margin:0;">
-梅田で喫煙可能な<%= genre_label[@forced_genre] || @forced_genre %>を探す入口ページとして活用してください。
-</p>
-<% elsif @forced_genre.present? && @search_form_url.to_s.include?("/namba/genre/") %>
-<p style="margin:0 0 12px;">
-このページでは、難波エリアで喫煙できる<%= genre_label[@forced_genre] || @forced_genre %>を一覧で見られます。
-ジャンルを絞ることで、飲み会、二軒目、休憩など目的に合わせて店を探しやすくなります。
-</p>
-<p style="margin:0 0 12px;">
-同じ<%= genre_label[@forced_genre] || @forced_genre %>でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
-気になる店は個別ページで詳細を確認してから選ぶのがおすすめです。
-</p>
+          <%= link_to "並び替えをリセット",
+              (@search_form_url || root_path).to_s + "?" + sort_base_params.merge(per: @per).to_query,
+              class: "filter-chip filter-chip--clear" %>
+        </div>
+      <% end %>
+    </div>
 
-<div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
-<%= link_to "難波で喫煙できる店", namba_path, class: "btn btn--ghost" %>
-<%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost" %>
-<%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost" %>
-</div>
+    <% if @shops.present? && @shops.any? %>
+      <%= render partial: "shared/shop_cards", locals: { shops: @shops } %>
 
-<p style="margin:0;">
-難波で喫煙可能な<%= genre_label[@forced_genre] || @forced_genre %>を探す入口ページとして活用してください。
-</p>
-<% end %>
-</div>
-</section>
-<% end %>
+      <div style="margin-top:20px; display:flex; justify-content:center;">
+        <%= paginate @shops, params: (@listing_query || {}) %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <p>該当する店舗はありません。</p>
+      </div>
+    <% end %>
+  </section>
 
-<section class="home-section">
-<div class="info-note">
-※ 情報はユーザー投稿を含みます。最新状況は来店前に店舗へご確認ください。
-</div>
-</section>
+  <% if @is_area_page %>
+    <section class="home-section">
+      <div class="panel" style="line-height:1.9;">
+        <h2 class="section-title" style="margin-bottom:12px;"><%= @page_heading %>の探し方</h2>
+
+        <% if @search_form_url == umeda_path %>
+          <p style="margin:0 0 12px;">
+            梅田は大阪の中でも飲食店が密集しているエリアで、居酒屋、バー、焼肉、カフェまで幅広いジャンルの店舗があります。
+            そのぶん、喫煙できるかどうかが店ごとにかなり違うため、来店前に喫煙条件を確認しておくと探しやすいです。
+          </p>
+          <p style="margin:0 0 12px;">
+            このページでは、梅田で喫煙できる店を一覧で見られます。
+            「席で喫煙可」「喫煙所あり」「紙・加熱式OK」「加熱式のみ」などの条件で絞り込めるので、
+            飲み会、仕事帰り、1人飲みなどシーンに合わせて使いやすい店舗を探せます。
+          </p>
+          <p style="margin:0 0 12px;">
+            梅田で店を探すときは、まず喫煙エリアの違いを確認するのがおすすめです。
+            そのうえで、居酒屋、バー、カフェ、焼肉などジャンル別ページも見ると、自分の目的に合う店舗を見つけやすくなります。
+          </p>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
+            <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost" %>
+            <%= link_to "梅田のバー", umeda_genre_path("bar"), class: "btn btn--ghost" %>
+            <%= link_to "梅田のカフェ", umeda_genre_path("cafe"), class: "btn btn--ghost" %>
+            <%= link_to "梅田の焼肉", umeda_genre_path("yakiniku"), class: "btn btn--ghost" %>
+          </div>
+
+          <p style="margin:0;">
+            実際の喫煙条件や営業時間は変更されることがあるため、来店前には店舗への確認がおすすめです。
+            梅田で喫煙可能な飲食店を探したい人向けの入口ページとして使ってください。
+          </p>
+        <% elsif @search_form_url == umeda_smoking_path("all_smoking") %>
+          <p style="margin:0 0 12px;">
+            梅田で席で喫煙可の店を探したい人向けの一覧ページです。
+            店外の喫煙所まで移動せず、その場で吸える店を探したいときに使いやすいページです。
+          </p>
+          <p style="margin:0 0 12px;">
+            同じ梅田エリアでも、紙タバコも吸える店と、加熱式のみの店では使い勝手が変わります。
+            喫煙タイプや最寄駅もあわせて確認しながら、自分に合う店舗を探してみてください。
+          </p>
+          <p style="margin:0;">
+            喫煙ルールは時間帯や席によって異なる場合もあるため、最新情報は来店前確認がおすすめです。
+          </p>
+        <% elsif @search_form_url == umeda_smoking_path("separated") %>
+          <p style="margin:0 0 12px;">
+            梅田で喫煙所ありの店を探したい人向けの一覧ページです。
+            完全禁煙の店は避けたいけれど、店内のルールが分かりやすい店を選びたい場合に向いています。
+          </p>
+          <p style="margin:0 0 12px;">
+            喫煙所ありでも、利用できる場所や時間帯は店舗ごとに異なります。
+            最寄駅、営業時間、喫煙タイプもあわせてチェックしておくと失敗しにくいです。
+          </p>
+          <p style="margin:0;">
+            梅田で分かりやすく喫煙可能な店舗を探したい人向けに、比較しやすい形で一覧化しています。
+          </p>
+        <% elsif @search_form_url == namba_path %>
+          <p style="margin:0 0 12px;">
+            難波は観光、買い物、飲み会利用が多い大阪の主要エリアで、居酒屋、バー、焼肉、カフェまで幅広い店があります。
+            人通りが多いぶん、喫煙条件を事前に把握しておくと店選びがかなり楽になります。
+          </p>
+          <p style="margin:0 0 12px;">
+            このページでは、難波で喫煙できる店を一覧で見られます。
+            「席で喫煙可」「喫煙所あり」「紙・加熱式OK」「加熱式のみ」などの条件で絞り込めるので、
+            予定や同行者に合わせて使いやすい店舗を探せます。
+          </p>
+          <p style="margin:0 0 12px;">
+            難波で店を探すときも、喫煙エリアの違いとジャンルを先に絞るのがおすすめです。
+            居酒屋、バー、カフェ、焼肉のページも使い分けると探しやすくなります。
+          </p>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
+            <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost" %>
+            <%= link_to "難波のバー", namba_genre_path("bar"), class: "btn btn--ghost" %>
+            <%= link_to "難波のカフェ", namba_genre_path("cafe"), class: "btn btn--ghost" %>
+            <%= link_to "難波の焼肉", namba_genre_path("yakiniku"), class: "btn btn--ghost" %>
+          </div>
+
+          <p style="margin:0;">
+            実際の喫煙条件や営業時間は変わることがあるため、来店前には最新情報の確認がおすすめです。
+            難波で喫煙可能な飲食店を探したい人向けの入口ページとして使ってください。
+          </p>
+        <% elsif @search_form_url == namba_smoking_path("all_smoking") %>
+          <p style="margin:0 0 12px;">
+            難波で席で喫煙可の店を探したい人向けの一覧ページです。
+            店を移動せず、その場で吸える店舗を探したいときに使いやすいページです。
+          </p>
+          <p style="margin:0 0 12px;">
+            同じ難波でも、紙タバコも吸える店と、加熱式のみの店では利用感が変わります。
+            喫煙タイプや最寄駅もあわせて見ながら、自分に合う店舗を探してください。
+          </p>
+          <p style="margin:0;">
+            喫煙ルールは時間帯や席で変わる場合もあるため、来店前確認がおすすめです。
+          </p>
+        <% elsif @search_form_url == namba_smoking_path("separated") %>
+          <p style="margin:0 0 12px;">
+            難波で喫煙所ありの店を探したい人向けの一覧ページです。
+            完全禁煙は避けたいけれど、分かりやすく吸える場所がある店を選びたい場合に向いています。
+          </p>
+          <p style="margin:0 0 12px;">
+            喫煙所ありでも、利用場所や時間帯は店ごとに異なります。
+            最寄駅、営業時間、喫煙タイプも確認しておくと店選びで失敗しにくいです。
+          </p>
+          <p style="margin:0;">
+            難波で比較しやすい喫煙可能店一覧として活用してください。
+          </p>
+        <% elsif @forced_genre.present? && @search_form_url.to_s.include?("/umeda/genre/") %>
+          <p style="margin:0 0 12px;">
+            このページでは、梅田エリアで喫煙できる<%= genre_label[@forced_genre] || @forced_genre %>を一覧で見られます。
+            ジャンルを絞ることで、居酒屋なら飲み会、バーなら二軒目、カフェなら休憩など、目的に合わせて探しやすくなります。
+          </p>
+          <p style="margin:0 0 12px;">
+            同じ<%= genre_label[@forced_genre] || @forced_genre %>でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
+            気になる店は個別ページで詳細を確認してから選ぶのがおすすめです。
+          </p>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
+            <%= link_to "梅田で喫煙できる店", umeda_path, class: "btn btn--ghost" %>
+            <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost" %>
+            <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost" %>
+          </div>
+
+          <p style="margin:0;">
+            梅田で喫煙可能な<%= genre_label[@forced_genre] || @forced_genre %>を探す入口ページとして活用してください。
+          </p>
+        <% elsif @forced_genre.present? && @search_form_url.to_s.include?("/namba/genre/") %>
+          <p style="margin:0 0 12px;">
+            このページでは、難波エリアで喫煙できる<%= genre_label[@forced_genre] || @forced_genre %>を一覧で見られます。
+            ジャンルを絞ることで、飲み会、二軒目、休憩など目的に合わせて店を探しやすくなります。
+          </p>
+          <p style="margin:0 0 12px;">
+            同じ<%= genre_label[@forced_genre] || @forced_genre %>でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
+            気になる店は個別ページで詳細を確認してから選ぶのがおすすめです。
+          </p>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
+            <%= link_to "難波で喫煙できる店", namba_path, class: "btn btn--ghost" %>
+            <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost" %>
+            <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost" %>
+          </div>
+
+          <p style="margin:0;">
+            難波で喫煙可能な<%= genre_label[@forced_genre] || @forced_genre %>を探す入口ページとして活用してください。
+          </p>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <section class="home-section">
+    <div class="info-note">
+      ※ 情報はユーザー投稿を含みます。最新状況は来店前に店舗へご確認ください。
+    </div>
+  </section>
 </div>
