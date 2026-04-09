@@ -138,13 +138,13 @@ gap: 6px;
 
 .logo-main {
 font-weight: 900;
-font-size: 22px;
+font-size: 26px;
 letter-spacing: 0.02em;
 }
 
 .logo-sub {
 font-weight: 800;
-font-size: 16px;
+font-size: 18px;
 color: var(--gold);
 }
 
@@ -1392,11 +1392,11 @@ gap: 8px;
 }
 
 .logo-main {
-font-size: 18px;
+font-size: 20px;
 }
 
 .logo-sub {
-font-size: 13px;
+font-size: 14px;
 }
 
 .nav {
@@ -1893,4 +1893,8 @@ white-space: pre-wrap;
   .empty-state {
     border-radius: 0 !important;
   }
+}
+
+.logo-main {
+letter-spacing: 0.03em;
 }
