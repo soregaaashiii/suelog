@@ -1349,11 +1349,11 @@ max-width: 100%;
 
 @media (max-width: 640px) {
 .home-page {
-padding: 0 6px 40px;
+padding: 0 12px 40px;
 }
 
 .hero__inner {
-padding: 0 6px;
+padding: 0 12px;
 }
 
 .hero__content,
@@ -1362,11 +1362,11 @@ padding: 0 6px;
 .shop-card2,
 .empty-state,
 .area-card {
-border-radius: 14px;
+border-radius: 16px;
 }
 
 .hero__content {
-  padding: 20px 14px 18px;
+padding: 22px 18px 18px;
 }
 
 .search-btn,
@@ -1482,8 +1482,8 @@ align-items: flex-start;
 
 .shop-grid {
 grid-template-columns: 1fr;
-margin-left: -4px;
-margin-right: -4px;
+margin-left: 0;
+margin-right: 0;
 }
 
 .shop-card {
@@ -1796,6 +1796,11 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
 gap: 10px;
 }
 
+.map-filter-grid-fallback__full {
+grid-column: 1 / -1;
+}
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 0 12px;
@@ -1803,8 +1808,6 @@ gap: 10px;
 }
 
 @media (max-width: 640px) {
-
-  /* ヒーローだけ container 無視して広げる */
   .hero {
     margin-left: calc(50% - 50vw);
     margin-right: calc(50% - 50vw);
@@ -1813,14 +1816,6 @@ gap: 10px;
   .hero__inner {
     padding: 0 12px;
   }
-
-}
-
-
-
-.map-filter-grid-fallback__full {
-grid-column: 1 / -1;
-}
 }
 
 .shop-show__infoCell--multiline {
