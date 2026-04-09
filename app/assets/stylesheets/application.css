@@ -138,13 +138,13 @@ gap: 6px;
 
 .logo-main {
 font-weight: 900;
-font-size: 18px;
+font-size: 22px;
 letter-spacing: 0.02em;
 }
 
 .logo-sub {
 font-weight: 800;
-font-size: 14px;
+font-size: 16px;
 color: var(--gold);
 }
 
@@ -1392,11 +1392,11 @@ gap: 8px;
 }
 
 .logo-main {
-font-size: 16px;
+font-size: 18px;
 }
 
 .logo-sub {
-font-size: 12px;
+font-size: 13px;
 }
 
 .nav {
@@ -1881,4 +1881,16 @@ grid-column: 1 / -1;
 
 .shop-show__infoCell--multiline {
 white-space: pre-wrap;
+}
+
+/* ===== PCは角丸ゼロ ===== */
+@media (min-width: 1025px) {
+  .hero__content,
+  .panel,
+  .area-card,
+  .shop-card,
+  .shop-card2,
+  .empty-state {
+    border-radius: 0 !important;
+  }
 }
