@@ -149,9 +149,20 @@ id: "shop_closed_days_text" %>
 
 <div style="margin-top:12px;">
 <%= f.label :last_confirmed_on do %>
+
+
 最終確認日 <%= req %>
 <% end %><br>
 <%= f.date_field :last_confirmed_on, max: Date.current, required: true %>
+
+
+    <div style="margin-top:12px;">
+<%= f.label :public_store_details, "店舗詳細（ユーザー向け）" %><br>
+<%= f.text_area :public_store_details,
+rows: 5,
+placeholder: "例：席で吸える / 21時以降だけOK / カウンター席あり / 1人でも入りやすい など" %>
+</div>
+
 </div>
 
 <hr>
@@ -166,7 +177,7 @@ id: "shop_closed_days_text" %>
 喫煙エリア <%= req %>
 <% end %><br>
 <%= f.select :smoking_area,
-[["選択してください", ""], ["喫煙所あり", "separated"], ["席で喫煙可", "all_smoking"]],
+[["選択してください", ""], ["喫煙所あり", "separated"], ["席で喫煙可", "all_smoking"], ["不明", "unknown"]],
 {},
 { required: true } %>
 </p>
@@ -179,7 +190,8 @@ id: "shop_closed_days_text" %>
 [["選択してください", ""],
 ["紙・加熱式どちらもOK", "both_ok"],
 ["加熱式タバコのみOK", "electronic_only"],
-["紙タバコのみOK", "paper_only"]],
+["紙タバコのみOK", "paper_only"],
+["不明", "unknown"]],
 {},
 { required: true } %>
 </p>
