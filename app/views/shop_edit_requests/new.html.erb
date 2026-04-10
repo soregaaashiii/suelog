@@ -265,17 +265,29 @@ style: "padding:10px 14px; border:1px solid #111; border-radius:12px; background
 </p>
 
 <script>
-document.addEventListener("turbo:load", function() {
-document.querySelectorAll(".hours-preset-btn").forEach(function(button) {
-if (button.dataset.bound === "1") return;
-button.dataset.bound = "1";
+(function() {
+  function bindHoursPresetButtons() {
+    document.querySelectorAll(".hours-preset-btn").forEach(function(button) {
+      if (button.dataset.bound === "1") return;
+      button.dataset.bound = "1";
 
-button.addEventListener("click", function() {
-var target = document.getElementById(button.dataset.target);
-if (!target) return;
-target.value = button.dataset.value;
-target.dispatchEvent(new Event("input", { bubbles: true }));
-});
-});
-});
+      button.addEventListener("click", function(event) {
+        event.preventDefault();
+
+        var targetId = button.dataset.target;
+        var value = button.dataset.value;
+        var target = document.getElementById(targetId);
+
+        if (!target) return;
+
+        target.value = value;
+        target.dispatchEvent(new Event("input", { bubbles: true }));
+        target.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", bindHoursPresetButtons);
+  document.addEventListener("turbo:load", bindHoursPresetButtons);
+})();
 </script>
