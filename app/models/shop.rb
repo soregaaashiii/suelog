@@ -99,28 +99,28 @@ class Shop < ApplicationRecord
   }, prefix: true
 
   # ===== Scopes =====
- scope :approved, -> { where(approved: true, on_hold: false) }
-scope :on_hold_only, -> { where(on_hold: true) }
-scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
+  scope :approved, -> { where(approved: true, on_hold: false) }
+  scope :on_hold_only, -> { where(on_hold: true) }
+  scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
 
   scope :keyword, lambda { |q|
-    kw = q.to_s.strip
+    kw = q.to_s.strip.downcase
     next all if kw.blank?
 
-    like = "%#{kw}%"
+    like = "%#{sanitize_sql_like(kw)}%"
     where(
       <<~SQL.squish,
-        shops.name LIKE :like
-        OR shops.address LIKE :like
-        OR shops.area LIKE :like
-        OR shops.nearest_station LIKE :like
-        OR shops.phone LIKE :like
-        OR shops.note LIKE :like
-        OR shops.genre LIKE :like
-        OR shops.genre_other LIKE :like
-        OR shops.opening_hours_text LIKE :like
-        OR shops.holiday_hours_text LIKE :like
-        OR shops.closed_days_text LIKE :like
+        LOWER(COALESCE(shops.name, '')) LIKE :like
+        OR LOWER(COALESCE(shops.address, '')) LIKE :like
+        OR LOWER(COALESCE(shops.area, '')) LIKE :like
+        OR LOWER(COALESCE(shops.nearest_station, '')) LIKE :like
+        OR LOWER(COALESCE(shops.phone, '')) LIKE :like
+        OR LOWER(COALESCE(shops.note, '')) LIKE :like
+        OR LOWER(COALESCE(shops.genre, '')) LIKE :like
+        OR LOWER(COALESCE(shops.genre_other, '')) LIKE :like
+        OR LOWER(COALESCE(shops.opening_hours_text, '')) LIKE :like
+        OR LOWER(COALESCE(shops.holiday_hours_text, '')) LIKE :like
+        OR LOWER(COALESCE(shops.closed_days_text, '')) LIKE :like
       SQL
       like: like
     )
@@ -303,36 +303,36 @@ scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
   end
 
   def smoking_type_label
-  case smoking_type
-  when "both_ok"
-    "紙・加熱式どちらもOK"
-  when "electronic_only"
-    "加熱式タバコのみOK"
-  when "paper_only"
-    "紙タバコのみOK"
-  when "unknown"
-    "不明"
-  else
-    "未設定"
+    case smoking_type
+    when "both_ok"
+      "紙・加熱式どちらもOK"
+    when "electronic_only"
+      "加熱式タバコのみOK"
+    when "paper_only"
+      "紙タバコのみOK"
+    when "unknown"
+      "不明"
+    else
+      "未設定"
+    end
   end
-end
 
-def hold_reason_label
-  case hold_reason.to_s
-  when "closed"
-    "営業終了"
-  when "relocated"
-    "移転"
-  when "temporarily_closed"
-    "休業"
-  when "was_non_smoking"
-    "禁煙店だった"
-  when "became_non_smoking"
-    "禁煙店になった"
-  else
-    "保留"
+  def hold_reason_label
+    case hold_reason.to_s
+    when "closed"
+      "営業終了"
+    when "relocated"
+      "移転"
+    when "temporarily_closed"
+      "休業"
+    when "was_non_smoking"
+      "禁煙店だった"
+    when "became_non_smoking"
+      "禁煙店になった"
+    else
+      "保留"
+    end
   end
-end
 
   # =========================
   # サムネイル（安全版）
