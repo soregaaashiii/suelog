@@ -55,7 +55,7 @@
   { key: "menu", label: "メニュー", photos: @shop.menu_photos.to_a }
 ] %>
 
-<% visible_shop_photo_groups = shop_photo_groups.select { |group| group[:key] == "all" || group[:photos].present? } %>
+
 <% total_shop_photos_count = shop_photo_groups.reject { |group| group[:key] == "all" }.sum { |group| group[:photos].size } %>
 
 <% content_for :head do %>
@@ -968,96 +968,92 @@
       </section>
 
       <section class="shop-show__section">
-        <div class="shop-show__sectionHeader">
-          <h2 class="shop-show__sectionTitle" style="margin-bottom:0;">写真</h2>
-          <span class="shop-show__sectionMeta"><%= total_shop_photos_count %>枚</span>
-        </div>
+  <div class="shop-show__sectionHeader">
+    <h2 class="shop-show__sectionTitle" style="margin-bottom:0;">写真</h2>
+    <span class="shop-show__sectionMeta"><%= total_shop_photos_count %>枚</span>
+  </div>
 
-        <% if total_shop_photos_count.positive? %>
-          <div class="shop-show__photoTabs" data-photo-tabs>
-            <div class="shop-show__photoTabsNav" role="tablist" aria-label="写真カテゴリ">
-              <% visible_shop_photo_groups.each_with_index do |group, index| %>
-                <button
-                  type="button"
-                  class="shop-show__photoTab <%= 'is-active' if index == 0 %>"
-                  data-photo-tab-button
-                  data-photo-tab-key="<%= group[:key] %>"
-                  role="tab"
-                  aria-selected="<%= index == 0 ? 'true' : 'false' %>">
-                  <%= group[:label] %>
-                  <% if group[:key] != "all" %>
-                    <span class="shop-show__photoTabCount">(<%= group[:photos].size %>)</span>
-                  <% end %>
-                </button>
-              <% end %>
-            </div>
+  <div class="shop-show__photoTabs" data-photo-tabs>
+    <div class="shop-show__photoTabsNav" role="tablist" aria-label="写真カテゴリ">
+      <% shop_photo_groups.each_with_index do |group, index| %>
+        <button
+          type="button"
+          class="shop-show__photoTab <%= 'is-active' if index == 0 %>"
+          data-photo-tab-button
+          data-photo-tab-key="<%= group[:key] %>"
+          role="tab"
+          aria-selected="<%= index == 0 ? 'true' : 'false' %>">
+          <%= group[:label] %>
+          <% if group[:key] != "all" %>
+            <span class="shop-show__photoTabCount">(<%= group[:photos].size %>)</span>
+          <% end %>
+        </button>
+      <% end %>
+    </div>
 
-            <% visible_shop_photo_groups.each_with_index do |group, index| %>
-              <div
-                class="shop-show__photoPanel <%= 'is-active' if index == 0 %>"
-                data-photo-tab-panel
-                data-photo-tab-key="<%= group[:key] %>"
-                role="tabpanel">
-                <% if group[:photos].present? %>
-                  <div class="shop-show__photoGrid">
-                    <% group[:photos].each do |photo| %>
-                      <a
-                        href="<%= url_for(photo) %>"
-                        target="_blank"
-                        rel="noopener"
-                        class="shop-show__photoCard">
-                        <%= image_tag url_for(photo),
-                                      class: "shop-show__photoCardImage",
-                                      alt: "#{@shop.name}の#{group[:label]}写真",
-                                      loading: "lazy" %>
-                      </a>
-                    <% end %>
-                  </div>
-                <% else %>
-                  <p class="shop-show__photoEmpty">まだありません</p>
-                <% end %>
-              </div>
+    <% shop_photo_groups.each_with_index do |group, index| %>
+      <div
+        class="shop-show__photoPanel <%= 'is-active' if index == 0 %>"
+        data-photo-tab-panel
+        data-photo-tab-key="<%= group[:key] %>"
+        role="tabpanel">
+        <% if group[:photos].present? %>
+          <div class="shop-show__photoGrid">
+            <% group[:photos].each do |photo| %>
+              <a
+                href="<%= url_for(photo) %>"
+                target="_blank"
+                rel="noopener"
+                class="shop-show__photoCard">
+                <%= image_tag url_for(photo),
+                              class: "shop-show__photoCardImage",
+                              alt: "#{@shop.name}の#{group[:label]}写真",
+                              loading: "lazy" %>
+              </a>
             <% end %>
           </div>
-
-          <script>
-            (function() {
-              function initShopPhotoTabs() {
-                document.querySelectorAll("[data-photo-tabs]").forEach(function(wrapper) {
-                  if (wrapper.dataset.photoTabsReady === "true") return;
-                  wrapper.dataset.photoTabsReady = "true";
-
-                  const buttons = wrapper.querySelectorAll("[data-photo-tab-button]");
-                  const panels = wrapper.querySelectorAll("[data-photo-tab-panel]");
-
-                  buttons.forEach(function(button) {
-                    button.addEventListener("click", function() {
-                      const key = button.getAttribute("data-photo-tab-key");
-
-                      buttons.forEach(function(btn) {
-                        const active = btn.getAttribute("data-photo-tab-key") === key;
-                        btn.classList.toggle("is-active", active);
-                        btn.setAttribute("aria-selected", active ? "true" : "false");
-                      });
-
-                      panels.forEach(function(panel) {
-                        const active = panel.getAttribute("data-photo-tab-key") === key;
-                        panel.classList.toggle("is-active", active);
-                      });
-                    });
-                  });
-                });
-              }
-
-              document.addEventListener("turbo:load", initShopPhotoTabs);
-              document.addEventListener("DOMContentLoaded", initShopPhotoTabs);
-              initShopPhotoTabs();
-            })();
-          </script>
         <% else %>
           <p class="shop-show__photoEmpty">まだありません</p>
         <% end %>
-      </section>
+      </div>
+    <% end %>
+  </div>
+
+  <script>
+    (function() {
+      function initShopPhotoTabs() {
+        document.querySelectorAll("[data-photo-tabs]").forEach(function(wrapper) {
+          if (wrapper.dataset.photoTabsReady === "true") return;
+          wrapper.dataset.photoTabsReady = "true";
+
+          const buttons = wrapper.querySelectorAll("[data-photo-tab-button]");
+          const panels = wrapper.querySelectorAll("[data-photo-tab-panel]");
+
+          buttons.forEach(function(button) {
+            button.addEventListener("click", function() {
+              const key = button.getAttribute("data-photo-tab-key");
+
+              buttons.forEach(function(btn) {
+                const active = btn.getAttribute("data-photo-tab-key") === key;
+                btn.classList.toggle("is-active", active);
+                btn.setAttribute("aria-selected", active ? "true" : "false");
+              });
+
+              panels.forEach(function(panel) {
+                const active = panel.getAttribute("data-photo-tab-key") === key;
+                panel.classList.toggle("is-active", active);
+              });
+            });
+          });
+        });
+      }
+
+      document.addEventListener("turbo:load", initShopPhotoTabs);
+      document.addEventListener("DOMContentLoaded", initShopPhotoTabs);
+      initShopPhotoTabs();
+    })();
+  </script>
+</section>
 
       <section class="shop-show__section">
         <h2 class="shop-show__sectionTitle">口コミ</h2>
