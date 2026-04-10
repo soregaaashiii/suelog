@@ -803,10 +803,9 @@
         </div>
 
         <div class="shop-show__infoRow">
+  <div class="shop-show__infoRow">
   <div class="shop-show__infoHead">店舗詳細</div>
-  <div class="shop-show__infoCell shop-show__infoCell--multiline" style="text-align:left; display:block;">
-    <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "未設定") : "未設定" %>
-  </div>
+  <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "未設定") : "未設定" %></div>
 </div>
 
         <div class="shop-show__infoRow">
