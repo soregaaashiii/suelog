@@ -8,7 +8,7 @@
 <% page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_station.present? %>
 <% page_description_parts << "住所：#{@shop.address}" if @shop.address.present? %>
 <% if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
-<% page_description_parts << "営業時間：#{@shop.display_opening_hours_text}" %>
+  <% page_description_parts << "営業時間：#{@shop.display_opening_hours_text}" %>
 <% end %>
 <% page_description_parts << "大阪で喫煙できる飲食店を探すなら吸えログ。" %>
 
@@ -21,1143 +21,1283 @@
 <% is_namba_shop = shop_location_text.include?("難波") || shop_location_text.include?("なんば") %>
 
 <% back_path =
-if is_umeda_shop
-umeda_path
-elsif is_namba_shop
-namba_path
-else
-root_path
-end %>
+  if is_umeda_shop
+    umeda_path
+  elsif is_namba_shop
+    namba_path
+  else
+    root_path
+  end %>
 
 <% back_label =
-if is_umeda_shop
-"← 梅田の一覧に戻る"
-elsif is_namba_shop
-"← 難波の一覧に戻る"
-else
-"← 一覧に戻る"
-end %>
+  if is_umeda_shop
+    "← 梅田の一覧に戻る"
+  elsif is_namba_shop
+    "← 難波の一覧に戻る"
+  else
+    "← 一覧に戻る"
+  end %>
 
 <% footer_back_label =
-if is_umeda_shop
-"梅田の一覧に戻る"
-elsif is_namba_shop
-"難波の一覧に戻る"
-else
-"一覧に戻る"
-end %>
+  if is_umeda_shop
+    "梅田の一覧に戻る"
+  elsif is_namba_shop
+    "難波の一覧に戻る"
+  else
+    "一覧に戻る"
+  end %>
 
-<% content_for :head do %>
-<% photo_url = nil %>
-<% if @shop.respond_to?(:food_photos) && @shop.food_photos.attached? %>
-<% photo_url = url_for(@shop.food_photos.first) rescue nil %>
-<% elsif @shop.respond_to?(:exterior_photos) && @shop.exterior_photos.attached? %>
-<% photo_url = url_for(@shop.exterior_photos.first) rescue nil %>
-<% elsif @shop.respond_to?(:interior_photos) && @shop.interior_photos.attached? %>
-<% photo_url = url_for(@shop.interior_photos.first) rescue nil %>
-<% elsif @shop.respond_to?(:menu_photos) && @shop.menu_photos.attached? %>
-<% photo_url = url_for(@shop.menu_photos.first) rescue nil %>
-<% end %>
-
-<% restaurant_structured_data = {
-"@context": "https://schema.org",
-"@type": "Restaurant",
-"name": @shop.name,
-"url": shop_url(@shop),
-"image": photo_url,
-"telephone": @shop.phone.presence,
-"address": (@shop.address.present? ? {
-"@type": "PostalAddress",
-"streetAddress": @shop.address,
-"addressRegion": "大阪府",
-"addressCountry": "JP"
-} : nil),
-"servesCuisine": @shop.display_genre.presence,
-"description": page_description_parts.join(" "),
-"smokingAllowed": (@shop.smoking_area == "all_smoking"),
-"keywords": [
-(@shop.smoking_area_label if @shop.respond_to?(:smoking_area_label)),
-(@shop.smoking_type_label if @shop.respond_to?(:smoking_type_label)),
-@shop.display_genre.presence,
-@shop.nearest_station.presence,
-"大阪",
-"喫煙可"
-].compact.join(", "),
-"geo": (@shop.latitude.present? && @shop.longitude.present? ? {
-"@type": "GeoCoordinates",
-"latitude": @shop.latitude,
-"longitude": @shop.longitude
-} : nil)
-}.compact %>
-
-<% breadcrumb_items = [
-{
-"@type": "ListItem",
-"position": 1,
-"name": "ホーム",
-"item": root_url
-}
+<% shop_photo_groups = [
+  { key: "all", label: "すべて", photos: (@shop.food_photos.to_a + @shop.interior_photos.to_a + @shop.exterior_photos.to_a + @shop.menu_photos.to_a) },
+  { key: "food", label: "料理", photos: @shop.food_photos.to_a },
+  { key: "interior", label: "内観", photos: @shop.interior_photos.to_a },
+  { key: "exterior", label: "外観", photos: @shop.exterior_photos.to_a },
+  { key: "menu", label: "メニュー", photos: @shop.menu_photos.to_a }
 ] %>
 
-<% if is_umeda_shop %>
-<% breadcrumb_items << {
-"@type": "ListItem",
-"position": 2,
-"name": "梅田で喫煙できる店",
-"item": umeda_url
-} %>
-<% breadcrumb_items << {
-"@type": "ListItem",
-"position": 3,
-"name": @shop.name
-} %>
-<% elsif is_namba_shop %>
-<% breadcrumb_items << {
-"@type": "ListItem",
-"position": 2,
-"name": "難波で喫煙できる店",
-"item": namba_url
-} %>
-<% breadcrumb_items << {
-"@type": "ListItem",
-"position": 3,
-"name": @shop.name
-} %>
-<% else %>
-<% breadcrumb_items << {
-"@type": "ListItem",
-"position": 2,
-"name": @shop.name
-} %>
-<% end %>
+<% visible_shop_photo_groups = shop_photo_groups.select { |group| group[:key] == "all" || group[:photos].present? } %>
+<% total_shop_photos_count = shop_photo_groups.reject { |group| group[:key] == "all" }.sum { |group| group[:photos].size } %>
 
-<% breadcrumb_structured_data = {
-"@context": "https://schema.org",
-"@type": "BreadcrumbList",
-"itemListElement": breadcrumb_items
-} %>
+<% content_for :head do %>
+  <% photo_url = nil %>
+  <% if @shop.respond_to?(:food_photos) && @shop.food_photos.attached? %>
+    <% photo_url = url_for(@shop.food_photos.first) rescue nil %>
+  <% elsif @shop.respond_to?(:exterior_photos) && @shop.exterior_photos.attached? %>
+    <% photo_url = url_for(@shop.exterior_photos.first) rescue nil %>
+  <% elsif @shop.respond_to?(:interior_photos) && @shop.interior_photos.attached? %>
+    <% photo_url = url_for(@shop.interior_photos.first) rescue nil %>
+  <% elsif @shop.respond_to?(:menu_photos) && @shop.menu_photos.attached? %>
+    <% photo_url = url_for(@shop.menu_photos.first) rescue nil %>
+  <% end %>
 
-<script type="application/ld+json">
-<%= raw restaurant_structured_data.to_json %>
-</script>
+  <% restaurant_structured_data = {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    "name": @shop.name,
+    "url": shop_url(@shop),
+    "image": photo_url,
+    "telephone": @shop.phone.presence,
+    "address": (@shop.address.present? ? {
+      "@type": "PostalAddress",
+      "streetAddress": @shop.address,
+      "addressRegion": "大阪府",
+      "addressCountry": "JP"
+    } : nil),
+    "servesCuisine": @shop.display_genre.presence,
+    "description": page_description_parts.join(" "),
+    "smokingAllowed": (@shop.smoking_area == "all_smoking"),
+    "keywords": [
+      (@shop.smoking_area_label if @shop.respond_to?(:smoking_area_label)),
+      (@shop.smoking_type_label if @shop.respond_to?(:smoking_type_label)),
+      @shop.display_genre.presence,
+      @shop.nearest_station.presence,
+      "大阪",
+      "喫煙可"
+    ].compact.join(", "),
+    "geo": (@shop.latitude.present? && @shop.longitude.present? ? {
+      "@type": "GeoCoordinates",
+      "latitude": @shop.latitude,
+      "longitude": @shop.longitude
+    } : nil)
+  }.compact %>
 
-<script type="application/ld+json">
-<%= raw breadcrumb_structured_data.to_json %>
-</script>
+  <% breadcrumb_items = [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "ホーム",
+      "item": root_url
+    }
+  ] %>
+
+  <% if is_umeda_shop %>
+    <% breadcrumb_items << {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "梅田で喫煙できる店",
+      "item": umeda_url
+    } %>
+    <% breadcrumb_items << {
+      "@type": "ListItem",
+      "position": 3,
+      "name": @shop.name
+    } %>
+  <% elsif is_namba_shop %>
+    <% breadcrumb_items << {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "難波で喫煙できる店",
+      "item": namba_url
+    } %>
+    <% breadcrumb_items << {
+      "@type": "ListItem",
+      "position": 3,
+      "name": @shop.name
+    } %>
+  <% else %>
+    <% breadcrumb_items << {
+      "@type": "ListItem",
+      "position": 2,
+      "name": @shop.name
+    } %>
+  <% end %>
+
+  <% breadcrumb_structured_data = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": breadcrumb_items
+  } %>
+
+  <script type="application/ld+json">
+    <%= raw restaurant_structured_data.to_json %>
+  </script>
+
+  <script type="application/ld+json">
+    <%= raw breadcrumb_structured_data.to_json %>
+  </script>
 <% end %>
 
 <style>
 .shop-show {
-max-width: 980px;
-margin: 0 auto;
+  max-width: 980px;
+  margin: 0 auto;
 }
 
 .shop-show__breadcrumb {
-margin: 0 0 14px;
-font-size: 13px;
-color: #666666;
-line-height: 1.7;
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.7;
 }
 
 .shop-show__breadcrumb a {
-color: #666666;
-text-decoration: none;
+  color: #666666;
+  text-decoration: none;
 }
 
 .shop-show__breadcrumbCurrent {
-color: #111111;
-font-weight: 700;
+  color: #111111;
+  font-weight: 700;
 }
 
 .shop-show__back {
-margin: 0 0 14px;
+  margin: 0 0 14px;
 }
 
 .shop-show__backLink {
-display: inline-flex;
-align-items: center;
-color: #6b6b6b;
-text-decoration: none;
-font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  color: #6b6b6b;
+  text-decoration: none;
+  font-weight: 700;
 }
 
 .shop-show__backLink:hover {
-color: #111111;
+  color: #111111;
 }
 
 .shop-show__hero {
-background: linear-gradient(135deg, #fffdf8 0%, #ffffff 60%);
-border: 1px solid #e8e3d7;
-border-radius: 22px;
-padding: 18px;
-box-shadow: 0 10px 30px rgba(17, 17, 17, 0.04);
-margin-bottom: 16px;
+  background: linear-gradient(135deg, #fffdf8 0%, #ffffff 60%);
+  border: 1px solid #e8e3d7;
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(17, 17, 17, 0.04);
+  margin-bottom: 16px;
 }
 
 .shop-show__title {
-margin: 0 0 8px;
-font-size: clamp(28px, 4vw, 40px);
-line-height: 1.15;
-letter-spacing: -0.03em;
-color: #111111;
+  margin: 0 0 8px;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #111111;
 }
 
 .shop-show__sub {
-margin: 0;
-color: #7a7a7a;
-font-size: 13px;
+  margin: 0;
+  color: #7a7a7a;
+  font-size: 13px;
 }
 
 .shop-show__badges {
-display: flex;
-gap: 8px;
-flex-wrap: wrap;
-margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
 }
 
-
 .shop-show__layout {
-display: grid;
-grid-template-columns: minmax(0, 1fr);
-gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
 }
 
 .shop-show__section {
-background: #ffffff;
-border: 1px solid #e8e3d7;
-border-radius: 20px;
-padding: 18px;
-box-shadow: 0 10px 30px rgba(17, 17, 17, 0.03);
+  background: #ffffff;
+  border: 1px solid #e8e3d7;
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(17, 17, 17, 0.03);
 }
 
 .shop-show__sectionTitle {
-margin: 0 0 14px;
-font-size: 20px;
-font-weight: 800;
-color: #111111;
-letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -0.02em;
+}
+
+.shop-show__sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.shop-show__sectionMeta {
+  color: #666666;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .shop-show__infoTable {
-border-top: 1px solid #ece6d8;
-border-bottom: 1px solid #ece6d8;
-background: #ffffff;
+  border-top: 1px solid #ece6d8;
+  border-bottom: 1px solid #ece6d8;
+  background: #ffffff;
 }
 
 .shop-show__infoRow {
-display: grid;
-grid-template-columns: 150px minmax(0, 1fr);
-border-top: 1px solid #ece6d8;
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  border-top: 1px solid #ece6d8;
+  min-height: unset;
 }
 
 .shop-show__infoRow:first-child {
-border-top: 0;
+  border-top: 0;
 }
 
 .shop-show__infoHead {
-padding: 6px 8px;
-background: #faf8f2;
-color: #6f6f6f;
-font-size: 11px;
-font-weight: 700;
-line-height: 1.35;
-border-right: 1px solid #ece6d8;
+  padding: 6px 8px;
+  background: #faf8f2;
+  color: #6f6f6f;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  border-right: 1px solid #ece6d8;
 }
 
 .shop-show__infoCell {
-padding: 6px 8px;
-color: #111111;
-font-size: 13px;
-line-height: 1.4;
-word-break: break-word;
-white-space: normal;
-background: #ffffff;
+  padding: 6px 8px;
+  color: #111111;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
+  white-space: normal;
+  background: #ffffff;
 }
 
 .shop-show__infoCell--multiline {
-white-space: pre-wrap;
+  white-space: pre-wrap;
 }
 
 .shop-show__hoursBox {
-display: grid;
-gap: 12px;
+  display: grid;
+  gap: 12px;
 }
 
 .shop-show__hoursCard {
-background: #faf8f2;
-border: 1px solid #eee6d6;
-border-radius: 16px;
-padding: 14px;
+  background: #faf8f2;
+  border: 1px solid #eee6d6;
+  border-radius: 16px;
+  padding: 14px;
 }
 
 .shop-show__hoursCardTitle {
-margin: 0 0 6px;
-color: #7a7a7a;
-font-size: 12px;
-font-weight: 700;
+  margin: 0 0 6px;
+  color: #7a7a7a;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .shop-show__hoursCardValue {
-color: #111111;
-font-size: 15px;
-line-height: 1.8;
-white-space: pre-wrap;
-word-break: break-word;
+  color: #111111;
+  font-size: 15px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .shop-show__hoursNote {
-margin-top: 8px;
-color: #777777;
-font-size: 12px;
+  margin-top: 8px;
+  color: #777777;
+  font-size: 12px;
 }
 
 .shop-show__phoneLink {
-display: inline;
-color: #1f4ea3;
-text-decoration: none;
-font-weight: 700;
-line-height: 1.3;
-}
-
-.shop-show__infoRow {
-min-height: unset;
+  display: inline;
+  color: #1f4ea3;
+  text-decoration: none;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .shop-show__phoneLink:hover {
-text-decoration: underline;
+  text-decoration: underline;
 }
 
 .shop-show__bookingActions {
-display: flex;
-gap: 10px;
-flex-wrap: wrap;
-margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
 }
 
 .shop-show__map {
-height: 320px;
-min-height: 320px;
-border: 1px solid #e0e0e0;
-border-radius: 14px;
-overflow: hidden;
-background: #f7f7f7;
+  height: 320px;
+  min-height: 320px;
+  border: 1px solid #e0e0e0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f7f7f7;
 }
 
 .shop-show__mapLink {
-margin-top: 10px;
+  margin-top: 10px;
 }
 
 .shop-show__mapLink a {
-color: #7a5a12;
-font-weight: 700;
-text-decoration: none;
+  color: #7a5a12;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .shop-show__photosGroup + .shop-show__photosGroup {
-margin-top: 18px;
+  margin-top: 18px;
 }
 
 .shop-show__photosTitle {
-margin: 0 0 10px;
-font-size: 16px;
-font-weight: 800;
-color: #111111;
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #111111;
 }
 
 .shop-show__photosGrid {
-display: flex;
-gap: 10px;
-flex-wrap: wrap;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .shop-show__photo {
-width: 160px;
-height: 160px;
-object-fit: cover;
-border-radius: 12px;
-border: 1px solid #ddd;
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #ddd;
 }
 
 .shop-show__footerActions {
-display: flex;
-gap: 10px;
-flex-wrap: wrap;
-margin-top: 4px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }
 
 .shop-show__relatedLinks {
-display: flex;
-gap: 10px;
-flex-wrap: wrap;
-margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
 }
 
 .shop-show__divider {
-border: 0;
-border-top: 1px solid #eee6d6;
-margin: 4px 0 0;
+  border: 0;
+  border-top: 1px solid #eee6d6;
+  margin: 4px 0 0;
+}
+
+/* 写真タブ */
+.shop-show__photoTabs {
+  margin-top: 2px;
+}
+
+.shop-show__photoTabsNav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.shop-show__photoTab {
+  appearance: none;
+  border: 1px solid #e2dccd;
+  background: #ffffff;
+  color: #444444;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.shop-show__photoTab:hover {
+  border-color: #cfc4a5;
+}
+
+.shop-show__photoTab.is-active {
+  background: #111111;
+  border-color: #111111;
+  color: #ffffff;
+}
+
+.shop-show__photoTabCount {
+  opacity: 0.9;
+}
+
+.shop-show__photoPanel {
+  display: none;
+}
+
+.shop-show__photoPanel.is-active {
+  display: block;
+}
+
+.shop-show__photoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.shop-show__photoCard {
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  background: #f7f7f7;
+  aspect-ratio: 1 / 1;
+}
+
+.shop-show__photoCardImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.shop-show__photoEmpty {
+  margin: 0;
+  color: #666666;
+  font-size: 14px;
 }
 
 .ss-badge {
-display: inline-flex;
-align-items: center;
-min-height: 32px;
-padding: 0 10px;
-border-radius: 999px;
-font-size: 12px;
-font-weight: 800;
-border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid transparent;
 }
 
 .ss-badge--dark {
-background: #111111;
-color: #ffffff;
-border-color: #111111;
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
 }
 
 .ss-badge--gold {
-background: #f6edd7;
-color: #7a5a12;
-border-color: #eadbb5;
+  background: #f6edd7;
+  color: #7a5a12;
+  border-color: #eadbb5;
 }
 
 .ss-badge--line {
-background: #ffffff;
-color: #111111;
-border-color: #e8e3d7;
+  background: #ffffff;
+  color: #111111;
+  border-color: #e8e3d7;
 }
 
 .ss-badge--green {
-background: #eef7ee;
-color: #2f6b3b;
-border-color: #d8e7d7;
+  background: #eef7ee;
+  color: #2f6b3b;
+  border-color: #d8e7d7;
 }
 
 .ss-badge--warn {
-background: #fff6db;
-color: #8a6500;
-border-color: #f0de9c;
+  background: #fff6db;
+  color: #8a6500;
+  border-color: #f0de9c;
 }
 
 .ss-badge--muted {
-background: #f5f5f5;
-color: #555555;
-border-color: #d8d8d8;
+  background: #f5f5f5;
+  color: #555555;
+  border-color: #d8d8d8;
 }
 
 .ss-btn {
-display: inline-flex;
-align-items: center;
-justify-content: center;
-min-height: 42px;
-padding: 0 16px;
-border-radius: 999px;
-text-decoration: none;
-font-size: 14px;
-font-weight: 800;
-border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+  border: 1px solid transparent;
 }
 
 .ss-btn--dark {
-background: #111111;
-color: #ffffff;
-border-color: #111111;
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
 }
 
 .ss-btn--ghost {
-background: #ffffff;
-color: #111111;
-border-color: #e8e3d7;
+  background: #ffffff;
+  color: #111111;
+  border-color: #e8e3d7;
 }
 
 .ss-btn--muted {
-background: #ffffff;
-color: #666666;
-border-color: #eeeeee;
+  background: #ffffff;
+  color: #666666;
+  border-color: #eeeeee;
 }
 
 .ss-alert {
-padding: 12px 14px;
-border-radius: 12px;
-margin: 10px 0;
-font-weight: 700;
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin: 10px 0;
+  font-weight: 700;
 }
 
 .ss-alert--notice {
-border: 1px solid #d8e7d7;
-background: #eef7ee;
-color: #2f6b3b;
+  border: 1px solid #d8e7d7;
+  background: #eef7ee;
+  color: #2f6b3b;
 }
 
 .ss-alert--alert {
-border: 1px solid #f0d1d1;
-background: #fff6f6;
-color: #b00020;
+  border: 1px solid #f0d1d1;
+  background: #fff6f6;
+  color: #b00020;
 }
 
 .ss-alert--warn {
-border: 1px solid #f0de9c;
-background: #fffaf0;
-color: #8a6500;
+  border: 1px solid #f0de9c;
+  background: #fffaf0;
+  color: #8a6500;
 }
 
 .ss-pending {
-border: 1px solid #f0d1d1;
-background: #fff6f6;
-padding: 14px;
-border-radius: 14px;
+  border: 1px solid #f0d1d1;
+  background: #fff6f6;
+  padding: 14px;
+  border-radius: 14px;
 }
 
 .ss-pending__title {
-margin: 0;
-color: #b00020;
-font-weight: 800;
+  margin: 0;
+  color: #b00020;
+  font-weight: 800;
 }
 
 .ss-pending__text {
-margin: 6px 0 0;
-color: #666666;
+  margin: 6px 0 0;
+  color: #666666;
+}
+
+@media (min-width: 721px) {
+  .shop-show__photoGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
-.shop-show__hero,
-.shop-show__section {
-border-radius: 16px;
-padding: 14px;
+  .shop-show__hero,
+  .shop-show__section {
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .shop-show__infoRow {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .shop-show__infoHead {
+    padding: 6px 6px;
+    font-size: 10px;
+  }
+
+  .shop-show__infoCell {
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .shop-show__footerActions,
+  .shop-show__relatedLinks,
+  .shop-show__bookingActions {
+    flex-direction: column;
+  }
+
+  .ss-btn {
+    width: 100%;
+  }
+
+  .shop-show__photo {
+    width: calc(50% - 5px);
+    height: 140px;
+  }
+
+  .shop-show__sectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
-
-
-
-.shop-show__infoRow {
-grid-template-columns: 96px minmax(0, 1fr);
-}
-
-.shop-show__infoHead {
-padding: 6px 6px;
-font-size: 10px;
-}
-
-.shop-show__infoCell {
-padding: 6px 8px;
-font-size: 12px;
-line-height: 1.45;
-}
-
-.shop-show__footerActions,
-.shop-show__relatedLinks,
-.shop-show__bookingActions {
-flex-direction: column;
-}
-
-.ss-btn {
-width: 100%;
-}
-
-.shop-show__photo {
-width: calc(50% - 5px);
-height: 140px;
-}
-}
-
-
 </style>
 
 <div class="shop-show">
-<nav class="shop-show__breadcrumb" aria-label="パンくず">
-<%= link_to "ホーム", root_path %>
+  <nav class="shop-show__breadcrumb" aria-label="パンくず">
+    <%= link_to "ホーム", root_path %>
 
-<% if is_umeda_shop %>
-<span> › </span>
-<%= link_to "梅田で喫煙できる店", umeda_path %>
-<% elsif is_namba_shop %>
-<span> › </span>
-<%= link_to "難波で喫煙できる店", namba_path %>
-<% end %>
+    <% if is_umeda_shop %>
+      <span> › </span>
+      <%= link_to "梅田で喫煙できる店", umeda_path %>
+    <% elsif is_namba_shop %>
+      <span> › </span>
+      <%= link_to "難波で喫煙できる店", namba_path %>
+    <% end %>
 
-<span> › </span>
-<span class="shop-show__breadcrumbCurrent"><%= @shop.name %></span>
-</nav>
+    <span> › </span>
+    <span class="shop-show__breadcrumbCurrent"><%= @shop.name %></span>
+  </nav>
 
-<div class="shop-show__back">
-<%= link_to back_label, back_path, class: "shop-show__backLink" %>
-</div>
-
-<section class="shop-show__hero">
-<h1 class="shop-show__title"><%= @shop.name %></h1>
-<p class="shop-show__sub">
-ジャンル：<%= @shop.display_genre.presence || "未設定" %>
-</p>
-
-<div class="shop-show__badges">
-<% if @shop.smoking_area == "all_smoking" %>
-<span class="ss-badge ss-badge--dark">席で喫煙可</span>
-<% elsif @shop.smoking_area == "separated" %>
-<span class="ss-badge ss-badge--line">喫煙所あり</span>
-<% elsif @shop.smoking_area == "unknown" %>
-<span class="ss-badge ss-badge--muted">喫煙エリア不明</span>
-<% end %>
-
-<% if @shop.smoking_type == "both_ok" %>
-<span class="ss-badge ss-badge--gold">紙・加熱式OK</span>
-<% elsif @shop.smoking_type == "electronic_only" %>
-<span class="ss-badge ss-badge--gold">加熱式のみ</span>
-<% elsif @shop.smoking_type == "paper_only" %>
-<span class="ss-badge ss-badge--gold">紙のみ</span>
-<% elsif @shop.smoking_type == "unknown" %>
-<span class="ss-badge ss-badge--muted">喫煙タイプ不明</span>
-<% end %>
-
-<% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
-<span class="ss-badge ss-badge--warn">喫煙情報未確認</span>
-<% end %>
-
-<% if @shop.respond_to?(:open_now?) && @shop.open_now? %>
-<span class="ss-badge ss-badge--green">営業中</span>
-<% end %>
-
-<% if @shop.last_confirmed_on.present? %>
-<span class="ss-badge ss-badge--line">最終確認：<%= @shop.last_confirmed_on %></span>
-<% end %>
-</div>
-
-<%# 長い説明文は削除 %>
-
-</section>
-
-<% if flash[:notice].present? %>
-<div class="ss-alert ss-alert--notice"><%= flash[:notice] %></div>
-<% end %>
-
-<% if flash[:alert].present? %>
-<div class="ss-alert ss-alert--alert"><%= flash[:alert] %></div>
-<% end %>
-
-<% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
-<div class="ss-alert ss-alert--warn">
-この店舗の喫煙情報は未確認です。来店前に店舗へご確認ください。
-</div>
-<% end %>
-
-<div class="shop-show__layout">
-<section class="shop-show__section shop-show__section--table">
-<h2 class="shop-show__sectionTitle shop-show__sectionTitle--table">基本情報</h2>
-
-<div class="shop-show__infoTable">
-  <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">住所</div>
-    <div class="shop-show__infoCell"><%= @shop.address.presence || "未設定" %></div>
+  <div class="shop-show__back">
+    <%= link_to back_label, back_path, class: "shop-show__backLink" %>
   </div>
 
-  <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">最寄駅</div>
-    <div class="shop-show__infoCell"><%= @shop.nearest_station.presence || "未設定" %></div>
-  </div>
+  <section class="shop-show__hero">
+    <h1 class="shop-show__title"><%= @shop.name %></h1>
+    <p class="shop-show__sub">
+      ジャンル：<%= @shop.display_genre.presence || "未設定" %>
+    </p>
 
-  <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">電話番号</div>
-    <div class="shop-show__infoCell">
-      <% if @shop.phone.present? %>
-        <a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="shop-show__phoneLink">
-          <%= @shop.phone %>
-        </a>
-      <% else %>
-        未設定
+    <div class="shop-show__badges">
+      <% if @shop.smoking_area == "all_smoking" %>
+        <span class="ss-badge ss-badge--dark">席で喫煙可</span>
+      <% elsif @shop.smoking_area == "separated" %>
+        <span class="ss-badge ss-badge--line">喫煙所あり</span>
+      <% elsif @shop.smoking_area == "unknown" %>
+        <span class="ss-badge ss-badge--muted">喫煙エリア不明</span>
+      <% end %>
+
+      <% if @shop.smoking_type == "both_ok" %>
+        <span class="ss-badge ss-badge--gold">紙・加熱式OK</span>
+      <% elsif @shop.smoking_type == "electronic_only" %>
+        <span class="ss-badge ss-badge--gold">加熱式のみ</span>
+      <% elsif @shop.smoking_type == "paper_only" %>
+        <span class="ss-badge ss-badge--gold">紙のみ</span>
+      <% elsif @shop.smoking_type == "unknown" %>
+        <span class="ss-badge ss-badge--muted">喫煙タイプ不明</span>
+      <% end %>
+
+      <% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
+        <span class="ss-badge ss-badge--warn">喫煙情報未確認</span>
+      <% end %>
+
+      <% if @shop.respond_to?(:open_now?) && @shop.open_now? %>
+        <span class="ss-badge ss-badge--green">営業中</span>
+      <% end %>
+
+      <% if @shop.last_confirmed_on.present? %>
+        <span class="ss-badge ss-badge--line">最終確認：<%= @shop.last_confirmed_on %></span>
       <% end %>
     </div>
-  </div>
+  </section>
 
-  <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">喫煙エリア</div>
-    <div class="shop-show__infoCell">
-      <%= @shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "未設定" %>
-    </div>
-  </div>
+  <% if flash[:notice].present? %>
+    <div class="ss-alert ss-alert--notice"><%= flash[:notice] %></div>
+  <% end %>
 
-  <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">喫煙タイプ</div>
-    <div class="shop-show__infoCell">
-      <%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定" %>
-    </div>
-  </div>
+  <% if flash[:alert].present? %>
+    <div class="ss-alert ss-alert--alert"><%= flash[:alert] %></div>
+  <% end %>
 
   <% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
-    <div class="shop-show__infoRow">
-      <div class="shop-show__infoHead">喫煙情報ステータス</div>
-      <div class="shop-show__infoCell">未確認</div>
+    <div class="ss-alert ss-alert--warn">
+      この店舗の喫煙情報は未確認です。来店前に店舗へご確認ください。
     </div>
   <% end %>
 
-  <div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">営業時間</div>
-  <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
-</div>
+  <div class="shop-show__layout">
+    <section class="shop-show__section shop-show__section--table">
+      <h2 class="shop-show__sectionTitle shop-show__sectionTitle--table">基本情報</h2>
 
-<div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">祝日営業時間</div>
-  <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
-</div>
+      <div class="shop-show__infoTable">
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">住所</div>
+          <div class="shop-show__infoCell"><%= @shop.address.presence || "未設定" %></div>
+        </div>
 
-<div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">定休日</div>
-  <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
-</div>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">最寄駅</div>
+          <div class="shop-show__infoCell"><%= @shop.nearest_station.presence || "未設定" %></div>
+        </div>
 
-<div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">店舗詳細</div>
-  <div class="shop-show__infoCell shop-show__infoCell--multiline">
-    <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "未設定") : "未設定" %>
-  </div>
-</div>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">電話番号</div>
+          <div class="shop-show__infoCell">
+            <% if @shop.phone.present? %>
+              <a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="shop-show__phoneLink">
+                <%= @shop.phone %>
+              </a>
+            <% else %>
+              未設定
+            <% end %>
+          </div>
+        </div>
 
-<div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">最終確認日</div>
-  <div class="shop-show__infoCell"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
-</div>
-</div>
-</section>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">喫煙エリア</div>
+          <div class="shop-show__infoCell">
+            <%= @shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "未設定" %>
+          </div>
+        </div>
 
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">喫煙タイプ</div>
+          <div class="shop-show__infoCell">
+            <%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定" %>
+          </div>
+        </div>
 
+        <% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">喫煙情報ステータス</div>
+            <div class="shop-show__infoCell">未確認</div>
+          </div>
+        <% end %>
 
-<% unless @shop.approved? %>
-<section class="shop-show__section">
-<div class="ss-pending">
-<p class="ss-pending__title">この店舗は承認待ちです</p>
-<p class="ss-pending__text">※ 詳細（地図・写真・口コミ・店舗詳細等）は確認後に公開されます</p>
-</div>
-</section>
-<% else %>
-<% if @shop.phone.present? || (@shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present?) || (@shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present?) %>
-<section class="shop-show__section">
-<h2 class="shop-show__sectionTitle">予約・詳細</h2>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">営業時間</div>
+          <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+        </div>
 
-<div class="shop-show__bookingActions">
-<% if @shop.phone.present? %>
-<a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="ss-btn ss-btn--dark">
-電話予約する
-</a>
-<% end %>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">祝日営業時間</div>
+          <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+        </div>
 
-<% if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present? %>
-<%= link_to "食べログで見る",
-@shop.tabelog_url,
-target: "_blank",
-rel: "nofollow noopener",
-class: "ss-btn ss-btn--ghost" %>
-<% end %>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">定休日</div>
+          <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+        </div>
 
-<% if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present? %>
-<%= link_to "ホットペッパーで予約",
-@shop.hotpepper_url,
-target: "_blank",
-rel: "nofollow noopener",
-class: "ss-btn ss-btn--dark" %>
-<% end %>
-</div>
-</section>
-<% end %>
-<% if @shop.phone.present? %>
-<a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="ss-btn ss-btn--dark">
-電話予約する
-</a>
-<% end %>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">店舗詳細</div>
+          <div class="shop-show__infoCell shop-show__infoCell--multiline">
+            <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "未設定") : "未設定" %>
+          </div>
+        </div>
 
-<% if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present? %>
-<%= link_to "食べログで見る",
-@shop.tabelog_url,
-target: "_blank",
-rel: "nofollow noopener",
-class: "ss-btn ss-btn--ghost" %>
-<% end %>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">最終確認日</div>
+          <div class="shop-show__infoCell"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
+        </div>
+      </div>
+    </section>
 
-<% if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present? %>
-<%= link_to "ホットペッパーで予約",
-@shop.hotpepper_url,
-target: "_blank",
-rel: "nofollow noopener",
-class: "ss-btn ss-btn--dark" %>
-<% end %>
-</div>
-</section>
+    <% unless @shop.approved? %>
+      <section class="shop-show__section">
+        <div class="ss-pending">
+          <p class="ss-pending__title">この店舗は承認待ちです</p>
+          <p class="ss-pending__text">※ 詳細（地図・写真・口コミ・店舗詳細等）は確認後に公開されます</p>
+        </div>
+      </section>
+    <% else %>
+      <% if @shop.phone.present? || (@shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present?) || (@shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present?) %>
+        <section class="shop-show__section">
+          <h2 class="shop-show__sectionTitle">予約・詳細</h2>
 
+          <div class="shop-show__bookingActions">
+            <% if @shop.phone.present? %>
+              <a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="ss-btn ss-btn--dark">
+                電話予約する
+              </a>
+            <% end %>
 
+            <% if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present? %>
+              <%= link_to "食べログで見る",
+                          @shop.tabelog_url,
+                          target: "_blank",
+                          rel: "nofollow noopener",
+                          class: "ss-btn ss-btn--ghost" %>
+            <% end %>
 
-<section class="shop-show__section">
-<h2 class="shop-show__sectionTitle">地図</h2>
+            <% if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present? %>
+              <%= link_to "ホットペッパーで予約",
+                          @shop.hotpepper_url,
+                          target: "_blank",
+                          rel: "nofollow noopener",
+                          class: "ss-btn ss-btn--dark" %>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
 
-<% map_query = ERB::Util.url_encode([@shop.name, @shop.address].compact.join(" ")) %>
-<% address_query = ERB::Util.url_encode(@shop.address.to_s) %>
+      <section class="shop-show__section">
+        <h2 class="shop-show__sectionTitle">地図</h2>
 
-<% if @shop.latitude.present? && @shop.longitude.present? %>
-<div id="shop-map" class="shop-show__map"></div>
+        <% map_query = ERB::Util.url_encode([@shop.name, @shop.address].compact.join(" ")) %>
+        <% address_query = ERB::Util.url_encode(@shop.address.to_s) %>
 
-<p class="shop-show__mapLink">
-<a href="https://www.google.com/maps?q=<%= map_query %>" target="_blank" rel="noopener">Googleマップで開く</a>
-</p>
+        <% if @shop.latitude.present? && @shop.longitude.present? %>
+          <div id="shop-map" class="shop-show__map"></div>
 
-<script>
-(function() {
-function loadLeafletCss() {
-if (document.getElementById("leaflet-css")) return;
-const link = document.createElement("link");
-link.id = "leaflet-css";
-link.rel = "stylesheet";
-link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-document.head.appendChild(link);
-}
+          <p class="shop-show__mapLink">
+            <a href="https://www.google.com/maps?q=<%= map_query %>" target="_blank" rel="noopener">Googleマップで開く</a>
+          </p>
 
-function loadLeafletJs(callback) {
-if (window.L) {
-callback();
-return;
-}
+          <script>
+            (function() {
+              function loadLeafletCss() {
+                if (document.getElementById("leaflet-css")) return;
+                const link = document.createElement("link");
+                link.id = "leaflet-css";
+                link.rel = "stylesheet";
+                link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+                document.head.appendChild(link);
+              }
 
-if (document.getElementById("leaflet-js")) {
-document.getElementById("leaflet-js").addEventListener("load", callback, { once: true });
-return;
-}
+              function loadLeafletJs(callback) {
+                if (window.L) {
+                  callback();
+                  return;
+                }
 
-const script = document.createElement("script");
-script.id = "leaflet-js";
-script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-script.async = true;
-script.onload = callback;
-document.body.appendChild(script);
-}
+                if (document.getElementById("leaflet-js")) {
+                  document.getElementById("leaflet-js").addEventListener("load", callback, { once: true });
+                  return;
+                }
 
-function initShopMap() {
-const el = document.getElementById("shop-map");
-if (!el || !window.L) return;
+                const script = document.createElement("script");
+                script.id = "leaflet-js";
+                script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+                script.async = true;
+                script.onload = callback;
+                document.body.appendChild(script);
+              }
 
-if (el._leaflet_map_instance) {
-el._leaflet_map_instance.remove();
-el._leaflet_map_instance = null;
-}
+              function initShopMap() {
+                const el = document.getElementById("shop-map");
+                if (!el || !window.L) return;
 
-const lat = <%= @shop.latitude.to_f %>;
-const lng = <%= @shop.longitude.to_f %>;
+                if (el._leaflet_map_instance) {
+                  el._leaflet_map_instance.remove();
+                  el._leaflet_map_instance = null;
+                }
 
-const map = L.map(el).setView([lat, lng], 16);
-el._leaflet_map_instance = map;
+                const lat = <%= @shop.latitude.to_f %>;
+                const lng = <%= @shop.longitude.to_f %>;
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-maxZoom: 19,
-attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+                const map = L.map(el).setView([lat, lng], 16);
+                el._leaflet_map_instance = map;
 
-const marker = L.marker([lat, lng]).addTo(map);
-marker.bindPopup("<strong><%= j @shop.name %></strong>").openPopup();
+                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                  maxZoom: 19,
+                  attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
 
-setTimeout(() => map.invalidateSize(), 50);
-setTimeout(() => map.invalidateSize(), 300);
-}
+                const marker = L.marker([lat, lng]).addTo(map);
+                marker.bindPopup("<strong><%= j @shop.name %></strong>").openPopup();
 
-function bootShopMap() {
-loadLeafletCss();
-loadLeafletJs(initShopMap);
-}
+                setTimeout(() => map.invalidateSize(), 50);
+                setTimeout(() => map.invalidateSize(), 300);
+              }
 
-document.addEventListener("turbo:load", bootShopMap);
-document.addEventListener("DOMContentLoaded", bootShopMap);
-document.addEventListener("turbo:before-cache", () => {
-const el = document.getElementById("shop-map");
-if (el && el._leaflet_map_instance) {
-el._leaflet_map_instance.remove();
-el._leaflet_map_instance = null;
-}
-});
+              function bootShopMap() {
+                loadLeafletCss();
+                loadLeafletJs(initShopMap);
+              }
 
-bootShopMap();
-})();
-</script>
-<% elsif @shop.address.present? %>
-<div class="shop-show__map">
-<iframe
-src="https://maps.google.com/maps?q=<%= address_query %>&z=16&output=embed"
-width="100%"
-height="320"
-style="border:0; display:block;"
-loading="lazy"
-referrerpolicy="no-referrer-when-downgrade"
-allowfullscreen>
-</iframe>
-</div>
+              document.addEventListener("turbo:load", bootShopMap);
+              document.addEventListener("DOMContentLoaded", bootShopMap);
+              document.addEventListener("turbo:before-cache", () => {
+                const el = document.getElementById("shop-map");
+                if (el && el._leaflet_map_instance) {
+                  el._leaflet_map_instance.remove();
+                  el._leaflet_map_instance = null;
+                }
+              });
 
-<p class="shop-show__mapLink">
-<a href="https://www.google.com/maps/search/?api=1&query=<%= address_query %>" target="_blank" rel="noopener">Googleマップで開く</a>
-</p>
-
-<p class="shop-show__hoursNote">
-※ 緯度・経度が未設定のため、住所から地図を表示しています
-</p>
-<% else %>
-<p style="color:#666;">この店舗は位置情報（緯度・経度）も住所も未設定です。</p>
-<% end %>
-</section>
-
-<section class="shop-show__section">
-<h2 class="shop-show__sectionTitle">写真</h2>
-
-<% [["料理", @shop.food_photos], ["内観", @shop.interior_photos], ["外観", @shop.exterior_photos], ["メニュー", @shop.menu_photos]].each do |label, photos| %>
-<div class="shop-show__photosGroup">
-<h3 class="shop-show__photosTitle"><%= label %></h3>
-
-<% if photos.attached? %>
-<div class="shop-show__photosGrid">
-<% photos.each do |p| %>
-<%= image_tag url_for(p), class: "shop-show__photo" %>
-<% end %>
-</div>
-<% else %>
-<p style="color:#666;">まだありません</p>
-<% end %>
-</div>
-<% end %>
-</section>
-
-<section class="shop-show__section">
-  <h2 class="shop-show__sectionTitle">口コミ</h2>
-
-  <% approved_reviews_count = @approved_reviews.size %>
-<% average_rating_value =
-     if approved_reviews_count.positive?
-       @approved_reviews.sum { |r| r.rating.to_f } / approved_reviews_count
-     else
-       0
-     end %>
-<% average_rating_rounded = average_rating_value.round(1) %>
-<% average_rating_stars = "★" * average_rating_value.round + "☆" * (5 - average_rating_value.round) %>
-
-<div style="margin:0 0 14px; padding:12px 14px; border:1px solid #e8e3d7; border-radius:14px; background:#faf8f2;">
-  <% if approved_reviews_count.positive? %>
-    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <span style="font-size:20px; font-weight:900; color:#111111;"><%= average_rating_stars %></span>
-      <span style="font-size:15px; font-weight:800; color:#111111;">
-        平均 <%= average_rating_rounded %>/5
-      </span>
-      <span style="font-size:13px; color:#666666;">
-        （口コミ <%= approved_reviews_count %>件）
-      </span>
-    </div>
-  <% else %>
-    <span style="font-size:13px; color:#666666;">まだ評価はありません</span>
-  <% end %>
-</div>
-
-
-
-  <% if @approved_reviews.present? && @approved_reviews.any? %>
-    <div style="display:grid; gap:12px;">
-      <% @approved_reviews.each do |review| %>
-        <% review_author = review.author_name.presence || "匿名" %>
-        <% review_text = review.comment.to_s %>
-
-        <article style="border:1px solid #e8e3d7; border-radius:16px; padding:14px; background:#faf8f2;">
-          <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:8px; flex-wrap:wrap;">
-            <div>
-              <div style="font-weight:800; color:#111111;">
-                <%= review_author %>
-              </div>
-              <div style="font-size:12px; color:#777777; margin-top:2px;">
-                <%= l(review.created_at.to_date) rescue review.created_at.strftime("%Y-%m-%d") %>
-              </div>
-            </div>
-
-           <div class="ss-badge ss-badge--gold">
-  <%= "★" * review.rating.to_i %><%= "☆" * (5 - review.rating.to_i) %>
-</div>
-
+              bootShopMap();
+            })();
+          </script>
+        <% elsif @shop.address.present? %>
+          <div class="shop-show__map">
+            <iframe
+              src="https://maps.google.com/maps?q=<%= address_query %>&z=16&output=embed"
+              width="100%"
+              height="320"
+              style="border:0; display:block;"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen>
+            </iframe>
           </div>
 
-          <% if review_text.present? %>
-            <div style="color:#333333; line-height:1.8; white-space:pre-wrap; word-break:break-word;">
-              <%= h(review_text) %>
-            </div>
-          <% else %>
-            <p style="margin:0; color:#666666;">コメントなし</p>
-          <% end %>
+          <p class="shop-show__mapLink">
+            <a href="https://www.google.com/maps/search/?api=1&query=<%= address_query %>" target="_blank" rel="noopener">Googleマップで開く</a>
+          </p>
 
-          <% [
-            ["料理", review.food_photos],
-            ["外観", review.exterior_photos],
-            ["内観", review.interior_photos],
-            ["メニュー", review.menu_photos]
-          ].each do |label, photos| %>
-            <% if photos.attached? %>
-              <div style="margin-top:10px;">
-                <div style="font-size:12px; font-weight:800; color:#666; margin-bottom:6px;"><%= label %></div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                  <% photos.each do |photo| %>
-                    <%= image_tag url_for(photo),
-                          style: "width:120px; height:120px; object-fit:cover; border-radius:12px; border:1px solid #ddd;" %>
+          <p class="shop-show__hoursNote">
+            ※ 緯度・経度が未設定のため、住所から地図を表示しています
+          </p>
+        <% else %>
+          <p style="color:#666;">この店舗は位置情報（緯度・経度）も住所も未設定です。</p>
+        <% end %>
+      </section>
+
+      <section class="shop-show__section">
+        <div class="shop-show__sectionHeader">
+          <h2 class="shop-show__sectionTitle" style="margin-bottom:0;">写真</h2>
+          <span class="shop-show__sectionMeta"><%= total_shop_photos_count %>枚</span>
+        </div>
+
+        <% if total_shop_photos_count.positive? %>
+          <div class="shop-show__photoTabs" data-photo-tabs>
+            <div class="shop-show__photoTabsNav" role="tablist" aria-label="写真カテゴリ">
+              <% visible_shop_photo_groups.each_with_index do |group, index| %>
+                <button
+                  type="button"
+                  class="shop-show__photoTab <%= 'is-active' if index == 0 %>"
+                  data-photo-tab-button
+                  data-photo-tab-key="<%= group[:key] %>"
+                  role="tab"
+                  aria-selected="<%= index == 0 ? 'true' : 'false' %>">
+                  <%= group[:label] %>
+                  <% if group[:key] != "all" %>
+                    <span class="shop-show__photoTabCount">(<%= group[:photos].size %>)</span>
                   <% end %>
-                </div>
+                </button>
+              <% end %>
+            </div>
+
+            <% visible_shop_photo_groups.each_with_index do |group, index| %>
+              <div
+                class="shop-show__photoPanel <%= 'is-active' if index == 0 %>"
+                data-photo-tab-panel
+                data-photo-tab-key="<%= group[:key] %>"
+                role="tabpanel">
+                <% if group[:photos].present? %>
+                  <div class="shop-show__photoGrid">
+                    <% group[:photos].each do |photo| %>
+                      <a
+                        href="<%= url_for(photo) %>"
+                        target="_blank"
+                        rel="noopener"
+                        class="shop-show__photoCard">
+                        <%= image_tag url_for(photo),
+                                      class: "shop-show__photoCardImage",
+                                      alt: "#{@shop.name}の#{group[:label]}写真",
+                                      loading: "lazy" %>
+                      </a>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <p class="shop-show__photoEmpty">まだありません</p>
+                <% end %>
               </div>
             <% end %>
-          <% end %>
-
-          <div style="margin-top:10px;">
-            <%= link_to "この口コミを通報",
-                        new_review_review_report_path(review),
-                        class: "ss-btn ss-btn--muted",
-                        style: "min-height:36px; padding:0 12px; font-size:13px;" %>
           </div>
-        </article>
-      <% end %>
-    </div>
-  <% else %>
-    <p style="margin:0; color:#666666;">まだ口コミはありません。</p>
-  <% end %>
-</section>
 
-<section class="shop-show__section">
-  <h2 class="shop-show__sectionTitle">口コミを投稿する</h2>
+          <script>
+            (function() {
+              function initShopPhotoTabs() {
+                document.querySelectorAll("[data-photo-tabs]").forEach(function(wrapper) {
+                  if (wrapper.dataset.photoTabsReady === "true") return;
+                  wrapper.dataset.photoTabsReady = "true";
 
-  <% if @my_review.present? %>
-    <div class="ss-alert ss-alert--warn" id="review-form">
-      この端末からはこの店舗に口コミを投稿済みです。編集する場合は下のリンクから更新してください。
-    </div>
+                  const buttons = wrapper.querySelectorAll("[data-photo-tab-button]");
+                  const panels = wrapper.querySelectorAll("[data-photo-tab-panel]");
 
-    <div style="margin-top:12px;">
-      <%= link_to "あなたの口コミを編集",
-                  edit_review_path(@my_review),
-                  class: "ss-btn ss-btn--dark" %>
-    </div>
-  <% else %>
-    <% if @review.present? && @review.errors.any? %>
-      <div class="ss-alert ss-alert--alert" id="review-form">
-        <div style="font-weight:800; margin-bottom:6px;">口コミを送信できませんでした</div>
-        <ul style="margin:0; padding-left:18px;">
-          <% @review.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
+                  buttons.forEach(function(button) {
+                    button.addEventListener("click", function() {
+                      const key = button.getAttribute("data-photo-tab-key");
+
+                      buttons.forEach(function(btn) {
+                        const active = btn.getAttribute("data-photo-tab-key") === key;
+                        btn.classList.toggle("is-active", active);
+                        btn.setAttribute("aria-selected", active ? "true" : "false");
+                      });
+
+                      panels.forEach(function(panel) {
+                        const active = panel.getAttribute("data-photo-tab-key") === key;
+                        panel.classList.toggle("is-active", active);
+                      });
+                    });
+                  });
+                });
+              }
+
+              document.addEventListener("turbo:load", initShopPhotoTabs);
+              document.addEventListener("DOMContentLoaded", initShopPhotoTabs);
+              initShopPhotoTabs();
+            })();
+          </script>
+        <% else %>
+          <p class="shop-show__photoEmpty">まだありません</p>
+        <% end %>
+      </section>
+
+      <section class="shop-show__section">
+        <h2 class="shop-show__sectionTitle">口コミ</h2>
+
+        <% approved_reviews_count = @approved_reviews.size %>
+        <% average_rating_value =
+             if approved_reviews_count.positive?
+               @approved_reviews.sum { |r| r.rating.to_f } / approved_reviews_count
+             else
+               0
+             end %>
+        <% average_rating_rounded = average_rating_value.round(1) %>
+        <% average_rating_stars = "★" * average_rating_value.round + "☆" * (5 - average_rating_value.round) %>
+
+        <div style="margin:0 0 14px; padding:12px 14px; border:1px solid #e8e3d7; border-radius:14px; background:#faf8f2;">
+          <% if approved_reviews_count.positive? %>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <span style="font-size:20px; font-weight:900; color:#111111;"><%= average_rating_stars %></span>
+              <span style="font-size:15px; font-weight:800; color:#111111;">
+                平均 <%= average_rating_rounded %>/5
+              </span>
+              <span style="font-size:13px; color:#666666;">
+                （口コミ <%= approved_reviews_count %>件）
+              </span>
+            </div>
+          <% else %>
+            <span style="font-size:13px; color:#666666;">まだ評価はありません</span>
           <% end %>
-        </ul>
-      </div>
+        </div>
+
+        <% if @approved_reviews.present? && @approved_reviews.any? %>
+          <div style="display:grid; gap:12px;">
+            <% @approved_reviews.each do |review| %>
+              <% review_author = review.author_name.presence || "匿名" %>
+              <% review_text = review.comment.to_s %>
+
+              <article style="border:1px solid #e8e3d7; border-radius:16px; padding:14px; background:#faf8f2;">
+                <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:8px; flex-wrap:wrap;">
+                  <div>
+                    <div style="font-weight:800; color:#111111;">
+                      <%= review_author %>
+                    </div>
+                    <div style="font-size:12px; color:#777777; margin-top:2px;">
+                      <%= l(review.created_at.to_date) rescue review.created_at.strftime("%Y-%m-%d") %>
+                    </div>
+                  </div>
+
+                  <div class="ss-badge ss-badge--gold">
+                    <%= "★" * review.rating.to_i %><%= "☆" * (5 - review.rating.to_i) %>
+                  </div>
+                </div>
+
+                <% if review_text.present? %>
+                  <div style="color:#333333; line-height:1.8; white-space:pre-wrap; word-break:break-word;">
+                    <%= h(review_text) %>
+                  </div>
+                <% else %>
+                  <p style="margin:0; color:#666666;">コメントなし</p>
+                <% end %>
+
+                <% [
+                  ["料理", review.food_photos],
+                  ["外観", review.exterior_photos],
+                  ["内観", review.interior_photos],
+                  ["メニュー", review.menu_photos]
+                ].each do |label, photos| %>
+                  <% if photos.attached? %>
+                    <div style="margin-top:10px;">
+                      <div style="font-size:12px; font-weight:800; color:#666; margin-bottom:6px;"><%= label %></div>
+                      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <% photos.each do |photo| %>
+                          <%= image_tag url_for(photo),
+                                        style: "width:120px; height:120px; object-fit:cover; border-radius:12px; border:1px solid #ddd;" %>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                <% end %>
+
+                <div style="margin-top:10px;">
+                  <%= link_to "この口コミを通報",
+                              new_review_review_report_path(review),
+                              class: "ss-btn ss-btn--muted",
+                              style: "min-height:36px; padding:0 12px; font-size:13px;" %>
+                </div>
+              </article>
+            <% end %>
+          </div>
+        <% else %>
+          <p style="margin:0; color:#666666;">まだ口コミはありません。</p>
+        <% end %>
+      </section>
+
+      <section class="shop-show__section">
+        <h2 class="shop-show__sectionTitle">口コミを投稿する</h2>
+
+        <% if @my_review.present? %>
+          <div class="ss-alert ss-alert--warn" id="review-form">
+            この端末からはこの店舗に口コミを投稿済みです。編集する場合は下のリンクから更新してください。
+          </div>
+
+          <div style="margin-top:12px;">
+            <%= link_to "あなたの口コミを編集",
+                        edit_review_path(@my_review),
+                        class: "ss-btn ss-btn--dark" %>
+          </div>
+        <% else %>
+          <% if @review.present? && @review.errors.any? %>
+            <div class="ss-alert ss-alert--alert" id="review-form">
+              <div style="font-weight:800; margin-bottom:6px;">口コミを送信できませんでした</div>
+              <ul style="margin:0; padding-left:18px;">
+                <% @review.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <%= form_with model: [@shop, @review], local: true, html: { id: "review-form" } do |f| %>
+            <div style="display:grid; gap:14px;">
+              <div>
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+                  お名前（任意）
+                </label>
+                <%= f.text_field :author_name,
+                      maxlength: 30,
+                      placeholder: "匿名でも投稿できます",
+                      style: "width:100%; padding:12px 14px; border:1px solid #e8e3d7; border-radius:12px; font:inherit; background:#fff;" %>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+                  評価
+                </label>
+                <%= f.select :rating,
+                      [["1", 1], ["2", 2], ["3", 3], ["4", 4], ["5", 5]],
+                      { include_blank: "選択してください" },
+                      style: "width:100%; max-width:240px; padding:12px 14px; border:1px solid #e8e3d7; border-radius:12px; font:inherit; background:#fff;" %>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+                  口コミ内容
+                </label>
+                <%= f.text_area :comment,
+                      rows: 5,
+                      maxlength: 1000,
+                      placeholder: "店内の雰囲気、喫煙しやすさ、使ってみた感想など",
+                      style: "width:100%; padding:12px 14px; border:1px solid #e8e3d7; border-radius:12px; font:inherit; background:#fff; resize:vertical;" %>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+                  料理の写真
+                </label>
+                <%= f.file_field :food_photos,
+                      multiple: true,
+                      accept: "image/*",
+                      style: "width:100%; max-width:420px;" %>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+                  外観の写真
+                </label>
+                <%= f.file_field :exterior_photos,
+                      multiple: true,
+                      accept: "image/*",
+                      style: "width:100%; max-width:420px;" %>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+                  内観の写真
+                </label>
+                <%= f.file_field :interior_photos,
+                      multiple: true,
+                      accept: "image/*",
+                      style: "width:100%; max-width:420px;" %>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
+                  メニューの写真
+                </label>
+                <%= f.file_field :menu_photos,
+                      multiple: true,
+                      accept: "image/*",
+                      style: "width:100%; max-width:420px;" %>
+              </div>
+
+              <p style="margin:0; font-size:12px; color:#777777; line-height:1.7;">
+                ※ 口コミは確認後に公開されます。<br>
+                ※ 画像は料理・外観・内観・メニューに分けて投稿できます。<br>
+                ※ 誹謗中傷・虚偽投稿・個人情報を含む内容は掲載されません。
+              </p>
+
+              <div>
+                <%= f.submit "口コミを送信する", class: "ss-btn ss-btn--dark" %>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </section>
     <% end %>
 
-    <%= form_with model: [@shop, @review], local: true, html: { id: "review-form" } do |f| %>
-      <div style="display:grid; gap:14px;">
-        <div>
-          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
-            お名前（任意）
-          </label>
-          <%= f.text_field :author_name,
-                maxlength: 30,
-                placeholder: "匿名でも投稿できます",
-                style: "width:100%; padding:12px 14px; border:1px solid #e8e3d7; border-radius:12px; font:inherit; background:#fff;" %>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
-            評価
-          </label>
-          <%= f.select :rating,
-                [["1", 1], ["2", 2], ["3", 3], ["4", 4], ["5", 5]],
-                { include_blank: "選択してください" },
-                style: "width:100%; max-width:240px; padding:12px 14px; border:1px solid #e8e3d7; border-radius:12px; font:inherit; background:#fff;" %>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
-            口コミ内容
-          </label>
-          <%= f.text_area :comment,
-                rows: 5,
-                maxlength: 1000,
-                placeholder: "店内の雰囲気、喫煙しやすさ、使ってみた感想など",
-                style: "width:100%; padding:12px 14px; border:1px solid #e8e3d7; border-radius:12px; font:inherit; background:#fff; resize:vertical;" %>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
-            料理の写真
-          </label>
-          <%= f.file_field :food_photos,
-                multiple: true,
-                accept: "image/*",
-                style: "width:100%; max-width:420px;" %>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
-            外観の写真
-          </label>
-          <%= f.file_field :exterior_photos,
-                multiple: true,
-                accept: "image/*",
-                style: "width:100%; max-width:420px;" %>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
-            内観の写真
-          </label>
-          <%= f.file_field :interior_photos,
-                multiple: true,
-                accept: "image/*",
-                style: "width:100%; max-width:420px;" %>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:#111111;">
-            メニューの写真
-          </label>
-          <%= f.file_field :menu_photos,
-                multiple: true,
-                accept: "image/*",
-                style: "width:100%; max-width:420px;" %>
-        </div>
-
-        <p style="margin:0; font-size:12px; color:#777777; line-height:1.7;">
-          ※ 口コミは確認後に公開されます。<br>
-          ※ 画像は料理・外観・内観・メニューに分けて投稿できます。<br>
-          ※ 誹謗中傷・虚偽投稿・個人情報を含む内容は掲載されません。
+    <% if is_umeda_shop || is_namba_shop %>
+      <section class="shop-show__section">
+        <h2 class="shop-show__sectionTitle">関連エリアページ</h2>
+        <p style="color:#666; margin:0 0 12px;">
+          このエリアの他の喫煙可能店も探せます。
         </p>
 
-        <div>
-          <%= f.submit "口コミを送信する", class: "ss-btn ss-btn--dark" %>
+        <div class="shop-show__relatedLinks">
+          <% if is_umeda_shop %>
+            <%= link_to "梅田で喫煙できる店一覧", umeda_path, class: "ss-btn ss-btn--ghost" %>
+            <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "ss-btn ss-btn--ghost" %>
+            <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "ss-btn ss-btn--ghost" %>
+            <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "ss-btn ss-btn--ghost" %>
+          <% end %>
+
+          <% if is_namba_shop %>
+            <%= link_to "難波で喫煙できる店一覧", namba_path, class: "ss-btn ss-btn--ghost" %>
+            <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "ss-btn ss-btn--ghost" %>
+            <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "ss-btn ss-btn--ghost" %>
+            <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "ss-btn ss-btn--ghost" %>
+          <% end %>
         </div>
-      </div>
+      </section>
     <% end %>
-  <% end %>
-</section>
 
+    <hr class="shop-show__divider">
 
-<% end %>
-
-<% if is_umeda_shop || is_namba_shop %>
-<section class="shop-show__section">
-<h2 class="shop-show__sectionTitle">関連エリアページ</h2>
-<p style="color:#666; margin:0 0 12px;">
-このエリアの他の喫煙可能店も探せます。
-</p>
-
-<div class="shop-show__relatedLinks">
-<% if is_umeda_shop %>
-<%= link_to "梅田で喫煙できる店一覧", umeda_path, class: "ss-btn ss-btn--ghost" %>
-<%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "ss-btn ss-btn--ghost" %>
-<%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "ss-btn ss-btn--ghost" %>
-<%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "ss-btn ss-btn--ghost" %>
-<% end %>
-
-<% if is_namba_shop %>
-<%= link_to "難波で喫煙できる店一覧", namba_path, class: "ss-btn ss-btn--ghost" %>
-<%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "ss-btn ss-btn--ghost" %>
-<%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "ss-btn ss-btn--ghost" %>
-<%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "ss-btn ss-btn--ghost" %>
-<% end %>
-</div>
-</section>
-<% end %>
-
-<hr class="shop-show__divider">
-
-<section class="shop-show__section">
-<h2 class="shop-show__sectionTitle">このページについて</h2>
-<div class="shop-show__footerActions">
-<%= link_to footer_back_label, back_path, class: "ss-btn ss-btn--ghost" %>
-<%= link_to "情報の修正依頼", new_shop_shop_edit_request_path(@shop), class: "ss-btn ss-btn--dark" %>
-<%= link_to "通報", new_shop_shop_report_path(@shop), class: "ss-btn ss-btn--muted" %>
-</div>
-</section>
-</div>
+    <section class="shop-show__section">
+      <h2 class="shop-show__sectionTitle">このページについて</h2>
+      <div class="shop-show__footerActions">
+        <%= link_to footer_back_label, back_path, class: "ss-btn ss-btn--ghost" %>
+        <%= link_to "情報の修正依頼", new_shop_shop_edit_request_path(@shop), class: "ss-btn ss-btn--dark" %>
+        <%= link_to "通報", new_shop_shop_report_path(@shop), class: "ss-btn ss-btn--muted" %>
+      </div>
+    </section>
+  </div>
 </div>
