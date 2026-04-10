@@ -140,9 +140,17 @@ style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border
 
 <div style="margin:12px 0;">
   <div style="font-weight:700;">店舗詳細</div>
-  <%= f.text_area :note,
+  <%= f.text_area :proposed_public_store_details,
   rows: 4,
   placeholder: "例：席で吸える / 21時以降だけOK / 喫煙可能な席の場所 / 利用時の補足など",
+  style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+</div>
+
+<div style="margin:12px 0;">
+  <div style="font-weight:700;">補足情報（管理用）</div>
+  <%= f.text_area :note,
+  rows: 4,
+  placeholder: "例：承認前に電話確認が必要 / 情報ソースの補足 / 管理者向けメモ",
   style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
 </div>
 

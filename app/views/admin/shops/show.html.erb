@@ -13,8 +13,8 @@
       <div><strong>最寄駅:</strong> <%= @shop.nearest_station.presence || "なし" %></div>
       <div><strong>電話:</strong> <%= @shop.phone.presence || "なし" %></div>
       <div><strong>ジャンル:</strong> <%= (@shop.respond_to?(:display_genre) ? @shop.display_genre : @shop.genre).presence || "なし" %></div>
-      <div><strong>喫煙エリア:</strong> <%= @shop.smoking_area.presence || "なし" %></div>
-      <div><strong>喫煙タイプ:</strong> <%= @shop.smoking_type.presence || "なし" %></div>
+      <div><strong>喫煙エリア:</strong> <%= (@shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : @shop.smoking_area).presence || "なし" %></div>
+      <div><strong>喫煙タイプ:</strong> <%= (@shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : @shop.smoking_type).presence || "なし" %></div>
       <div><strong>最終確認日:</strong> <%= @shop.last_confirmed_on.presence || "なし" %></div>
 <div><strong>店舗詳細（ユーザー向け）:</strong> <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "なし") : "なし" %></div>
 <div class="shop-show__infoRow">

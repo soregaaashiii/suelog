@@ -5,18 +5,19 @@ def new
 @shop = Shop.find(params[:shop_id])
 
 @req = @shop.shop_edit_requests.build(
-proposed_name: @shop.name,
-proposed_address: @shop.address,
-proposed_nearest_station: @shop.nearest_station,
-proposed_phone: @shop.phone,
-proposed_smoking_area: @shop.smoking_area,
-proposed_smoking_type: @shop.smoking_type,
-genre: @shop.genre,
-genre_other: @shop.genre_other,
-proposed_thumbnail_kind: (@shop.thumbnail_kind.presence || "auto"),
-proposed_thumbnail_index: (@shop.thumbnail_index.presence || 1),
-note: @shop.note,
-proposed_opening_hours_json: (@shop.opening_hours_data || {})
+  proposed_name: @shop.name,
+  proposed_address: @shop.address,
+  proposed_nearest_station: @shop.nearest_station,
+  proposed_phone: @shop.phone,
+  proposed_smoking_area: @shop.smoking_area,
+  proposed_smoking_type: @shop.smoking_type,
+  genre: @shop.genre,
+  genre_other: @shop.genre_other,
+  proposed_thumbnail_kind: (@shop.thumbnail_kind.presence || "auto"),
+  proposed_thumbnail_index: (@shop.thumbnail_index.presence || 1),
+  proposed_public_store_details: @shop.public_store_details,
+  note: @shop.note,
+  proposed_opening_hours_json: (@shop.opening_hours_data || {})
 )
 
 assign_simple_hours_from_shop!(@req, @shop)
@@ -26,18 +27,19 @@ def create
 @shop = Shop.find(params[:shop_id])
 
 @req = @shop.shop_edit_requests.build(
-proposed_name: @shop.name,
-proposed_address: @shop.address,
-proposed_nearest_station: @shop.nearest_station,
-proposed_phone: @shop.phone,
-proposed_smoking_area: @shop.smoking_area,
-proposed_smoking_type: @shop.smoking_type,
-genre: @shop.genre,
-genre_other: @shop.genre_other,
-proposed_thumbnail_kind: (@shop.thumbnail_kind.presence || "auto"),
-proposed_thumbnail_index: (@shop.thumbnail_index.presence || 1),
-note: @shop.note,
-proposed_opening_hours_json: (@shop.opening_hours_data || {})
+  proposed_name: @shop.name,
+  proposed_address: @shop.address,
+  proposed_nearest_station: @shop.nearest_station,
+  proposed_phone: @shop.phone,
+  proposed_smoking_area: @shop.smoking_area,
+  proposed_smoking_type: @shop.smoking_type,
+  genre: @shop.genre,
+  genre_other: @shop.genre_other,
+  proposed_thumbnail_kind: (@shop.thumbnail_kind.presence || "auto"),
+  proposed_thumbnail_index: (@shop.thumbnail_index.presence || 1),
+  proposed_public_store_details: @shop.public_store_details,
+  note: @shop.note,
+  proposed_opening_hours_json: (@shop.opening_hours_data || {})
 )
 
 assign_simple_hours_from_shop!(@req, @shop)
@@ -65,6 +67,7 @@ if @req.respond_to?(:proposed_last_confirmed_on) && @req.proposed_last_confirmed
 @req.proposed_last_confirmed_on = nil
 end
 
+@req.proposed_public_store_details = @shop.public_store_details if blankish?(@req.proposed_public_store_details)
 @req.note = @shop.note if blankish?(@req.note)
 
 if blankish?(@req.proposed_thumbnail_kind)
@@ -108,6 +111,7 @@ private
 def req_params
 params.require(:shop_edit_request).permit(
   :proposer_name,
+  :proposed_public_store_details,
   :note,
   :proposed_name,
   :proposed_address,

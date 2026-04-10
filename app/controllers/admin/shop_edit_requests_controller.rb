@@ -173,6 +173,9 @@ attrs[:genre] = genre
 attrs[:genre_other] = (genre == "その他" ? safe_str(req.genre_other) : nil)
 end
 
+public_store_details = safe_str(req.proposed_public_store_details)
+attrs[:public_store_details] = public_store_details if public_store_details.present?
+
 req_note = safe_str(req.note)
 attrs[:note] = req_note if req_note.present?
 
