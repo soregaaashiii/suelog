@@ -701,6 +701,18 @@ height: 140px;
   <div class="shop-show__infoHead">定休日</div>
   <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
 </div>
+
+<div class="shop-show__infoRow">
+  <div class="shop-show__infoHead">店舗詳細</div>
+  <div class="shop-show__infoCell shop-show__infoCell--multiline">
+    <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "未設定") : "未設定" %>
+  </div>
+</div>
+
+<div class="shop-show__infoRow">
+  <div class="shop-show__infoHead">最終確認日</div>
+  <div class="shop-show__infoCell"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
+</div>
 </div>
 </section>
 
@@ -714,6 +726,7 @@ height: 140px;
 </div>
 </section>
 <% else %>
+<% if @shop.phone.present? || (@shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present?) || (@shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present?) %>
 <section class="shop-show__section">
 <h2 class="shop-show__sectionTitle">予約・詳細</h2>
 
@@ -741,24 +754,32 @@ class: "ss-btn ss-btn--dark" %>
 <% end %>
 </div>
 </section>
+<% end %>
+<% if @shop.phone.present? %>
+<a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="ss-btn ss-btn--dark">
+電話予約する
+</a>
+<% end %>
 
-<section class="shop-show__section">
-<%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "未設定") : "未設定" %>
+<% if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present? %>
+<%= link_to "食べログで見る",
+@shop.tabelog_url,
+target: "_blank",
+rel: "nofollow noopener",
+class: "ss-btn ss-btn--ghost" %>
+<% end %>
 
-<div class="shop-show__infoTable">
-  <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">店舗詳細</div>
-    <div class="shop-show__infoCell shop-show__infoCell--multiline">
-      <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "未設定") : "未設定" %>
-    </div>
-  </div>
-
-  <div class="shop-show__infoRow">
-    <div class="shop-show__infoHead">最終確認日</div>
-    <div class="shop-show__infoCell"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
-  </div>
+<% if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present? %>
+<%= link_to "ホットペッパーで予約",
+@shop.hotpepper_url,
+target: "_blank",
+rel: "nofollow noopener",
+class: "ss-btn ss-btn--dark" %>
+<% end %>
 </div>
 </section>
+
+
 
 <section class="shop-show__section">
 <h2 class="shop-show__sectionTitle">地図</h2>
