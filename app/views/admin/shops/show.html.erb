@@ -16,6 +16,15 @@
       <div><strong>喫煙エリア:</strong> <%= @shop.smoking_area.presence || "なし" %></div>
       <div><strong>喫煙タイプ:</strong> <%= @shop.smoking_type.presence || "なし" %></div>
       <div><strong>最終確認日:</strong> <%= @shop.last_confirmed_on.presence || "なし" %></div>
+
+<div class="shop-show__infoRow">
+  <div class="shop-show__infoHead">補足情報（管理用）</div>
+  <div class="shop-show__infoCell shop-show__infoCell--multiline">
+    <%= @shop.note.presence || "未設定" %>
+  </div>
+</div>
+
+
     </div>
   </div>
 
