@@ -102,27 +102,30 @@ class ShopsController < ApplicationController
   private
 
   def shop_params
-    params.require(:shop).permit(
-      :name,
-      :area,
-      :address,
-      :note,
-      :last_confirmed_on,
-      :nearest_station,
-      :phone,
-      :smoking_area,
-      :smoking_type,
-      :genre,
-      :genre_other,
-      :thumbnail_kind,
-      :thumbnail_index,
-      opening_hours_json: {},
-      food_photos: [],
-      interior_photos: [],
-      exterior_photos: [],
-      menu_photos: []
-    )
-  end
+  params.require(:shop).permit(
+    :name,
+    :area,
+    :address,
+    :public_store_details,
+    :last_confirmed_on,
+    :nearest_station,
+    :phone,
+    :smoking_area,
+    :smoking_type,
+    :genre,
+    :genre_other,
+    :thumbnail_kind,
+    :thumbnail_index,
+    :opening_hours_text,
+    :holiday_hours_text,
+    :closed_days_text,
+    opening_hours_json: {},
+    food_photos: [],
+    interior_photos: [],
+    exterior_photos: [],
+    menu_photos: []
+  )
+end
 
   def ip_hash_for_request
     raw = request.remote_ip.to_s
