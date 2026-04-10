@@ -1,4 +1,4 @@
-# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/controllers/admin/shops_controller.rb
+# /Users/kawamuratakuya/dev/suelog/app/controllers/admin/shops_controller.rb
 # frozen_string_literal: true
 
 require "csv"
@@ -330,6 +330,9 @@ end
 area_raw = normalize_str.call(pick.call(row, [:area, "area", "エリア"]))
 nearest_station = normalize_str.call(pick.call(row, [:nearest_station, "nearest_station", "最寄駅"]))
 note = normalize_str.call(pick.call(row, [:note, "note", "メモ"]))
+public_store_details = normalize_str.call(
+  pick.call(row, [:public_store_details, "public_store_details", "店舗詳細", "詳細"])
+)
 
 genre = normalize_str.call(pick.call(row, [:genre, "genre", "ジャンル"]))
 genre_other = normalize_str.call(pick.call(row, [:genre_other, "genre_other", "ジャンルその他", "その他"]))
@@ -373,6 +376,7 @@ holiday_hours_text: holiday_hours_text.presence,
 closed_days_text: closed_days_text.presence,
 opening_hours_json: opening_json,
 note: note.presence,
+public_store_details: public_store_details.presence,
 genre: genre.presence,
 genre_other: genre_other.presence,
 smoking_area: smoking_area,
@@ -418,6 +422,7 @@ params.require(:shop).permit(
 :genre,
 :genre_other,
 :note,
+:public_store_details,
 :smoking_area,
 :smoking_type,
 :smoking_unverified,
