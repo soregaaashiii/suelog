@@ -1,6 +1,6 @@
 <%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shops/edit.html.erb %>
 
-<h1>店舗編集（管理）</h1>
+<h1>店舗編集（管理者用）</h1>
 
 <p style="color:#666;">
 <%= link_to "← 一覧に戻る", admin_shops_path(status: @status, source: @source, per: @per, page: @page) %>
@@ -189,8 +189,25 @@ style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
 </div>
 
 <div style="grid-column:1/-1;">
-<div style="font-weight:700;">メモ</div>
-<%= f.text_area :note, rows: 6, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+<div style="font-weight:700;">店舗詳細（ユーザーに表示）</div>
+<p style="margin:4px 0 8px; color:#666; font-size:13px; line-height:1.7;">
+来店前にユーザーが知りたい情報を書いてください。<br>
+例）カウンター席あり / テラス席あり / 深夜まで営業 / 1人でも入りやすい など
+</p>
+<%= f.text_area :public_store_details,
+rows: 6,
+placeholder: "例）カウンター席あり。仕事帰りに1人でも入りやすい雰囲気です。",
+style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+</div>
+
+<div style="grid-column:1/-1;">
+<div style="font-weight:700;">管理メモ（管理者のみ表示）</div>
+<p style="margin:4px 0 8px; color:#666; font-size:13px; line-height:1.7;">
+内部確認用のメモです。一般ユーザーには表示しません。
+</p>
+<%= f.text_area :note,
+rows: 6,
+style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
 </div>
 </div>
 

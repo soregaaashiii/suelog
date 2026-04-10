@@ -710,7 +710,7 @@ height: 140px;
 <section class="shop-show__section">
 <div class="ss-pending">
 <p class="ss-pending__title">この店舗は承認待ちです</p>
-<p class="ss-pending__text">※ 詳細（地図・写真・口コミ・メモ等）は確認後に公開されます</p>
+<p class="ss-pending__text">※ 詳細（地図・写真・口コミ・店舗詳細等）は確認後に公開されます</p>
 </div>
 </section>
 <% else %>
@@ -743,20 +743,20 @@ class: "ss-btn ss-btn--dark" %>
 </section>
 
 <section class="shop-show__section">
-<h2 class="shop-show__sectionTitle">補足情報</h2>
+<%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "未設定") : "未設定" %>
 
-<div class="shop-show__metaGrid">
-<div class="shop-show__metaItem">
-<span class="shop-show__metaLabel">メモ</span>
-<div class="shop-show__metaValue">
-<%= @shop.respond_to?(:note) ? (@shop.note.presence || "未設定") : "未設定" %>
-</div>
-</div>
+<div class="shop-show__infoTable">
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">店舗詳細</div>
+    <div class="shop-show__infoCell shop-show__infoCell--multiline">
+      <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "未設定") : "未設定" %>
+    </div>
+  </div>
 
-<div class="shop-show__metaItem">
-<span class="shop-show__metaLabel">最終確認日</span>
-<div class="shop-show__metaValue"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
-</div>
+  <div class="shop-show__infoRow">
+    <div class="shop-show__infoHead">最終確認日</div>
+    <div class="shop-show__infoCell"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
+  </div>
 </div>
 </section>
 

@@ -104,27 +104,27 @@ class Shop < ApplicationRecord
   scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
 
   scope :keyword, lambda { |q|
-    kw = q.to_s.strip.downcase
-    next all if kw.blank?
+  kw = q.to_s.strip.downcase
+  next all if kw.blank?
 
-    like = "%#{sanitize_sql_like(kw)}%"
-    where(
-      <<~SQL.squish,
-        LOWER(COALESCE(shops.name, '')) LIKE :like
-        OR LOWER(COALESCE(shops.address, '')) LIKE :like
-        OR LOWER(COALESCE(shops.area, '')) LIKE :like
-        OR LOWER(COALESCE(shops.nearest_station, '')) LIKE :like
-        OR LOWER(COALESCE(shops.phone, '')) LIKE :like
-        OR LOWER(COALESCE(shops.note, '')) LIKE :like
-        OR LOWER(COALESCE(shops.genre, '')) LIKE :like
-        OR LOWER(COALESCE(shops.genre_other, '')) LIKE :like
-        OR LOWER(COALESCE(shops.opening_hours_text, '')) LIKE :like
-        OR LOWER(COALESCE(shops.holiday_hours_text, '')) LIKE :like
-        OR LOWER(COALESCE(shops.closed_days_text, '')) LIKE :like
-      SQL
-      like: like
-    )
-  }
+  like = "%#{sanitize_sql_like(kw)}%"
+  where(
+    <<~SQL.squish,
+      LOWER(COALESCE(shops.name, '')) LIKE :like
+      OR LOWER(COALESCE(shops.address, '')) LIKE :like
+      OR LOWER(COALESCE(shops.area, '')) LIKE :like
+      OR LOWER(COALESCE(shops.nearest_station, '')) LIKE :like
+      OR LOWER(COALESCE(shops.phone, '')) LIKE :like
+      OR LOWER(COALESCE(shops.public_store_details, '')) LIKE :like
+      OR LOWER(COALESCE(shops.genre, '')) LIKE :like
+      OR LOWER(COALESCE(shops.genre_other, '')) LIKE :like
+      OR LOWER(COALESCE(shops.opening_hours_text, '')) LIKE :like
+      OR LOWER(COALESCE(shops.holiday_hours_text, '')) LIKE :like
+      OR LOWER(COALESCE(shops.closed_days_text, '')) LIKE :like
+    SQL
+    like: like
+  )
+}
 
   scope :text_like, lambda { |column, value|
     v = value.to_s.strip
