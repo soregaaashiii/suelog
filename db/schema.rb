@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_07_010100) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_10_033311) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -115,107 +115,3 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_010100) do
     t.index ["shop_id"], name: "index_reviews_on_shop_id"
   end
 
-  create_table "shop_edit_requests", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "genre"
-    t.string "genre_other"
-    t.text "note"
-    t.string "proposed_address"
-    t.string "proposed_area"
-    t.string "proposed_closed_days_text"
-    t.text "proposed_holiday_hours_text"
-    t.date "proposed_last_confirmed_on"
-    t.string "proposed_name"
-    t.string "proposed_nearest_station"
-    t.text "proposed_opening_hours"
-    t.jsonb "proposed_opening_hours_json", default: {}, null: false
-    t.text "proposed_opening_hours_text"
-    t.string "proposed_phone"
-    t.integer "proposed_smoking_area"
-    t.integer "proposed_smoking_type"
-    t.integer "proposed_thumbnail_index"
-    t.string "proposed_thumbnail_kind"
-    t.string "proposer_name"
-    t.integer "shop_id", null: false
-    t.integer "status", default: 0, null: false
-    t.text "status_report_note"
-    t.string "status_report_type"
-    t.datetime "updated_at", null: false
-    t.index ["proposed_opening_hours_json"], name: "index_shop_edit_requests_on_proposed_opening_hours_json", using: :gin
-    t.index ["shop_id"], name: "index_shop_edit_requests_on_shop_id"
-    t.index ["status_report_type"], name: "index_shop_edit_requests_on_status_report_type"
-  end
-
-  create_table "shop_reports", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "detail"
-    t.string "reason"
-    t.string "reporter_name"
-    t.integer "shop_id", null: false
-    t.integer "status", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.index ["shop_id"], name: "index_shop_reports_on_shop_id"
-  end
-
-  create_table "shops", force: :cascade do |t|
-    t.string "address"
-    t.boolean "approved", default: false, null: false
-    t.string "area"
-    t.integer "atmosphere"
-    t.string "closed_days_text"
-    t.datetime "created_at", null: false
-    t.string "genre"
-    t.string "genre_other"
-    t.datetime "held_at"
-    t.text "hold_note"
-    t.string "hold_reason"
-    t.text "holiday_hours_text"
-    t.string "hotpepper_url"
-    t.date "last_confirmed_on"
-    t.float "latitude"
-    t.float "longitude"
-    t.string "name"
-    t.string "nearest_station"
-    t.string "normalized_phone"
-    t.text "note"
-    t.boolean "on_hold", default: false, null: false
-    t.text "opening_hours"
-    t.jsonb "opening_hours_json"
-    t.text "opening_hours_text"
-    t.string "phone"
-    t.string "place_id"
-    t.boolean "rejected"
-    t.integer "smoking_area"
-    t.integer "smoking_type"
-    t.boolean "smoking_unverified", default: false, null: false
-    t.string "source"
-    t.string "tabelog_url"
-    t.integer "taste"
-    t.integer "thumbnail_index"
-    t.string "thumbnail_kind"
-    t.datetime "updated_at", null: false
-    t.index ["hold_reason"], name: "index_shops_on_hold_reason"
-    t.index ["on_hold"], name: "index_shops_on_on_hold"
-    t.index ["place_id"], name: "index_shops_on_place_id", unique: true
-    t.index ["source"], name: "index_shops_on_source"
-  end
-
-  create_table "solid_cache_entries", force: :cascade do |t|
-    t.integer "byte_size", null: false
-    t.datetime "created_at", null: false
-    t.binary "key", null: false
-    t.bigint "key_hash", null: false
-    t.binary "value", null: false
-    t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
-    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
-    t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
-  end
-
-  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "page_views", "shops"
-  add_foreign_key "review_reports", "reviews"
-  add_foreign_key "reviews", "shops"
-  add_foreign_key "shop_edit_requests", "shops"
-  add_foreign_key "shop_reports", "shops"
-end
