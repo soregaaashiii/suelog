@@ -157,7 +157,7 @@ id: "shop_closed_days_text" %>
 
 
     <div style="margin-top:12px;">
-<%= f.label :public_store_details, "店舗詳細（ユーザー向け）" %><br>
+<%= f.label :public_store_details, "店舗詳細" %><br>
 <%= f.text_area :public_store_details,
 rows: 5,
 placeholder: "例：席で吸える / 21時以降だけOK / カウンター席あり / 1人でも入りやすい など" %>
@@ -224,10 +224,7 @@ placeholder: "例：席で吸える / 21時以降だけOK / カウンター席�
 
 <hr>
 
-<div style="margin-top:12px;">
-<%= f.label :note, "メモ（吸える条件・席・時間など）" %><br>
-<%= f.text_area :note, rows: 5 %>
-</div>
+
 
 <div style="margin-top:16px;">
 <%= f.submit "登録する" %>
