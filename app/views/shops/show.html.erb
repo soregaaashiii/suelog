@@ -798,22 +798,20 @@
         </div>
 
         <div class="shop-show__infoRow">
-          <div class="shop-show__infoHead">定休日</div>
-          <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
-        </div>
+  <div class="shop-show__infoHead">定休日</div>
+  <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+</div>
 
-        
-  <div class="shop-show__infoRow">
-  <% public_store_details_text = @shop.respond_to?(:public_store_details) ? @shop.public_store_details.to_s.strip.presence : nil %>
+<% public_store_details_text = @shop.respond_to?(:public_store_details) ? @shop.public_store_details.to_s.strip.presence : nil %>
 
 <div class="shop-show__infoRow">
   <div class="shop-show__infoHead">店舗詳細</div>
-  <div class="shop-show__infoCell"><span><%= public_store_details_text || "未設定" %></span></div>
+  <div class="shop-show__infoCell"><%= public_store_details_text || "未設定" %></div>
 </div>
 
 <div class="shop-show__infoRow">
   <div class="shop-show__infoHead">最終確認日</div>
-  <div class="shop-show__infoCell"><span><%= @shop.last_confirmed_on.presence || "未設定" %></span></div>
+  <div class="shop-show__infoCell"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
 </div>
     </section>
 
