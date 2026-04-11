@@ -442,11 +442,19 @@ def import
         shop.save!
         success += 1
       rescue => e
-        failed += 1
-        message = "#{idx + 2}行目: #{e.class} - #{e.message}"
-        error_messages << message
-        Rails.logger.error("[CSV IMPORT ERROR] #{message} row=#{row.to_h.inspect}")
-      end
+  failed += 1
+
+  detail =
+    if e.respond_to?(:record) && e.record.present?
+      e.record.errors.full_messages.join(", ")
+    else
+      e.message
+    end
+
+  message = "#{idx + 2}行目: #{e.class} - #{detail}"
+  error_messages << message
+  Rails.logger.error("[CSV IMPORT ERROR] #{message} row=#{row.to_h.inspect}")
+end
     end
 
     if processed_rows.zero?
