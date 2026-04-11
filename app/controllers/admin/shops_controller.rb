@@ -221,193 +221,246 @@ render :edit, status: :unprocessable_entity
 end
 
 def import
-file = params[:file]
-return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
+  file = params[:file]
+  return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
 
-success = 0
-failed = 0
+  success = 0
+  failed = 0
+  skipped_duplicates = 0
+  skipped_blank = 0
+  processed_rows = 0
+  raw_rows = 0
+  error_messages = []
 
-area_map = {
-"umeda" => "梅田",
-"namba" => "難波",
-"tennoji" => "天王寺",
-"shinsaibashi" => "心斎橋",
-"kyobashi" => "京橋",
-"shinosaka" => "新大阪",
-"yodoyabashi" => "淀屋橋",
-"hommachi" => "本町"
-}
+  area_map = {
+    "umeda" => "梅田",
+    "namba" => "難波",
+    "tennoji" => "天王寺",
+    "shinsaibashi" => "心斎橋",
+    "kyobashi" => "京橋",
+    "shinosaka" => "新大阪",
+    "yodoyabashi" => "淀屋橋",
+    "hommachi" => "本町"
+  }
 
-normalize_str = lambda do |v|
-return "" if v.nil?
+  normalize_str = lambda do |v|
+    return "" if v.nil?
 
-s = v.is_a?(String) ? v : v.to_s
-s = s.tr("０-９", "0-9")
-s.gsub(/\A[[:space:]]+|[[:space:]]+\z/, "")
-end
+    s = v.is_a?(String) ? v : v.to_s
+    s = s.tr("０-９", "0-9")
+    s.gsub(/\A[[:space:]]+|[[:space:]]+\z/, "")
+  end
 
-pick = lambda do |row, keys|
-keys.each do |k|
-v = row[k]
-v = row[k.to_s] if v.nil? && k.is_a?(Symbol)
-v = row[k.to_sym] if v.nil? && k.is_a?(String)
-return v if v.present?
-end
-nil
-end
+  pick = lambda do |row, keys|
+    keys.each do |k|
+      v = row[k]
+      v = row[k.to_s] if v.nil? && k.is_a?(Symbol)
+      v = row[k.to_sym] if v.nil? && k.is_a?(String)
+      return v if v.present?
+    end
+    nil
+  end
 
-map_smoking_area = lambda do |raw|
-s = normalize_str.call(raw)
-return nil if s.blank?
+  map_smoking_area = lambda do |raw|
+    s = normalize_str.call(raw)
+    return nil if s.blank?
 
-case s
-when "0" then "separated"
-when "1" then "all_smoking"
-when "2" then "separated"
-else s.presence
-end
-end
+    case s
+    when "0" then "separated"
+    when "1" then "all_smoking"
+    when "2" then "separated"
+    else s.presence
+    end
+  end
 
-map_smoking_type = lambda do |raw|
-s = normalize_str.call(raw)
-return nil if s.blank?
+  map_smoking_type = lambda do |raw|
+    s = normalize_str.call(raw)
+    return nil if s.blank?
 
-case s
-when "0" then "both_ok"
-when "1" then "electronic_only"
-when "2" then "paper_only"
-when "3" then "paper_only"
-else s.presence
-end
-end
+    case s
+    when "0" then "both_ok"
+    when "1" then "electronic_only"
+    when "2" then "paper_only"
+    when "3" then "paper_only"
+    else s.presence
+    end
+  end
 
-CSV.foreach(file.path, headers: true) do |row|
-begin
-name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
-phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
-address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
+  begin
+    csv_text = file.read
+    csv_text = csv_text.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+    csv_text.sub!(/\A\uFEFF/, "")
 
-attrs = {
-  name: name,
-  address: address,
-  phone: phone
-}
+    rows = CSV.parse(csv_text, headers: true)
 
-if Shop.duplicate_exists_for_import?(attrs)
-  Rails.logger.info("[SKIP DUPLICATE] #{name} / #{address}")
-  next
-end
+    if rows.empty?
+      return redirect_to admin_shops_path, alert: "CSVのデータ行が0件です。ヘッダだけ、またはCSV形式が不正です。"
+    end
 
-opening_hours_text = normalize_str.call(
-pick.call(row, [:opening_hours_text, "opening_hours_text", "通常営業時間", "営業時間テキスト"])
-)
-holiday_hours_text = normalize_str.call(
-pick.call(row, [:holiday_hours_text, "holiday_hours_text", "祝日営業時間"])
-)
-closed_days_text = normalize_str.call(
-pick.call(row, [:closed_days_text, "closed_days_text", "定休日"])
-)
+    Rails.logger.info("[CSV IMPORT] headers=#{rows.headers.inspect}")
 
-opening_json_raw = pick.call(row, [:opening_hours_json, "opening_hours_json", "営業時間JSON"])
-opening_text_legacy = normalize_str.call(
-pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"])
-)
+    rows.each_with_index do |row, idx|
+      raw_rows += 1
 
-opening_json =
-if opening_json_raw.present?
-begin
-parsed = JSON.parse(opening_json_raw.to_s)
-OpeningHoursParser.normalize_json(parsed)
-rescue JSON::ParserError
-OpeningHoursParser.parse_legacy_text(opening_text_legacy)
-end
-elsif opening_text_legacy.present?
-OpeningHoursParser.parse_legacy_text(opening_text_legacy)
-else
-{}
-end
+      begin
+        row_hash = row.to_h
 
-area_raw = normalize_str.call(pick.call(row, [:area, "area", "エリア"]))
-nearest_station = normalize_str.call(pick.call(row, [:nearest_station, "nearest_station", "最寄駅"]))
-note = normalize_str.call(pick.call(row, [:note, "note", "メモ"]))
-public_store_details = normalize_str.call(
-  pick.call(row, [:public_store_details, "public_store_details", "店舗詳細", "詳細"])
-)
+        if row_hash.values.all? { |v| normalize_str.call(v).blank? }
+          skipped_blank += 1
+          Rails.logger.info("[CSV IMPORT SKIP BLANK] line=#{idx + 2}")
+          next
+        end
 
-genre = normalize_str.call(pick.call(row, [:genre, "genre", "ジャンル"]))
-genre_other = normalize_str.call(pick.call(row, [:genre_other, "genre_other", "ジャンルその他", "その他"]))
+        name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
+        phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
+        address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
 
-smoking_area = map_smoking_area.call(pick.call(row, [:smoking_area, "smoking_area", "喫煙エリア"]))
-smoking_type = map_smoking_type.call(pick.call(row, [:smoking_type, "smoking_type", "喫煙タイプ"]))
+        if name.blank? && address.blank? && phone.blank?
+          skipped_blank += 1
+          Rails.logger.info("[CSV IMPORT SKIP EMPTY KEY FIELDS] line=#{idx + 2} row=#{row_hash.inspect}")
+          next
+        end
 
-tabelog_url = normalize_str.call(
-pick.call(row, [:tabelog_url, "tabelog_url", "食べログURL", "tabelog"])
-)
-hotpepper_url = normalize_str.call(
-pick.call(row, [:hotpepper_url, "hotpepper_url", "ホットペッパーURL", "hotpepper"])
-)
+        processed_rows += 1
 
-last_raw = normalize_str.call(pick.call(row, [:last_confirmed_on, "last_confirmed_on", "最終確認日"]))
-last_confirmed_on =
-if last_raw.present?
-if last_raw.match?(/\A\d{6}\z/)
-year = ("20" + last_raw[0..1]).to_i
-month = last_raw[2..3].to_i
-day = last_raw[4..5].to_i
-Date.new(year, month, day)
-else
-Date.parse(last_raw)
-end
-else
-Date.current
-end
+        attrs = {
+          name: name,
+          address: address,
+          phone: phone
+        }
 
-area_key = area_raw.to_s.downcase
-area = area_map[area_key] || area_raw
+        if Shop.duplicate_exists_for_import?(attrs)
+          skipped_duplicates += 1
+          Rails.logger.info("[SKIP DUPLICATE] line=#{idx + 2} #{name} / #{address}")
+          next
+        end
 
-shop = Shop.new(
-name: name,
-phone: phone.presence,
-address: address,
-area: area.presence,
-nearest_station: nearest_station.presence,
-opening_hours_text: opening_hours_text.presence,
-holiday_hours_text: holiday_hours_text.presence,
-closed_days_text: closed_days_text.presence,
-opening_hours_json: opening_json,
-note: note.presence,
-public_store_details: public_store_details.presence,
-genre: genre.presence,
-genre_other: genre_other.presence,
-smoking_area: smoking_area,
-smoking_type: smoking_type,
-tabelog_url: tabelog_url.presence,
-hotpepper_url: hotpepper_url.presence,
-last_confirmed_on: last_confirmed_on
-)
+        opening_hours_text = normalize_str.call(
+          pick.call(row, [:opening_hours_text, "opening_hours_text", "通常営業時間", "営業時間テキスト"])
+        )
+        holiday_hours_text = normalize_str.call(
+          pick.call(row, [:holiday_hours_text, "holiday_hours_text", "祝日営業時間"])
+        )
+        closed_days_text = normalize_str.call(
+          pick.call(row, [:closed_days_text, "closed_days_text", "定休日"])
+        )
 
-if shop.opening_hours_text.blank? && shop.respond_to?(:derived_opening_hours_text, true)
-derived_text = shop.send(:derived_opening_hours_text)
-shop.opening_hours_text = derived_text if derived_text.present?
-end
+        opening_json_raw = pick.call(row, [:opening_hours_json, "opening_hours_json", "営業時間JSON"])
+        opening_text_legacy = normalize_str.call(
+          pick.call(row, [:opening_hours, "opening_hours", "営業時間", "hours"])
+        )
 
-if shop.closed_days_text.blank? && shop.respond_to?(:derived_closed_days_text, true)
-derived_closed = shop.send(:derived_closed_days_text)
-shop.closed_days_text = derived_closed if derived_closed.present?
-end
+        opening_json =
+          if opening_json_raw.present?
+            begin
+              parsed = JSON.parse(opening_json_raw.to_s)
+              OpeningHoursParser.normalize_json(parsed)
+            rescue JSON::ParserError
+              OpeningHoursParser.parse_legacy_text(opening_text_legacy)
+            end
+          elsif opening_text_legacy.present?
+            OpeningHoursParser.parse_legacy_text(opening_text_legacy)
+          else
+            {}
+          end
 
-shop.approved = false
-shop.rejected = false if shop.respond_to?(:rejected=)
+        area_raw = normalize_str.call(pick.call(row, [:area, "area", "エリア"]))
+        nearest_station = normalize_str.call(pick.call(row, [:nearest_station, "nearest_station", "最寄駅"]))
+        note = normalize_str.call(pick.call(row, [:note, "note", "メモ"]))
+        public_store_details = normalize_str.call(
+          pick.call(row, [:public_store_details, "public_store_details", "店舗詳細", "詳細"])
+        )
 
-shop.save!
-success += 1
-rescue => e
-Rails.logger.error "[CSV IMPORT ERROR] #{e.class}: #{e.message} row=#{row.to_h.inspect}"
-failed += 1
-end
-end
+        genre = normalize_str.call(pick.call(row, [:genre, "genre", "ジャンル"]))
+        genre_other = normalize_str.call(pick.call(row, [:genre_other, "genre_other", "ジャンルその他", "その他"]))
 
-redirect_to admin_shops_path, notice: "CSV取込完了：#{success}件成功 / #{failed}件失敗"
+        smoking_area = map_smoking_area.call(pick.call(row, [:smoking_area, "smoking_area", "喫煙エリア"]))
+        smoking_type = map_smoking_type.call(pick.call(row, [:smoking_type, "smoking_type", "喫煙タイプ"]))
+
+        tabelog_url = normalize_str.call(
+          pick.call(row, [:tabelog_url, "tabelog_url", "食べログURL", "tabelog"])
+        )
+        hotpepper_url = normalize_str.call(
+          pick.call(row, [:hotpepper_url, "hotpepper_url", "ホットペッパーURL", "hotpepper"])
+        )
+
+        last_raw = normalize_str.call(
+          pick.call(row, [:last_confirmed_on, "last_confirmed_on", "最終確認日"])
+        )
+
+        last_confirmed_on =
+          if last_raw.present?
+            if last_raw.match?(/\A\d{6}\z/)
+              year = ("20" + last_raw[0..1]).to_i
+              month = last_raw[2..3].to_i
+              day = last_raw[4..5].to_i
+              Date.new(year, month, day)
+            else
+              Date.parse(last_raw)
+            end
+          else
+            Date.current
+          end
+
+        area_key = area_raw.to_s.downcase
+        area = area_map[area_key] || area_raw
+
+        shop = Shop.new(
+          name: name,
+          phone: phone.presence,
+          address: address,
+          area: area.presence,
+          nearest_station: nearest_station.presence,
+          opening_hours_text: opening_hours_text.presence,
+          holiday_hours_text: holiday_hours_text.presence,
+          closed_days_text: closed_days_text.presence,
+          opening_hours_json: opening_json,
+          note: note.presence,
+          public_store_details: public_store_details.presence,
+          genre: genre.presence,
+          genre_other: genre_other.presence,
+          smoking_area: smoking_area,
+          smoking_type: smoking_type,
+          tabelog_url: tabelog_url.presence,
+          hotpepper_url: hotpepper_url.presence,
+          last_confirmed_on: last_confirmed_on
+        )
+
+        if shop.opening_hours_text.blank? && shop.respond_to?(:derived_opening_hours_text, true)
+          derived_text = shop.send(:derived_opening_hours_text)
+          shop.opening_hours_text = derived_text if derived_text.present?
+        end
+
+        if shop.closed_days_text.blank? && shop.respond_to?(:derived_closed_days_text, true)
+          derived_closed = shop.send(:derived_closed_days_text)
+          shop.closed_days_text = derived_closed if derived_closed.present?
+        end
+
+        shop.approved = false
+        shop.rejected = false if shop.respond_to?(:rejected=)
+
+        shop.save!
+        success += 1
+      rescue => e
+        failed += 1
+        message = "#{idx + 2}行目: #{e.class} - #{e.message}"
+        error_messages << message
+        Rails.logger.error("[CSV IMPORT ERROR] #{message} row=#{row.to_h.inspect}")
+      end
+    end
+
+    if processed_rows.zero?
+      return redirect_to admin_shops_path,
+                         alert: "CSVのデータ行を処理できませんでした。ヘッダ名・文字コード・保存形式を確認してください。"
+    end
+
+    notice_message = "CSV取込完了：#{success}件成功 / #{failed}件失敗 / 重複#{skipped_duplicates}件スキップ / 空行#{skipped_blank}件スキップ / 対象#{processed_rows}件"
+    redirect_to admin_shops_path, notice: notice_message, alert: error_messages.first(5).join(" / ").presence
+  rescue CSV::MalformedCSVError => e
+    redirect_to admin_shops_path, alert: "CSV形式が不正です: #{e.message}"
+  rescue => e
+    redirect_to admin_shops_path, alert: "インポート中にエラーが発生しました: #{e.class} - #{e.message}"
+  end
 end
 
 private
