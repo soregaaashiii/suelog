@@ -329,16 +329,20 @@ class Admin::ShopsController < Admin::BaseController
           processed_rows += 1
 
           attrs = {
-            name: name,
-            address: address,
-            phone: phone
-          }
+  name: name,
+  address: address,
+  phone: phone
+}
 
-          if Shop.duplicate_exists_for_import?(attrs)
-            skipped_duplicates += 1
-            Rails.logger.info("[SKIP DUPLICATE] line=#{idx + 2} #{name} / #{address}")
-            next
-          end
+Rails.logger.warn(
+  "[CSV DUP CHECK] line=#{idx + 2} name=#{name.inspect} address=#{address.inspect} phone=#{phone.inspect}"
+)
+
+if Shop.duplicate_exists_for_import?(attrs)
+  skipped_duplicates += 1
+  Rails.logger.info("[SKIP DUPLICATE] line=#{idx + 2} #{name} / #{address}")
+  next
+end
 
           opening_hours_text = normalize_str.call(
             pick.call(row, [:opening_hours_text, "opening_hours_text", "通常営業時間", "営業時間テキスト"])
