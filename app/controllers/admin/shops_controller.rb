@@ -379,7 +379,12 @@ class Admin::ShopsController < Admin::BaseController
           raw_genre_value = pick.call(row, [:genre, "genre", "ジャンル"])
           raw_genre_other_value = pick.call(row, [:genre_other, "genre_other", "ジャンルその他", "その他"])
 
-          genre = normalize_str.call(raw_genre_value)
+         genre = normalize_str.call(raw_genre_value)
+
+# 保険：genreが取れない場合はgenre_otherを使う
+if genre.blank? && raw_genre_other_value.present?
+  genre = normalize_str.call(raw_genre_other_value)
+end
           genre_other = normalize_str.call(raw_genre_other_value)
 
           Rails.logger.warn(
