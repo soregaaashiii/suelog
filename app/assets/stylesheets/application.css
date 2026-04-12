@@ -1367,6 +1367,50 @@ line-height: 1.8;
 padding: 10px 2px 0;
 }
 
+.area-station-panel {
+padding-top: 14px;
+padding-bottom: 14px;
+}
+
+.area-station-panel__row {
+display: flex;
+align-items: center;
+gap: 10px;
+flex-wrap: wrap;
+}
+
+.area-station-panel__label {
+font-size: 13px;
+font-weight: 700;
+color: var(--muted);
+white-space: nowrap;
+}
+
+.area-station-panel__links {
+display: flex;
+gap: 8px;
+flex-wrap: wrap;
+}
+
+.area-station-chip {
+display: inline-flex;
+align-items: center;
+min-height: 32px;
+padding: 0 10px;
+border-radius: 999px;
+border: 1px solid var(--line);
+background: #ffffff;
+color: var(--muted);
+font-size: 12px;
+font-weight: 700;
+text-decoration: none;
+}
+
+.area-station-chip:hover {
+border-color: var(--line-strong);
+color: var(--black);
+}
+
 /* =========================
 Admin Badge
 ========================= */
@@ -1997,6 +2041,40 @@ grid-column: 1 / -1;
 
 .shop-show__infoCell--multiline {
 white-space: pre-wrap;
+}
+
+.shop-show__microLinks {
+margin-top: 6px;
+}
+
+.shop-show__microLink {
+color: #7a5a12;
+font-size: 12px;
+font-weight: 700;
+text-decoration: underline;
+text-underline-offset: 2px;
+}
+
+.shop-show__microLink:hover {
+opacity: 0.85;
+}
+
+.shop-show__relatedChip {
+display: inline-flex;
+align-items: center;
+min-height: 36px;
+padding: 0 12px;
+border-radius: 999px;
+background: #ffffff;
+border: 1px solid #e8e3d7;
+color: #111111;
+font-size: 13px;
+font-weight: 700;
+text-decoration: none;
+}
+
+.shop-show__relatedChip:hover {
+border-color: #d7c7a0;
 }
 
 /* ===== PCは角丸ゼロ ===== */

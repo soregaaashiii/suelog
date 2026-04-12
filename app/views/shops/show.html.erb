@@ -1,51 +1,92 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/shops/show.html.erb %>
 
-<% page_title_parts = [@shop.name.presence, "喫煙できる店", "吸えログ in大阪"].compact %>
-<% page_description_parts = [] %>
-<% page_description_parts << "#{@shop.name}の喫煙情報。" if @shop.name.present? %>
-<% page_description_parts << @shop.smoking_area_label if @shop.respond_to?(:smoking_area_label) %>
-<% page_description_parts << @shop.smoking_type_label if @shop.respond_to?(:smoking_type_label) %>
-<% page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_station.present? %>
-<% page_description_parts << "住所：#{@shop.address}" if @shop.address.present? %>
-<% if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定" %>
-  <% page_description_parts << "営業時間：#{@shop.display_opening_hours_text}" %>
-<% end %>
-<% page_description_parts << "大阪で喫煙できる飲食店を探すなら吸えログ。" %>
+<%
+  shop_location_text = [@shop.area, @shop.address, @shop.nearest_station, @shop.name].compact.join(" ")
+  is_umeda_shop = shop_location_text.include?("梅田")
+  is_namba_shop = shop_location_text.include?("難波") || shop_location_text.include?("なんば")
+
+  area_label =
+    if is_umeda_shop
+      "梅田"
+    elsif is_namba_shop
+      "難波"
+    elsif @shop.area.present?
+      @shop.area
+    else
+      "大阪"
+    end
+
+  genre_label_text =
+    if @shop.respond_to?(:display_genre) && @shop.display_genre.present?
+      @shop.display_genre
+    elsif @shop.genre.present?
+      @shop.genre
+    else
+      "飲食店"
+    end
+
+  smoking_area_text =
+    if @shop.respond_to?(:smoking_area_label) && @shop.smoking_area_label.present?
+      @shop.smoking_area_label
+    else
+      nil
+    end
+
+  smoking_type_text =
+    if @shop.respond_to?(:smoking_type_label) && @shop.smoking_type_label.present?
+      @shop.smoking_type_label
+    else
+      nil
+    end
+
+  page_title_parts = [
+    @shop.name.presence,
+    "#{area_label}で喫煙できる#{genre_label_text}",
+    "吸えログ"
+  ].compact
+
+  page_description_parts = []
+  page_description_parts << "#{@shop.name}は#{area_label}で喫煙できる#{genre_label_text}です。" if @shop.name.present?
+  page_description_parts << smoking_area_text if smoking_area_text.present?
+  page_description_parts << smoking_type_text if smoking_type_text.present?
+  page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_station.present?
+  page_description_parts << "住所：#{@shop.address}" if @shop.address.present?
+  if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定"
+    page_description_parts << "営業時間：#{@shop.display_opening_hours_text}"
+  end
+  page_description_parts << "#{area_label}で喫煙可能な飲食店を探すなら吸えログ。"
+
+  back_path =
+    if is_umeda_shop
+      umeda_path
+    elsif is_namba_shop
+      namba_path
+    else
+      root_path
+    end
+
+  back_label =
+    if is_umeda_shop
+      "← 梅田の一覧に戻る"
+    elsif is_namba_shop
+      "← 難波の一覧に戻る"
+    else
+      "← 一覧に戻る"
+    end
+
+  footer_back_label =
+    if is_umeda_shop
+      "梅田の一覧に戻る"
+    elsif is_namba_shop
+      "難波の一覧に戻る"
+    else
+      "一覧に戻る"
+    end
+%>
 
 <% content_for :title, page_title_parts.join("｜") %>
 <% content_for :meta_description, page_description_parts.join(" ") %>
 <% content_for :canonical_url, shop_url(@shop) %>
-
-<% shop_location_text = [@shop.address, @shop.nearest_station, @shop.name].compact.join(" ") %>
-<% is_umeda_shop = shop_location_text.include?("梅田") %>
-<% is_namba_shop = shop_location_text.include?("難波") || shop_location_text.include?("なんば") %>
-
-<% back_path =
-  if is_umeda_shop
-    umeda_path
-  elsif is_namba_shop
-    namba_path
-  else
-    root_path
-  end %>
-
-<% back_label =
-  if is_umeda_shop
-    "← 梅田の一覧に戻る"
-  elsif is_namba_shop
-    "← 難波の一覧に戻る"
-  else
-    "← 一覧に戻る"
-  end %>
-
-<% footer_back_label =
-  if is_umeda_shop
-    "梅田の一覧に戻る"
-  elsif is_namba_shop
-    "難波の一覧に戻る"
-  else
-    "一覧に戻る"
-  end %>
 
 <% shop_photo_groups = [
   { key: "all", label: "すべて", photos: (@shop.food_photos.to_a + @shop.interior_photos.to_a + @shop.exterior_photos.to_a + @shop.menu_photos.to_a) },
@@ -54,7 +95,6 @@
   { key: "exterior", label: "外観", photos: @shop.exterior_photos.to_a },
   { key: "menu", label: "メニュー", photos: @shop.menu_photos.to_a }
 ] %>
-
 
 <% total_shop_photos_count = shop_photo_groups.reject { |group| group[:key] == "all" }.sum { |group| group[:photos].size } %>
 
@@ -91,7 +131,7 @@
       (@shop.smoking_type_label if @shop.respond_to?(:smoking_type_label)),
       @shop.display_genre.presence,
       @shop.nearest_station.presence,
-      "大阪",
+      area_label,
       "喫煙可"
     ].compact.join(", "),
     "geo": (@shop.latitude.present? && @shop.longitude.present? ? {
@@ -419,7 +459,6 @@
   margin: 4px 0 0;
 }
 
-/* 写真タブ */
 .shop-show__photoTabs {
   margin-top: 2px;
 }
@@ -749,9 +788,21 @@
         </div>
 
         <div class="shop-show__infoRow">
-          <div class="shop-show__infoHead">最寄駅</div>
-          <div class="shop-show__infoCell"><%= @shop.nearest_station.presence || "未設定" %></div>
-        </div>
+  <div class="shop-show__infoHead">最寄駅</div>
+  <div class="shop-show__infoCell">
+    <%= @shop.nearest_station.presence || "未設定" %>
+
+    <% if is_umeda_shop %>
+      <div class="shop-show__microLinks">
+        <%= link_to "梅田で喫煙できる店", umeda_path, class: "shop-show__microLink" %>
+      </div>
+    <% elsif is_namba_shop %>
+      <div class="shop-show__microLinks">
+        <%= link_to "難波で喫煙できる店", namba_path, class: "shop-show__microLink" %>
+      </div>
+    <% end %>
+  </div>
+</div>
 
         <div class="shop-show__infoRow">
           <div class="shop-show__infoHead">電話番号</div>
@@ -798,21 +849,22 @@
         </div>
 
         <div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">定休日</div>
-  <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
-</div>
+          <div class="shop-show__infoHead">定休日</div>
+          <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+        </div>
 
-<% public_store_details_text = @shop.respond_to?(:public_store_details) ? @shop.public_store_details.to_s.strip.presence : nil %>
+        <% public_store_details_text = @shop.respond_to?(:public_store_details) ? @shop.public_store_details.to_s.strip.presence : nil %>
 
-<div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">店舗詳細</div>
-  <div class="shop-show__infoCell"><%= public_store_details_text || "未設定" %></div>
-</div>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">店舗詳細</div>
+          <div class="shop-show__infoCell"><%= public_store_details_text || "未設定" %></div>
+        </div>
 
-<div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">最終確認日</div>
-  <div class="shop-show__infoCell"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
-</div>
+        <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">最終確認日</div>
+          <div class="shop-show__infoCell"><%= @shop.last_confirmed_on.presence || "未設定" %></div>
+        </div>
+      </div>
     </section>
 
     <% unless @shop.approved? %>
@@ -967,92 +1019,92 @@
       </section>
 
       <section class="shop-show__section">
-  <div class="shop-show__sectionHeader">
-    <h2 class="shop-show__sectionTitle" style="margin-bottom:0;">写真</h2>
-    <span class="shop-show__sectionMeta"><%= total_shop_photos_count %>枚</span>
-  </div>
+        <div class="shop-show__sectionHeader">
+          <h2 class="shop-show__sectionTitle" style="margin-bottom:0;">写真</h2>
+          <span class="shop-show__sectionMeta"><%= total_shop_photos_count %>枚</span>
+        </div>
 
-  <div class="shop-show__photoTabs" data-photo-tabs>
-    <div class="shop-show__photoTabsNav" role="tablist" aria-label="写真カテゴリ">
-      <% shop_photo_groups.each_with_index do |group, index| %>
-        <button
-          type="button"
-          class="shop-show__photoTab <%= 'is-active' if index == 0 %>"
-          data-photo-tab-button
-          data-photo-tab-key="<%= group[:key] %>"
-          role="tab"
-          aria-selected="<%= index == 0 ? 'true' : 'false' %>">
-          <%= group[:label] %>
-          <% if group[:key] != "all" %>
-            <span class="shop-show__photoTabCount">(<%= group[:photos].size %>)</span>
-          <% end %>
-        </button>
-      <% end %>
-    </div>
-
-    <% shop_photo_groups.each_with_index do |group, index| %>
-      <div
-        class="shop-show__photoPanel <%= 'is-active' if index == 0 %>"
-        data-photo-tab-panel
-        data-photo-tab-key="<%= group[:key] %>"
-        role="tabpanel">
-        <% if group[:photos].present? %>
-          <div class="shop-show__photoGrid">
-            <% group[:photos].each do |photo| %>
-              <a
-                href="<%= url_for(photo) %>"
-                target="_blank"
-                rel="noopener"
-                class="shop-show__photoCard">
-                <%= image_tag url_for(photo),
-                              class: "shop-show__photoCardImage",
-                              alt: "#{@shop.name}の#{group[:label]}写真",
-                              loading: "lazy" %>
-              </a>
+        <div class="shop-show__photoTabs" data-photo-tabs>
+          <div class="shop-show__photoTabsNav" role="tablist" aria-label="写真カテゴリ">
+            <% shop_photo_groups.each_with_index do |group, index| %>
+              <button
+                type="button"
+                class="shop-show__photoTab <%= 'is-active' if index == 0 %>"
+                data-photo-tab-button
+                data-photo-tab-key="<%= group[:key] %>"
+                role="tab"
+                aria-selected="<%= index == 0 ? 'true' : 'false' %>">
+                <%= group[:label] %>
+                <% if group[:key] != "all" %>
+                  <span class="shop-show__photoTabCount">(<%= group[:photos].size %>)</span>
+                <% end %>
+              </button>
             <% end %>
           </div>
-        <% else %>
-          <p class="shop-show__photoEmpty">まだありません</p>
-        <% end %>
-      </div>
-    <% end %>
-  </div>
 
-  <script>
-    (function() {
-      function initShopPhotoTabs() {
-        document.querySelectorAll("[data-photo-tabs]").forEach(function(wrapper) {
-          if (wrapper.dataset.photoTabsReady === "true") return;
-          wrapper.dataset.photoTabsReady = "true";
+          <% shop_photo_groups.each_with_index do |group, index| %>
+            <div
+              class="shop-show__photoPanel <%= 'is-active' if index == 0 %>"
+              data-photo-tab-panel
+              data-photo-tab-key="<%= group[:key] %>"
+              role="tabpanel">
+              <% if group[:photos].present? %>
+                <div class="shop-show__photoGrid">
+                  <% group[:photos].each do |photo| %>
+                    <a
+                      href="<%= url_for(photo) %>"
+                      target="_blank"
+                      rel="noopener"
+                      class="shop-show__photoCard">
+                      <%= image_tag url_for(photo),
+                                    class: "shop-show__photoCardImage",
+                                    alt: "#{@shop.name}の#{group[:label]}写真",
+                                    loading: "lazy" %>
+                    </a>
+                  <% end %>
+                </div>
+              <% else %>
+                <p class="shop-show__photoEmpty">まだありません</p>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
 
-          const buttons = wrapper.querySelectorAll("[data-photo-tab-button]");
-          const panels = wrapper.querySelectorAll("[data-photo-tab-panel]");
+        <script>
+          (function() {
+            function initShopPhotoTabs() {
+              document.querySelectorAll("[data-photo-tabs]").forEach(function(wrapper) {
+                if (wrapper.dataset.photoTabsReady === "true") return;
+                wrapper.dataset.photoTabsReady = "true";
 
-          buttons.forEach(function(button) {
-            button.addEventListener("click", function() {
-              const key = button.getAttribute("data-photo-tab-key");
+                const buttons = wrapper.querySelectorAll("[data-photo-tab-button]");
+                const panels = wrapper.querySelectorAll("[data-photo-tab-panel]");
 
-              buttons.forEach(function(btn) {
-                const active = btn.getAttribute("data-photo-tab-key") === key;
-                btn.classList.toggle("is-active", active);
-                btn.setAttribute("aria-selected", active ? "true" : "false");
+                buttons.forEach(function(button) {
+                  button.addEventListener("click", function() {
+                    const key = button.getAttribute("data-photo-tab-key");
+
+                    buttons.forEach(function(btn) {
+                      const active = btn.getAttribute("data-photo-tab-key") === key;
+                      btn.classList.toggle("is-active", active);
+                      btn.setAttribute("aria-selected", active ? "true" : "false");
+                    });
+
+                    panels.forEach(function(panel) {
+                      const active = panel.getAttribute("data-photo-tab-key") === key;
+                      panel.classList.toggle("is-active", active);
+                    });
+                  });
+                });
               });
+            }
 
-              panels.forEach(function(panel) {
-                const active = panel.getAttribute("data-photo-tab-key") === key;
-                panel.classList.toggle("is-active", active);
-              });
-            });
-          });
-        });
-      }
-
-      document.addEventListener("turbo:load", initShopPhotoTabs);
-      document.addEventListener("DOMContentLoaded", initShopPhotoTabs);
-      initShopPhotoTabs();
-    })();
-  </script>
-</section>
+            document.addEventListener("turbo:load", initShopPhotoTabs);
+            document.addEventListener("DOMContentLoaded", initShopPhotoTabs);
+            initShopPhotoTabs();
+          })();
+        </script>
+      </section>
 
       <section class="shop-show__section">
         <h2 class="shop-show__sectionTitle">口コミ</h2>
@@ -1261,26 +1313,26 @@
 
     <% if is_umeda_shop || is_namba_shop %>
       <section class="shop-show__section">
-        <h2 class="shop-show__sectionTitle">関連エリアページ</h2>
-        <p style="color:#666; margin:0 0 12px;">
-          このエリアの他の喫煙可能店も探せます。
-        </p>
+        <<h2 class="shop-show__sectionTitle">このエリアでも探す</h2>
+<p style="color:#666; margin:0 0 12px;">
+  同じエリアの喫煙可能店を一覧で見られます。
+</p>
 
         <div class="shop-show__relatedLinks">
-          <% if is_umeda_shop %>
-            <%= link_to "梅田で喫煙できる店一覧", umeda_path, class: "ss-btn ss-btn--ghost" %>
-            <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "ss-btn ss-btn--ghost" %>
-            <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "ss-btn ss-btn--ghost" %>
-            <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "ss-btn ss-btn--ghost" %>
-          <% end %>
+  <% if is_umeda_shop %>
+    <%= link_to "梅田で喫煙できる店一覧", umeda_path, class: "shop-show__relatedChip" %>
+    <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "shop-show__relatedChip" %>
+    <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "shop-show__relatedChip" %>
+    <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "shop-show__relatedChip" %>
+  <% end %>
 
-          <% if is_namba_shop %>
-            <%= link_to "難波で喫煙できる店一覧", namba_path, class: "ss-btn ss-btn--ghost" %>
-            <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "ss-btn ss-btn--ghost" %>
-            <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "ss-btn ss-btn--ghost" %>
-            <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "ss-btn ss-btn--ghost" %>
-          <% end %>
-        </div>
+  <% if is_namba_shop %>
+    <%= link_to "難波で喫煙できる店一覧", namba_path, class: "shop-show__relatedChip" %>
+    <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "shop-show__relatedChip" %>
+    <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "shop-show__relatedChip" %>
+    <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "shop-show__relatedChip" %>
+  <% end %>
+</div>
       </section>
     <% end %>
 
