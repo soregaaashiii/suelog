@@ -389,8 +389,19 @@
             </p>
           </div>
 
+          <div style="margin:14px 0 0; padding:14px; border:1px solid #e8e3d7; border-radius:14px; background:#ffffff;">
+            <div style="font-weight:800; margin-bottom:10px; color:#111;">関連ページ</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <%= link_to "梅田で喫煙できる店", umeda_path, class: "btn btn--ghost" %>
+              <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost" %>
+              <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost" %>
+              <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost" %>
+              <%= link_to "梅田のバー", umeda_genre_path("bar"), class: "btn btn--ghost" %>
+            </div>
+          </div>
+
           <p style="margin:14px 0 0;">
-            <%= @forced_station_label %>周辺で喫煙可能な飲食店を探す入口ページとして活用してください。
+            <%= @forced_station_label %>周辺で喫煙できる店を探すときの入口ページとして活用してください。
           </p>
         <% elsif @forced_station_label.present? && @search_form_url.to_s.include?("/namba/station/") %>
           <p style="margin:0 0 12px;">
@@ -419,8 +430,19 @@
             </p>
           </div>
 
+          <div style="margin:14px 0 0; padding:14px; border:1px solid #e8e3d7; border-radius:14px; background:#ffffff;">
+            <div style="font-weight:800; margin-bottom:10px; color:#111;">関連ページ</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <%= link_to "難波で喫煙できる店", namba_path, class: "btn btn--ghost" %>
+              <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost" %>
+              <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost" %>
+              <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost" %>
+              <%= link_to "難波のバー", namba_genre_path("bar"), class: "btn btn--ghost" %>
+            </div>
+          </div>
+
           <p style="margin:14px 0 0;">
-            <%= @forced_station_label %>周辺で喫煙可能な飲食店を探す入口ページとして活用してください。
+            <%= @forced_station_label %>周辺で喫煙できる店を探すときの入口ページとして活用してください。
           </p>
         <% end %>
       </div>
