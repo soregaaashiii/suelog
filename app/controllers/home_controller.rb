@@ -120,8 +120,12 @@ class HomeController < ApplicationController
     @forced_station_label = nil
   end
 
+  def current_area_key
+    request.path_parameters[:area].presence || params[:area].presence
+  end
+
   def apply_area_page_context_from_params!
-    case params[:area].to_s
+    case current_area_key.to_s
     when "umeda"
       if station_route_request?
         apply_umeda_station_context!
@@ -356,11 +360,10 @@ class HomeController < ApplicationController
   end
 
   def current_station_label
-    area_key = params[:area].to_s
+    area_key = current_area_key.to_s
     slug = current_station_slug.to_s
     mapped = STATION_SLUG_MAP.dig(area_key, slug)
     return mapped if mapped.present?
-
     return nil if slug.blank?
 
     slug.tr("-", " ").strip
@@ -491,7 +494,7 @@ class HomeController < ApplicationController
   end
 
   def normalized_smoking_area_param
-    value = params[:smoking_area].to_s.strip
+    value = request.path_parameters[:smoking_area].presence || params[:smoking_area].to_s.strip
     return "all_smoking" if value == "smoking_allowed"
 
     value
@@ -510,7 +513,7 @@ class HomeController < ApplicationController
   end
 
   def cleaned_listing_query
-    request.query_parameters.to_h.except("page", "commit").each_with_object({}) do |(key, value), hash|
+    request.query_parameters.to_h.except("page", "commit", "area").each_with_object({}) do |(key, value), hash|
       next if value.blank?
 
       hash[key] = value
