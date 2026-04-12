@@ -21,6 +21,29 @@ class HomeController < ApplicationController
     }
   }.freeze
 
+  STATION_SLUG_MAP = {
+    "umeda" => {
+      "osaka" => "大阪駅",
+      "umeda" => "梅田駅",
+      "higashi-umeda" => "東梅田駅",
+      "nishi-umeda" => "西梅田駅",
+      "kitashinchi" => "北新地駅",
+      "nakazakicho" => "中崎町駅",
+      "nakatsu" => "中津駅",
+      "fukushima" => "福島駅"
+    },
+    "namba" => {
+      "namba" => "なんば駅",
+      "nanba" => "難波駅",
+      "jr-namba" => "JR難波駅",
+      "osaka-namba" => "大阪難波駅",
+      "shinsaibashi" => "心斎橋駅",
+      "nipponbashi" => "日本橋駅",
+      "daikokucho" => "大国町駅",
+      "sakuragawa" => "桜川駅"
+    }
+  }.freeze
+
   SORT_OPTIONS = %w[recommended rating reviews_count newest].freeze
   FULLWIDTH_SPACE = "\u3000"
 
@@ -78,7 +101,7 @@ class HomeController < ApplicationController
 
   def set_default_page_meta!
     @search_form_url = root_path
-    @page_title = "吸えログ in大阪｜喫煙できる飲食店を探せる"
+    @page_title = "吸えログ in大阪｜大阪で喫煙できる飲食店を探せる"
     @page_description = "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。"
     @page_heading = "掲載店舗"
     @page_subtitle = "大阪の喫煙可能店舗を一覧で確認できます"
@@ -91,18 +114,24 @@ class HomeController < ApplicationController
     @forced_genre = nil
     @forced_genre_label = nil
     @forced_genre_terms = []
+    @forced_station_keyword = nil
+    @forced_station_label = nil
   end
 
   def apply_area_page_context_from_params!
     case params[:area].to_s
     when "umeda"
-      if current_genre_slug.present?
+      if station_route_request?
+        apply_umeda_station_context!
+      elsif current_genre_slug.present?
         apply_umeda_genre_context!
       else
         apply_umeda_context!
       end
     when "namba"
-      if current_genre_slug.present?
+      if station_route_request?
+        apply_namba_station_context!
+      elsif current_genre_slug.present?
         apply_namba_genre_context!
       else
         apply_namba_context!
@@ -115,6 +144,8 @@ class HomeController < ApplicationController
     @forced_genre = nil
     @forced_genre_label = nil
     @forced_genre_terms = []
+    @forced_station_keyword = nil
+    @forced_station_label = nil
     @is_area_page = true
     @search_form_url = umeda_path
     @area_nav_links = umeda_nav_links
@@ -159,6 +190,8 @@ class HomeController < ApplicationController
     @forced_genre = genre_label
     @forced_genre_label = genre_label
     @forced_genre_terms = Array(genre_config[:terms])
+    @forced_station_keyword = nil
+    @forced_station_label = nil
     @is_area_page = true
     @search_form_url = umeda_genre_path(current_genre_slug)
     @area_nav_links = umeda_nav_links
@@ -172,11 +205,36 @@ class HomeController < ApplicationController
     @canonical_url = umeda_genre_url(current_genre_slug)
   end
 
+  def apply_umeda_station_context!
+    station_label = current_station_label
+    raise ActionController::RoutingError, "Not Found" if station_label.blank?
+
+    @forced_area_keyword = "梅田"
+    @forced_genre = nil
+    @forced_genre_label = nil
+    @forced_genre_terms = []
+    @forced_station_keyword = station_label
+    @forced_station_label = station_label
+    @is_area_page = true
+    @search_form_url = umeda_station_path(current_station_slug)
+    @area_nav_links = umeda_nav_links + umeda_station_nav_links
+
+    @page_title = "#{station_label}周辺で喫煙できる店まとめ｜梅田エリアの喫煙可飲食店【吸えログ】"
+    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、梅田エリアで#{station_label}近くの店を探せます。"
+    @page_heading = "#{station_label}周辺で喫煙できる店"
+    @page_subtitle = "梅田エリアで#{station_label}近くの喫煙可能店舗を一覧で確認できます"
+    @area_intro_title = "#{station_label}周辺で喫煙できる店を探す"
+    @area_intro_text = "#{station_label}周辺で喫煙できる飲食店をまとめています。駅近で探したい人向けに、席で吸える店や喫煙所ありの店を一覧で見られます。"
+    @canonical_url = umeda_station_url(current_station_slug)
+  end
+
   def apply_namba_context!
     @forced_area_keyword = "難波"
     @forced_genre = nil
     @forced_genre_label = nil
     @forced_genre_terms = []
+    @forced_station_keyword = nil
+    @forced_station_label = nil
     @is_area_page = true
     @search_form_url = namba_path
     @area_nav_links = namba_nav_links
@@ -221,6 +279,8 @@ class HomeController < ApplicationController
     @forced_genre = genre_label
     @forced_genre_label = genre_label
     @forced_genre_terms = Array(genre_config[:terms])
+    @forced_station_keyword = nil
+    @forced_station_label = nil
     @is_area_page = true
     @search_form_url = namba_genre_path(current_genre_slug)
     @area_nav_links = namba_nav_links
@@ -234,12 +294,55 @@ class HomeController < ApplicationController
     @canonical_url = namba_genre_url(current_genre_slug)
   end
 
+  def apply_namba_station_context!
+    station_label = current_station_label
+    raise ActionController::RoutingError, "Not Found" if station_label.blank?
+
+    @forced_area_keyword = "難波"
+    @forced_genre = nil
+    @forced_genre_label = nil
+    @forced_genre_terms = []
+    @forced_station_keyword = station_label
+    @forced_station_label = station_label
+    @is_area_page = true
+    @search_form_url = namba_station_path(current_station_slug)
+    @area_nav_links = namba_nav_links + namba_station_nav_links
+
+    @page_title = "#{station_label}周辺で喫煙できる店まとめ｜難波エリアの喫煙可飲食店【吸えログ】"
+    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、難波エリアで#{station_label}近くの店を探せます。"
+    @page_heading = "#{station_label}周辺で喫煙できる店"
+    @page_subtitle = "難波エリアで#{station_label}近くの喫煙可能店舗を一覧で確認できます"
+    @area_intro_title = "#{station_label}周辺で喫煙できる店を探す"
+    @area_intro_text = "#{station_label}周辺で喫煙できる飲食店をまとめています。駅近で探したい人向けに、席で吸える店や喫煙所ありの店を一覧で見られます。"
+    @canonical_url = namba_station_url(current_station_slug)
+  end
+
   def current_genre_slug
     params[:genre_slug].presence || params[:genre].presence
   end
 
   def current_area_genre_config
     AREA_GENRE_MAP[current_genre_slug.to_s]
+  end
+
+  def station_route_request?
+    current_station_slug.present? &&
+      request.path_parameters[:station].present?
+  end
+
+  def current_station_slug
+    params[:station].to_s.presence
+  end
+
+  def current_station_label
+    area_key = params[:area].to_s
+    slug = current_station_slug.to_s
+    mapped = STATION_SLUG_MAP.dig(area_key, slug)
+    return mapped if mapped.present?
+
+    return nil if slug.blank?
+
+    slug.tr("-", " ").strip
   end
 
   def build_listing!
@@ -251,7 +354,7 @@ class HomeController < ApplicationController
     @listing_query = cleaned_listing_query
 
     genre_terms = effective_genre_terms
-    station_q = params[:station].to_s.strip
+    station_q = effective_station_query
     smoking_area = normalized_smoking_area_param
     smoking_type = params[:smoking_type].to_s.strip
     keyword_q = normalized_keyword_query(params[:q])
@@ -341,6 +444,10 @@ class HomeController < ApplicationController
     end
   end
 
+  def effective_station_query
+    @forced_station_keyword.presence || params[:station].to_s.strip
+  end
+
   def normalized_smoking_area_param
     value = params[:smoking_area].to_s.strip
     return "all_smoking" if value == "smoking_allowed"
@@ -418,6 +525,24 @@ class HomeController < ApplicationController
       { label: "難波のバー", path: namba_genre_path("bar") },
       { label: "難波のカフェ", path: namba_genre_path("cafe") },
       { label: "難波の焼肉", path: namba_genre_path("yakiniku") }
+    ]
+  end
+
+  def umeda_station_nav_links
+    [
+      { label: "大阪駅周辺", path: umeda_station_path("osaka") },
+      { label: "梅田駅周辺", path: umeda_station_path("umeda") },
+      { label: "東梅田駅周辺", path: umeda_station_path("higashi-umeda") },
+      { label: "西梅田駅周辺", path: umeda_station_path("nishi-umeda") }
+    ]
+  end
+
+  def namba_station_nav_links
+    [
+      { label: "なんば駅周辺", path: namba_station_path("namba") },
+      { label: "難波駅周辺", path: namba_station_path("nanba") },
+      { label: "JR難波駅周辺", path: namba_station_path("jr-namba") },
+      { label: "大阪難波駅周辺", path: namba_station_path("osaka-namba") }
     ]
   end
 end
