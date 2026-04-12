@@ -332,7 +332,7 @@ class HomeController < ApplicationController
   end
 
   def current_genre_slug
-    route_genre_slug.presence || params[:genre].presence
+    route_genre_slug.presence
   end
 
   def route_genre_slug
@@ -348,7 +348,7 @@ class HomeController < ApplicationController
   end
 
   def genre_route_request?
-    route_genre_slug.present?
+    route_genre_slug.present? && params[:genre].blank?
   end
 
   def current_station_slug
@@ -454,18 +454,35 @@ class HomeController < ApplicationController
   end
 
   def effective_genre_param
-    return params[:genre].to_s.strip if params[:genre].present?
+    return normalized_genre_param(params[:genre]) if params[:genre].present?
 
     @forced_genre.presence
   end
 
   def effective_genre_terms
     if params[:genre].present?
-      Shop.genre_search_terms(params[:genre].to_s.strip)
+      normalized = normalized_genre_param(params[:genre])
+
+      if AREA_GENRE_MAP.key?(normalized)
+        Array(AREA_GENRE_MAP[normalized][:terms]).flat_map { |term| Shop.genre_search_terms(term) }.uniq
+      else
+        Shop.genre_search_terms(normalized)
+      end
     elsif @forced_genre_terms.present?
       @forced_genre_terms.flat_map { |term| Shop.genre_search_terms(term) }.uniq
     else
       Shop.genre_search_terms(effective_genre_param)
+    end
+  end
+
+  def normalized_genre_param(value)
+    raw = value.to_s.strip
+    return raw if raw.blank?
+
+    if AREA_GENRE_MAP.key?(raw)
+      raw
+    else
+      AREA_GENRE_MAP.find { |_slug, config| config[:label] == raw }&.first || raw
     end
   end
 
