@@ -379,7 +379,17 @@
             <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost" %>
           </div>
 
-          <p style="margin:0;">
+          <div style="margin:14px 0 0; padding:14px; border:1px solid #e8e3d7; border-radius:14px; background:#faf8f2;">
+            <div style="font-weight:800; margin-bottom:8px; color:#111;">駅近で探すコツ</div>
+            <p style="margin:0 0 8px;">
+              <%= @forced_station_label %>周辺で探すときは、まず「席で喫煙可」か「喫煙所あり」かを確認すると選びやすいです。
+            </p>
+            <p style="margin:0;">
+              居酒屋は飲み会向き、バーは二軒目向き、カフェは短時間利用向きなので、利用シーンに合わせてページ内の条件やジャンルを見比べるのがおすすめです。
+            </p>
+          </div>
+
+          <p style="margin:14px 0 0;">
             <%= @forced_station_label %>周辺で喫煙可能な飲食店を探す入口ページとして活用してください。
           </p>
         <% elsif @forced_station_label.present? && @search_form_url.to_s.include?("/namba/station/") %>
@@ -399,7 +409,17 @@
             <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost" %>
           </div>
 
-          <p style="margin:0;">
+          <div style="margin:14px 0 0; padding:14px; border:1px solid #e8e3d7; border-radius:14px; background:#faf8f2;">
+            <div style="font-weight:800; margin-bottom:8px; color:#111;">駅近で探すコツ</div>
+            <p style="margin:0 0 8px;">
+              <%= @forced_station_label %>周辺で探すときは、まず「席で喫煙可」か「喫煙所あり」かを見ておくと、自分に合う店を絞りやすいです。
+            </p>
+            <p style="margin:0;">
+              居酒屋は飲み会、バーは二軒目、カフェは休憩向きなので、移動前後の使い方に合わせてジャンルや喫煙条件を見比べるのがおすすめです。
+            </p>
+          </div>
+
+          <p style="margin:14px 0 0;">
             <%= @forced_station_label %>周辺で喫煙可能な飲食店を探す入口ページとして活用してください。
           </p>
         <% end %>
