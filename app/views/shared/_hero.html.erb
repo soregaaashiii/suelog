@@ -44,14 +44,28 @@
     @forced_genre_slug
   end %>
 
+<% current_smoking_area_value =
+  if request.path_parameters[:smoking_area].present?
+    request.path_parameters[:smoking_area]
+  else
+    params[:smoking_area]
+  end %>
+
+<% current_station_value =
+  if @forced_station_label.present?
+    @forced_station_label
+  else
+    params[:station]
+  end %>
+
 <% hero_chips = [] %>
 
 <% if @forced_area_label.present? %>
   <% hero_chips << ["エリア：#{@forced_area_label}", :forced_area] %>
 <% end %>
 
-<% if params[:smoking_area].present? %>
-  <% label = smoking_area_label[params[:smoking_area]] || params[:smoking_area] %>
+<% if current_smoking_area_value.present? %>
+  <% label = smoking_area_label[current_smoking_area_value] || current_smoking_area_value %>
   <% hero_chips << ["喫煙エリア：#{label}", :smoking_area] %>
 <% end %>
 
@@ -60,15 +74,8 @@
   <% hero_chips << ["喫煙タイプ：#{label}", :smoking_type] %>
 <% end %>
 
-<% station_chip_label =
-  if @forced_station_label.present?
-    @forced_station_label
-  elsif params[:station].present?
-    params[:station]
-  end %>
-
-<% if station_chip_label.present? %>
-  <% hero_chips << ["最寄駅：#{station_chip_label}", :station] %>
+<% if current_station_value.present? %>
+  <% hero_chips << ["最寄駅：#{current_station_value}", :station] %>
 <% end %>
 
 <% genre_chip_label =
@@ -101,13 +108,20 @@
           <div class="search-grid">
             <div class="search-field">
               <%= label_tag :smoking_area, "喫煙エリア" %>
-              <%= select_tag :smoking_area,
-                  options_for_select([
-                    ["指定なし", ""],
-                    ["喫煙所あり", "separated"],
-                    ["席で喫煙可", "all_smoking"]
-                  ], params[:smoking_area]),
-                  class: "search-select" %>
+
+              <% if request.path_parameters[:smoking_area].present? %>
+                <div class="search-input" style="display:flex; align-items:center; color:#111; background:#f7f4ea;">
+                  <%= smoking_area_label[current_smoking_area_value] || current_smoking_area_value %>
+                </div>
+              <% else %>
+                <%= select_tag :smoking_area,
+                    options_for_select([
+                      ["指定なし", ""],
+                      ["喫煙所あり", "separated"],
+                      ["席で喫煙可", "all_smoking"]
+                    ], current_smoking_area_value),
+                    class: "search-select" %>
+              <% end %>
             </div>
 
             <div class="search-field">
@@ -136,9 +150,16 @@
 
             <div class="search-field">
               <%= label_tag :genre, "ジャンル" %>
-              <%= select_tag :genre,
-                  options_for_select(genre_select_options, current_genre_value),
-                  class: "search-select" %>
+
+              <% if @forced_genre_label.present? && params[:genre].blank? %>
+                <div class="search-input" style="display:flex; align-items:center; color:#111; background:#f7f4ea;">
+                  <%= @forced_genre_label %>
+                </div>
+              <% else %>
+                <%= select_tag :genre,
+                    options_for_select(genre_select_options, current_genre_value),
+                    class: "search-select" %>
+              <% end %>
             </div>
 
             <div class="search-field">
@@ -174,9 +195,9 @@
                   <% end %>
 
                 <% elsif @forced_station_label.present? && key.to_sym == :station %>
-                  <% station_clear_url = if params[:area].to_s == "umeda"
+                  <% station_clear_url = if request.path_parameters[:area].to_s == "umeda"
                                           umeda_path
-                                        elsif params[:area].to_s == "namba"
+                                        elsif request.path_parameters[:area].to_s == "namba"
                                           namba_path
                                         else
                                           (@search_form_url || root_path)
@@ -188,15 +209,29 @@
                   <% end %>
 
                 <% elsif @forced_genre_label.present? && key.to_sym == :genre && params[:genre].blank? %>
-                  <% genre_clear_url = if params[:area].to_s == "umeda"
+                  <% genre_clear_url = if request.path_parameters[:area].to_s == "umeda"
                                         umeda_path
-                                      elsif params[:area].to_s == "namba"
+                                      elsif request.path_parameters[:area].to_s == "namba"
                                         namba_path
                                       else
                                         (@search_form_url || root_path)
                                       end %>
 
                   <%= link_to "#{genre_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
+                    <span><%= text %></span>
+                    <span>×</span>
+                  <% end %>
+
+                <% elsif request.path_parameters[:smoking_area].present? && key.to_sym == :smoking_area %>
+                  <% smoking_clear_url = if request.path_parameters[:area].to_s == "umeda"
+                                          umeda_path
+                                        elsif request.path_parameters[:area].to_s == "namba"
+                                          namba_path
+                                        else
+                                          (@search_form_url || root_path)
+                                        end %>
+
+                  <%= link_to "#{smoking_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
                     <span><%= text %></span>
                     <span>×</span>
                   <% end %>
