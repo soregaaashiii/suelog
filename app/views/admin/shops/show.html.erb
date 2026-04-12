@@ -1,5 +1,7 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/admin/shops/show.html.erb %>
 
+<% rejected = (@shop.respond_to?(:rejected?) && @shop.rejected?) %>
+
 <h1 style="margin:0 0 16px;"><%= @shop.name %></h1>
 
 <div style="display:grid; gap:16px;">
@@ -16,15 +18,14 @@
       <div><strong>喫煙エリア:</strong> <%= (@shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : @shop.smoking_area).presence || "なし" %></div>
       <div><strong>喫煙タイプ:</strong> <%= (@shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : @shop.smoking_type).presence || "なし" %></div>
       <div><strong>最終確認日:</strong> <%= @shop.last_confirmed_on.presence || "なし" %></div>
-<div><strong>店舗詳細（ユーザー向け）:</strong> <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "なし") : "なし" %></div>
-<div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">補足情報（管理用）</div>
-  <div class="shop-show__infoCell shop-show__infoCell--multiline">
-    <%= @shop.note.presence || "未設定" %>
-  </div>
-</div>
+      <div><strong>店舗詳細（ユーザー向け）:</strong> <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "なし") : "なし" %></div>
 
-
+      <div class="shop-show__infoRow">
+        <div class="shop-show__infoHead">補足情報（管理用）</div>
+        <div class="shop-show__infoCell shop-show__infoCell--multiline">
+          <%= @shop.note.presence || "未設定" %>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -36,7 +37,45 @@
     <%= link_to "一覧に戻る",
         admin_shops_path(status: @status, source: @source, per: @per, page: @page),
         style: "display:inline-block; padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+
+    <% if !@shop.approved? && !rejected %>
+      <%= button_to "承認する",
+          approve_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),
+          method: :patch,
+          data: { turbo_confirm: "承認しますか？" },
+          style: "display:inline-block; padding:10px 14px; border:1px solid #137333; border-radius:10px; background:#e6f4ea; color:#137333; font-weight:700;" %>
+
+      <%= button_to "却下する",
+          reject_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),
+          method: :patch,
+          data: { turbo_confirm: "却下します。よろしいですか？" },
+          style: "display:inline-block; padding:10px 14px; border:1px solid #b00020; border-radius:10px; background:#fdecea; color:#b00020; font-weight:700;" %>
+    <% end %>
   </div>
 
   <%= render "duplicate_candidates", duplicate_candidates: @duplicate_candidates %>
+
+  <% if !@shop.approved? && !rejected %>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding-top:4px;">
+      <%= button_to "承認する",
+          approve_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),
+          method: :patch,
+          data: { turbo_confirm: "承認しますか？" },
+          style: "padding:10px 14px; border:1px solid #137333; border-radius:10px; background:#e6f4ea; color:#137333; font-weight:700;" %>
+
+      <%= button_to "却下する",
+          reject_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),
+          method: :patch,
+          data: { turbo_confirm: "却下します。よろしいですか？" },
+          style: "padding:10px 14px; border:1px solid #b00020; border-radius:10px; background:#fdecea; color:#b00020; font-weight:700;" %>
+
+      <%= link_to "編集する",
+          edit_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),
+          style: "display:inline-block; padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+
+      <%= link_to "一覧に戻る",
+          admin_shops_path(status: @status, source: @source, per: @per, page: @page),
+          style: "display:inline-block; padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+    </div>
+  <% end %>
 </div>
