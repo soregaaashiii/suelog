@@ -83,31 +83,31 @@
     </section>
   <% end %>
 
-  
+  <% if @is_area_page %>
+    <section class="home-section">
+      <div class="panel area-station-panel" style="margin-bottom:16px;">
+        <div class="area-station-panel__row">
+          <span class="area-station-panel__label">近くの駅から探す</span>
 
-        <% if @is_area_page %>
-  <section class="home-section">
-    <div class="panel" style="margin-bottom:16px;">
-      <h2 class="section-title" style="margin-bottom:8px;">近くの駅から探す</h2>
-
-      <% if @search_form_url == umeda_path || @search_form_url.to_s.include?("/umeda/") %>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <%= link_to "大阪駅周辺", umeda_station_path("osaka"), class: "btn btn--ghost" %>
-          <%= link_to "梅田駅周辺", umeda_station_path("umeda"), class: "btn btn--ghost" %>
-          <%= link_to "東梅田駅周辺", umeda_station_path("higashi-umeda"), class: "btn btn--ghost" %>
-          <%= link_to "西梅田駅周辺", umeda_station_path("nishi-umeda"), class: "btn btn--ghost" %>
+          <% if @search_form_url == umeda_path || @search_form_url.to_s.include?("/umeda/") %>
+            <div class="area-station-panel__links">
+              <%= link_to "大阪駅周辺", umeda_station_path("osaka"), class: "area-station-chip" %>
+              <%= link_to "梅田駅周辺", umeda_station_path("umeda"), class: "area-station-chip" %>
+              <%= link_to "東梅田駅周辺", umeda_station_path("higashi-umeda"), class: "area-station-chip" %>
+              <%= link_to "西梅田駅周辺", umeda_station_path("nishi-umeda"), class: "area-station-chip" %>
+            </div>
+          <% elsif @search_form_url == namba_path || @search_form_url.to_s.include?("/namba/") %>
+            <div class="area-station-panel__links">
+              <%= link_to "なんば駅周辺", namba_station_path("namba"), class: "area-station-chip" %>
+              <%= link_to "難波駅周辺", namba_station_path("nanba"), class: "area-station-chip" %>
+              <%= link_to "JR難波駅周辺", namba_station_path("jr-namba"), class: "area-station-chip" %>
+              <%= link_to "大阪難波駅周辺", namba_station_path("osaka-namba"), class: "area-station-chip" %>
+            </div>
+          <% end %>
         </div>
-      <% elsif @search_form_url == namba_path || @search_form_url.to_s.include?("/namba/") %>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <%= link_to "なんば駅周辺", namba_station_path("namba"), class: "btn btn--ghost" %>
-          <%= link_to "難波駅周辺", namba_station_path("nanba"), class: "btn btn--ghost" %>
-          <%= link_to "JR難波駅周辺", namba_station_path("jr-namba"), class: "btn btn--ghost" %>
-          <%= link_to "大阪難波駅周辺", namba_station_path("osaka-namba"), class: "btn btn--ghost" %>
-        </div>
-      <% end %>
-    </div>
-  </section>
-<% end %>
+      </div>
+    </section>
+  <% end %>
 
   <section class="home-section">
     <div class="section-head">
