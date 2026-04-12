@@ -65,6 +65,7 @@
     "reviews_count" => "口コミが多い順",
     "newest" => "新しい順"
   } %>
+
   <% if @is_area_page %>
     <section class="home-section">
       <div class="panel" style="margin-bottom:16px;">
@@ -76,6 +77,30 @@
             <% @area_nav_links.each do |item| %>
               <%= link_to item[:label], item[:path], class: "btn btn--ghost" %>
             <% end %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @is_area_page %>
+    <section class="home-section">
+      <div class="panel" style="margin-bottom:16px;">
+        <h2 class="section-title" style="margin-bottom:8px;">近くの駅から探す</h2>
+
+        <% if @search_form_url == umeda_path || @search_form_url.to_s.include?("/umeda/") %>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <%= link_to "大阪駅周辺", umeda_station_path("osaka"), class: "btn btn--ghost" %>
+            <%= link_to "梅田駅周辺", umeda_station_path("umeda"), class: "btn btn--ghost" %>
+            <%= link_to "東梅田駅周辺", umeda_station_path("higashi-umeda"), class: "btn btn--ghost" %>
+            <%= link_to "西梅田駅周辺", umeda_station_path("nishi-umeda"), class: "btn btn--ghost" %>
+          </div>
+        <% elsif @search_form_url == namba_path || @search_form_url.to_s.include?("/namba/") %>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <%= link_to "なんば駅周辺", namba_station_path("namba"), class: "btn btn--ghost" %>
+            <%= link_to "難波駅周辺", namba_station_path("nanba"), class: "btn btn--ghost" %>
+            <%= link_to "JR難波駅周辺", namba_station_path("jr-namba"), class: "btn btn--ghost" %>
+            <%= link_to "大阪難波駅周辺", namba_station_path("osaka-namba"), class: "btn btn--ghost" %>
           </div>
         <% end %>
       </div>
@@ -94,86 +119,84 @@
       </div>
     </div>
 
-    <% sort_base_params = (@listing_query || {}).except("sort", "open_now_only") %>
-
     <% current_query = (@listing_query || {}).dup %>
-<% sort_base_params = (@listing_query || {}).except("sort", "open_now_only", "per") %>
+    <% sort_base_params = current_query.except("sort", "open_now_only", "per") %>
 
-<div class="panel" style="margin-bottom:16px;">
-  <div style="font-size:13px; color:#666; font-weight:700; margin-bottom:12px;">
-    検索結果を並び替え
-  </div>
-
-  <%= form_with url: (@search_form_url || root_path), method: :get, local: true do %>
-    <% sort_base_params.each do |key, value| %>
-      <%= hidden_field_tag key, value %>
-    <% end %>
-
-    <div class="sort-per-grid" style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; align-items:end;">
-      <div>
-        <label style="display:block; font-size:12px; color:#666; font-weight:700; margin-bottom:6px;">
-          並び順
-        </label>
-        <%= select_tag :sort,
-            options_for_select([
-              ["おすすめ順", "recommended"],
-              ["評価が高い順", "rating"],
-              ["口コミが多い順", "reviews_count"],
-              ["新しい順", "newest"]
-            ], (@current_sort.presence || "recommended")),
-            class: "search-select",
-            onchange: "this.form.requestSubmit()" %>
+    <div class="panel" style="margin-bottom:16px;">
+      <div style="font-size:13px; color:#666; font-weight:700; margin-bottom:12px;">
+        検索結果を並び替え
       </div>
 
-      <div>
-        <label style="display:block; font-size:12px; color:#666; font-weight:700; margin-bottom:6px;">
-          表示件数
-        </label>
-        <%= select_tag :per,
-            options_for_select([
-              ["30件", 30],
-              ["50件", 50],
-              ["100件", 100]
-            ], (@per.presence || 30)),
-            class: "search-select",
-            onchange: "this.form.requestSubmit()" %>
-      </div>
-    </div>
+      <%= form_with url: (@search_form_url || root_path), method: :get, local: true do %>
+        <% sort_base_params.each do |key, value| %>
+          <%= hidden_field_tag key, value %>
+        <% end %>
 
-    <label style="display:inline-flex; align-items:center; gap:8px; font-size:14px; color:#333; margin-top:12px;">
-      <%= check_box_tag :open_now_only, "1", @open_now_only, onchange: "this.form.requestSubmit()" %>
-      <span>営業中のみ</span>
-    </label>
-  <% end %>
+        <div class="sort-per-grid" style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; align-items:end;">
+          <div>
+            <label style="display:block; font-size:12px; color:#666; font-weight:700; margin-bottom:6px;">
+              並び順
+            </label>
+            <%= select_tag :sort,
+                options_for_select([
+                  ["おすすめ順", "recommended"],
+                  ["評価が高い順", "rating"],
+                  ["口コミが多い順", "reviews_count"],
+                  ["新しい順", "newest"]
+                ], (@current_sort.presence || "recommended")),
+                class: "search-select",
+                onchange: "this.form.requestSubmit()" %>
+          </div>
 
-  <% if (@current_sort.present? && @current_sort != "recommended") || @open_now_only || (@per.present? && @per.to_i != 30) %>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px;">
-      <span style="font-size:12px; color:#666;">適用中</span>
+          <div>
+            <label style="display:block; font-size:12px; color:#666; font-weight:700; margin-bottom:6px;">
+              表示件数
+            </label>
+            <%= select_tag :per,
+                options_for_select([
+                  ["30件", 30],
+                  ["50件", 50],
+                  ["100件", 100]
+                ], (@per.presence || 30)),
+                class: "search-select",
+                onchange: "this.form.requestSubmit()" %>
+          </div>
+        </div>
 
-      <% if @current_sort.present? && @current_sort != "recommended" %>
-        <span class="filter-chip">
-          <span>並び順：<%= sort_label[@current_sort] || @current_sort %></span>
-        </span>
-      <% end %>
-
-      <% if @per.present? && @per.to_i != 30 %>
-        <span class="filter-chip">
-          <span>表示件数：<%= @per %>件</span>
-        </span>
-      <% end %>
-
-      <% if @open_now_only %>
-        <span class="filter-chip">
+        <label style="display:inline-flex; align-items:center; gap:8px; font-size:14px; color:#333; margin-top:12px;">
+          <%= check_box_tag :open_now_only, "1", @open_now_only, onchange: "this.form.requestSubmit()" %>
           <span>営業中のみ</span>
-        </span>
+        </label>
       <% end %>
 
-      <%= link_to "並び替えをリセット",
-          (@search_form_url || root_path).to_s + "?" + sort_base_params.merge(per: 30).to_query,
-          class: "filter-chip filter-chip--clear" %>
+      <% if (@current_sort.present? && @current_sort != "recommended") || @open_now_only || (@per.present? && @per.to_i != 30) %>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px;">
+          <span style="font-size:12px; color:#666;">適用中</span>
+
+          <% if @current_sort.present? && @current_sort != "recommended" %>
+            <span class="filter-chip">
+              <span>並び順：<%= sort_label[@current_sort] || @current_sort %></span>
+            </span>
+          <% end %>
+
+          <% if @per.present? && @per.to_i != 30 %>
+            <span class="filter-chip">
+              <span>表示件数：<%= @per %>件</span>
+            </span>
+          <% end %>
+
+          <% if @open_now_only %>
+            <span class="filter-chip">
+              <span>営業中のみ</span>
+            </span>
+          <% end %>
+
+          <%= link_to "並び替えをリセット",
+              (@search_form_url || root_path).to_s + "?" + sort_base_params.merge(per: 30).to_query,
+              class: "filter-chip filter-chip--clear" %>
+        </div>
+      <% end %>
     </div>
-  <% end %>
-</div>
 
     <% if @shops.present? && @shops.any? %>
       <%= render partial: "shared/shop_cards", locals: { shops: @shops } %>
@@ -330,6 +353,46 @@
 
           <p style="margin:0;">
             難波で喫煙可能な<%= genre_label[@forced_genre] || @forced_genre %>を探す入口ページとして活用してください。
+          </p>
+        <% elsif @forced_station_label.present? && @search_form_url.to_s.include?("/umeda/station/") %>
+          <p style="margin:0 0 12px;">
+            このページでは、梅田エリアの中でも<%= @forced_station_label %>周辺で喫煙できる店を一覧で見られます。
+            駅近で探したいときや、待ち合わせ前後に入りやすい店舗を探したいときに使いやすいページです。
+          </p>
+          <p style="margin:0 0 12px;">
+            同じ駅周辺でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
+            喫煙条件や営業時間、最寄駅表示を見ながら自分に合う店を探してみてください。
+          </p>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
+            <%= link_to "梅田で喫煙できる店", umeda_path, class: "btn btn--ghost" %>
+            <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost" %>
+            <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "btn btn--ghost" %>
+            <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "btn btn--ghost" %>
+          </div>
+
+          <p style="margin:0;">
+            <%= @forced_station_label %>周辺で喫煙可能な飲食店を探す入口ページとして活用してください。
+          </p>
+        <% elsif @forced_station_label.present? && @search_form_url.to_s.include?("/namba/station/") %>
+          <p style="margin:0 0 12px;">
+            このページでは、難波エリアの中でも<%= @forced_station_label %>周辺で喫煙できる店を一覧で見られます。
+            駅近で入りやすい店を探したいときや、移動前後に使いやすい店舗を探したいときに向いています。
+          </p>
+          <p style="margin:0 0 12px;">
+            同じ駅周辺でも、席で喫煙可なのか、喫煙所ありなのか、加熱式のみなのかで使い勝手は変わります。
+            喫煙条件や営業時間、最寄駅表示を見ながら自分に合う店を探してください。
+          </p>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px;">
+            <%= link_to "難波で喫煙できる店", namba_path, class: "btn btn--ghost" %>
+            <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost" %>
+            <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "btn btn--ghost" %>
+            <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "btn btn--ghost" %>
+          </div>
+
+          <p style="margin:0;">
+            <%= @forced_station_label %>周辺で喫煙可能な飲食店を探す入口ページとして活用してください。
           </p>
         <% end %>
       </div>
