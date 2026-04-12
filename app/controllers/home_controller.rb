@@ -228,11 +228,11 @@ class HomeController < ApplicationController
     @area_nav_links = umeda_nav_links + umeda_station_nav_links
 
     @page_title = "#{station_label}周辺で喫煙できる店｜席で吸える・喫煙所あり【吸えログ】"
-    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、#{station_label}近くの喫煙可能店を探せます。"
+    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。#{station_label}近くで席で喫煙可の店、喫煙所ありの店、加熱式のみ対応の店などを探せます。"
     @page_heading = "#{station_label}周辺で喫煙できる店"
     @page_subtitle = "#{station_label}近くの喫煙可能店舗を一覧で確認できます"
     @area_intro_title = "#{station_label}周辺で喫煙できる店を探す"
-    @area_intro_text = "#{station_label}周辺で喫煙できる飲食店をまとめています。駅近で探したい人向けに、席で吸える店、喫煙所ありの店、加熱式のみ対応の店などを一覧で見られます。"
+    @area_intro_text = "#{station_label}近くで喫煙できる店をまとめています。吸える居酒屋、バー、カフェなどを探したい人向けに、席で喫煙可・喫煙所あり・加熱式のみ対応の店を一覧で見られます。仕事帰りや待ち合わせ前後に入りやすい、#{station_label}周辺の喫煙可能店を探したいときの入口ページとして使えます。"
     @canonical_url = umeda_station_url(current_station_slug)
   end
 
@@ -323,11 +323,11 @@ class HomeController < ApplicationController
     @area_nav_links = namba_nav_links + namba_station_nav_links
 
     @page_title = "#{station_label}周辺で喫煙できる店｜席で吸える・喫煙所あり【吸えログ】"
-    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、#{station_label}近くの喫煙可能店を探せます。"
+    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。#{station_label}近くで席で喫煙可の店、喫煙所ありの店、加熱式のみ対応の店などを探せます。"
     @page_heading = "#{station_label}周辺で喫煙できる店"
     @page_subtitle = "#{station_label}近くの喫煙可能店舗を一覧で確認できます"
     @area_intro_title = "#{station_label}周辺で喫煙できる店を探す"
-    @area_intro_text = "#{station_label}周辺で喫煙できる飲食店をまとめています。駅近で探したい人向けに、席で吸える店、喫煙所ありの店、加熱式のみ対応の店などを一覧で見られます。"
+    @area_intro_text = "#{station_label}近くで喫煙できる店をまとめています。吸える居酒屋、バー、カフェなどを探したい人向けに、席で喫煙可・喫煙所あり・加熱式のみ対応の店を一覧で見られます。移動前後や待ち合わせの合間に入りやすい、#{station_label}周辺の喫煙可能店を探したいときの入口ページとして使えます。"
     @canonical_url = namba_station_url(current_station_slug)
   end
 
