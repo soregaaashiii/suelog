@@ -112,7 +112,13 @@
   <section class="home-section">
     <div class="section-head">
       <div>
-        <h2 class="section-title"><%= @page_heading %></h2>
+        <h2 class="section-title">
+          <% if @forced_station_label.present? %>
+            <%= "#{@forced_station_label}周辺で喫煙できる居酒屋・バー・カフェ" %>
+          <% else %>
+            <%= @page_heading %>
+          <% end %>
+        </h2>
       </div>
 
       <div class="result-count">
