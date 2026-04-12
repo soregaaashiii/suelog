@@ -326,12 +326,11 @@ class HomeController < ApplicationController
   end
 
   def station_route_request?
-    current_station_slug.present? &&
-      request.path_parameters[:station].present?
+    request.path_parameters[:station].present?
   end
 
   def current_station_slug
-    params[:station].to_s.presence
+    request.path_parameters[:station].to_s.presence
   end
 
   def current_station_label
@@ -396,7 +395,7 @@ class HomeController < ApplicationController
     end
 
     if station_q.present?
-      like = "%#{station_q}%"
+      like = "%#{ActiveRecord::Base.sanitize_sql_like(station_q)}%"
       base = base.where("shops.nearest_station LIKE ?", like)
     end
 

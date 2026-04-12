@@ -33,7 +33,17 @@
   <% hero_chips << ["喫煙タイプ：#{label}", :smoking_type] %>
 <% end %>
 
-<% hero_chips << ["最寄駅：#{params[:station]}", :station] if params[:station].present? %>
+<% station_chip_label =
+  if @forced_station_label.present?
+    @forced_station_label
+  elsif params[:station].present?
+    params[:station]
+  end %>
+
+<% if station_chip_label.present? %>
+  <% hero_chips << ["最寄駅：#{station_chip_label}", :station] %>
+<% end %>
+
 <% hero_chips << ["ジャンル：#{genre_label[params[:genre]] || params[:genre]}", :genre] if params[:genre].present? %>
 <% hero_chips << ["キーワード：#{params[:q]}", :q] if params[:q].present? %>
 
@@ -77,13 +87,20 @@
 
             <div class="search-field">
               <%= label_tag :station, "最寄駅" %>
-              <%= text_field_tag :station, params[:station], placeholder: "指定なし", class: "search-input" %>
+
+              <% if @forced_station_label.present? %>
+                <div class="search-input" style="display:flex; align-items:center; color:#111; background:#f7f4ea;">
+                  <%= @forced_station_label %>
+                </div>
+              <% else %>
+                <%= text_field_tag :station, params[:station], placeholder: "指定なし", class: "search-input" %>
+              <% end %>
             </div>
 
             <div class="search-field">
               <%= label_tag :genre, "ジャンル" %>
               <%= select_tag :genre,
-                  options_for_select([["指定なし", ""]] + Shop.genre_options.map { |g| [g, g] }, params[:genre]),
+                  options_for_select([["指定なし", ""]] + Shop.genre_options.map { |g| [genre_label[g] || g, g] }, params[:genre]),
                   class: "search-select" %>
             </div>
 
@@ -106,9 +123,24 @@
                 <% new_q = hero_query.deep_dup %>
                 <% new_q.delete(key.to_s) %>
 
-                <%= link_to "#{(@search_form_url || root_path)}?#{new_q.to_query}", class: "filter-chip" do %>
-                  <span><%= text %></span>
-                  <span>×</span>
+                <% if @forced_station_label.present? && key.to_sym == :station %>
+                  <% station_clear_url = if params[:area].to_s == "umeda"
+                                          umeda_path
+                                        elsif params[:area].to_s == "namba"
+                                          namba_path
+                                        else
+                                          (@search_form_url || root_path)
+                                        end %>
+
+                  <%= link_to "#{station_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
+                    <span><%= text %></span>
+                    <span>×</span>
+                  <% end %>
+                <% else %>
+                  <%= link_to "#{(@search_form_url || root_path)}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
+                    <span><%= text %></span>
+                    <span>×</span>
+                  <% end %>
                 <% end %>
               <% end %>
 
