@@ -21,7 +21,34 @@
 <% genre_label["cafe"] = "カフェ" %>
 <% genre_label["yakiniku"] = "焼肉" %>
 
+<% genre_select_options = [["指定なし", ""]] %>
+<% canonical_genres = [
+  ["居酒屋", "izakaya"],
+  ["バー・パブ", "bar"],
+  ["カフェ", "cafe"],
+  ["焼肉", "yakiniku"]
+] %>
+<% genre_select_options.concat(canonical_genres) %>
+
+<% Shop.genre_options.each do |g| %>
+  <% next if %w[izakaya bar cafe yakiniku].include?(g.to_s) %>
+  <% label = genre_label[g] || g %>
+  <% next if genre_select_options.any? { |existing_label, existing_value| existing_label == label || existing_value == g } %>
+  <% genre_select_options << [label, g] %>
+<% end %>
+
+<% current_genre_value =
+  if @forced_genre_slug.present?
+    @forced_genre_slug
+  else
+    params[:genre].presence
+  end %>
+
 <% hero_chips = [] %>
+
+<% if @forced_area_label.present? %>
+  <% hero_chips << ["エリア：#{@forced_area_label}", :forced_area] %>
+<% end %>
 
 <% if params[:smoking_area].present? %>
   <% label = smoking_area_label[params[:smoking_area]] || params[:smoking_area] %>
@@ -44,7 +71,17 @@
   <% hero_chips << ["最寄駅：#{station_chip_label}", :station] %>
 <% end %>
 
-<% hero_chips << ["ジャンル：#{genre_label[params[:genre]] || params[:genre]}", :genre] if params[:genre].present? %>
+<% genre_chip_label =
+  if @forced_genre_label.present?
+    @forced_genre_label
+  elsif params[:genre].present?
+    genre_label[params[:genre]] || params[:genre]
+  end %>
+
+<% if genre_chip_label.present? %>
+  <% hero_chips << ["ジャンル：#{genre_chip_label}", :genre] %>
+<% end %>
+
 <% hero_chips << ["キーワード：#{params[:q]}", :q] if params[:q].present? %>
 
 <section class="hero hero--fullbleed">
@@ -99,9 +136,16 @@
 
             <div class="search-field">
               <%= label_tag :genre, "ジャンル" %>
-              <%= select_tag :genre,
-                  options_for_select([["指定なし", ""]] + Shop.genre_options.map { |g| [genre_label[g] || g, g] }, params[:genre]),
-                  class: "search-select" %>
+
+              <% if @forced_genre_label.present? %>
+                <div class="search-input" style="display:flex; align-items:center; color:#111; background:#f7f4ea;">
+                  <%= @forced_genre_label %>
+                </div>
+              <% else %>
+                <%= select_tag :genre,
+                    options_for_select(genre_select_options, current_genre_value),
+                    class: "search-select" %>
+              <% end %>
             </div>
 
             <div class="search-field">
@@ -123,7 +167,20 @@
                 <% new_q = hero_query.deep_dup %>
                 <% new_q.delete(key.to_s) %>
 
-                <% if @forced_station_label.present? && key.to_sym == :station %>
+                <% if key.to_sym == :forced_area %>
+                  <% area_clear_query = hero_query.deep_dup %>
+                  <% area_clear_query.delete("smoking_area") if request.path.include?("/smoking/") %>
+                  <% area_clear_query.delete("genre") if request.path.include?("/genre/") %>
+                  <% area_clear_query.delete("station") if request.path.include?("/station/") %>
+
+                  <%= link_to "#{root_path}?#{area_clear_query.merge(per: (@per.presence || 30)).to_query}",
+                      class: "filter-chip",
+                      style: "background:#e8f1ff; border:1px solid #87aef5; color:#1d4ed8;" do %>
+                    <span><%= text %></span>
+                    <span>×</span>
+                  <% end %>
+
+                <% elsif @forced_station_label.present? && key.to_sym == :station %>
                   <% station_clear_url = if params[:area].to_s == "umeda"
                                           umeda_path
                                         elsif params[:area].to_s == "namba"
@@ -136,6 +193,21 @@
                     <span><%= text %></span>
                     <span>×</span>
                   <% end %>
+
+                <% elsif @forced_genre_label.present? && key.to_sym == :genre %>
+                  <% genre_clear_url = if params[:area].to_s == "umeda"
+                                        umeda_path
+                                      elsif params[:area].to_s == "namba"
+                                        namba_path
+                                      else
+                                        (@search_form_url || root_path)
+                                      end %>
+
+                  <%= link_to "#{genre_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
+                    <span><%= text %></span>
+                    <span>×</span>
+                  <% end %>
+
                 <% else %>
                   <%= link_to "#{(@search_form_url || root_path)}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
                     <span><%= text %></span>
