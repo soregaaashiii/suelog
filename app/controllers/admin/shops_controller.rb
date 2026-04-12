@@ -76,16 +76,9 @@ class Admin::ShopsController < Admin::BaseController
     status = params[:status].presence || "pending"
     shop = Shop.find(params[:id])
 
-    if Shop.duplicate_exists_for_import?(
-         {
-           name: shop.name,
-           address: shop.address,
-           phone: shop.phone
-         },
-         exclude_id: shop.id
-       )
+    if duplicate_exists_against_approved_shops?(shop)
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                  alert: "重複の可能性があるため承認できません。詳細から重複候補を確認してください。"
+                  alert: "承認済み店舗との重複の可能性があるため承認できません。詳細から重複候補を確認してください。"
       return
     end
 
@@ -133,14 +126,7 @@ class Admin::ShopsController < Admin::BaseController
       skipped_count = 0
 
       scope.find_each do |shop|
-        if Shop.duplicate_exists_for_import?(
-             {
-               name: shop.name,
-               address: shop.address,
-               phone: shop.phone
-             },
-             exclude_id: shop.id
-           )
+        if duplicate_exists_against_approved_shops?(shop)
           Rails.logger.info("[SKIP DUPLICATE APPROVE] #{shop.id}")
           skipped_count += 1
           next
@@ -151,7 +137,7 @@ class Admin::ShopsController < Admin::BaseController
       end
 
       message = "一括承認しました（#{approved_count}件）"
-      message += " / 重複の可能性でスキップ（#{skipped_count}件）" if skipped_count.positive?
+      message += " / 承認済み店舗との重複の可能性でスキップ（#{skipped_count}件）" if skipped_count.positive?
 
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                   notice: message
@@ -189,15 +175,12 @@ class Admin::ShopsController < Admin::BaseController
 
       case action
       when "approve"
-        if Shop.duplicate_exists_for_import?(
-             {
-               name: @shop.name,
-               address: @shop.address,
-               phone: @shop.phone
-             },
-             exclude_id: @shop.id
-           )
-          raise ActiveRecord::RecordInvalid.new(@shop.tap { |s| s.errors.add(:base, "重複の可能性があるため承認できません。詳細から重複候補を確認してください。") })
+        if duplicate_exists_against_approved_shops?(@shop)
+          raise ActiveRecord::RecordInvalid.new(
+            @shop.tap do |s|
+              s.errors.add(:base, "承認済み店舗との重複の可能性があるため承認できません。詳細から重複候補を確認してください。")
+            end
+          )
         end
 
         @shop.update!(approved: true, rejected: false)
@@ -329,20 +312,20 @@ class Admin::ShopsController < Admin::BaseController
           processed_rows += 1
 
           attrs = {
-  name: name,
-  address: address,
-  phone: phone
-}
+            name: name,
+            address: address,
+            phone: phone
+          }
 
-Rails.logger.warn(
-  "[CSV DUP CHECK] line=#{idx + 2} name=#{name.inspect} address=#{address.inspect} phone=#{phone.inspect}"
-)
+          Rails.logger.warn(
+            "[CSV DUP CHECK] line=#{idx + 2} name=#{name.inspect} address=#{address.inspect} phone=#{phone.inspect}"
+          )
 
-if Shop.duplicate_exists_for_import?(attrs)
-  skipped_duplicates += 1
-  Rails.logger.info("[SKIP DUPLICATE] line=#{idx + 2} #{name} / #{address}")
-  next
-end
+          if Shop.duplicate_exists_for_import?(attrs)
+            skipped_duplicates += 1
+            Rails.logger.info("[SKIP DUPLICATE] line=#{idx + 2} #{name} / #{address}")
+            next
+          end
 
           opening_hours_text = normalize_str.call(
             pick.call(row, [:opening_hours_text, "opening_hours_text", "通常営業時間", "営業時間テキスト"])
@@ -383,12 +366,13 @@ end
           raw_genre_value = pick.call(row, [:genre, "genre", "ジャンル"])
           raw_genre_other_value = pick.call(row, [:genre_other, "genre_other", "ジャンルその他", "その他"])
 
-         genre = normalize_str.call(raw_genre_value)
+          genre = normalize_str.call(raw_genre_value)
 
-# 保険：genreが取れない場合はgenre_otherを使う
-if genre.blank? && raw_genre_other_value.present?
-  genre = normalize_str.call(raw_genre_other_value)
-end
+          # 保険：genreが取れない場合はgenre_otherを使う
+          if genre.blank? && raw_genre_other_value.present?
+            genre = normalize_str.call(raw_genre_other_value)
+          end
+
           genre_other = normalize_str.call(raw_genre_other_value)
 
           Rails.logger.warn(
@@ -495,6 +479,39 @@ end
   end
 
   private
+
+  def duplicate_exists_against_approved_shops?(shop)
+    duplicate_scope_for_approved_shops(shop).exists?
+  end
+
+  def duplicate_scope_for_approved_shops(shop)
+    scope = Shop.where(approved: true).where.not(id: shop.id)
+
+    conditions = []
+    binds = {}
+
+    normalized_phone =
+      if shop.respond_to?(:normalized_phone) && shop.normalized_phone.present?
+        shop.normalized_phone
+      else
+        shop.phone.to_s.gsub(/\D/, "").presence
+      end
+
+    if normalized_phone.present?
+      conditions << "normalized_phone = :normalized_phone"
+      binds[:normalized_phone] = normalized_phone
+    end
+
+    if shop.name.present? && shop.address.present?
+      conditions << "(name = :name AND address = :address)"
+      binds[:name] = shop.name
+      binds[:address] = shop.address
+    end
+
+    return Shop.none if conditions.empty?
+
+    scope.where(conditions.join(" OR "), binds)
+  end
 
   def shop_params
     params.require(:shop).permit(
