@@ -38,10 +38,10 @@
 <% end %>
 
 <% current_genre_value =
-  if @forced_genre_slug.present?
+  if params[:genre].present?
+    params[:genre]
+  elsif @forced_genre_slug.present?
     @forced_genre_slug
-  else
-    params[:genre].presence
   end %>
 
 <% hero_chips = [] %>
@@ -72,10 +72,10 @@
 <% end %>
 
 <% genre_chip_label =
-  if @forced_genre_label.present?
-    @forced_genre_label
-  elsif params[:genre].present?
+  if params[:genre].present?
     genre_label[params[:genre]] || params[:genre]
+  elsif @forced_genre_label.present?
+    @forced_genre_label
   end %>
 
 <% if genre_chip_label.present? %>
@@ -136,16 +136,9 @@
 
             <div class="search-field">
               <%= label_tag :genre, "ジャンル" %>
-
-              <% if @forced_genre_label.present? %>
-                <div class="search-input" style="display:flex; align-items:center; color:#111; background:#f7f4ea;">
-                  <%= @forced_genre_label %>
-                </div>
-              <% else %>
-                <%= select_tag :genre,
-                    options_for_select(genre_select_options, current_genre_value),
-                    class: "search-select" %>
-              <% end %>
+              <%= select_tag :genre,
+                  options_for_select(genre_select_options, current_genre_value),
+                  class: "search-select" %>
             </div>
 
             <div class="search-field">
@@ -194,7 +187,7 @@
                     <span>×</span>
                   <% end %>
 
-                <% elsif @forced_genre_label.present? && key.to_sym == :genre %>
+                <% elsif @forced_genre_label.present? && key.to_sym == :genre && params[:genre].blank? %>
                   <% genre_clear_url = if params[:area].to_s == "umeda"
                                         umeda_path
                                       elsif params[:area].to_s == "namba"
