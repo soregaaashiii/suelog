@@ -5,11 +5,15 @@
   <% page_description = content_for?(:meta_description) ? yield(:meta_description) : "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。" %>
   <% page_url = content_for?(:canonical_url) ? yield(:canonical_url) : request.original_url %>
 
+  <% station_route_page = request.path_parameters[:station].present? %>
+  <% genre_route_page = request.path_parameters[:genre].present? %>
+  <% smoking_route_page = request.path_parameters[:smoking_area].present? %>
+
   <% noindex_params_present =
     params[:q].present? ||
-    params[:station].present? ||
-    params[:genre].present? ||
-    params[:smoking_area].present? ||
+    (params[:station].present? && !station_route_page) ||
+    (params[:genre].present? && !genre_route_page) ||
+    (params[:smoking_area].present? && !smoking_route_page) ||
     params[:smoking_type].present? ||
     params[:needs_review].present? ||
     params[:sort].present? ||
