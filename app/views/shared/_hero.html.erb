@@ -195,13 +195,14 @@
                   <% end %>
 
                 <% elsif @forced_station_label.present? && key.to_sym == :station %>
-                  <% station_clear_url = if request.path_parameters[:area].to_s == "umeda"
-                                          umeda_path
-                                        elsif request.path_parameters[:area].to_s == "namba"
-                                          namba_path
-                                        else
-                                          (@search_form_url || root_path)
-                                        end %>
+                  <% station_clear_url =
+                    if @current_area_key.to_s == "umeda"
+                      umeda_path
+                    elsif @current_area_key.to_s == "namba"
+                      namba_path
+                    else
+                      (@search_form_url || root_path)
+                    end %>
 
                   <%= link_to "#{station_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
                     <span><%= text %></span>
@@ -209,13 +210,14 @@
                   <% end %>
 
                 <% elsif @forced_genre_label.present? && key.to_sym == :genre && params[:genre].blank? %>
-                  <% genre_clear_url = if request.path_parameters[:area].to_s == "umeda"
-                                        umeda_path
-                                      elsif request.path_parameters[:area].to_s == "namba"
-                                        namba_path
-                                      else
-                                        (@search_form_url || root_path)
-                                      end %>
+                  <% genre_clear_url =
+                    if @current_area_key.to_s == "umeda"
+                      umeda_path
+                    elsif @current_area_key.to_s == "namba"
+                      namba_path
+                    else
+                      (@search_form_url || root_path)
+                    end %>
 
                   <%= link_to "#{genre_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
                     <span><%= text %></span>
@@ -223,13 +225,14 @@
                   <% end %>
 
                 <% elsif request.path_parameters[:smoking_area].present? && key.to_sym == :smoking_area %>
-                  <% smoking_clear_url = if request.path_parameters[:area].to_s == "umeda"
-                                          umeda_path
-                                        elsif request.path_parameters[:area].to_s == "namba"
-                                          namba_path
-                                        else
-                                          (@search_form_url || root_path)
-                                        end %>
+                  <% smoking_clear_url =
+                    if @current_area_key.to_s == "umeda"
+                      umeda_path
+                    elsif @current_area_key.to_s == "namba"
+                      namba_path
+                    else
+                      (@search_form_url || root_path)
+                    end %>
 
                   <%= link_to "#{smoking_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
                     <span><%= text %></span>

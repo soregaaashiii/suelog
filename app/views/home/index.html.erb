@@ -210,7 +210,7 @@
       <%= render partial: "shared/shop_cards", locals: { shops: @shops } %>
 
       <div style="margin-top:20px; display:flex; justify-content:center;">
-        <%= paginate @shops %>
+        <%= paginate @shops, params: (@pagination_params || {}) %>
       </div>
     <% else %>
       <div class="empty-state">

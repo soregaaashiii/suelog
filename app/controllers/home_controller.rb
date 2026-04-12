@@ -118,6 +118,8 @@ class HomeController < ApplicationController
     @forced_genre_terms = []
     @forced_station_keyword = nil
     @forced_station_label = nil
+    @current_area_key = current_area_key
+    @pagination_params = {}
   end
 
   def current_area_key
@@ -157,6 +159,7 @@ class HomeController < ApplicationController
     @is_area_page = true
     @search_form_url = umeda_path
     @area_nav_links = umeda_nav_links
+    @current_area_key = "umeda"
 
     smoking_area = normalized_smoking_area_param
 
@@ -205,6 +208,7 @@ class HomeController < ApplicationController
     @is_area_page = true
     @search_form_url = umeda_genre_path(current_genre_slug)
     @area_nav_links = umeda_nav_links
+    @current_area_key = "umeda"
 
     @page_title = "梅田で喫煙できる#{genre_label}まとめ｜喫煙可の店一覧【吸えログ】"
     @page_description = "梅田で喫煙できる#{genre_label}を掲載。喫煙エリア、喫煙タイプ、最寄駅、営業時間を確認しながら使いやすい店を探せます。"
@@ -230,6 +234,7 @@ class HomeController < ApplicationController
     @is_area_page = true
     @search_form_url = umeda_station_path(current_station_slug)
     @area_nav_links = umeda_nav_links + umeda_station_nav_links
+    @current_area_key = "umeda"
 
     @page_title = "#{station_label}周辺で喫煙できる店｜席で吸える・喫煙所あり【吸えログ】"
     @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。#{station_label}近くで席で喫煙可の店、喫煙所ありの店、加熱式のみ対応の店などを探せます。"
@@ -252,6 +257,7 @@ class HomeController < ApplicationController
     @is_area_page = true
     @search_form_url = namba_path
     @area_nav_links = namba_nav_links
+    @current_area_key = "namba"
 
     smoking_area = normalized_smoking_area_param
 
@@ -300,6 +306,7 @@ class HomeController < ApplicationController
     @is_area_page = true
     @search_form_url = namba_genre_path(current_genre_slug)
     @area_nav_links = namba_nav_links
+    @current_area_key = "namba"
 
     @page_title = "難波で喫煙できる#{genre_label}まとめ｜喫煙可の店一覧【吸えログ】"
     @page_description = "難波で喫煙できる#{genre_label}を掲載。喫煙エリア、喫煙タイプ、最寄駅、営業時間を確認しながら使いやすい店を探せます。"
@@ -325,6 +332,7 @@ class HomeController < ApplicationController
     @is_area_page = true
     @search_form_url = namba_station_path(current_station_slug)
     @area_nav_links = namba_nav_links + namba_station_nav_links
+    @current_area_key = "namba"
 
     @page_title = "#{station_label}周辺で喫煙できる店｜席で吸える・喫煙所あり【吸えログ】"
     @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。#{station_label}近くで席で喫煙可の店、喫煙所ありの店、加熱式のみ対応の店などを探せます。"
@@ -360,7 +368,7 @@ class HomeController < ApplicationController
   end
 
   def current_station_label
-    area_key = current_area_key.to_s
+    area_key = @current_area_key.presence || current_area_key.to_s
     slug = current_station_slug.to_s
     mapped = STATION_SLUG_MAP.dig(area_key, slug)
     return mapped if mapped.present?
@@ -376,6 +384,7 @@ class HomeController < ApplicationController
     @current_sort = normalized_sort_param
     @open_now_only = open_now_only_param?
     @listing_query = cleaned_listing_query
+    @pagination_params = (@listing_query || {}).merge(per: @per)
 
     genre_terms = effective_genre_terms
     station_q = effective_station_query
@@ -515,6 +524,9 @@ class HomeController < ApplicationController
   def cleaned_listing_query
     request.query_parameters.to_h.except("page", "commit", "area").each_with_object({}) do |(key, value), hash|
       next if value.blank?
+      next if station_route_request? && key == "station"
+      next if genre_route_request? && key == "genre"
+      next if request.path_parameters[:smoking_area].present? && key == "smoking_area"
 
       hash[key] = value
     end
