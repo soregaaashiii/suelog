@@ -111,7 +111,9 @@ class HomeController < ApplicationController
     @is_area_page = false
     @area_nav_links = []
     @forced_area_keyword = nil
+    @forced_area_label = nil
     @forced_genre = nil
+    @forced_genre_slug = nil
     @forced_genre_label = nil
     @forced_genre_terms = []
     @forced_station_keyword = nil
@@ -141,7 +143,9 @@ class HomeController < ApplicationController
 
   def apply_umeda_context!
     @forced_area_keyword = "梅田"
+    @forced_area_label = "梅田"
     @forced_genre = nil
+    @forced_genre_slug = nil
     @forced_genre_label = nil
     @forced_genre_terms = []
     @forced_station_keyword = nil
@@ -187,7 +191,9 @@ class HomeController < ApplicationController
     genre_label = genre_config[:label]
 
     @forced_area_keyword = "梅田"
+    @forced_area_label = "梅田"
     @forced_genre = genre_label
+    @forced_genre_slug = current_genre_slug
     @forced_genre_label = genre_label
     @forced_genre_terms = Array(genre_config[:terms])
     @forced_station_keyword = nil
@@ -210,7 +216,9 @@ class HomeController < ApplicationController
     raise ActionController::RoutingError, "Not Found" if station_label.blank?
 
     @forced_area_keyword = "梅田"
+    @forced_area_label = "梅田"
     @forced_genre = nil
+    @forced_genre_slug = nil
     @forced_genre_label = nil
     @forced_genre_terms = []
     @forced_station_keyword = station_label
@@ -230,7 +238,9 @@ class HomeController < ApplicationController
 
   def apply_namba_context!
     @forced_area_keyword = "難波"
+    @forced_area_label = "難波"
     @forced_genre = nil
+    @forced_genre_slug = nil
     @forced_genre_label = nil
     @forced_genre_terms = []
     @forced_station_keyword = nil
@@ -276,7 +286,9 @@ class HomeController < ApplicationController
     genre_label = genre_config[:label]
 
     @forced_area_keyword = "難波"
+    @forced_area_label = "難波"
     @forced_genre = genre_label
+    @forced_genre_slug = current_genre_slug
     @forced_genre_label = genre_label
     @forced_genre_terms = Array(genre_config[:terms])
     @forced_station_keyword = nil
@@ -299,7 +311,9 @@ class HomeController < ApplicationController
     raise ActionController::RoutingError, "Not Found" if station_label.blank?
 
     @forced_area_keyword = "難波"
+    @forced_area_label = "難波"
     @forced_genre = nil
+    @forced_genre_slug = nil
     @forced_genre_label = nil
     @forced_genre_terms = []
     @forced_station_keyword = station_label
