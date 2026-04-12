@@ -227,12 +227,12 @@ class HomeController < ApplicationController
     @search_form_url = umeda_station_path(current_station_slug)
     @area_nav_links = umeda_nav_links + umeda_station_nav_links
 
-    @page_title = "#{station_label}周辺で喫煙できる店まとめ｜梅田エリアの喫煙可飲食店【吸えログ】"
-    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、梅田エリアで#{station_label}近くの店を探せます。"
+    @page_title = "#{station_label}周辺で喫煙できる店｜席で吸える・喫煙所あり【吸えログ】"
+    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、#{station_label}近くの喫煙可能店を探せます。"
     @page_heading = "#{station_label}周辺で喫煙できる店"
-    @page_subtitle = "梅田エリアで#{station_label}近くの喫煙可能店舗を一覧で確認できます"
+    @page_subtitle = "#{station_label}近くの喫煙可能店舗を一覧で確認できます"
     @area_intro_title = "#{station_label}周辺で喫煙できる店を探す"
-    @area_intro_text = "#{station_label}周辺で喫煙できる飲食店をまとめています。駅近で探したい人向けに、席で吸える店や喫煙所ありの店を一覧で見られます。"
+    @area_intro_text = "#{station_label}周辺で喫煙できる飲食店をまとめています。駅近で探したい人向けに、席で吸える店、喫煙所ありの店、加熱式のみ対応の店などを一覧で見られます。"
     @canonical_url = umeda_station_url(current_station_slug)
   end
 
@@ -322,12 +322,12 @@ class HomeController < ApplicationController
     @search_form_url = namba_station_path(current_station_slug)
     @area_nav_links = namba_nav_links + namba_station_nav_links
 
-    @page_title = "#{station_label}周辺で喫煙できる店まとめ｜難波エリアの喫煙可飲食店【吸えログ】"
-    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、難波エリアで#{station_label}近くの店を探せます。"
+    @page_title = "#{station_label}周辺で喫煙できる店｜席で吸える・喫煙所あり【吸えログ】"
+    @page_description = "#{station_label}周辺で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、#{station_label}近くの喫煙可能店を探せます。"
     @page_heading = "#{station_label}周辺で喫煙できる店"
-    @page_subtitle = "難波エリアで#{station_label}近くの喫煙可能店舗を一覧で確認できます"
+    @page_subtitle = "#{station_label}近くの喫煙可能店舗を一覧で確認できます"
     @area_intro_title = "#{station_label}周辺で喫煙できる店を探す"
-    @area_intro_text = "#{station_label}周辺で喫煙できる飲食店をまとめています。駅近で探したい人向けに、席で吸える店や喫煙所ありの店を一覧で見られます。"
+    @area_intro_text = "#{station_label}周辺で喫煙できる飲食店をまとめています。駅近で探したい人向けに、席で吸える店、喫煙所ありの店、加熱式のみ対応の店などを一覧で見られます。"
     @canonical_url = namba_station_url(current_station_slug)
   end
 

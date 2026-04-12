@@ -1,0 +1,11 @@
+<h1><%= @station %>で喫煙できる店</h1>
+
+<p style="color:#666;">
+<%= @station %>周辺で喫煙可能な飲食店一覧です。
+</p>
+
+<div class="shop-grid">
+  <%= render partial: "shops/shop_card", collection: @shops, as: :shop %>
+</div>
+
+<%= paginate @shops %>
