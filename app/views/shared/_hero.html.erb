@@ -248,7 +248,7 @@
               <% end %>
 
               <%= link_to "すべてクリア",
-                  (@search_form_url || root_path).to_s + "?per=#{(@per.presence || 30)}",
+                  (@clear_filters_url || @search_form_url || root_path).to_s + "?per=#{(@per.presence || 30)}",
                   class: "filter-chip filter-chip--clear" %>
             </div>
           </div>

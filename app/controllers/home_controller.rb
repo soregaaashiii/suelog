@@ -101,6 +101,7 @@ class HomeController < ApplicationController
 
   def set_default_page_meta!
     @search_form_url = root_path
+    @clear_filters_url = root_path
     @page_title = "吸えログ in大阪｜大阪で喫煙できる飲食店を探せる"
     @page_description = "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。"
     @page_heading = "掲載店舗"
@@ -158,6 +159,7 @@ class HomeController < ApplicationController
     @forced_station_label = nil
     @is_area_page = true
     @search_form_url = umeda_path
+    @clear_filters_url = umeda_path
     @area_nav_links = umeda_nav_links
     @current_area_key = "umeda"
 
@@ -172,6 +174,7 @@ class HomeController < ApplicationController
       @area_intro_title = "梅田で席で吸える店を探す"
       @area_intro_text = "梅田で席で吸える飲食店をまとめています。移動せずにその場で吸いたい人、飲み会や仕事帰りに使いやすい店を探したい人向けの一覧です。"
       @canonical_url = umeda_smoking_url("all_smoking")
+      @clear_filters_url = umeda_smoking_path("all_smoking")
     when "separated"
       @page_title = "梅田で喫煙所ありの店まとめ｜喫煙可の飲食店一覧【吸えログ】"
       @page_description = "梅田で喫煙所ありの飲食店を掲載。完全禁煙は困るけれど、喫煙場所が分かれている店を探したい人向けに最寄駅や営業時間も確認できます。"
@@ -179,7 +182,8 @@ class HomeController < ApplicationController
       @page_subtitle = "梅田エリアで喫煙所ありの店舗を一覧で確認できます"
       @area_intro_title = "梅田で喫煙所ありの店を探す"
       @area_intro_text = "梅田で喫煙所ありの飲食店をまとめています。吸える場所が明確な店を探したい人向けに、使いやすい喫煙可能店を一覧で見られます。"
-      @canonical_url = umeda_smoking_url("separated")
+        @canonical_url = umeda_smoking_url("separated")
+      @clear_filters_url = umeda_smoking_path("separated")
     else
       @page_title = "梅田で喫煙可の店まとめ｜席で吸える・喫煙所あり【吸えログ】"
       @page_description = "梅田で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、梅田の喫煙可能店をまとめて探せます。"
@@ -188,6 +192,7 @@ class HomeController < ApplicationController
       @area_intro_title = "梅田で喫煙可の店を探す"
       @area_intro_text = "梅田で喫煙できる飲食店をまとめています。席で吸える店、喫煙所ありの店、加熱式のみ対応の店などをまとめて探したい人向けの入口ページです。"
       @canonical_url = umeda_url
+      @clear_filters_url = umeda_path
     end
   end
 
@@ -207,6 +212,7 @@ class HomeController < ApplicationController
     @forced_station_label = nil
     @is_area_page = true
     @search_form_url = umeda_genre_path(current_genre_slug)
+    @clear_filters_url = umeda_genre_path(current_genre_slug)
     @area_nav_links = umeda_nav_links
     @current_area_key = "umeda"
 
@@ -233,6 +239,7 @@ class HomeController < ApplicationController
     @forced_station_label = station_label
     @is_area_page = true
     @search_form_url = umeda_station_path(current_station_slug)
+    @clear_filters_url = umeda_station_path(current_station_slug)
     @area_nav_links = umeda_nav_links + umeda_station_nav_links
     @current_area_key = "umeda"
 
@@ -256,9 +263,9 @@ class HomeController < ApplicationController
     @forced_station_label = nil
     @is_area_page = true
     @search_form_url = namba_path
+    @clear_filters_url = namba_path
     @area_nav_links = namba_nav_links
     @current_area_key = "namba"
-
     smoking_area = normalized_smoking_area_param
 
     case smoking_area
@@ -270,6 +277,7 @@ class HomeController < ApplicationController
       @area_intro_title = "難波で席で吸える店を探す"
       @area_intro_text = "難波で席で吸える飲食店をまとめています。移動せずその場で吸いたい人や、二軒目・待ち合わせ前に使いやすい店を探したい人向けです。"
       @canonical_url = namba_smoking_url("all_smoking")
+      @clear_filters_url = namba_smoking_path("all_smoking")
     when "separated"
       @page_title = "難波で喫煙所ありの店まとめ｜喫煙可の飲食店一覧【吸えログ】"
       @page_description = "難波で喫煙所ありの飲食店を掲載。完全禁煙は困るけれど、喫煙場所が分かれている店を探したい人向けに最寄駅や営業時間も確認できます。"
@@ -278,6 +286,7 @@ class HomeController < ApplicationController
       @area_intro_title = "難波で喫煙所ありの店を探す"
       @area_intro_text = "難波で喫煙所ありの飲食店をまとめています。喫煙場所が明確な店を探したい人向けに、使いやすい喫煙可能店を一覧で見られます。"
       @canonical_url = namba_smoking_url("separated")
+      @clear_filters_url = namba_smoking_path("separated")
     else
       @page_title = "難波で喫煙可の店まとめ｜席で吸える・喫煙所あり【吸えログ】"
       @page_description = "難波で喫煙できる飲食店を掲載。席で喫煙可・喫煙所あり・加熱式のみ対応など、難波の喫煙可能店をまとめて探せます。"
@@ -285,7 +294,8 @@ class HomeController < ApplicationController
       @page_subtitle = "難波エリアの喫煙可能店舗を一覧で確認できます"
       @area_intro_title = "難波で喫煙可の店を探す"
       @area_intro_text = "難波で喫煙できる飲食店をまとめています。席で吸える店、喫煙所ありの店、加熱式のみ対応の店などをまとめて探したい人向けの入口ページです。"
-      @canonical_url = namba_url
+        @canonical_url = namba_url
+      @clear_filters_url = namba_path
     end
   end
 
@@ -305,6 +315,7 @@ class HomeController < ApplicationController
     @forced_station_label = nil
     @is_area_page = true
     @search_form_url = namba_genre_path(current_genre_slug)
+    @clear_filters_url = namba_genre_path(current_genre_slug)
     @area_nav_links = namba_nav_links
     @current_area_key = "namba"
 
@@ -330,7 +341,8 @@ class HomeController < ApplicationController
     @forced_station_keyword = station_label
     @forced_station_label = station_label
     @is_area_page = true
-    @search_form_url = namba_station_path(current_station_slug)
+     @search_form_url = namba_station_path(current_station_slug)
+    @clear_filters_url = namba_station_path(current_station_slug)
     @area_nav_links = namba_nav_links + namba_station_nav_links
     @current_area_key = "namba"
 
