@@ -182,7 +182,7 @@ class HomeController < ApplicationController
       @page_subtitle = "梅田エリアで喫煙所ありの店舗を一覧で確認できます"
       @area_intro_title = "梅田で喫煙所ありの店を探す"
       @area_intro_text = "梅田で喫煙所ありの飲食店をまとめています。吸える場所が明確な店を探したい人向けに、使いやすい喫煙可能店を一覧で見られます。"
-        @canonical_url = umeda_smoking_url("separated")
+      @canonical_url = umeda_smoking_url("separated")
       @clear_filters_url = umeda_smoking_path("separated")
     else
       @page_title = "梅田で喫煙可の店まとめ｜席で吸える・喫煙所あり【吸えログ】"
@@ -266,6 +266,7 @@ class HomeController < ApplicationController
     @clear_filters_url = namba_path
     @area_nav_links = namba_nav_links
     @current_area_key = "namba"
+
     smoking_area = normalized_smoking_area_param
 
     case smoking_area
@@ -294,7 +295,7 @@ class HomeController < ApplicationController
       @page_subtitle = "難波エリアの喫煙可能店舗を一覧で確認できます"
       @area_intro_title = "難波で喫煙可の店を探す"
       @area_intro_text = "難波で喫煙できる飲食店をまとめています。席で吸える店、喫煙所ありの店、加熱式のみ対応の店などをまとめて探したい人向けの入口ページです。"
-        @canonical_url = namba_url
+      @canonical_url = namba_url
       @clear_filters_url = namba_path
     end
   end
@@ -341,7 +342,7 @@ class HomeController < ApplicationController
     @forced_station_keyword = station_label
     @forced_station_label = station_label
     @is_area_page = true
-     @search_form_url = namba_station_path(current_station_slug)
+    @search_form_url = namba_station_path(current_station_slug)
     @clear_filters_url = namba_station_path(current_station_slug)
     @area_nav_links = namba_nav_links + namba_station_nav_links
     @current_area_key = "namba"
@@ -396,7 +397,7 @@ class HomeController < ApplicationController
     @current_sort = normalized_sort_param
     @open_now_only = open_now_only_param?
     @listing_query = cleaned_listing_query
-    @pagination_params = pagination_params_for_links
+    @pagination_params = (@listing_query || {}).merge(per: @per)
 
     genre_terms = effective_genre_terms
     station_q = effective_station_query
@@ -475,16 +476,6 @@ class HomeController < ApplicationController
 
     @shops_count = records.size
     @shops = Kaminari.paginate_array(records).page(params[:page]).per(@per)
-  end
-
-  def pagination_params_for_links
-    route_params = {}
-    route_params[:area] = @current_area_key if @current_area_key.present?
-    route_params[:station] = current_station_slug if station_route_request?
-    route_params[:genre] = current_genre_slug if genre_route_request?
-    route_params[:smoking_area] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present?
-
-    route_params.merge(@listing_query || {}).merge(per: @per)
   end
 
   def effective_genre_param
