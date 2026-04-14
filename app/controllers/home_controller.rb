@@ -397,7 +397,7 @@ class HomeController < ApplicationController
     @current_sort = normalized_sort_param
     @open_now_only = open_now_only_param?
     @listing_query = cleaned_listing_query
-    @pagination_params = (@listing_query || {}).merge(per: @per)
+    @pagination_params = @listing_query.merge(per: @per)
 
     genre_terms = effective_genre_terms
     station_q = effective_station_query
@@ -423,7 +423,6 @@ class HomeController < ApplicationController
         OR shops.address LIKE :like
         OR shops.nearest_station LIKE :like
       SQL
-
       base = base.where(area_sql, like: like)
     end
 
@@ -469,9 +468,7 @@ class HomeController < ApplicationController
     end
 
     records = base.to_a
-
     records.select!(&:open_now?) if @open_now_only
-
     records = sort_shop_records(records, @current_sort)
 
     @shops_count = records.size
