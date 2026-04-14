@@ -125,11 +125,14 @@ class HomeController < ApplicationController
 end
 
   def current_area_key
-    return "namba" if request.path.start_with?("/namba")
-    return "umeda" if request.path.start_with?("/umeda")
+  override = station_area_override
+  return override if override.present?
 
-    request.path_parameters[:area].presence || params[:area].presence
-  end
+  return "namba" if request.path.start_with?("/namba")
+  return "umeda" if request.path.start_with?("/umeda")
+
+  request.path_parameters[:area].presence || params[:area].presence
+end
 
   def station_area_override
     return nil unless station_route_request?
