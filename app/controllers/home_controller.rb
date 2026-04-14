@@ -602,7 +602,7 @@ end
   end
 
   def cleaned_listing_query
-  request.query_parameters.to_h.except("page", "commit", "area").each_with_object({}) do |(key, value), hash|
+  request.query_parameters.to_h.except("page", "commit").each_with_object({}) do |(key, value), hash|
     next if value.blank?
     next if station_route_request? && key == "station"
     next if genre_route_request? && key == "genre"
