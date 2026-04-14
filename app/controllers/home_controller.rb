@@ -576,17 +576,24 @@ end
   def pagination_params_for_links
   base_params = (@listing_query || {}).merge(per: @per)
 
-  if station_route_request? || genre_route_request? || request.path_parameters[:smoking_area].present?
-    route_params = {}
-    route_params[:area] = @current_area_key if @current_area_key.present?
-    route_params[:station] = current_station_slug if station_route_request?
-    route_params[:genre] = current_genre_slug if genre_route_request?
-    route_params[:smoking_area] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present?
+  return base_params unless station_route_request? || genre_route_request? || request.path_parameters[:smoking_area].present?
 
-    route_params.merge(base_params)
-  else
-    base_params
+  if station_route_request?
+    if @current_area_key.to_s == "namba"
+      return { controller: "home", action: "index", area: "namba", station: current_station_slug }.merge(base_params)
+    elsif @current_area_key.to_s == "umeda"
+      return { controller: "home", action: "index", area: "umeda", station: current_station_slug }.merge(base_params)
+    end
   end
+
+  route_params = {}
+  route_params[:controller] = "home"
+  route_params[:action] = "index"
+  route_params[:area] = @current_area_key if @current_area_key.present?
+  route_params[:genre] = current_genre_slug if genre_route_request?
+  route_params[:smoking_area] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present?
+
+  route_params.merge(base_params)
 end
 
 
