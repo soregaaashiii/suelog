@@ -1,6 +1,13 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/shared/_hero.html.erb %>
 
-<% hero_query = request.query_parameters.to_h.deep_dup.except("page", "commit") %>
+<%
+raw_hero_query = request.query_parameters.to_h.deep_dup.except("page", "commit")
+
+hero_query = raw_hero_query.each_with_object({}) do |(key, value), hash|
+  next if value.blank?
+  hash[key] = value
+end
+%>
 
 <% smoking_area_label = {
   "separated" => "喫煙所あり",
@@ -104,6 +111,7 @@
       <div class="hero__search">
         <%= form_with url: (@search_form_url || root_path), method: :get, local: true, class: "search-form" do %>
           <%= hidden_field_tag :per, (@per.presence || 30) %>
+          <%= hidden_field_tag :area, @current_area_key if @current_area_key.present? && !@forced_area_label.present? %>
 
           <div class="search-grid">
             <div class="search-field">
@@ -187,7 +195,7 @@
                   <% area_clear_query.delete("genre") if request.path.include?("/genre/") %>
                   <% area_clear_query.delete("station") if request.path.include?("/station/") %>
 
-                  <%= link_to "#{root_path}?#{area_clear_query.merge(per: (@per.presence || 30)).to_query}",
+                  <%= link_to "#{root_path}?#{area_clear_query.merge(per: (@per.presence || 30)).compact_blank.to_query}",
                       class: "filter-chip",
                       style: "background:#e8f1ff; border:1px solid #87aef5; color:#1d4ed8;" do %>
                     <span><%= text %></span>
@@ -204,7 +212,7 @@
                       (@search_form_url || root_path)
                     end %>
 
-                  <%= link_to "#{station_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
+                  <%= link_to "#{station_clear_url}?#{new_q.merge(per: (@per.presence || 30)).compact_blank.to_query}", class: "filter-chip" do %>
                     <span><%= text %></span>
                     <span>×</span>
                   <% end %>
@@ -219,7 +227,7 @@
                       (@search_form_url || root_path)
                     end %>
 
-                  <%= link_to "#{genre_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
+                  <%= link_to "#{genre_clear_url}?#{new_q.merge(per: (@per.presence || 30)).compact_blank.to_query}", class: "filter-chip" do %>
                     <span><%= text %></span>
                     <span>×</span>
                   <% end %>
@@ -234,13 +242,13 @@
                       (@search_form_url || root_path)
                     end %>
 
-                  <%= link_to "#{smoking_clear_url}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
+                  <%= link_to "#{smoking_clear_url}?#{new_q.merge(per: (@per.presence || 30)).compact_blank.to_query}", class: "filter-chip" do %>
                     <span><%= text %></span>
                     <span>×</span>
                   <% end %>
 
                 <% else %>
-                  <%= link_to "#{(@search_form_url || root_path)}?#{new_q.merge(per: (@per.presence || 30)).to_query}", class: "filter-chip" do %>
+                  <%= link_to "#{(@search_form_url || root_path)}?#{new_q.merge(per: (@per.presence || 30)).compact_blank.to_query}", class: "filter-chip" do %>
                     <span><%= text %></span>
                     <span>×</span>
                   <% end %>
@@ -269,8 +277,8 @@
                 end %>
 
               <%= link_to "すべてクリア",
-    "#{root_path}?per=#{(@per.presence || 30)}",
-    class: "filter-chip filter-chip--clear" %>
+                  "#{clear_base_url}?#{ { per: (@per.presence || 30) }.to_query }",
+                  class: "filter-chip filter-chip--clear" %>
             </div>
           </div>
         <% end %>
