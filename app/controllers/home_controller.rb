@@ -100,7 +100,7 @@ end
 
   private
 
-  def set_default_page_meta!
+def set_default_page_meta!
   @search_form_url = root_path
   @clear_filters_url = root_path
   @page_title = "吸えログ in大阪｜大阪で喫煙できる飲食店を探せる"
@@ -123,7 +123,7 @@ end
   @current_area_key = current_area_key
   @pagination_params = {}
   @pagination_base_path = root_path
-
+end
 
 def redirect_to_canonical_station_path!
   return false unless station_route_request?
@@ -156,9 +156,6 @@ def redirect_to_canonical_station_path!
 
   redirect_to target_url, status: :found
   true
-end
-
-
 end
 
   def current_area_key
