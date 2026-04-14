@@ -277,8 +277,8 @@ end
                 end %>
 
               <%= link_to "すべてクリア",
-                  "#{clear_base_url}?#{ { per: (@per.presence || 30) }.to_query }",
-                  class: "filter-chip filter-chip--clear" %>
+    root_path(per: (@per.presence || 30)),
+    class: "filter-chip filter-chip--clear" %>
             </div>
           </div>
         <% end %>
