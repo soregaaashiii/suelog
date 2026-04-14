@@ -124,13 +124,10 @@ class HomeController < ApplicationController
   end
 
   def current_area_key
-  if request.path.start_with?("/namba")
-    "namba"
-  elsif request.path.start_with?("/umeda")
-    "umeda"
-  else
-    station_area_override.presence || request.path_parameters[:area].presence || params[:area].presence
-  end
+  return "namba" if request.path.start_with?("/namba")
+  return "umeda" if request.path.start_with?("/umeda")
+
+  nil
 end
 
   def station_area_override
@@ -577,13 +574,25 @@ end
   end
 
   def pagination_params_for_links
-    route_params = {}
-    route_params[:station] = current_station_slug if station_route_request?
-    route_params[:genre] = current_genre_slug if genre_route_request?
-    route_params[:smoking_area] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present?
+  route_params = {}
 
-    route_params.merge(@listing_query || {}).merge(per: @per)
+  if station_route_request?
+    route_params[:station] = current_station_slug
+
+    return url_for(
+      controller: "home",
+      action: @current_area_key, # ← ここが超重要
+      station: current_station_slug,
+      **(@listing_query || {}),
+      per: @per
+    )
   end
+
+  route_params[:genre] = current_genre_slug if genre_route_request?
+  route_params[:smoking_area] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present?
+
+  route_params.merge(@listing_query || {}).merge(per: @per)
+end
 
   def normalized_keyword_query(value)
     value.to_s
