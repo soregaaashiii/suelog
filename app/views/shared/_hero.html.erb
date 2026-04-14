@@ -194,9 +194,9 @@ end
 
                 <% if key.to_sym == :forced_area %>
                   <% area_clear_query = hero_query.deep_dup %>
-                  <% area_clear_query.delete("smoking_area") if request.path.include?("/smoking/") %>
-                  <% area_clear_query.delete("genre") if request.path.include?("/genre/") %>
-                  <% area_clear_query.delete("station") if request.path.include?("/station/") %>
+                  <% area_clear_query["smoking_area"] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present? %>
+                  <% area_clear_query["genre"] = request.path_parameters[:genre] if request.path_parameters[:genre].present? %>
+                  <% area_clear_query["station"] = request.path_parameters[:station] if request.path_parameters[:station].present? %>
 
                   <%= link_to "#{root_path}?#{area_clear_query.merge(per: (@per.presence || 30)).compact_blank.to_query}",
                       class: "filter-chip",
