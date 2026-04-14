@@ -1317,8 +1317,10 @@ color: #111111;
 transform: translateY(-1px);
 }
 
-.km-pagination__item .current,
-.km-page--current {
+.km-pagination__item--current .km-page,
+.km-pagination__item .km-page--current,
+.km-page--current,
+.km-page.is-current {
 min-width: 42px;
 height: 42px;
 padding: 0 14px;
@@ -1326,10 +1328,11 @@ display: inline-flex;
 align-items: center;
 justify-content: center;
 border-radius: 999px;
-border: 1px solid #111111;
-background: #111111;
-color: #ffffff;
-font-weight: 800;
+border: 1px solid #d8c9a6;
+background: #f6f1e4;
+color: #6f5318;
+font-weight: 900;
+box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .km-pagination__item--nav a,
@@ -2091,73 +2094,4 @@ border-color: #d7c7a0;
 
 .logo-main {
 letter-spacing: 0.03em;
-}
-
-/* ===== ページネーション：吸えログ用（ベージュ統一） ===== */
-.pagination {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-}
-
-.pagination span,
-.pagination a {
-  min-width: 44px;
-  height: 44px;
-  padding: 0 14px;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  text-decoration: none;
-  font-weight: 800;
-  font-size: 15px;
-  border: 1px solid #e5dcc9;
-  background: #fff;
-  color: #333;
-  transition: all 0.15s ease;
-}
-
-/* hover */
-.pagination a:hover {
-  background: #f6f1e4;
-  border-color: #cbb98a;
-  color: #111;
-}
-
-/* ★ 今いるページ（今回の本命） */
-.pagination .current,
-.pagination span.current,
-.pagination .page.current span {
-  background: #f6f1e4 !important;   /* ←薄ベージュ */
-  color: #111 !important;
-  border: 2px solid #cbb98a !important; /* ←金寄り */
-  font-weight: 900;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-/* 前へ・次へ */
-.pagination .first a,
-.pagination .prev a,
-.pagination .next a,
-.pagination .last a {
-  background: #faf8f2;
-  color: #333;
-}
-
-/* 非活性 */
-.pagination .disabled {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-/* ... */
-.pagination .gap {
-  border: none;
-  background: transparent;
-  padding: 0 4px;
-  color: #999;
 }

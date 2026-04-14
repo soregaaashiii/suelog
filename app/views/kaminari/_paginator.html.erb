@@ -16,7 +16,7 @@
 
       <% each_page do |page| %>
         <% if page.display_tag? %>
-          <span class="km-pagination__item">
+          <span class="km-pagination__item <%= 'km-pagination__item--current' if page.current? %>">
             <%= page_tag page %>
           </span>
         <% elsif !page.was_truncated? %>
