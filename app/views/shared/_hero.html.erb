@@ -247,26 +247,29 @@
                 <% end %>
               <% end %>
 
+              <% station_slug = request.path_parameters[:station].presence %>
+              <% genre_slug = request.path_parameters[:genre].presence %>
+              <% smoking_slug = request.path_parameters[:smoking_area].presence %>
+
               <% clear_path =
-                if @forced_station_label.present? && @current_area_key.to_s == "umeda" && current_station_slug.present?
-                  umeda_station_path(current_station_slug)
-                elsif @forced_station_label.present? && @current_area_key.to_s == "namba" && current_station_slug.present?
-                  namba_station_path(current_station_slug)
-                elsif @forced_genre_label.present? && @current_area_key.to_s == "umeda" && current_genre_slug.present?
-                  umeda_genre_path(current_genre_slug)
-                elsif @forced_genre_label.present? && @current_area_key.to_s == "namba" && current_genre_slug.present?
-                  namba_genre_path(current_genre_slug)
-                elsif request.path_parameters[:smoking_area].present? && @current_area_key.to_s == "umeda"
-                  umeda_smoking_path(request.path_parameters[:smoking_area])
-                elsif request.path_parameters[:smoking_area].present? && @current_area_key.to_s == "namba"
-                  namba_smoking_path(request.path_parameters[:smoking_area])
+                if @forced_station_label.present? && @current_area_key.to_s == "umeda" && station_slug.present?
+                  umeda_station_path(station_slug)
+                elsif @forced_station_label.present? && @current_area_key.to_s == "namba" && station_slug.present?
+                  namba_station_path(station_slug)
+                elsif @forced_genre_label.present? && @current_area_key.to_s == "umeda" && genre_slug.present?
+                  umeda_genre_path(genre_slug)
+                elsif @forced_genre_label.present? && @current_area_key.to_s == "namba" && genre_slug.present?
+                  namba_genre_path(genre_slug)
+                elsif smoking_slug.present? && @current_area_key.to_s == "umeda"
+                  umeda_smoking_path(smoking_slug)
+                elsif smoking_slug.present? && @current_area_key.to_s == "namba"
+                  namba_smoking_path(smoking_slug)
                 else
                   (@clear_filters_url || @search_form_url || root_path)
                 end %>
 
               <%= link_to "すべてクリア",
-                  clear_path,
-                  params: { per: (@per.presence || 30) },
+                  "#{clear_path}?per=#{(@per.presence || 30)}",
                   class: "filter-chip filter-chip--clear" %>
             </div>
           </div>
