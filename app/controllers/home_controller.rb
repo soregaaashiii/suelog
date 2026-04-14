@@ -48,14 +48,15 @@ class HomeController < ApplicationController
   FULLWIDTH_SPACE = "\u3000"
 
   def index
-    track_page_view
+  track_page_view
 
-    set_default_page_meta!
-    apply_area_page_context_from_params!
+  set_default_page_meta!
+  return if redirect_to_canonical_station_path!
+  apply_area_page_context_from_params!
 
-    build_listing!
-    render :index
-  end
+  build_listing!
+  render :index
+end
 
   def umeda
     track_page_view
@@ -122,6 +123,42 @@ class HomeController < ApplicationController
   @current_area_key = current_area_key
   @pagination_params = {}
   @pagination_base_path = root_path
+
+
+def redirect_to_canonical_station_path!
+  return false unless station_route_request?
+
+  actual_area =
+    if request.path.start_with?("/namba")
+      "namba"
+    elsif request.path.start_with?("/umeda")
+      "umeda"
+    else
+      request.path_parameters[:area].to_s
+    end
+
+  canonical_area = station_area_override
+  return false if canonical_area.blank?
+  return false if canonical_area == actual_area
+
+  target_path =
+    case canonical_area
+    when "namba"
+      namba_station_path(current_station_slug)
+    when "umeda"
+      umeda_station_path(current_station_slug)
+    end
+
+  return false if target_path.blank?
+
+  query = request.query_parameters.to_h.to_query
+  target_url = query.present? ? "#{target_path}?#{query}" : target_path
+
+  redirect_to target_url, status: :found
+  true
+end
+
+
 end
 
   def current_area_key
