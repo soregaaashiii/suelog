@@ -212,7 +212,7 @@
       <div style="margin-top:20px; display:flex; justify-content:center;">
   <%= paginate @shops,
     params: (@pagination_params || {}).except(:page, "page"),
-    url: request.path %>
+    url: request.fullpath %>
 </div>
     <% else %>
       <div class="empty-state">
