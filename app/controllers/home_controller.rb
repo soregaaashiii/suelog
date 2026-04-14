@@ -100,29 +100,29 @@ class HomeController < ApplicationController
   private
 
   def set_default_page_meta!
-    @search_form_url = root_path
-    @clear_filters_url = root_path
-    @page_title = "吸えログ in大阪｜大阪で喫煙できる飲食店を探せる"
-    @page_description = "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。"
-    @page_heading = "掲載店舗"
-    @page_subtitle = "大阪の喫煙可能店舗を一覧で確認できます"
-    @area_intro_title = nil
-    @area_intro_text = nil
-    @canonical_url = root_url
-    @is_area_page = false
-    @area_nav_links = []
-    @forced_area_keyword = nil
-    @forced_area_label = nil
-    @forced_genre = nil
-    @forced_genre_slug = nil
-    @forced_genre_label = nil
-    @forced_genre_terms = []
-    @forced_station_keyword = nil
-    @forced_station_label = nil
-    @current_area_key = current_area_key
-    @pagination_params = {}
-@pagination_base_path = root_path
-  end
+  @search_form_url = root_path
+  @clear_filters_url = root_path
+  @page_title = "吸えログ in大阪｜大阪で喫煙できる飲食店を探せる"
+  @page_description = "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。"
+  @page_heading = "掲載店舗"
+  @page_subtitle = "大阪の喫煙可能店舗を一覧で確認できます"
+  @area_intro_title = nil
+  @area_intro_text = nil
+  @canonical_url = root_url
+  @is_area_page = false
+  @area_nav_links = []
+  @forced_area_keyword = nil
+  @forced_area_label = nil
+  @forced_genre = nil
+  @forced_genre_slug = nil
+  @forced_genre_label = nil
+  @forced_genre_terms = []
+  @forced_station_keyword = nil
+  @forced_station_label = nil
+  @current_area_key = current_area_key
+  @pagination_params = {}
+  @pagination_base_path = root_path
+end
 
   def current_area_key
     return "namba" if request.path.start_with?("/namba")
@@ -410,20 +410,20 @@ class HomeController < ApplicationController
   end
 
   def build_listing!
-    @per = params[:per].to_i
-    @per = 30 unless [30, 50, 100].include?(@per)
+  @per = params[:per].to_i
+  @per = 30 unless [30, 50, 100].include?(@per)
 
-    @current_sort = normalized_sort_param
-    @open_now_only = open_now_only_param?
-    @listing_query = cleaned_listing_query
-    @pagination_params = pagination_params_for_links
-@pagination_base_path = pagination_base_path
+  @current_sort = normalized_sort_param
+  @open_now_only = open_now_only_param?
+  @listing_query = cleaned_listing_query
+  @pagination_params = pagination_params_for_links
+  @pagination_base_path = pagination_base_path
 
-    genre_terms = effective_genre_terms
-    station_q = effective_station_query
-    smoking_area = normalized_smoking_area_param
-    smoking_type = params[:smoking_type].to_s.strip
-    keyword_q = normalized_keyword_query(params[:q])
+  genre_terms = effective_genre_terms
+  station_q = effective_station_query
+  smoking_area = normalized_smoking_area_param
+  smoking_type = params[:smoking_type].to_s.strip
+  keyword_q = normalized_keyword_query(params[:q])
 
     base = Shop
       .approved
@@ -565,15 +565,15 @@ class HomeController < ApplicationController
   end
 
   def cleaned_listing_query
-    request.query_parameters.to_h.except("page", "commit").each_with_object({}) do |(key, value), hash|
-      next if value.blank?
-      next if station_route_request? && key == "station"
-      next if genre_route_request? && key == "genre"
-      next if request.path_parameters[:smoking_area].present? && key == "smoking_area"
+  request.query_parameters.to_h.except("page", "commit", "area").each_with_object({}) do |(key, value), hash|
+    next if value.blank?
+    next if station_route_request? && key == "station"
+    next if genre_route_request? && key == "genre"
+    next if request.path_parameters[:smoking_area].present? && key == "smoking_area"
 
-      hash[key] = value
-    end
+    hash[key] = value
   end
+end
 
   def pagination_params_for_links
     (@listing_query || {}).merge(per: @per)
