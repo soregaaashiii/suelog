@@ -574,14 +574,19 @@ end
   end
 
   def pagination_params_for_links
-  route_params = {}
+  base_params = (@listing_query || {}).merge(per: @per)
 
-  route_params[:area] = @current_area_key if @current_area_key.present?
-  route_params[:station] = current_station_slug if station_route_request?
-  route_params[:genre] = current_genre_slug if genre_route_request?
-  route_params[:smoking_area] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present?
+  if station_route_request? || genre_route_request? || request.path_parameters[:smoking_area].present?
+    route_params = {}
+    route_params[:area] = @current_area_key if @current_area_key.present?
+    route_params[:station] = current_station_slug if station_route_request?
+    route_params[:genre] = current_genre_slug if genre_route_request?
+    route_params[:smoking_area] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present?
 
-  route_params.merge(@listing_query || {}).merge(per: @per)
+    route_params.merge(base_params)
+  else
+    base_params
+  end
 end
 
 
