@@ -580,41 +580,7 @@ end
 end
 
 def pagination_base_path
-  if station_route_request?
-    case @current_area_key.to_s
-    when "namba"
-      return namba_station_path(current_station_slug)
-    when "umeda"
-      return umeda_station_path(current_station_slug)
-    end
-  end
-
-  if genre_route_request?
-    case @current_area_key.to_s
-    when "namba"
-      return namba_genre_path(current_genre_slug)
-    when "umeda"
-      return umeda_genre_path(current_genre_slug)
-    end
-  end
-
-  if request.path_parameters[:smoking_area].present?
-    case @current_area_key.to_s
-    when "namba"
-      return namba_smoking_path(request.path_parameters[:smoking_area])
-    when "umeda"
-      return umeda_smoking_path(request.path_parameters[:smoking_area])
-    end
-  end
-
-  case @current_area_key.to_s
-  when "namba"
-    namba_path
-  when "umeda"
-    umeda_path
-  else
-    root_path
-  end
+  request.path
 end
 
   def normalized_keyword_query(value)
