@@ -30,7 +30,7 @@ to: "home#index",
 as: :umeda,
 defaults: { area: "umeda" }
 
-get "umeda/smoking/:smoking_area",
+get "umeda/smoking(/:smoking_area)",
 to: "home#index",
 as: :umeda_smoking,
 defaults: { area: "umeda" }
@@ -51,7 +51,7 @@ to: "home#index",
 as: :namba,
 defaults: { area: "namba" }
 
-get "namba/smoking/:smoking_area",
+get "namba/smoking(/:smoking_area)",
 to: "home#index",
 as: :namba_smoking,
 defaults: { area: "namba" }
