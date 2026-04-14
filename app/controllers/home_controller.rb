@@ -124,7 +124,7 @@ class HomeController < ApplicationController
   end
 
   def current_area_key
-    station_area_override.presence || request.path_parameters[:area].presence || params[:area].presence
+    request.path_parameters[:area].presence || params[:area].presence
   end
 
   def station_area_override
@@ -392,14 +392,11 @@ class HomeController < ApplicationController
     request.path_parameters[:station].to_s.presence
   end
 
-  def current_station_label
+   def current_station_label
     area_key = @current_area_key.presence || current_area_key.to_s
     slug = current_station_slug.to_s
     mapped = STATION_SLUG_MAP.dig(area_key, slug)
     return mapped if mapped.present?
-
-    fallback_mapped = STATION_SLUG_MAP.values.map { |stations| stations[slug] }.compact.first
-    return fallback_mapped if fallback_mapped.present?
     return nil if slug.blank?
 
     slug.tr("-", " ").strip
@@ -534,8 +531,8 @@ class HomeController < ApplicationController
   end
 
   def effective_station_query
-    return @forced_station_label if @forced_station_label.present?
     return @forced_station_keyword if @forced_station_keyword.present?
+    return @forced_station_label if @forced_station_label.present?
 
     params[:station].to_s.strip
   end

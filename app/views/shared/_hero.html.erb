@@ -54,7 +54,7 @@
 <% current_station_value =
   if @forced_station_label.present?
     @forced_station_label
-  elsif params[:station].present?
+  else
     params[:station]
   end %>
 
@@ -252,13 +252,13 @@
               <% smoking_slug = request.path_parameters[:smoking_area].presence %>
 
               <% clear_path =
-                if @forced_station_label.present? && @current_area_key.to_s == "umeda" && station_slug.present?
+                if station_slug.present? && @current_area_key.to_s == "umeda"
                   umeda_station_path(station_slug)
-                elsif @forced_station_label.present? && @current_area_key.to_s == "namba" && station_slug.present?
+                elsif station_slug.present? && @current_area_key.to_s == "namba"
                   namba_station_path(station_slug)
-                elsif @forced_genre_label.present? && @current_area_key.to_s == "umeda" && genre_slug.present?
+                elsif genre_slug.present? && @current_area_key.to_s == "umeda"
                   umeda_genre_path(genre_slug)
-                elsif @forced_genre_label.present? && @current_area_key.to_s == "namba" && genre_slug.present?
+                elsif genre_slug.present? && @current_area_key.to_s == "namba"
                   namba_genre_path(genre_slug)
                 elsif smoking_slug.present? && @current_area_key.to_s == "umeda"
                   umeda_smoking_path(smoking_slug)
