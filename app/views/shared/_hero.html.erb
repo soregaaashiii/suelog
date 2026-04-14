@@ -1,6 +1,6 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/shared/_hero.html.erb %>
 
-<% hero_query = request.query_parameters.to_h.deep_dup %>
+<% hero_query = request.query_parameters.to_h.deep_dup.except("page", "commit") %>
 
 <% smoking_area_label = {
   "separated" => "喫煙所あり",
@@ -144,7 +144,7 @@
                   <%= @forced_station_label %>
                 </div>
               <% else %>
-                <%= text_field_tag :station, params[:station], placeholder: "指定なし", class: "search-input" %>
+                <%= text_field_tag :station, current_station_value, placeholder: "指定なし", class: "search-input" %>
               <% end %>
             </div>
 

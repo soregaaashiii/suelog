@@ -124,7 +124,19 @@ class HomeController < ApplicationController
   end
 
   def current_area_key
-    request.path_parameters[:area].presence || params[:area].presence
+    station_area_override.presence || request.path_parameters[:area].presence || params[:area].presence
+  end
+
+  def station_area_override
+    return nil unless station_route_request?
+
+    slug = current_station_slug.to_s
+    return nil if slug.blank?
+
+    matched_areas = STATION_SLUG_MAP.select { |_area, stations| stations.key?(slug) }.keys
+    return matched_areas.first if matched_areas.one?
+
+    nil
   end
 
   def apply_area_page_context_from_params!
@@ -475,7 +487,17 @@ class HomeController < ApplicationController
     records = sort_shop_records(records, @current_sort)
 
     @shops_count = records.size
-    @shops = Kaminari.paginate_array(records).page(params[:page]).per(@per)
+
+    requested_page = params[:page].to_i
+    requested_page = 1 if requested_page < 1
+
+    paginated = Kaminari.paginate_array(records).page(requested_page).per(@per)
+
+    if paginated.total_pages.positive? && requested_page > paginated.total_pages
+      paginated = Kaminari.paginate_array(records).page(1).per(@per)
+    end
+
+    @shops = paginated
   end
 
   def effective_genre_param
@@ -549,13 +571,7 @@ class HomeController < ApplicationController
   end
 
   def pagination_params_for_links
-    route_params = {}
-    route_params[:area] = @current_area_key if @current_area_key.present?
-    route_params[:station] = current_station_slug if station_route_request?
-    route_params[:genre] = current_genre_slug if genre_route_request?
-    route_params[:smoking_area] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present?
-
-    route_params.merge(@listing_query || {}).merge(per: @per)
+    (@listing_query || {}).merge(per: @per)
   end
 
   def normalized_keyword_query(value)
