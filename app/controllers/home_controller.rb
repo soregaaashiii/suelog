@@ -578,13 +578,9 @@ end
 
   return base_params unless station_route_request? || genre_route_request? || request.path_parameters[:smoking_area].present?
 
-  if station_route_request?
-    if @current_area_key.to_s == "namba"
-      return { controller: "home", action: "index", area: "namba", station: current_station_slug }.merge(base_params)
-    elsif @current_area_key.to_s == "umeda"
-      return { controller: "home", action: "index", area: "umeda", station: current_station_slug }.merge(base_params)
-    end
-  end
+ def pagination_params_for_links
+  (@listing_query || {}).merge(per: @per)
+end
 
   route_params = {}
   route_params[:controller] = "home"
