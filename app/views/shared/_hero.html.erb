@@ -111,7 +111,10 @@ end
       <div class="hero__search">
         <%= form_with url: (@search_form_url || root_path), method: :get, local: true, class: "search-form" do %>
           <%= hidden_field_tag :per, (@per.presence || 30) %>
-          <%= hidden_field_tag :area, @current_area_key if @current_area_key.present? && !@forced_area_label.present? %>
+          <%# ホームでは area を持たせない（404防止） %>
+<% unless request.path == root_path %>
+  <%= hidden_field_tag :area, @current_area_key if @current_area_key.present? && !@forced_area_label.present? %>
+<% end %>
 
           <div class="search-grid">
             <div class="search-field">
