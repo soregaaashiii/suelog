@@ -576,8 +576,8 @@ end
 end
 
   def pagination_params_for_links
-    (@listing_query || {}).merge(per: @per)
-  end
+  (@listing_query || {}).merge(per: @per)
+end
 
 def pagination_base_path
   if station_route_request?
