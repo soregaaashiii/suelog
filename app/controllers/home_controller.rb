@@ -124,7 +124,7 @@ class HomeController < ApplicationController
   end
 
   def current_area_key
-    request.path_parameters[:area].presence || params[:area].presence
+    station_area_override.presence || request.path_parameters[:area].presence || params[:area].presence
   end
 
   def station_area_override
@@ -392,11 +392,14 @@ class HomeController < ApplicationController
     request.path_parameters[:station].to_s.presence
   end
 
-   def current_station_label
+  def current_station_label
     area_key = @current_area_key.presence || current_area_key.to_s
     slug = current_station_slug.to_s
     mapped = STATION_SLUG_MAP.dig(area_key, slug)
     return mapped if mapped.present?
+
+    fallback_mapped = STATION_SLUG_MAP.values.map { |stations| stations[slug] }.compact.first
+    return fallback_mapped if fallback_mapped.present?
     return nil if slug.blank?
 
     slug.tr("-", " ").strip
@@ -531,8 +534,8 @@ class HomeController < ApplicationController
   end
 
   def effective_station_query
-    return @forced_station_keyword if @forced_station_keyword.present?
     return @forced_station_label if @forced_station_label.present?
+    return @forced_station_keyword if @forced_station_keyword.present?
 
     params[:station].to_s.strip
   end
@@ -568,7 +571,12 @@ class HomeController < ApplicationController
   end
 
   def pagination_params_for_links
-    (@listing_query || {}).merge(per: @per)
+    route_params = {}
+    route_params[:station] = current_station_slug if station_route_request?
+    route_params[:genre] = current_genre_slug if genre_route_request?
+    route_params[:smoking_area] = request.path_parameters[:smoking_area] if request.path_parameters[:smoking_area].present?
+
+    route_params.merge(@listing_query || {}).merge(per: @per)
   end
 
   def normalized_keyword_query(value)
