@@ -35,7 +35,7 @@ to: "home#index",
 as: :umeda_smoking,
 defaults: { area: "umeda" }
 
-get "umeda/genre/:genre",
+get "umeda/genre(/:genre)",
 to: "home#index",
 as: :umeda_genre,
 defaults: { area: "umeda" }
@@ -56,7 +56,7 @@ to: "home#index",
 as: :namba_smoking,
 defaults: { area: "namba" }
 
-get "namba/genre/:genre",
+get "namba/genre(/:genre)",
 to: "home#index",
 as: :namba_genre,
 defaults: { area: "namba" }
