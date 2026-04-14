@@ -121,6 +121,7 @@ class HomeController < ApplicationController
     @forced_station_label = nil
     @current_area_key = current_area_key
     @pagination_params = {}
+@pagination_base_path = root_path
   end
 
   def current_area_key
@@ -416,6 +417,7 @@ class HomeController < ApplicationController
     @open_now_only = open_now_only_param?
     @listing_query = cleaned_listing_query
     @pagination_params = pagination_params_for_links
+@pagination_base_path = pagination_base_path
 
     genre_terms = effective_genre_terms
     station_q = effective_station_query
@@ -576,6 +578,44 @@ class HomeController < ApplicationController
   def pagination_params_for_links
     (@listing_query || {}).merge(per: @per)
   end
+
+def pagination_base_path
+  if station_route_request?
+    case @current_area_key.to_s
+    when "namba"
+      return namba_station_path(current_station_slug)
+    when "umeda"
+      return umeda_station_path(current_station_slug)
+    end
+  end
+
+  if genre_route_request?
+    case @current_area_key.to_s
+    when "namba"
+      return namba_genre_path(current_genre_slug)
+    when "umeda"
+      return umeda_genre_path(current_genre_slug)
+    end
+  end
+
+  if request.path_parameters[:smoking_area].present?
+    case @current_area_key.to_s
+    when "namba"
+      return namba_smoking_path(request.path_parameters[:smoking_area])
+    when "umeda"
+      return umeda_smoking_path(request.path_parameters[:smoking_area])
+    end
+  end
+
+  case @current_area_key.to_s
+  when "namba"
+    namba_path
+  when "umeda"
+    umeda_path
+  else
+    root_path
+  end
+end
 
   def normalized_keyword_query(value)
     value.to_s
