@@ -124,11 +124,11 @@ class HomeController < ApplicationController
   end
 
   def current_area_key
-  return "namba" if request.path.start_with?("/namba")
-  return "umeda" if request.path.start_with?("/umeda")
+    return "namba" if request.path.start_with?("/namba")
+    return "umeda" if request.path.start_with?("/umeda")
 
-  request.path_parameters[:area].presence || params[:area].presence
-end
+    request.path_parameters[:area].presence || params[:area].presence
+  end
 
   def station_area_override
     return nil unless station_route_request?
@@ -563,21 +563,19 @@ end
   end
 
   def cleaned_listing_query
-  request.query_parameters.to_h.except("page", "commit").each_with_object({}) do |(key, value), hash|
-    next if value.blank?
-    next if station_route_request? && key == "station"
-    next if genre_route_request? && key == "genre"
-    next if request.path_parameters[:smoking_area].present? && key == "smoking_area"
+    request.query_parameters.to_h.except("page", "commit").each_with_object({}) do |(key, value), hash|
+      next if value.blank?
+      next if station_route_request? && key == "station"
+      next if genre_route_request? && key == "genre"
+      next if request.path_parameters[:smoking_area].present? && key == "smoking_area"
 
-    hash[key] = value
+      hash[key] = value
+    end
   end
-end
 
   def pagination_params_for_links
-  (@listing_query || {}).merge(per: @per)
-end
-
-
+    (@listing_query || {}).merge(per: @per)
+  end
 
   def normalized_keyword_query(value)
     value.to_s
