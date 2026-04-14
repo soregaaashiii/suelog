@@ -54,7 +54,7 @@
 <% current_station_value =
   if @forced_station_label.present?
     @forced_station_label
-  else
+  elsif params[:station].present?
     params[:station]
   end %>
 
@@ -251,7 +251,7 @@
               <% genre_slug = request.path_parameters[:genre].presence %>
               <% smoking_slug = request.path_parameters[:smoking_area].presence %>
 
-              <% clear_path =
+              <% clear_base_url =
                 if station_slug.present? && @current_area_key.to_s == "umeda"
                   umeda_station_path(station_slug)
                 elsif station_slug.present? && @current_area_key.to_s == "namba"
@@ -269,7 +269,7 @@
                 end %>
 
               <%= link_to "すべてクリア",
-                  "#{clear_path}?per=#{(@per.presence || 30)}",
+                  "#{clear_base_url}?per=#{(@per.presence || 30)}",
                   class: "filter-chip filter-chip--clear" %>
             </div>
           </div>
