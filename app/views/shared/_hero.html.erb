@@ -54,7 +54,7 @@
 <% current_station_value =
   if @forced_station_label.present?
     @forced_station_label
-  else
+  elsif params[:station].present?
     params[:station]
   end %>
 
@@ -247,8 +247,10 @@
                 <% end %>
               <% end %>
 
+              <% clear_base_url = @clear_filters_url || @search_form_url || root_path %>
+
               <%= link_to "すべてクリア",
-                  "#{(@clear_filters_url || @search_form_url || root_path)}?per=#{(@per.presence || 30)}",
+                  "#{clear_base_url}?per=#{(@per.presence || 30)}",
                   class: "filter-chip filter-chip--clear" %>
             </div>
           </div>
