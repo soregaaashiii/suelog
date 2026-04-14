@@ -247,10 +247,26 @@
                 <% end %>
               <% end %>
 
-              <% clear_base_url = @clear_filters_url || @search_form_url || root_path %>
+              <% clear_path =
+                if @forced_station_label.present? && @current_area_key.to_s == "umeda" && current_station_slug.present?
+                  umeda_station_path(current_station_slug)
+                elsif @forced_station_label.present? && @current_area_key.to_s == "namba" && current_station_slug.present?
+                  namba_station_path(current_station_slug)
+                elsif @forced_genre_label.present? && @current_area_key.to_s == "umeda" && current_genre_slug.present?
+                  umeda_genre_path(current_genre_slug)
+                elsif @forced_genre_label.present? && @current_area_key.to_s == "namba" && current_genre_slug.present?
+                  namba_genre_path(current_genre_slug)
+                elsif request.path_parameters[:smoking_area].present? && @current_area_key.to_s == "umeda"
+                  umeda_smoking_path(request.path_parameters[:smoking_area])
+                elsif request.path_parameters[:smoking_area].present? && @current_area_key.to_s == "namba"
+                  namba_smoking_path(request.path_parameters[:smoking_area])
+                else
+                  (@clear_filters_url || @search_form_url || root_path)
+                end %>
 
               <%= link_to "すべてクリア",
-                  "#{clear_base_url}?per=#{(@per.presence || 30)}",
+                  clear_path,
+                  params: { per: (@per.presence || 30) },
                   class: "filter-chip filter-chip--clear" %>
             </div>
           </div>
