@@ -83,7 +83,10 @@ class Admin::ShopsController < Admin::BaseController
       @click_counts[:phone_click] = grouped_counts["phone_click"].to_i
       @click_counts[:map_click] = grouped_counts["map_click"].to_i
       @click_counts[:affiliate_click] = grouped_counts["affiliate_click"].to_i
-      @click_counts[:total] = @click_counts[:phone_click] + @click_counts[:map_click] + @click_counts[:affiliate_click]
+      @click_counts[:total] =
+        @click_counts[:phone_click] +
+        @click_counts[:map_click] +
+        @click_counts[:affiliate_click]
     end
   end
 
