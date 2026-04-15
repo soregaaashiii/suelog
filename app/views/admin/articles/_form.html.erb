@@ -70,7 +70,7 @@
     </div>
 
     <div style="margin-top:8px; font-size:12px; color:#666;">
-      ※ 本文欄を大きく表示しています。枠内が記事本文の入力エリアです。
+      ※ 枠内が記事本文の入力エリアです。
     </div>
   </div>
 
@@ -123,7 +123,12 @@
   width: 100%;
 }
 
-.article-body-editor-wrap .trix-button-row {
+.article-body-editor-wrap trix-toolbar {
+  display: block !important;
+  margin: 0 !important;
+}
+
+.article-body-editor-wrap trix-toolbar .trix-button-row {
   display: flex !important;
   flex-wrap: wrap;
   gap: 4px;
@@ -134,17 +139,10 @@
   padding: 8px;
 }
 
-.article-body-editor-wrap trix-toolbar {
-  display: block !important;
-  margin-bottom: 0 !important;
-}
-
 .article-body-editor-wrap trix-editor {
   display: block !important;
   width: 100% !important;
   min-height: 520px !important;
-  height: 520px !important;
-  overflow-y: auto !important;
   padding: 16px !important;
   border: 2px solid #111 !important;
   border-radius: 0 0 12px 12px !important;
@@ -152,34 +150,23 @@
   font-size: 16px !important;
   line-height: 1.9 !important;
   box-sizing: border-box !important;
-}
-
-.article-body-editor-wrap trix-editor:empty::before {
-  color: #999;
-  content: attr(placeholder);
+  overflow-y: auto !important;
 }
 
 .article-body-editor-wrap trix-editor:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
 }
-
-.article-body-editor-wrap .trix-content {
-  min-height: 420px;
-}
 </style>
 
 <script>
 (() => {
   function setupArticleSnippetButtons() {
-    const forms = document.querySelectorAll("form");
-    if (!forms.length) return;
-
-    forms.forEach((form) => {
+    document.querySelectorAll("form").forEach((form) => {
       if (form.dataset.articleSnippetBound === "true") return;
       form.dataset.articleSnippetBound = "true";
 
-      form.addEventListener("click", function(event) {
+      form.addEventListener("click", (event) => {
         const btn = event.target.closest(".article-snippet-btn");
         if (!btn) return;
 
@@ -187,9 +174,7 @@
         if (!editor || !editor.editor) return;
 
         event.preventDefault();
-
-        const snippet = btn.dataset.snippet || "";
-        editor.editor.insertString(snippet + "\n");
+        editor.editor.insertString((btn.dataset.snippet || "") + "\n");
         editor.focus();
       });
     });
