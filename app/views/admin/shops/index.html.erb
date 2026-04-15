@@ -28,39 +28,39 @@ CSV一括インポート
 <div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
   <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
     <div>
-  <strong>表示：</strong>
-  <% if @status == "all" %>
-    <strong>すべて</strong>｜
-    <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "保留一覧", holds_admin_shops_path %>
-  <% elsif @status == "rejected" %>
-    <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-    <strong>却下</strong>｜
-    <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "保留一覧", holds_admin_shops_path %>
-  <% elsif @status == "unverified" %>
-    <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-    <strong>未確認のみ</strong>｜
-    <%= link_to "保留一覧", holds_admin_shops_path %>
-  <% elsif @status == "hold" %>
-    <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
-    <strong>保留一覧</strong>
-  <% else %>
-    <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-    <strong>承認待ち</strong>｜
-    <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
-    <%= link_to "保留一覧", holds_admin_shops_path %>
-  <% end %>
-</div>
+      <strong>表示：</strong>
+      <% if @status == "all" %>
+        <strong>すべて</strong>｜
+        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "保留一覧", holds_admin_shops_path %>
+      <% elsif @status == "rejected" %>
+        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+        <strong>却下</strong>｜
+        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "保留一覧", holds_admin_shops_path %>
+      <% elsif @status == "unverified" %>
+        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+        <strong>未確認のみ</strong>｜
+        <%= link_to "保留一覧", holds_admin_shops_path %>
+      <% elsif @status == "hold" %>
+        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+        <strong>保留一覧</strong>
+      <% else %>
+        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+        <strong>承認待ち</strong>｜
+        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "保留一覧", holds_admin_shops_path %>
+      <% end %>
+    </div>
 
     <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
       <div style="display:flex; gap:8px; align-items:center;">
@@ -171,160 +171,182 @@ CSV一括インポート
     </div>
   <% end %>
 
-  <table style="width:100%; border-collapse:collapse;">
-    <thead>
-      <tr style="border-bottom:2px solid #111;">
-        <th align="left" style="width:42px;">選択</th>
-        <th align="left">店名</th>
-        <th align="left">住所</th>
-        <th align="left">状態</th>
-        <th align="left">操作</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <% @shops.each do |shop| %>
-        <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
-
-                <% duplicate_state =
-            if @status == "pending" && shop.respond_to?(:duplicate_flag_state)
-              shop.duplicate_flag_state
-            else
-              :none
-            end %>
-
-        <% detail_label, detail_style =
-            case duplicate_state
-            when :approved_or_rejected
-              [
-                "詳細（重複候補あり）",
-                "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; font-weight:700; border-radius:10px; text-decoration:none;"
-              ]
-            when :pending_only
-              [
-                "詳細（承認待ち重複）",
-                "padding:6px 10px; border:1px solid #9aa0a6; background:#f5f5f5; color:#555; font-weight:700; border-radius:10px; text-decoration:none;"
-              ]
-            else
-              [
-                "詳細",
-                "padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; font-weight:700; border-radius:10px; text-decoration:none;"
-              ]
-            end %>
-
-        <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
-          <td style="padding:10px 0;">
-            <input type="checkbox" class="shop_checkbox" value="<%= shop.id %>">
-          </td>
-
-                    <td style="padding:8px 0;">
-            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <strong><%= shop.name %></strong>
-
-              <%= link_to "Google検索",
-                  "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address].compact.join(' '))}",
-                  target: "_blank",
-                  rel: "noopener",
-                  style: "display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:8px; text-decoration:none; font-size:12px; background:#fff;" %>
-            </div>
-
-            <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
-  <div style="margin-top:6px;">
-    <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#fff6db; color:#8a6500; border:1px solid #f0de9c;">
-      未確認
-    </span>
-  </div>
-<% end %>
-
-<% if shop.respond_to?(:on_hold?) && shop.on_hold? %>
-  <div style="margin-top:6px;">
-    <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#ffe9e9; color:#b00020; border:1px solid #f3b2b2;">
-      保留：<%= shop.hold_reason_label %>
-    </span>
-  </div>
-<% end %>
-
-            <% if Shop.column_names.include?("source") && shop.respond_to?(:source) && shop.source.present? %>
-              <div style="color:#666; font-size:12px; margin-top:4px;">source：<%= shop.source %></div>
-            <% end %>
-          </td>
-
-                    <td style="padding:8px 0;">
-            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <span><%= shop.address.presence || "未設定" %></span>
-
-              <% if shop.address.present? %>
-                <button type="button"
-                        class="copy-address-button"
-                        data-address="<%= shop.address %>"
-                        style="padding:4px 8px; border:1px solid #ddd; border-radius:8px; background:#fff; font-size:12px; cursor:pointer;">
-                  住所コピー
-                </button>
-              <% end %>
-            </div>
-          </td>
-
-          <td style="padding:8px 0;">
-            <% if shop.respond_to?(:on_hold?) && shop.on_hold? %>
-  <span style="color:#b00020; font-weight:bold;">保留中</span>
-<% elsif shop.approved? %>
-  <span style="color:#137333; font-weight:bold;">承認済み</span>
-<% elsif rejected %>
-  <span style="color:#b00020; font-weight:bold;">却下</span>
-<% else %>
-  <span style="color:#b00020; font-weight:bold;">承認待ち</span>
-<% end %>
-
-            <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
-              <div style="margin-top:4px; color:#8a6500; font-size:12px; font-weight:700;">
-                喫煙情報未確認
-              </div>
-            <% end %>
-          </td>
-
-          <td style="padding:8px 0;">
-            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-              <% if !shop.approved? && !shop.rejected? %>
-                <%= button_to "承認",
-                    approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                    method: :patch,
-                    data: { turbo: false, turbo_confirm: "承認しますか？" } %>
-
-                <%= button_to "却下",
-                    reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                    method: :patch,
-                    data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
-
-                <% if @status == "pending" && duplicate_state == :approved_or_rejected %>
-  <%= button_to "重複として却下",
-      reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-      method: :patch,
-      data: { turbo: false, turbo_confirm: "重複として却下しますか？" },
-      style: "background:#fff1f1; border:1px solid #b00020; color:#b00020;" %>
-<% end %>
-              <% end %>
-
-              <%= link_to detail_label,
-                  admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                  style: detail_style %>
-
-              <%= link_to "編集",
-                  edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                  style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-
-              <%= link_to "公開ページ",
-                  shop_path(shop),
-                  target: "_blank",
-                  rel: "noopener",
-                  style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-            </div>
-          </td>
-
-
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; min-width:1300px;">
+      <thead>
+        <tr style="border-bottom:2px solid #111;">
+          <th align="left" style="width:42px;">選択</th>
+          <th align="left">店名</th>
+          <th align="left">住所</th>
+          <th align="left">状態</th>
+          <th align="right">合計</th>
+          <th align="right">電話</th>
+          <th align="right">地図</th>
+          <th align="right">アフィリ</th>
+          <th align="left">操作</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+
+      <tbody>
+        <% @shops.each do |shop| %>
+          <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
+
+          <% duplicate_state =
+              if @status == "pending" && shop.respond_to?(:duplicate_flag_state)
+                shop.duplicate_flag_state
+              else
+                :none
+              end %>
+
+          <% detail_label, detail_style =
+              case duplicate_state
+              when :approved_or_rejected
+                [
+                  "詳細（重複候補あり）",
+                  "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; font-weight:700; border-radius:10px; text-decoration:none;"
+                ]
+              when :pending_only
+                [
+                  "詳細（承認待ち重複）",
+                  "padding:6px 10px; border:1px solid #9aa0a6; background:#f5f5f5; color:#555; font-weight:700; border-radius:10px; text-decoration:none;"
+                ]
+              else
+                [
+                  "詳細",
+                  "padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; font-weight:700; border-radius:10px; text-decoration:none;"
+                ]
+              end %>
+
+          <% click_counts = (@shop_click_counts || {})[shop.id] || {} %>
+
+          <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
+            <td style="padding:10px 0;">
+              <input type="checkbox" class="shop_checkbox" value="<%= shop.id %>">
+            </td>
+
+            <td style="padding:8px 0;">
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <strong><%= shop.name %></strong>
+
+                <%= link_to "Google検索",
+                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address].compact.join(' '))}",
+                    target: "_blank",
+                    rel: "noopener",
+                    style: "display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:8px; text-decoration:none; font-size:12px; background:#fff;" %>
+              </div>
+
+              <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
+                <div style="margin-top:6px;">
+                  <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#fff6db; color:#8a6500; border:1px solid #f0de9c;">
+                    未確認
+                  </span>
+                </div>
+              <% end %>
+
+              <% if shop.respond_to?(:on_hold?) && shop.on_hold? %>
+                <div style="margin-top:6px;">
+                  <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#ffe9e9; color:#b00020; border:1px solid #f3b2b2;">
+                    保留：<%= shop.hold_reason_label %>
+                  </span>
+                </div>
+              <% end %>
+
+              <% if Shop.column_names.include?("source") && shop.respond_to?(:source) && shop.source.present? %>
+                <div style="color:#666; font-size:12px; margin-top:4px;">source：<%= shop.source %></div>
+              <% end %>
+            </td>
+
+            <td style="padding:8px 0;">
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <span><%= shop.address.presence || "未設定" %></span>
+
+                <% if shop.address.present? %>
+                  <button type="button"
+                          class="copy-address-button"
+                          data-address="<%= shop.address %>"
+                          style="padding:4px 8px; border:1px solid #ddd; border-radius:8px; background:#fff; font-size:12px; cursor:pointer;">
+                    住所コピー
+                  </button>
+                <% end %>
+              </div>
+            </td>
+
+            <td style="padding:8px 0;">
+              <% if shop.respond_to?(:on_hold?) && shop.on_hold? %>
+                <span style="color:#b00020; font-weight:bold;">保留中</span>
+              <% elsif shop.approved? %>
+                <span style="color:#137333; font-weight:bold;">承認済み</span>
+              <% elsif rejected %>
+                <span style="color:#b00020; font-weight:bold;">却下</span>
+              <% else %>
+                <span style="color:#b00020; font-weight:bold;">承認待ち</span>
+              <% end %>
+
+              <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
+                <div style="margin-top:4px; color:#8a6500; font-size:12px; font-weight:700;">
+                  喫煙情報未確認
+                </div>
+              <% end %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0; font-weight:700;">
+              <%= click_counts[:total].to_i %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0;">
+              <%= click_counts[:phone_click].to_i %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0;">
+              <%= click_counts[:map_click].to_i %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0;">
+              <%= click_counts[:affiliate_click].to_i %>
+            </td>
+
+            <td style="padding:8px 0;">
+              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                <% if !shop.approved? && !shop.rejected? %>
+                  <%= button_to "承認",
+                      approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                      method: :patch,
+                      data: { turbo: false, turbo_confirm: "承認しますか？" } %>
+
+                  <%= button_to "却下",
+                      reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                      method: :patch,
+                      data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
+
+                  <% if @status == "pending" && duplicate_state == :approved_or_rejected %>
+                    <%= button_to "重複として却下",
+                        reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                        method: :patch,
+                        data: { turbo: false, turbo_confirm: "重複として却下しますか？" },
+                        style: "background:#fff1f1; border:1px solid #b00020; color:#b00020;" %>
+                  <% end %>
+                <% end %>
+
+                <%= link_to detail_label,
+                    admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                    style: detail_style %>
+
+                <%= link_to "編集",
+                    edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+
+                <%= link_to "公開ページ",
+                    shop_path(shop),
+                    target: "_blank",
+                    rel: "noopener",
+                    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 
   <% if (@total_pages || 1) > 1 %>
     <div style="margin:12px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">

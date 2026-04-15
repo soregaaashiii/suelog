@@ -51,6 +51,66 @@ class Admin::ShopsController < Admin::BaseController
     @shops = scope.offset(offset).limit(@per)
   end
 
+  def clicks
+    @status = params[:status].presence || "all"
+    @source = params[:source].to_s.presence
+
+    @per = (params[:per].presence || 50).to_i
+    @per = 50 if @per <= 0
+    @per = 500 if @per > 500
+
+    @page = params[:page].to_i
+    @page = 1 if @page <= 0
+
+    scope = Shop.order(created_at: :desc)
+
+    case @status
+    when "rejected"
+      scope = scope.where(rejected: true)
+    when "pending"
+      scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
+    when "unverified"
+      scope = scope.where(smoking_unverified: true)
+    when "hold"
+      scope = scope.where(on_hold: true)
+    else
+      # all
+    end
+
+    if @source.present? && Shop.column_names.include?("source")
+      scope = scope.where(source: @source)
+    end
+
+    @total_count = scope.count
+    @total_pages = (@total_count.to_f / @per).ceil
+    @total_pages = 1 if @total_pages <= 0
+
+    offset = (@page - 1) * @per
+    @shops = scope.offset(offset).limit(@per)
+
+    @shop_click_counts = {}
+
+    if defined?(ShopClick)
+      click_counts_by_shop = ShopClick
+        .where(shop_id: @shops.map(&:id))
+        .group(:shop_id, :kind)
+        .count
+
+      @shops.each do |shop|
+        phone = click_counts_by_shop[[shop.id, "phone_click"]].to_i
+        map = click_counts_by_shop[[shop.id, "map_click"]].to_i
+        affiliate = click_counts_by_shop[[shop.id, "affiliate_click"]].to_i
+
+        @shop_click_counts[shop.id] = {
+          total: phone + map + affiliate,
+          phone_click: phone,
+          map_click: map,
+          affiliate_click: affiliate
+        }
+      end
+    end
+  end
+
   def holds
     @shops = Shop
       .where(on_hold: true)

@@ -1,0 +1,174 @@
+<%# /Users/kawamuratakuya/dev/suelog/app/views/admin/shops/clicks.html.erb %>
+
+<h1>送客一覧</h1>
+
+<div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
+  <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+    <div>
+      <strong>表示：</strong>
+      <% if @status == "all" %>
+        <strong>すべて</strong>｜
+        <%= link_to "承認待ち", admin_shop_clicks_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "却下", admin_shop_clicks_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "未確認のみ", admin_shop_clicks_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "保留一覧", admin_shop_clicks_path(status: "hold", source: @source, per: @per, page: 1) %>
+      <% elsif @status == "rejected" %>
+        <%= link_to "すべて", admin_shop_clicks_path(status: "all", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "承認待ち", admin_shop_clicks_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+        <strong>却下</strong>｜
+        <%= link_to "未確認のみ", admin_shop_clicks_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "保留一覧", admin_shop_clicks_path(status: "hold", source: @source, per: @per, page: 1) %>
+      <% elsif @status == "unverified" %>
+        <%= link_to "すべて", admin_shop_clicks_path(status: "all", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "承認待ち", admin_shop_clicks_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "却下", admin_shop_clicks_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+        <strong>未確認のみ</strong>｜
+        <%= link_to "保留一覧", admin_shop_clicks_path(status: "hold", source: @source, per: @per, page: 1) %>
+      <% elsif @status == "hold" %>
+        <%= link_to "すべて", admin_shop_clicks_path(status: "all", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "承認待ち", admin_shop_clicks_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "却下", admin_shop_clicks_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "未確認のみ", admin_shop_clicks_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+        <strong>保留一覧</strong>
+      <% else %>
+        <%= link_to "すべて", admin_shop_clicks_path(status: "all", source: @source, per: @per, page: 1) %>｜
+        <strong>承認待ち</strong>｜
+        <%= link_to "却下", admin_shop_clicks_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "未確認のみ", admin_shop_clicks_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+        <%= link_to "保留一覧", admin_shop_clicks_path(status: "hold", source: @source, per: @per, page: 1) %>
+      <% end %>
+    </div>
+
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <strong>表示件数：</strong>
+        <form action="<%= admin_shop_clicks_path %>" method="get" style="display:flex; gap:8px; align-items:center;">
+          <input type="hidden" name="status" value="<%= @status %>">
+          <input type="hidden" name="source" value="<%= @source %>">
+          <input type="hidden" name="page" value="1">
+          <select name="per" style="padding:6px 8px; border:1px solid #ddd; border-radius:10px;">
+            <% [50, 100, 200, 500].each do |n| %>
+              <option value="<%= n %>" <%= "selected" if @per.to_i == n %>><%= n %></option>
+            <% end %>
+          </select>
+          <button type="submit" style="padding:6px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+            反映
+          </button>
+        </form>
+      </div>
+
+      <% if Shop.column_names.include?("source") %>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <strong>source：</strong>
+          <form action="<%= admin_shop_clicks_path %>" method="get" style="display:flex; gap:8px; align-items:center;">
+            <input type="hidden" name="status" value="<%= @status %>">
+            <input type="hidden" name="per" value="<%= @per %>">
+            <input type="hidden" name="page" value="1">
+            <select name="source" style="padding:6px 8px; border:1px solid #ddd; border-radius:10px;">
+              <option value="" <%= "selected" if @source.blank? %>>すべて</option>
+              <option value="google" <%= "selected" if @source == "google" %>>google</option>
+            </select>
+            <button type="submit" style="padding:6px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+              絞り込む
+            </button>
+          </form>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<p style="color:#666; margin:8px 0;">
+  件数：<%= (@total_count || @shops.count) %> 件 ／ ページ：<%= (@page || 1) %> / <%= (@total_pages || 1) %>
+</p>
+
+<% if (@total_pages || 1) > 1 %>
+  <div style="margin:10px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <% if (@page || 1) > 1 %>
+      <%= link_to "← 前へ",
+          admin_shop_clicks_path(status: @status, source: @source, per: @per, page: (@page - 1)),
+          style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+    <% end %>
+
+    <% if (@page || 1) < (@total_pages || 1) %>
+      <%= link_to "次へ →",
+          admin_shop_clicks_path(status: @status, source: @source, per: @per, page: (@page + 1)),
+          style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+    <% end %>
+  </div>
+<% end %>
+
+<% if @shops.any? %>
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; min-width:1100px;">
+      <thead>
+        <tr style="border-bottom:2px solid #111;">
+          <th align="left">店名</th>
+          <th align="left">エリア</th>
+          <th align="left">住所</th>
+          <th align="right">合計</th>
+          <th align="right">電話</th>
+          <th align="right">地図</th>
+          <th align="right">アフィリ</th>
+          <th align="left">操作</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @shops.each do |shop| %>
+          <% click_counts = (@shop_click_counts || {})[shop.id] || {} %>
+
+          <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
+            <td style="padding:8px 0;">
+              <strong><%= shop.name %></strong>
+            </td>
+
+            <td style="padding:8px 0;">
+              <%= shop.area.presence || "なし" %>
+            </td>
+
+            <td style="padding:8px 0;">
+              <%= shop.address.presence || "なし" %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0; font-weight:700;">
+              <%= click_counts[:total].to_i %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0;">
+              <%= click_counts[:phone_click].to_i %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0;">
+              <%= click_counts[:map_click].to_i %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0;">
+              <%= click_counts[:affiliate_click].to_i %>
+            </td>
+
+            <td style="padding:8px 0;">
+              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                <%= link_to "詳細",
+                    admin_shop_path(shop, status: "all", source: @source, per: @per, page: 1),
+                    style: "padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; font-weight:700; border-radius:10px; text-decoration:none;" %>
+
+                <%= link_to "編集",
+                    edit_admin_shop_path(shop, status: "all", source: @source, per: @per, page: 1),
+                    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+
+                <%= link_to "公開ページ",
+                    shop_path(shop),
+                    target: "_blank",
+                    rel: "noopener",
+                    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p>該当する店舗はありません。</p>
+<% end %>
