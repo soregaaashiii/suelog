@@ -1,142 +1,179 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/admin/articles/_form.html.erb %>
 
 <% if article.errors.any? %>
-<div style="border:1px solid #f5c2c7; background:#f8d7da; padding:12px; border-radius:8px; margin-bottom:16px;">
-<strong>入力エラーがあります</strong>
-<ul style="margin:8px 0 0 18px; padding:0;">
-<% article.errors.full_messages.each do |msg| %>
-<li><%= msg %></li>
-<% end %>
-</ul>
-</div>
+  <div style="border:1px solid #f5c2c7; background:#f8d7da; padding:12px; border-radius:8px; margin-bottom:16px;">
+    <strong>入力エラーがあります</strong>
+    <ul style="margin:8px 0 0 18px; padding:0;">
+      <% article.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
 <% end %>
 
 <%= form_with model: [:admin, article], local: true, html: { multipart: true } do |f| %>
-<div style="margin-bottom:12px;">
-<div style="font-weight:700; margin-bottom:6px;">タイトル</div>
-<%= f.text_field :title, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+  <div style="margin-bottom:12px;">
+    <div style="font-weight:700; margin-bottom:6px;">タイトル</div>
+    <%= f.text_field :title, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+  </div>
 
-<div style="margin-bottom:12px;">
-<div style="font-weight:700; margin-bottom:6px;">スラッグ</div>
-<%= f.text_field :slug, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+  <div style="margin-bottom:12px;">
+    <div style="font-weight:700; margin-bottom:6px;">スラッグ</div>
+    <%= f.text_field :slug, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+  </div>
 
-<div style="margin-bottom:12px;">
-<div style="font-weight:700; margin-bottom:6px;">概要</div>
-<%= f.text_area :summary, rows: 3, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+  <div style="margin-bottom:12px;">
+    <div style="font-weight:700; margin-bottom:6px;">概要</div>
+    <%= f.text_area :summary, rows: 3, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+  </div>
 
-<div style="margin-bottom:12px;">
-<div style="font-weight:700; margin-bottom:6px;">アイキャッチ画像</div>
-<%= f.file_field :eyecatch %>
+  <div style="margin-bottom:12px;">
+    <div style="font-weight:700; margin-bottom:6px;">アイキャッチ画像</div>
+    <%= f.file_field :eyecatch %>
 
-<% if article.respond_to?(:eyecatch) && article.eyecatch.attached? %>
-<div style="margin-top:10px;">
-<%= image_tag article.eyecatch, style: "max-width:240px; height:auto; border-radius:12px;" %>
-</div>
-<% end %>
-</div>
+    <% if article.respond_to?(:eyecatch) && article.eyecatch.attached? %>
+      <div style="margin-top:10px;">
+        <%= image_tag article.eyecatch, style: "max-width:240px; height:auto; border-radius:12px;" %>
+      </div>
+    <% end %>
+  </div>
 
-<div style="margin-bottom:12px; padding:14px; border:1px solid #e5e7eb; border-radius:12px; background:#fafafa;">
-<div style="font-weight:800; margin-bottom:10px;">本文補助ボタン</div>
-<div style="font-size:13px; color:#666; line-height:1.7; margin-bottom:10px;">
-本文にショートコードを差し込めます。<br>
-店舗カードは <code>[shop id=1]</code>、画像サイズや配置は画像の直前に
-<code>[image size=medium align=center]</code> のように入れて使います。<br>
-横並びは <code>[image-row-start]</code> と <code>[image-row-end]</code> で囲みます。
-</div>
+  <div style="margin-bottom:12px; padding:14px; border:1px solid #e5e7eb; border-radius:12px; background:#fafafa;">
+    <div style="font-weight:800; margin-bottom:10px;">本文補助ボタン</div>
+    <div style="font-size:13px; color:#666; line-height:1.7; margin-bottom:10px;">
+      本文にショートコードを差し込めます。<br>
+      店舗カードは <code>[shop id=1]</code>、画像サイズや配置は画像の直前に
+      <code>[image size=medium align=center]</code> のように入れて使います。<br>
+      横並びは <code>[image-row-start]</code> と <code>[image-row-end]</code> で囲みます。
+    </div>
 
-<div class="article-snippet-buttons" style="display:flex; flex-wrap:wrap; gap:8px;">
-<button type="button" class="article-snippet-btn" data-snippet="[shop id=1]">店舗カード</button>
-<button type="button" class="article-snippet-btn" data-snippet="[image size=small align=center]">小画像・中央</button>
-<button type="button" class="article-snippet-btn" data-snippet="[image size=medium align=center]">中画像・中央</button>
-<button type="button" class="article-snippet-btn" data-snippet="[image size=large align=center]">大画像・中央</button>
-<button type="button" class="article-snippet-btn" data-snippet="[image size=medium align=left]">画像・左寄せ</button>
-<button type="button" class="article-snippet-btn" data-snippet="[image size=medium align=right]">画像・右寄せ</button>
-<button type="button" class="article-snippet-btn" data-snippet="[image-row-start]">横並び開始</button>
-<button type="button" class="article-snippet-btn" data-snippet="[image-row-end]">横並び終了</button>
-</div>
-</div>
+    <div class="article-snippet-buttons" style="display:flex; flex-wrap:wrap; gap:8px;">
+      <button type="button" class="article-snippet-btn" data-snippet="[shop id=1]">店舗カード</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[image size=small align=center]">小画像・中央</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[image size=medium align=center]">中画像・中央</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[image size=large align=center]">大画像・中央</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[image size=medium align=left]">画像・左寄せ</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[image size=medium align=right]">画像・右寄せ</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[image-row-start]">横並び開始</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[image-row-end]">横並び終了</button>
+    </div>
+  </div>
 
-<div style="margin-bottom:12px;">
-<div style="font-weight:700; margin-bottom:6px;">本文</div>
-<%= f.rich_text_area :body %>
-</div>
+  <div style="margin:20px 0; padding:16px; border:2px solid #111; border-radius:14px; background:#fff;">
+    <div style="font-weight:900; font-size:18px; margin-bottom:8px;">本文</div>
+    <div style="font-size:13px; color:#666; margin-bottom:12px;">
+      ここに記事本文を入力します
+    </div>
 
-<div style="margin-bottom:12px;">
-<label style="display:inline-flex; align-items:center; gap:8px;">
-<%= f.check_box :published %>
-<span>公開する</span>
-</label>
-</div>
+    <div class="article-body-editor-wrap">
+      <%= f.rich_text_area :body %>
+    </div>
 
-<div style="margin-bottom:12px;">
-<div style="font-weight:700; margin-bottom:6px;">公開日時</div>
-<%= f.datetime_local_field :published_at, style: "padding:10px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div style="margin-top:8px; font-size:12px; color:#666;">
+      ※ 本文欄を大きく表示しています。枠内が記事本文の入力エリアです。
+    </div>
+  </div>
 
-<div style="margin-bottom:12px;">
-<div style="font-weight:700; margin-bottom:6px;">SEOタイトル</div>
-<%= f.text_field :seo_title, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+  <div style="margin-bottom:12px;">
+    <label style="display:inline-flex; align-items:center; gap:8px;">
+      <%= f.check_box :published %>
+      <span>公開する</span>
+    </label>
+  </div>
 
-<div style="margin-bottom:12px;">
-<div style="font-weight:700; margin-bottom:6px;">meta description</div>
-<%= f.text_area :meta_description, rows: 3, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+  <div style="margin-bottom:12px;">
+    <div style="font-weight:700; margin-bottom:6px;">公開日時</div>
+    <%= f.datetime_local_field :published_at, style: "padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+  </div>
 
-<div style="margin-bottom:12px;">
-<div style="font-weight:700; margin-bottom:6px;">管理メモ</div>
-<%= f.text_area :admin_note, rows: 3, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+  <div style="margin-bottom:12px;">
+    <div style="font-weight:700; margin-bottom:6px;">SEOタイトル</div>
+    <%= f.text_field :seo_title, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+  </div>
 
-<%= f.submit "保存", style: "padding:10px 16px; border:none; border-radius:10px; background:#111; color:#fff; font-weight:700; cursor:pointer;" %>
+  <div style="margin-bottom:12px;">
+    <div style="font-weight:700; margin-bottom:6px;">meta description</div>
+    <%= f.text_area :meta_description, rows: 3, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div style="font-weight:700; margin-bottom:6px;">管理メモ</div>
+    <%= f.text_area :admin_note, rows: 3, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+  </div>
+
+  <%= f.submit "保存", style: "padding:10px 16px; border:none; border-radius:10px; background:#111; color:#fff; font-weight:700; cursor:pointer;" %>
 <% end %>
 
 <style>
 .article-snippet-btn {
-padding: 8px 10px;
-border: 1px solid #d1d5db;
-border-radius: 999px;
-background: #fff;
-color: #111;
-font-weight: 700;
-cursor: pointer;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .article-snippet-btn:hover {
-background: #f3f4f6;
+  background: #f3f4f6;
+}
+
+.article-body-editor-wrap .trix-button-row {
+  border: 1px solid #d1d5db;
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  background: #fafafa;
+  padding: 8px 8px 0;
+}
+
+.article-body-editor-wrap trix-editor {
+  min-height: 520px;
+  padding: 16px;
+  border: 2px solid #111;
+  border-radius: 0 0 12px 12px;
+  background: #fff;
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.article-body-editor-wrap trix-editor:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
+}
+
+.article-body-editor-wrap .trix-content {
+  min-height: 420px;
 }
 </style>
 
 <script>
 (() => {
-function setupArticleSnippetButtons() {
-const forms = document.querySelectorAll("form");
-if (!forms.length) return;
+  function setupArticleSnippetButtons() {
+    const forms = document.querySelectorAll("form");
+    if (!forms.length) return;
 
-forms.forEach((form) => {
-if (form.dataset.articleSnippetBound === "true") return;
-form.dataset.articleSnippetBound = "true";
+    forms.forEach((form) => {
+      if (form.dataset.articleSnippetBound === "true") return;
+      form.dataset.articleSnippetBound = "true";
 
-form.addEventListener("click", function(event) {
-const btn = event.target.closest(".article-snippet-btn");
-if (!btn) return;
+      form.addEventListener("click", function(event) {
+        const btn = event.target.closest(".article-snippet-btn");
+        if (!btn) return;
 
-const editor = form.querySelector("trix-editor");
-if (!editor || !editor.editor) return;
+        const editor = form.querySelector("trix-editor");
+        if (!editor || !editor.editor) return;
 
-event.preventDefault();
+        event.preventDefault();
 
-const snippet = btn.dataset.snippet || "";
-editor.editor.insertString(snippet + "\n");
-editor.focus();
-});
-});
-}
+        const snippet = btn.dataset.snippet || "";
+        editor.editor.insertString(snippet + "\n");
+        editor.focus();
+      });
+    });
+  }
 
-document.addEventListener("turbo:load", setupArticleSnippetButtons);
-document.addEventListener("DOMContentLoaded", setupArticleSnippetButtons);
+  document.addEventListener("turbo:load", setupArticleSnippetButtons);
+  document.addEventListener("DOMContentLoaded", setupArticleSnippetButtons);
 })();
 </script>
