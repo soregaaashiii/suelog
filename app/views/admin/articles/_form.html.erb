@@ -119,22 +119,44 @@
   background: #f3f4f6;
 }
 
+.article-body-editor-wrap {
+  width: 100%;
+}
+
 .article-body-editor-wrap .trix-button-row {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 4px;
   border: 1px solid #d1d5db;
   border-bottom: 0;
   border-radius: 12px 12px 0 0;
   background: #fafafa;
-  padding: 8px 8px 0;
+  padding: 8px;
+}
+
+.article-body-editor-wrap trix-toolbar {
+  display: block !important;
+  margin-bottom: 0 !important;
 }
 
 .article-body-editor-wrap trix-editor {
-  min-height: 520px;
-  padding: 16px;
-  border: 2px solid #111;
-  border-radius: 0 0 12px 12px;
-  background: #fff;
-  font-size: 16px;
-  line-height: 1.9;
+  display: block !important;
+  width: 100% !important;
+  min-height: 520px !important;
+  height: 520px !important;
+  overflow-y: auto !important;
+  padding: 16px !important;
+  border: 2px solid #111 !important;
+  border-radius: 0 0 12px 12px !important;
+  background: #fff !important;
+  font-size: 16px !important;
+  line-height: 1.9 !important;
+  box-sizing: border-box !important;
+}
+
+.article-body-editor-wrap trix-editor:empty::before {
+  color: #999;
+  content: attr(placeholder);
 }
 
 .article-body-editor-wrap trix-editor:focus {
