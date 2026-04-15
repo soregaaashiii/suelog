@@ -6,6 +6,12 @@ class ShopsController < ApplicationController
 
   helper_method :contribution_count, :current_contribution_badge
 
+  TRACKABLE_CLICK_KINDS = %w[
+    phone_click
+    map_click
+    affiliate_click
+  ].freeze
+
   def index
     redirect_to root_path, status: :moved_permanently
   end
@@ -99,33 +105,60 @@ class ShopsController < ApplicationController
     redirect_to root_path
   end
 
+  def track_click
+    @shop = Shop.find(params[:id])
+
+    kind = params[:kind].to_s
+    target_url = params[:target_url].to_s
+
+    unless TRACKABLE_CLICK_KINDS.include?(kind)
+      redirect_to shop_path(@shop), alert: "不正なクリック種別です"
+      return
+    end
+
+    unless safe_redirect_target?(target_url)
+      redirect_to shop_path(@shop), alert: "遷移先URLが不正です"
+      return
+    end
+
+    @shop.shop_clicks.create!(kind: kind)
+
+    redirect_to target_url, allow_other_host: true
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.warn("[track_click] validation failed: #{e.message}")
+    redirect_to shop_path(@shop), alert: "クリック記録に失敗しました"
+  rescue StandardError => e
+    Rails.logger.warn("[track_click] #{e.class}: #{e.message}")
+    redirect_to shop_path(@shop), alert: "クリック記録に失敗しました"
+  end
+
   private
 
   def shop_params
-  params.require(:shop).permit(
-    :name,
-    :area,
-    :address,
-    :public_store_details,
-    :last_confirmed_on,
-    :nearest_station,
-    :phone,
-    :smoking_area,
-    :smoking_type,
-    :genre,
-    :genre_other,
-    :thumbnail_kind,
-    :thumbnail_index,
-    :opening_hours_text,
-    :holiday_hours_text,
-    :closed_days_text,
-    opening_hours_json: {},
-    food_photos: [],
-    interior_photos: [],
-    exterior_photos: [],
-    menu_photos: []
-  )
-end
+    params.require(:shop).permit(
+      :name,
+      :area,
+      :address,
+      :public_store_details,
+      :last_confirmed_on,
+      :nearest_station,
+      :phone,
+      :smoking_area,
+      :smoking_type,
+      :genre,
+      :genre_other,
+      :thumbnail_kind,
+      :thumbnail_index,
+      :opening_hours_text,
+      :holiday_hours_text,
+      :closed_days_text,
+      opening_hours_json: {},
+      food_photos: [],
+      interior_photos: [],
+      exterior_photos: [],
+      menu_photos: []
+    )
+  end
 
   def ip_hash_for_request
     raw = request.remote_ip.to_s
@@ -185,5 +218,16 @@ end
     end
 
     ["ご協力ありがとうございます！ ご協力回数：#{count}回（バッジ：#{badge[:name]}）", nil]
+  end
+
+  def safe_redirect_target?(url)
+    return false if url.blank?
+
+    uri = URI.parse(url)
+    return false unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+
+    true
+  rescue URI::InvalidURIError
+    false
   end
 end

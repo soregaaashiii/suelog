@@ -70,6 +70,21 @@ class Admin::ShopsController < Admin::BaseController
       else
         []
       end
+
+    @click_counts = {
+      total: 0,
+      phone_click: 0,
+      map_click: 0,
+      affiliate_click: 0
+    }
+
+    if @shop.respond_to?(:shop_clicks)
+      grouped_counts = @shop.shop_clicks.group(:kind).count
+      @click_counts[:phone_click] = grouped_counts["phone_click"].to_i
+      @click_counts[:map_click] = grouped_counts["map_click"].to_i
+      @click_counts[:affiliate_click] = grouped_counts["affiliate_click"].to_i
+      @click_counts[:total] = @click_counts[:phone_click] + @click_counts[:map_click] + @click_counts[:affiliate_click]
+    end
   end
 
   def approve
@@ -368,7 +383,6 @@ class Admin::ShopsController < Admin::BaseController
 
           genre = normalize_str.call(raw_genre_value)
 
-          # 保険：genreが取れない場合はgenre_otherを使う
           if genre.blank? && raw_genre_other_value.present?
             genre = normalize_str.call(raw_genre_other_value)
           end
