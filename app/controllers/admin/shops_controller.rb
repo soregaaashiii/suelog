@@ -51,65 +51,101 @@ class Admin::ShopsController < Admin::BaseController
     @shops = scope.offset(offset).limit(@per)
   end
 
-  def clicks
-    @status = params[:status].presence || "all"
-    @source = params[:source].to_s.presence
+def clicks
+  @status = params[:status].presence || "approved"
+  @source = params[:source].to_s.presence
+  @q = params[:q].to_s.strip
+  @sort = params[:sort].presence || "clicks_desc"
 
-    @per = (params[:per].presence || 50).to_i
-    @per = 50 if @per <= 0
-    @per = 500 if @per > 500
+  @per = (params[:per].presence || 50).to_i
+  @per = 50 if @per <= 0
+  @per = 500 if @per > 500
 
-    @page = params[:page].to_i
-    @page = 1 if @page <= 0
+  @page = params[:page].to_i
+  @page = 1 if @page <= 0
 
-    scope = Shop.order(created_at: :desc)
+  scope = Shop.order(created_at: :desc)
 
     case @status
-    when "rejected"
-      scope = scope.where(rejected: true)
-    when "pending"
-      scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
-    when "unverified"
-      scope = scope.where(smoking_unverified: true)
-    when "hold"
-      scope = scope.where(on_hold: true)
-    else
-      # all
-    end
+  when "approved"
+    scope = scope.where(approved: true)
+  when "rejected"
+    scope = scope.where(rejected: true)
+  when "pending"
+    scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
+  when "unverified"
+    scope = scope.where(smoking_unverified: true)
+  when "hold"
+    scope = scope.where(on_hold: true)
+  else
+    # all
+  end
 
-    if @source.present? && Shop.column_names.include?("source")
-      scope = scope.where(source: @source)
-    end
+  if @source.present? && Shop.column_names.include?("source")
+    scope = scope.where(source: @source)
+  end
 
-    @total_count = scope.count
-    @total_pages = (@total_count.to_f / @per).ceil
-    @total_pages = 1 if @total_pages <= 0
+  if @q.present?
+    like = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
+    scope = scope.where(
+      "shops.name LIKE :like OR shops.address LIKE :like OR shops.area LIKE :like OR shops.nearest_station LIKE :like OR shops.phone LIKE :like",
+      like: like
+    )
+  end
 
-    offset = (@page - 1) * @per
-    @shops = scope.offset(offset).limit(@per)
+  shop_ids = scope.pluck(:id)
 
-    @shop_click_counts = {}
+  @shop_click_counts = {}
+  click_totals_by_shop_id = {}
 
-    if defined?(ShopClick)
-      click_counts_by_shop = ShopClick
-        .where(shop_id: @shops.map(&:id))
-        .group(:shop_id, :kind)
-        .count
+  if defined?(ShopClick) && shop_ids.present?
+    raw_click_counts = ShopClick
+      .where(shop_id: shop_ids)
+      .group(:shop_id, :kind)
+      .count
 
-      @shops.each do |shop|
-        phone = click_counts_by_shop[[shop.id, "phone_click"]].to_i
-        map = click_counts_by_shop[[shop.id, "map_click"]].to_i
-        affiliate = click_counts_by_shop[[shop.id, "affiliate_click"]].to_i
+    shop_ids.each do |shop_id|
+      phone = raw_click_counts[[shop_id, "phone_click"]].to_i
+      map = raw_click_counts[[shop_id, "map_click"]].to_i
+      affiliate = raw_click_counts[[shop_id, "affiliate_click"]].to_i
+      total = phone + map + affiliate
 
-        @shop_click_counts[shop.id] = {
-          total: phone + map + affiliate,
-          phone_click: phone,
-          map_click: map,
-          affiliate_click: affiliate
-        }
-      end
+      @shop_click_counts[shop_id] = {
+        total: total,
+        phone_click: phone,
+        map_click: map,
+        affiliate_click: affiliate
+      }
+
+      click_totals_by_shop_id[shop_id] = total
     end
   end
+
+  sorted_ids =
+    case @sort
+    when "clicks_asc"
+      shop_ids.sort_by { |id| [click_totals_by_shop_id[id].to_i, -id] }
+    when "name_asc"
+      scope.reorder(name: :asc, id: :desc).pluck(:id)
+    when "newest"
+      scope.reorder(created_at: :desc, id: :desc).pluck(:id)
+    when "oldest"
+      scope.reorder(created_at: :asc, id: :asc).pluck(:id)
+    else
+      shop_ids.sort_by { |id| [-click_totals_by_shop_id[id].to_i, -id] }
+    end
+
+  @total_count = sorted_ids.size
+  @total_pages = (@total_count.to_f / @per).ceil
+  @total_pages = 1 if @total_pages <= 0
+
+  paged_ids = sorted_ids.slice((@page - 1) * @per, @per) || []
+
+  shops_by_id = Shop.where(id: paged_ids).index_by(&:id)
+  @shops = paged_ids.map { |id| shops_by_id[id] }.compact
+
+  render :clicks
+end
 
   def holds
     @shops = Shop
