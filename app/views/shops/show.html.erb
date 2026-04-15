@@ -82,6 +82,19 @@
     else
       "一覧に戻る"
     end
+
+  tel_digits = @shop.phone.to_s.gsub(/[^0-9]/, "")
+  tel_target_url = tel_digits.present? ? "tel:#{tel_digits}" : nil
+
+  tabelog_track_url =
+    if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present?
+      track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.tabelog_url)
+    end
+
+  hotpepper_track_url =
+    if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present?
+      track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.hotpepper_url)
+    end
 %>
 
 <% content_for :title, page_title_parts.join("｜") %>
@@ -533,6 +546,42 @@
   font-size: 14px;
 }
 
+.shop-show__microLinks {
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shop-show__microLink {
+  font-size: 12px;
+  color: #7a5a12;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.shop-show__microLink:hover {
+  text-decoration: underline;
+}
+
+.shop-show__relatedChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #e8e3d7;
+  color: #111111;
+  background: #fffdf8;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.shop-show__relatedChip:hover {
+  border-color: #cfc4a5;
+}
+
 .ss-badge {
   display: inline-flex;
   align-items: center;
@@ -788,29 +837,29 @@
         </div>
 
         <div class="shop-show__infoRow">
-  <div class="shop-show__infoHead">最寄駅</div>
-  <div class="shop-show__infoCell">
-    <%= @shop.nearest_station.presence || "未設定" %>
+          <div class="shop-show__infoHead">最寄駅</div>
+          <div class="shop-show__infoCell">
+            <%= @shop.nearest_station.presence || "未設定" %>
 
-    <% if is_umeda_shop %>
-      <div class="shop-show__microLinks">
-        <%= link_to "梅田で喫煙できる店", umeda_path, class: "shop-show__microLink" %>
-      </div>
-    <% elsif is_namba_shop %>
-      <div class="shop-show__microLinks">
-        <%= link_to "難波で喫煙できる店", namba_path, class: "shop-show__microLink" %>
-      </div>
-    <% end %>
-  </div>
-</div>
+            <% if is_umeda_shop %>
+              <div class="shop-show__microLinks">
+                <%= link_to "梅田で喫煙できる店", umeda_path, class: "shop-show__microLink" %>
+              </div>
+            <% elsif is_namba_shop %>
+              <div class="shop-show__microLinks">
+                <%= link_to "難波で喫煙できる店", namba_path, class: "shop-show__microLink" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
 
         <div class="shop-show__infoRow">
           <div class="shop-show__infoHead">電話番号</div>
           <div class="shop-show__infoCell">
-            <% if @shop.phone.present? %>
-              <a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="shop-show__phoneLink">
-                <%= @shop.phone %>
-              </a>
+            <% if @shop.phone.present? && tel_target_url.present? %>
+              <%= link_to @shop.phone,
+                          track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
+                          class: "shop-show__phoneLink" %>
             <% else %>
               未設定
             <% end %>
@@ -880,23 +929,23 @@
           <h2 class="shop-show__sectionTitle">予約・詳細</h2>
 
           <div class="shop-show__bookingActions">
-            <% if @shop.phone.present? %>
-              <a href="tel:<%= @shop.phone.gsub(/[^0-9]/, "") %>" class="ss-btn ss-btn--dark">
-                電話予約する
-              </a>
+            <% if @shop.phone.present? && tel_target_url.present? %>
+              <%= link_to "電話予約する",
+                          track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
+                          class: "ss-btn ss-btn--dark" %>
             <% end %>
 
-            <% if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present? %>
+            <% if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present? && tabelog_track_url.present? %>
               <%= link_to "食べログで見る",
-                          @shop.tabelog_url,
+                          tabelog_track_url,
                           target: "_blank",
                           rel: "nofollow noopener",
                           class: "ss-btn ss-btn--ghost" %>
             <% end %>
 
-            <% if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present? %>
+            <% if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present? && hotpepper_track_url.present? %>
               <%= link_to "ホットペッパーで予約",
-                          @shop.hotpepper_url,
+                          hotpepper_track_url,
                           target: "_blank",
                           rel: "nofollow noopener",
                           class: "ss-btn ss-btn--dark" %>
@@ -910,12 +959,17 @@
 
         <% map_query = ERB::Util.url_encode([@shop.name, @shop.address].compact.join(" ")) %>
         <% address_query = ERB::Util.url_encode(@shop.address.to_s) %>
+        <% google_map_query_url = "https://www.google.com/maps?q=#{map_query}" %>
+        <% google_map_search_url = "https://www.google.com/maps/search/?api=1&query=#{address_query}" %>
 
         <% if @shop.latitude.present? && @shop.longitude.present? %>
           <div id="shop-map" class="shop-show__map"></div>
 
           <p class="shop-show__mapLink">
-            <a href="https://www.google.com/maps?q=<%= map_query %>" target="_blank" rel="noopener">Googleマップで開く</a>
+            <%= link_to "Googleマップで開く",
+                        track_click_shop_path(@shop, kind: "map_click", target_url: google_map_query_url),
+                        target: "_blank",
+                        rel: "noopener" %>
           </p>
 
           <script>
@@ -1007,7 +1061,10 @@
           </div>
 
           <p class="shop-show__mapLink">
-            <a href="https://www.google.com/maps/search/?api=1&query=<%= address_query %>" target="_blank" rel="noopener">Googleマップで開く</a>
+            <%= link_to "Googleマップで開く",
+                        track_click_shop_path(@shop, kind: "map_click", target_url: google_map_search_url),
+                        target: "_blank",
+                        rel: "noopener" %>
           </p>
 
           <p class="shop-show__hoursNote">
@@ -1313,26 +1370,26 @@
 
     <% if is_umeda_shop || is_namba_shop %>
       <section class="shop-show__section">
-        <<h2 class="shop-show__sectionTitle">このエリアでも探す</h2>
-<p style="color:#666; margin:0 0 12px;">
-  同じエリアの喫煙可能店を一覧で見られます。
-</p>
+        <h2 class="shop-show__sectionTitle">このエリアでも探す</h2>
+        <p style="color:#666; margin:0 0 12px;">
+          同じエリアの喫煙可能店を一覧で見られます。
+        </p>
 
         <div class="shop-show__relatedLinks">
-  <% if is_umeda_shop %>
-    <%= link_to "梅田で喫煙できる店一覧", umeda_path, class: "shop-show__relatedChip" %>
-    <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "shop-show__relatedChip" %>
-    <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "shop-show__relatedChip" %>
-    <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "shop-show__relatedChip" %>
-  <% end %>
+          <% if is_umeda_shop %>
+            <%= link_to "梅田で喫煙できる店一覧", umeda_path, class: "shop-show__relatedChip" %>
+            <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "shop-show__relatedChip" %>
+            <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "shop-show__relatedChip" %>
+            <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "shop-show__relatedChip" %>
+          <% end %>
 
-  <% if is_namba_shop %>
-    <%= link_to "難波で喫煙できる店一覧", namba_path, class: "shop-show__relatedChip" %>
-    <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "shop-show__relatedChip" %>
-    <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "shop-show__relatedChip" %>
-    <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "shop-show__relatedChip" %>
-  <% end %>
-</div>
+          <% if is_namba_shop %>
+            <%= link_to "難波で喫煙できる店一覧", namba_path, class: "shop-show__relatedChip" %>
+            <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "shop-show__relatedChip" %>
+            <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "shop-show__relatedChip" %>
+            <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "shop-show__relatedChip" %>
+          <% end %>
+        </div>
       </section>
     <% end %>
 
