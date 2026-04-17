@@ -51,101 +51,101 @@ class Admin::ShopsController < Admin::BaseController
     @shops = scope.offset(offset).limit(@per)
   end
 
-def clicks
-  @status = params[:status].presence || "approved"
-  @source = params[:source].to_s.presence
-  @q = params[:q].to_s.strip
-  @sort = params[:sort].presence || "clicks_desc"
+  def clicks
+    @status = params[:status].presence || "approved"
+    @source = params[:source].to_s.presence
+    @q = params[:q].to_s.strip
+    @sort = params[:sort].presence || "clicks_desc"
 
-  @per = (params[:per].presence || 50).to_i
-  @per = 50 if @per <= 0
-  @per = 500 if @per > 500
+    @per = (params[:per].presence || 50).to_i
+    @per = 50 if @per <= 0
+    @per = 500 if @per > 500
 
-  @page = params[:page].to_i
-  @page = 1 if @page <= 0
+    @page = params[:page].to_i
+    @page = 1 if @page <= 0
 
-  scope = Shop.order(created_at: :desc)
+    scope = Shop.order(created_at: :desc)
 
     case @status
-  when "approved"
-    scope = scope.where(approved: true)
-  when "rejected"
-    scope = scope.where(rejected: true)
-  when "pending"
-    scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
-  when "unverified"
-    scope = scope.where(smoking_unverified: true)
-  when "hold"
-    scope = scope.where(on_hold: true)
-  else
-    # all
-  end
-
-  if @source.present? && Shop.column_names.include?("source")
-    scope = scope.where(source: @source)
-  end
-
-  if @q.present?
-    like = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
-    scope = scope.where(
-      "shops.name LIKE :like OR shops.address LIKE :like OR shops.area LIKE :like OR shops.nearest_station LIKE :like OR shops.phone LIKE :like",
-      like: like
-    )
-  end
-
-  shop_ids = scope.pluck(:id)
-
-  @shop_click_counts = {}
-  click_totals_by_shop_id = {}
-
-  if defined?(ShopClick) && shop_ids.present?
-    raw_click_counts = ShopClick
-      .where(shop_id: shop_ids)
-      .group(:shop_id, :kind)
-      .count
-
-    shop_ids.each do |shop_id|
-      phone = raw_click_counts[[shop_id, "phone_click"]].to_i
-      map = raw_click_counts[[shop_id, "map_click"]].to_i
-      affiliate = raw_click_counts[[shop_id, "affiliate_click"]].to_i
-      total = phone + map + affiliate
-
-      @shop_click_counts[shop_id] = {
-        total: total,
-        phone_click: phone,
-        map_click: map,
-        affiliate_click: affiliate
-      }
-
-      click_totals_by_shop_id[shop_id] = total
-    end
-  end
-
-  sorted_ids =
-    case @sort
-    when "clicks_asc"
-      shop_ids.sort_by { |id| [click_totals_by_shop_id[id].to_i, -id] }
-    when "name_asc"
-      scope.reorder(name: :asc, id: :desc).pluck(:id)
-    when "newest"
-      scope.reorder(created_at: :desc, id: :desc).pluck(:id)
-    when "oldest"
-      scope.reorder(created_at: :asc, id: :asc).pluck(:id)
+    when "approved"
+      scope = scope.where(approved: true)
+    when "rejected"
+      scope = scope.where(rejected: true)
+    when "pending"
+      scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
+    when "unverified"
+      scope = scope.where(smoking_unverified: true)
+    when "hold"
+      scope = scope.where(on_hold: true)
     else
-      shop_ids.sort_by { |id| [-click_totals_by_shop_id[id].to_i, -id] }
+      # all
     end
 
-  @total_count = sorted_ids.size
-  @total_pages = (@total_count.to_f / @per).ceil
-  @total_pages = 1 if @total_pages <= 0
+    if @source.present? && Shop.column_names.include?("source")
+      scope = scope.where(source: @source)
+    end
 
-  paged_ids = sorted_ids.slice((@page - 1) * @per, @per) || []
+    if @q.present?
+      like = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
+      scope = scope.where(
+        "shops.name LIKE :like OR shops.address LIKE :like OR shops.area LIKE :like OR shops.nearest_station LIKE :like OR shops.phone LIKE :like",
+        like: like
+      )
+    end
 
-  shops_by_id = Shop.where(id: paged_ids).index_by(&:id)
-  @shops = paged_ids.map { |id| shops_by_id[id] }.compact
+    shop_ids = scope.pluck(:id)
 
-  render :clicks
-end
+    @shop_click_counts = {}
+    click_totals_by_shop_id = {}
+
+    if defined?(ShopClick) && shop_ids.present?
+      raw_click_counts = ShopClick
+        .where(shop_id: shop_ids)
+        .group(:shop_id, :kind)
+        .count
+
+      shop_ids.each do |shop_id|
+        phone = raw_click_counts[[shop_id, "phone_click"]].to_i
+        map = raw_click_counts[[shop_id, "map_click"]].to_i
+        affiliate = raw_click_counts[[shop_id, "affiliate_click"]].to_i
+        total = phone + map + affiliate
+
+        @shop_click_counts[shop_id] = {
+          total: total,
+          phone_click: phone,
+          map_click: map,
+          affiliate_click: affiliate
+        }
+
+        click_totals_by_shop_id[shop_id] = total
+      end
+    end
+
+    sorted_ids =
+      case @sort
+      when "clicks_asc"
+        shop_ids.sort_by { |id| [click_totals_by_shop_id[id].to_i, -id] }
+      when "name_asc"
+        scope.reorder(name: :asc, id: :desc).pluck(:id)
+      when "newest"
+        scope.reorder(created_at: :desc, id: :desc).pluck(:id)
+      when "oldest"
+        scope.reorder(created_at: :asc, id: :asc).pluck(:id)
+      else
+        shop_ids.sort_by { |id| [-click_totals_by_shop_id[id].to_i, -id] }
+      end
+
+    @total_count = sorted_ids.size
+    @total_pages = (@total_count.to_f / @per).ceil
+    @total_pages = 1 if @total_pages <= 0
+
+    paged_ids = sorted_ids.slice((@page - 1) * @per, @per) || []
+
+    shops_by_id = Shop.where(id: paged_ids).index_by(&:id)
+    @shops = paged_ids.map { |id| shops_by_id[id] }.compact
+
+    render :clicks
+  end
 
   def holds
     @shops = Shop
@@ -196,7 +196,14 @@ end
       return
     end
 
-    shop.update!(approved: true, rejected: false)
+    attrs = {
+      approved: true,
+      rejected: false,
+      on_hold: false
+    }
+    attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+    shop.update!(attrs)
 
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                 notice: "承認しました"
@@ -208,13 +215,41 @@ end
   def reject
     status = params[:status].presence || "pending"
     shop = Shop.find(params[:id])
-    shop.update!(approved: false, rejected: true)
+
+    attrs = {
+      approved: false,
+      rejected: true,
+      on_hold: false
+    }
+    attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+    shop.update!(attrs)
 
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                 alert: "却下しました"
   rescue ActiveRecord::RecordInvalid => e
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                 alert: "却下に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+  end
+
+  def hold
+    status = params[:status].presence || "pending"
+    shop = Shop.find(params[:id])
+
+    attrs = {
+      approved: false,
+      rejected: false,
+      on_hold: true
+    }
+    attrs[:held_at] = Time.current if Shop.column_names.include?("held_at")
+
+    shop.update!(attrs)
+
+    redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+                notice: "保留に移動しました"
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+                alert: "保留への移動に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
   end
 
   def bulk_update
@@ -246,7 +281,14 @@ end
           next
         end
 
-        shop.update!(approved: true, rejected: false)
+        attrs = {
+          approved: true,
+          rejected: false,
+          on_hold: false
+        }
+        attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+        shop.update!(attrs)
         approved_count += 1
       end
 
@@ -256,7 +298,16 @@ end
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                   notice: message
     when "reject"
-      scope.update_all(approved: false, rejected: true, updated_at: Time.current)
+      attrs = {
+        approved: false,
+        rejected: true,
+        on_hold: false,
+        updated_at: Time.current
+      }
+      attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+      scope.update_all(attrs)
+
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                   alert: "一括却下しました（#{ids.size}件）"
     when "unverify"
@@ -297,11 +348,35 @@ end
           )
         end
 
-        @shop.update!(approved: true, rejected: false)
+        attrs = {
+          approved: true,
+          rejected: false,
+          on_hold: false
+        }
+        attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+        @shop.update!(attrs)
         notice = "更新して承認しました"
       when "reject"
-        @shop.update!(approved: false, rejected: true)
+        attrs = {
+          approved: false,
+          rejected: true,
+          on_hold: false
+        }
+        attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+        @shop.update!(attrs)
         notice = "更新して却下しました"
+      when "hold"
+        attrs = {
+          approved: false,
+          rejected: false,
+          on_hold: true
+        }
+        attrs[:held_at] = Time.current if Shop.column_names.include?("held_at")
+
+        @shop.update!(attrs)
+        notice = "更新して保留に移動しました"
       end
     end
 
