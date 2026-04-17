@@ -1,6 +1,7 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/admin/shops/show.html.erb %>
 
 <% rejected = (@shop.respond_to?(:rejected?) && @shop.rejected?) %>
+<% on_hold = (@shop.respond_to?(:on_hold?) && @shop.on_hold?) %>
 
 <h1 style="margin:0 0 16px;"><%= @shop.name %></h1>
 
@@ -20,6 +21,7 @@
       <div><strong>最終確認日:</strong> <%= @shop.last_confirmed_on.presence || "なし" %></div>
       <div><strong>店舗詳細（ユーザー向け）:</strong> <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "なし") : "なし" %></div>
       <div><strong>補足情報（管理用）:</strong> <%= @shop.note.presence || "未設定" %></div>
+      <div><strong>保留状態:</strong> <%= on_hold ? "保留中" : "通常" %></div>
     </div>
   </div>
 
@@ -50,6 +52,12 @@
           data: { turbo_confirm: "承認しますか？" },
           style: "display:inline-block; padding:10px 14px; border:1px solid #137333; border-radius:10px; background:#e6f4ea; color:#137333; font-weight:700;" %>
 
+      <%= button_to "保留する",
+          hold_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),
+          method: :patch,
+          data: { turbo_confirm: "保留に移動しますか？" },
+          style: "display:inline-block; padding:10px 14px; border:1px solid #9a6700; border-radius:10px; background:#fff8e1; color:#9a6700; font-weight:700;" %>
+
       <%= button_to "却下する",
           reject_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),
           method: :patch,
@@ -67,6 +75,12 @@
           method: :patch,
           data: { turbo_confirm: "承認しますか？" },
           style: "padding:10px 14px; border:1px solid #137333; border-radius:10px; background:#e6f4ea; color:#137333; font-weight:700;" %>
+
+      <%= button_to "保留する",
+          hold_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),
+          method: :patch,
+          data: { turbo_confirm: "保留に移動しますか？" },
+          style: "padding:10px 14px; border:1px solid #9a6700; border-radius:10px; background:#fff8e1; color:#9a6700; font-weight:700;" %>
 
       <%= button_to "却下する",
           reject_admin_shop_path(@shop, status: @status, source: @source, per: @per, page: @page),

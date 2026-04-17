@@ -1,254 +1,260 @@
-<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/admin/shops/edit.html.erb %>
+<%# /Users/kawamuratakuya/dev/suelog/app/views/admin/shops/edit.html.erb %>
 
 <h1>店舗編集（管理者用）</h1>
 
 <p style="color:#666;">
-<%= link_to "← 一覧に戻る", admin_shops_path(status: @status, source: @source, per: @per, page: @page) %>
+  <%= link_to "← 一覧に戻る", admin_shops_path(status: @status, source: @source, per: @per, page: @page) %>
 </p>
 
 <% if flash[:alert].present? %>
-<div style="padding:10px; border:1px solid #f5c2c7; background:#f8d7da; border-radius:10px; margin:10px 0;">
-<%= flash[:alert] %>
-</div>
+  <div style="padding:10px; border:1px solid #f5c2c7; background:#f8d7da; border-radius:10px; margin:10px 0;">
+    <%= flash[:alert] %>
+  </div>
 <% end %>
 
 <% if flash[:notice].present? %>
-<div style="padding:10px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:10px; margin:10px 0;">
-<%= flash[:notice] %>
-</div>
+  <div style="padding:10px; border:1px solid #b6d7a8; background:#e6f4ea; border-radius:10px; margin:10px 0;">
+    <%= flash[:notice] %>
+  </div>
 <% end %>
 
 <% rejected = (@shop.respond_to?(:rejected?) && @shop.rejected?) %>
 
 <%= form_with model: [:admin, @shop], method: :patch, local: true do |f| %>
-<%= hidden_field_tag :status, @status %>
-<%= hidden_field_tag :source, @source %>
-<%= hidden_field_tag :per, @per %>
-<%= hidden_field_tag :page, @page %>
+  <%= hidden_field_tag :status, @status %>
+  <%= hidden_field_tag :source, @source %>
+  <%= hidden_field_tag :per, @per %>
+  <%= hidden_field_tag :page, @page %>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:900px;">
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:900px;">
 
-<div>
-<div style="font-weight:700;">店名</div>
-<%= f.text_field :name, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div>
+      <div style="font-weight:700;">店名</div>
+      <%= f.text_field :name, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div>
-<div style="font-weight:700;">電話</div>
-<%= f.text_field :phone, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div>
+      <div style="font-weight:700;">電話</div>
+      <%= f.text_field :phone, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div style="grid-column:1/-1;">
-<div style="font-weight:700;">住所</div>
-<%= f.text_field :address, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div style="grid-column:1/-1;">
+      <div style="font-weight:700;">住所</div>
+      <%= f.text_field :address, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div>
-<div style="font-weight:700;">最寄駅</div>
-<%= f.text_field :nearest_station, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div>
+      <div style="font-weight:700;">最寄駅</div>
+      <%= f.text_field :nearest_station, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div>
-<div style="font-weight:700;">ジャンル</div>
-<%= f.select :genre,
-[
-["未設定", ""],
-["居酒屋", "居酒屋"],
-["焼肉", "焼肉"],
-["焼鳥", "焼鳥"],
-["ラーメン", "ラーメン"],
-["中華", "中華"],
-["韓国料理", "韓国料理"],
-["イタリアン", "イタリアン"],
-["フレンチ", "フレンチ"],
-["和食", "和食"],
-["寿司", "寿司"],
-["バー", "バー"],
-["カフェ", "カフェ"],
-["喫茶店", "喫茶店"],
-["スナック", "スナック"],
-["ダイニングバー", "ダイニングバー"],
-["その他", "その他"]
-],
-{},
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div>
+      <div style="font-weight:700;">ジャンル</div>
+      <%= f.select :genre,
+      [
+        ["未設定", ""],
+        ["居酒屋", "居酒屋"],
+        ["焼肉", "焼肉"],
+        ["焼鳥", "焼鳥"],
+        ["ラーメン", "ラーメン"],
+        ["中華", "中華"],
+        ["韓国料理", "韓国料理"],
+        ["イタリアン", "イタリアン"],
+        ["フレンチ", "フレンチ"],
+        ["和食", "和食"],
+        ["寿司", "寿司"],
+        ["バー", "バー"],
+        ["カフェ", "カフェ"],
+        ["喫茶店", "喫茶店"],
+        ["スナック", "スナック"],
+        ["ダイニングバー", "ダイニングバー"],
+        ["その他", "その他"]
+      ],
+      {},
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div>
-<div style="font-weight:700;">ジャンルその他</div>
-<%= f.text_field :genre_other, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div>
+      <div style="font-weight:700;">ジャンルその他</div>
+      <%= f.text_field :genre_other, style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div>
-<div style="font-weight:700;">食べログURL</div>
-<%= f.url_field :tabelog_url,
-placeholder: "https://tabelog.com/...",
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div>
+      <div style="font-weight:700;">食べログURL</div>
+      <%= f.url_field :tabelog_url,
+      placeholder: "https://tabelog.com/...",
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div>
-<div style="font-weight:700;">ホットペッパーURL</div>
-<%= f.url_field :hotpepper_url,
-placeholder: "https://www.hotpepper.jp/...",
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div>
+      <div style="font-weight:700;">ホットペッパーURL</div>
+      <%= f.url_field :hotpepper_url,
+      placeholder: "https://www.hotpepper.jp/...",
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div style="grid-column:1/-1; margin-top:6px; padding:14px; border:1px solid #eee; border-radius:12px; background:#fffdf8;">
-<div style="font-weight:800; font-size:16px; margin-bottom:8px;">営業時間</div>
-<p style="margin:0 0 10px; color:#666; font-size:13px; line-height:1.7;">
-曜日ごとの細かい入力はやめて、見たまま入れてください。<br>
-例）月-木 17:00-23:00 / 金土 17:00-02:00 / 日 15:00-22:00<br>
-例）11:30-14:00, 17:00-23:00 のように中休みもそのまま書けます。
-</p>
+    <div style="grid-column:1/-1; margin-top:6px; padding:14px; border:1px solid #eee; border-radius:12px; background:#fffdf8;">
+      <div style="font-weight:800; font-size:16px; margin-bottom:8px;">営業時間</div>
+      <p style="margin:0 0 10px; color:#666; font-size:13px; line-height:1.7;">
+        曜日ごとの細かい入力はやめて、見たまま入れてください。<br>
+        例）月-木 17:00-23:00 / 金土 17:00-02:00 / 日 15:00-22:00<br>
+        例）11:30-14:00, 17:00-23:00 のように中休みもそのまま書けます。
+      </p>
 
-<div style="margin-bottom:8px;">
-<div style="font-weight:700; margin-bottom:6px;">定型文</div>
-<div style="display:flex; gap:8px; flex-wrap:wrap;">
-<button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="毎日 17:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">毎日 夜営業</button>
-<button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">ランチ＋ディナー</button>
-<button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="火-日 18:00-24:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">夜のみ</button>
-<button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="通常営業と同じ" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日=通常営業</button>
-<button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="休業" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日休業</button>
-<button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="なし" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">定休日なし</button>
-<button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="不定休" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">不定休</button>
-<button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="月曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">月曜休み</button>
-<button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="水曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">水曜休み</button>
-</div>
-</div>
+      <div style="margin-bottom:8px;">
+        <div style="font-weight:700; margin-bottom:6px;">定型文</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="毎日 17:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">毎日 夜営業</button>
+          <button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">ランチ＋ディナー</button>
+          <button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="火-日 18:00-24:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">夜のみ</button>
+          <button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="通常営業と同じ" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日=通常営業</button>
+          <button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="休業" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日休業</button>
+          <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="なし" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">定休日なし</button>
+          <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="不定休" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">不定休</button>
+          <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="月曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">月曜休み</button>
+          <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="水曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">水曜休み</button>
+        </div>
+      </div>
 
-<div style="margin-bottom:10px;">
-<div style="font-weight:700; margin-bottom:4px;">通常営業時間</div>
-<%= f.text_area :opening_hours_text,
-rows: 3,
-placeholder: "例）月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00",
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;",
-id: "shop_opening_hours_text" %>
-</div>
+      <div style="margin-bottom:10px;">
+        <div style="font-weight:700; margin-bottom:4px;">通常営業時間</div>
+        <%= f.text_area :opening_hours_text,
+        rows: 3,
+        placeholder: "例）月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00",
+        style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;",
+        id: "shop_opening_hours_text" %>
+      </div>
 
-<div style="margin-bottom:10px;">
-<div style="font-weight:700; margin-bottom:4px;">祝日営業時間</div>
-<%= f.text_area :holiday_hours_text,
-rows: 2,
-placeholder: "例）12:00-23:00 / 通常営業と同じ / 休業",
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;",
-id: "shop_holiday_hours_text" %>
-</div>
+      <div style="margin-bottom:10px;">
+        <div style="font-weight:700; margin-bottom:4px;">祝日営業時間</div>
+        <%= f.text_area :holiday_hours_text,
+        rows: 2,
+        placeholder: "例）12:00-23:00 / 通常営業と同じ / 休業",
+        style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;",
+        id: "shop_holiday_hours_text" %>
+      </div>
 
-<div>
-<div style="font-weight:700; margin-bottom:4px;">定休日</div>
-<%= f.text_field :closed_days_text,
-placeholder: "例）水曜 / 不定休 / なし",
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;",
-id: "shop_closed_days_text" %>
-</div>
+      <div>
+        <div style="font-weight:700; margin-bottom:4px;">定休日</div>
+        <%= f.text_field :closed_days_text,
+        placeholder: "例）水曜 / 不定休 / なし",
+        style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;",
+        id: "shop_closed_days_text" %>
+      </div>
 
-<% if @shop.opening_hours_json.present? %>
-<p style="margin:10px 0 0; color:#8a6d3b; font-size:12px;">
-※ 以前の曜日別データはDBに残っていますが、今後の編集はこの簡易入力を優先します。
-</p>
-<% end %>
-</div>
+      <% if @shop.opening_hours_json.present? %>
+        <p style="margin:10px 0 0; color:#8a6d3b; font-size:12px;">
+          ※ 以前の曜日別データはDBに残っていますが、今後の編集はこの簡易入力を優先します。
+        </p>
+      <% end %>
+    </div>
 
-<div>
-<div style="font-weight:700;">喫煙エリア</div>
-<%= f.select :smoking_area,
-[
-["席で喫煙可", "all_smoking"],
-["喫煙所あり", "separated"],
-["不明", "unknown"]
-],
-{ include_blank: "選択してください" },
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div>
+      <div style="font-weight:700;">喫煙エリア</div>
+      <%= f.select :smoking_area,
+      [
+        ["席で喫煙可", "all_smoking"],
+        ["喫煙所あり", "separated"],
+        ["不明", "unknown"]
+      ],
+      { include_blank: "選択してください" },
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div>
-<div style="font-weight:700;">喫煙タイプ</div>
-<%= f.select :smoking_type,
-[
-["紙・加熱式どちらもOK", "both_ok"],
-["加熱式タバコのみOK", "electronic_only"],
-["紙タバコのみOK", "paper_only"],
-["不明", "unknown"]
-],
-{ include_blank: "選択してください" },
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div>
+      <div style="font-weight:700;">喫煙タイプ</div>
+      <%= f.select :smoking_type,
+      [
+        ["紙・加熱式どちらもOK", "both_ok"],
+        ["加熱式タバコのみOK", "electronic_only"],
+        ["紙タバコのみOK", "paper_only"],
+        ["不明", "unknown"]
+      ],
+      { include_blank: "選択してください" },
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div style="grid-column:1/-1; padding:14px; border:1px solid #eee; border-radius:12px; background:#f9fafb;">
-<div style="font-weight:800; font-size:16px; margin-bottom:8px;">喫煙情報ステータス</div>
+    <div style="grid-column:1/-1; padding:14px; border:1px solid #eee; border-radius:12px; background:#f9fafb;">
+      <div style="font-weight:800; font-size:16px; margin-bottom:8px;">喫煙情報ステータス</div>
 
-<label style="display:flex; align-items:center; gap:8px; font-weight:700; cursor:pointer;">
-<%= f.check_box :smoking_unverified %>
-<span>喫煙情報未確認として扱う</span>
-</label>
+      <label style="display:flex; align-items:center; gap:8px; font-weight:700; cursor:pointer;">
+        <%= f.check_box :smoking_unverified %>
+        <span>喫煙情報未確認として扱う</span>
+      </label>
 
-<p style="margin:8px 0 0; color:#666; font-size:13px; line-height:1.7;">
-オンにすると、表側で「未確認」バッジを表示する前提のデータとして扱えます。<br>
-電話確認や現地確認が終わったらオフに戻してください。
-</p>
-</div>
+      <p style="margin:8px 0 0; color:#666; font-size:13px; line-height:1.7;">
+        オンにすると、表側で「未確認」バッジを表示する前提のデータとして扱えます。<br>
+        電話確認や現地確認が終わったらオフに戻してください。
+      </p>
+    </div>
 
-<div style="grid-column:1/-1;">
-<div style="font-weight:700;">店舗詳細（ユーザーに表示）</div>
-<p style="margin:4px 0 8px; color:#666; font-size:13px; line-height:1.7;">
-来店前にユーザーが知りたい情報を書いてください。<br>
-例）カウンター席あり / テラス席あり / 深夜まで営業 / 1人でも入りやすい など
-</p>
-<%= f.text_area :public_store_details,
-rows: 6,
-placeholder: "例）カウンター席あり。仕事帰りに1人でも入りやすい雰囲気です。",
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
+    <div style="grid-column:1/-1;">
+      <div style="font-weight:700;">店舗詳細（ユーザーに表示）</div>
+      <p style="margin:4px 0 8px; color:#666; font-size:13px; line-height:1.7;">
+        来店前にユーザーが知りたい情報を書いてください。<br>
+        例）カウンター席あり / テラス席あり / 深夜まで営業 / 1人でも入りやすい など
+      </p>
+      <%= f.text_area :public_store_details,
+      rows: 6,
+      placeholder: "例）カウンター席あり。仕事帰りに1人でも入りやすい雰囲気です。",
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
-<div style="grid-column:1/-1;">
-<div style="font-weight:700;">管理メモ（管理者のみ表示）</div>
-<p style="margin:4px 0 8px; color:#666; font-size:13px; line-height:1.7;">
-内部確認用のメモです。一般ユーザーには表示しません。
-</p>
-<%= f.text_area :note,
-rows: 6,
-style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
-</div>
-</div>
+    <div style="grid-column:1/-1;">
+      <div style="font-weight:700;">管理メモ（管理者のみ表示）</div>
+      <p style="margin:4px 0 8px; color:#666; font-size:13px; line-height:1.7;">
+        内部確認用のメモです。一般ユーザーには表示しません。
+      </p>
+      <%= f.text_area :note,
+      rows: 6,
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
+  </div>
 
-<div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-<%= f.submit "更新する",
-name: "commit_action",
-value: "update",
-style: "padding:10px 14px; border:1px solid #111; border-radius:10px; background:#111; color:#fff;" %>
+  <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <%= f.submit "更新する",
+    name: "commit_action",
+    value: "update",
+    style: "padding:10px 14px; border:1px solid #111; border-radius:10px; background:#111; color:#fff;" %>
 
-<% if !@shop.approved? && !rejected %>
-<%= f.submit "更新して承認する",
-name: "commit_action",
-value: "approve",
-data: { turbo_confirm: "更新して承認しますか？" },
-style: "padding:10px 14px; border:1px solid #137333; border-radius:10px; background:#e6f4ea; color:#137333; font-weight:700;" %>
+    <% if !@shop.approved? && !rejected %>
+      <%= f.submit "更新して承認する",
+      name: "commit_action",
+      value: "approve",
+      data: { turbo_confirm: "更新して承認しますか？" },
+      style: "padding:10px 14px; border:1px solid #137333; border-radius:10px; background:#e6f4ea; color:#137333; font-weight:700;" %>
 
-<%= f.submit "更新して却下する",
-name: "commit_action",
-value: "reject",
-data: { turbo_confirm: "更新して却下します。よろしいですか？" },
-style: "padding:10px 14px; border:1px solid #b00020; border-radius:10px; background:#fdecea; color:#b00020; font-weight:700;" %>
-<% end %>
+      <%= f.submit "更新して保留に移動",
+      name: "commit_action",
+      value: "hold",
+      data: { turbo_confirm: "更新して保留に移動しますか？" },
+      style: "padding:10px 14px; border:1px solid #9a6700; border-radius:10px; background:#fff8e1; color:#9a6700; font-weight:700;" %>
 
-<%= link_to "キャンセル",
-admin_shops_path(status: @status, source: @source, per: @per, page: @page),
-style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-</div>
+      <%= f.submit "更新して却下する",
+      name: "commit_action",
+      value: "reject",
+      data: { turbo_confirm: "更新して却下します。よろしいですか？" },
+      style: "padding:10px 14px; border:1px solid #b00020; border-radius:10px; background:#fdecea; color:#b00020; font-weight:700;" %>
+    <% end %>
+
+    <%= link_to "キャンセル",
+    admin_shops_path(status: @status, source: @source, per: @per, page: @page),
+    style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+  </div>
 <% end %>
 
 <script>
 document.addEventListener("turbo:load", function() {
-document.querySelectorAll(".hours-preset-btn").forEach(function(button) {
-if (button.dataset.bound === "1") return;
-button.dataset.bound = "1";
+  document.querySelectorAll(".hours-preset-btn").forEach(function(button) {
+    if (button.dataset.bound === "1") return;
+    button.dataset.bound = "1";
 
-button.addEventListener("click", function() {
-var target = document.getElementById(button.dataset.target);
-if (!target) return;
-target.value = button.dataset.value;
-target.dispatchEvent(new Event("input", { bubbles: true }));
-});
-});
+    button.addEventListener("click", function() {
+      var target = document.getElementById(button.dataset.target);
+      if (!target) return;
+      target.value = button.dataset.value;
+      target.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  });
 });
 </script>
