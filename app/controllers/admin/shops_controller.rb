@@ -206,10 +206,10 @@ class Admin::ShopsController < Admin::BaseController
     shop.update!(attrs)
 
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                notice: "承認しました"
+                flash: { admin_notice: "承認しました" }
   rescue ActiveRecord::RecordInvalid => e
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                alert: "承認に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+                flash: { admin_alert: "承認に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   end
 
   def reject
@@ -226,10 +226,10 @@ class Admin::ShopsController < Admin::BaseController
     shop.update!(attrs)
 
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                alert: "却下しました"
+                flash: { admin_alert: "却下しました" }
   rescue ActiveRecord::RecordInvalid => e
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                alert: "却下に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+                flash: { admin_alert: "却下に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   end
 
   def hold
@@ -246,10 +246,10 @@ class Admin::ShopsController < Admin::BaseController
     shop.update!(attrs)
 
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                notice: "保留に移動しました"
+                flash: { admin_notice: "保留に移動しました" }
   rescue ActiveRecord::RecordInvalid => e
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                alert: "保留への移動に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+                flash: { admin_alert: "保留への移動に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   end
 
   def bulk_update
@@ -296,7 +296,7 @@ class Admin::ShopsController < Admin::BaseController
       message += " / 承認済み店舗との重複の可能性でスキップ（#{skipped_count}件）" if skipped_count.positive?
 
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                  notice: message
+                  flash: { admin_notice: message }
     when "reject"
       attrs = {
         approved: false,
@@ -309,14 +309,14 @@ class Admin::ShopsController < Admin::BaseController
       scope.update_all(attrs)
 
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                  alert: "一括却下しました（#{ids.size}件）"
+                  flash: { admin_alert: "一括却下しました（#{ids.size}件）" }
     when "unverify"
       scope.update_all(smoking_unverified: false, updated_at: Time.current)
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                  notice: "未確認を解除しました（#{ids.size}件）"
+                  flash: { admin_notice: "未確認を解除しました（#{ids.size}件）" }
     else
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                  alert: "不正な操作です"
+                  flash: { admin_alert: "不正な操作です" }
     end
   end
 
@@ -381,20 +381,20 @@ class Admin::ShopsController < Admin::BaseController
     end
 
     redirect_to admin_shops_path(status: params[:status], source: params[:source], per: params[:per], page: params[:page]),
-                notice: notice
+                flash: { admin_notice: notice }
   rescue ActiveRecord::RecordInvalid => e
     @status = params[:status].presence || "pending"
     @source = params[:source].to_s.presence
     @per = (params[:per].presence || 50).to_i
     @page = (params[:page].presence || 1).to_i
 
-    flash.now[:alert] = e.record.errors.full_messages.join(" / ")
+    flash.now[:admin_alert] = e.record.errors.full_messages.join(" / ")
     render :edit, status: :unprocessable_entity
   end
 
   def import
     file = params[:file]
-    return redirect_to admin_shops_path, alert: "CSVファイルを選択してください" unless file
+    return redirect_to admin_shops_path, flash: { admin_alert: "CSVファイルを選択してください" } unless file
 
     success = 0
     failed = 0
@@ -466,7 +466,7 @@ class Admin::ShopsController < Admin::BaseController
       rows = CSV.parse(csv_text, headers: true)
 
       if rows.empty?
-        return redirect_to admin_shops_path, alert: "CSVのデータ行が0件です。ヘッダだけ、またはCSV形式が不正です。"
+        return redirect_to admin_shops_path, flash: { admin_alert: "CSVのデータ行が0件です。ヘッダだけ、またはCSV形式が不正です。" }
       end
 
       Rails.logger.info("[CSV IMPORT] headers=#{rows.headers.inspect}")
@@ -654,15 +654,19 @@ class Admin::ShopsController < Admin::BaseController
 
       if processed_rows.zero?
         return redirect_to admin_shops_path,
-                           alert: "CSVのデータ行を処理できませんでした。ヘッダ名・文字コード・保存形式を確認してください。"
+                           flash: { admin_alert: "CSVのデータ行を処理できませんでした。ヘッダ名・文字コード・保存形式を確認してください。" }
       end
 
       notice_message = "CSV取込完了：#{success}件成功 / #{failed}件失敗 / 重複#{skipped_duplicates}件スキップ / 空行#{skipped_blank}件スキップ / 対象#{processed_rows}件"
-      redirect_to admin_shops_path, notice: notice_message, alert: error_messages.first(5).join(" / ").presence
+      flash_payload = { admin_notice: notice_message }
+admin_error_message = error_messages.first(5).join(" / ").presence
+flash_payload[:admin_alert] = admin_error_message if admin_error_message.present?
+
+redirect_to admin_shops_path, flash: flash_payload
     rescue CSV::MalformedCSVError => e
-      redirect_to admin_shops_path, alert: "CSV形式が不正です: #{e.message}"
+      redirect_to admin_shops_path, flash: { admin_alert: "CSV形式が不正です: #{e.message}" }
     rescue => e
-      redirect_to admin_shops_path, alert: "インポート中にエラーが発生しました: #{e.class} - #{e.message}"
+      redirect_to admin_shops_path, flash: { admin_alert: "インポート中にエラーが発生しました: #{e.class} - #{e.message}" }
     end
   end
 
