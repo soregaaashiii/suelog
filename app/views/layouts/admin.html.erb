@@ -44,15 +44,15 @@
         <% end %>
       </div>
 
-      <% if notice.present? %>
+      <% if flash[:admin_notice].present? %>
         <div style="margin:15px 0; padding:10px; background:#e6f4ea; border:1px solid #cfe8d6; color:#137333; border-radius:8px;">
-          <%= notice %>
+          <%= flash[:admin_notice] %>
         </div>
       <% end %>
 
-      <% if alert.present? %>
+      <% if flash[:admin_alert].present? %>
         <div style="margin:15px 0; padding:10px; background:#fff5f5; border:1px solid #f3c7c7; color:#b00020; border-radius:8px;">
-          <%= alert %>
+          <%= flash[:admin_alert] %>
         </div>
       <% end %>
 
