@@ -171,8 +171,8 @@ CSV一括インポート
     </div>
   <% end %>
 
-  <div style="overflow-x:auto;">
-    <table style="width:100%; border-collapse:collapse; min-width:1300px;">
+  <div class="admin-table-wrap" style="overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px;">
+    <table style="width:100%; border-collapse:collapse; min-width:1500px; table-layout:auto;">
       <thead>
         <tr style="border-bottom:2px solid #111;">
           <th align="left" style="width:42px;">選択</th>
@@ -183,7 +183,7 @@ CSV一括インポート
           <th align="right">電話</th>
           <th align="right">地図</th>
           <th align="right">アフィリ</th>
-          <th align="left">操作</th>
+          <th align="left" style="padding:8px 0 8px 0; white-space:nowrap; min-width:420px;">操作</th>
         </tr>
       </thead>
 
@@ -203,17 +203,17 @@ CSV一括インポート
               when :approved_or_rejected
                 [
                   "詳細（重複候補あり）",
-                  "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; font-weight:700; border-radius:10px; text-decoration:none;"
+                  "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; font-weight:700; border-radius:10px; text-decoration:none;"
                 ]
               when :pending_only
                 [
                   "詳細（承認待ち重複）",
-                  "padding:6px 10px; border:1px solid #9aa0a6; background:#f5f5f5; color:#555; font-weight:700; border-radius:10px; text-decoration:none;"
+                  "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #9aa0a6; background:#f5f5f5; color:#555; font-weight:700; border-radius:10px; text-decoration:none;"
                 ]
               else
                 [
                   "詳細",
-                  "padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; font-weight:700; border-radius:10px; text-decoration:none;"
+                  "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; font-weight:700; border-radius:10px; text-decoration:none;"
                 ]
               end %>
 
@@ -305,8 +305,8 @@ CSV一括インポート
               <%= click_counts[:affiliate_click].to_i %>
             </td>
 
-            <td style="padding:8px 0;">
-              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <td style="padding:10px 0; min-width:420px;">
+              <div class="admin-shop-actions" style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-start; min-width:400px;">
                 <% if !shop.approved? && !shop.rejected? %>
                   <%= button_to "承認",
                       approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
@@ -333,13 +333,13 @@ CSV一括インポート
 
                 <%= link_to "編集",
                     edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+                    style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
                 <%= link_to "公開ページ",
                     shop_path(shop),
                     target: "_blank",
                     rel: "noopener",
-                    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+                    style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
               </div>
             </td>
           </tr>
