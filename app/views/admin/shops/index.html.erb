@@ -192,8 +192,8 @@ CSV一括インポート
           <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
 
           <% duplicate_state =
-              if @status == "pending" && shop.respond_to?(:duplicate_flag_state)
-                shop.duplicate_flag_state
+              if @status == "pending"
+                (@duplicate_states || {})[shop.id] || :none
               else
                 :none
               end %>

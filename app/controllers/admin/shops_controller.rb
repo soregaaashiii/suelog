@@ -36,19 +36,14 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where(source: @source)
     end
 
-    scope = scope.includes(
-      food_photos_attachments: :blob,
-      interior_photos_attachments: :blob,
-      exterior_photos_attachments: :blob,
-      menu_photos_attachments: :blob
-    )
-
     @total_count = scope.count
     @total_pages = (@total_count.to_f / @per).ceil
     @total_pages = 1 if @total_pages <= 0
 
     offset = (@page - 1) * @per
     @shops = scope.offset(offset).limit(@per)
+
+    @duplicate_states = build_duplicate_states_for(@shops)
   end
 
   def clicks
@@ -659,10 +654,10 @@ class Admin::ShopsController < Admin::BaseController
 
       notice_message = "CSV取込完了：#{success}件成功 / #{failed}件失敗 / 重複#{skipped_duplicates}件スキップ / 空行#{skipped_blank}件スキップ / 対象#{processed_rows}件"
       flash_payload = { admin_notice: notice_message }
-admin_error_message = error_messages.first(5).join(" / ").presence
-flash_payload[:admin_alert] = admin_error_message if admin_error_message.present?
+      admin_error_message = error_messages.first(5).join(" / ").presence
+      flash_payload[:admin_alert] = admin_error_message if admin_error_message.present?
 
-redirect_to admin_shops_path, flash: flash_payload
+      redirect_to admin_shops_path, flash: flash_payload
     rescue CSV::MalformedCSVError => e
       redirect_to admin_shops_path, flash: { admin_alert: "CSV形式が不正です: #{e.message}" }
     rescue => e
@@ -703,6 +698,91 @@ redirect_to admin_shops_path, flash: flash_payload
     return Shop.none if conditions.empty?
 
     scope.where(conditions.join(" OR "), binds)
+  end
+
+  def build_duplicate_states_for(shops)
+    return {} if shops.blank?
+
+    states = Hash.new(:none)
+    ids = shops.map(&:id)
+
+    scope = Shop.where.not(id: ids)
+
+    place_id_available = Shop.column_names.include?("place_id")
+
+    place_ids =
+      if place_id_available
+        shops.filter_map do |shop|
+          shop.respond_to?(:place_id) ? shop.place_id.presence : nil
+        end.uniq
+      else
+        []
+      end
+
+    normalized_phones = shops.map { |shop| shop.normalized_phone.presence }.compact.uniq
+    names = shops.map { |shop| shop.name.presence }.compact.uniq
+    addresses = shops.map { |shop| shop.address.presence }.compact.uniq
+
+    grouped = {}
+
+    if place_id_available && place_ids.present?
+      scope.where(place_id: place_ids).pluck(:id, :place_id, :approved, :rejected).each do |candidate_id, place_id, approved, rejected|
+        grouped[[:place_id, place_id]] ||= []
+        grouped[[:place_id, place_id]] << [candidate_id, approved, rejected]
+      end
+    end
+
+    if normalized_phones.present?
+      scope.where(normalized_phone: normalized_phones).pluck(:id, :normalized_phone, :approved, :rejected).each do |candidate_id, normalized_phone, approved, rejected|
+        grouped[[:normalized_phone, normalized_phone]] ||= []
+        grouped[[:normalized_phone, normalized_phone]] << [candidate_id, approved, rejected]
+      end
+    end
+
+    if names.present?
+      scope.where(name: names).pluck(:id, :name, :approved, :rejected).each do |candidate_id, name, approved, rejected|
+        grouped[[:name, name]] ||= []
+        grouped[[:name, name]] << [candidate_id, approved, rejected]
+      end
+    end
+
+    if addresses.present?
+      scope.where(address: addresses).pluck(:id, :address, :approved, :rejected).each do |candidate_id, address, approved, rejected|
+        grouped[[:address, address]] ||= []
+        grouped[[:address, address]] << [candidate_id, approved, rejected]
+      end
+    end
+
+    shops.each do |shop|
+      candidates = []
+
+      if place_id_available && shop.respond_to?(:place_id) && shop.place_id.present?
+        candidates.concat(grouped[[:place_id, shop.place_id]] || [])
+      end
+
+      if shop.normalized_phone.present?
+        candidates.concat(grouped[[:normalized_phone, shop.normalized_phone]] || [])
+      end
+
+      if shop.name.present?
+        candidates.concat(grouped[[:name, shop.name]] || [])
+      end
+
+      if shop.address.present?
+        candidates.concat(grouped[[:address, shop.address]] || [])
+      end
+
+      states[shop.id] =
+        if candidates.any? { |_, approved, rejected| approved || rejected }
+          :approved_or_rejected
+        elsif candidates.any?
+          :pending_only
+        else
+          :none
+        end
+    end
+
+    states
   end
 
   def shop_params
