@@ -1,223 +1,251 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/articles/show.html.erb %>
 
-<h1><%= @article.title %></h1>
+<% content_for :title, (@article.respond_to?(:seo_title) && @article.seo_title.present?) ? @article.seo_title : @article.title.to_s %>
 
-<% if @article.eyecatch.attached? %>
-<div style="margin-bottom:16px; text-align:center;">
-<%= image_tag @article.eyecatch, style: "max-width:100%; border-radius:12px;" %>
-</div>
-<% end %>
+<%
+meta_description =
+  if @article.respond_to?(:meta_description) && @article.meta_description.present?
+    @article.meta_description
+  elsif @article.summary.present?
+    @article.summary.to_s
+  else
+    @article.title.to_s
+  end
+%>
+<% content_for :meta_description, meta_description %>
 
-<% if @article.summary.present? %>
-<p style="font-size:18px; color:#555;"><%= @article.summary %></p>
-<% end %>
+<%
+article_body_html =
+  begin
+    render_article_body(@article.body.to_s)
+  rescue StandardError
+    simple_format(h(@article.body.to_s))
+  end
+%>
 
-<div class="article-body" data-article-body="true">
-<%= render_article_body(@article.body.to_s) %>
-</div>
+<article style="max-width:860px; margin:0 auto; padding:24px 16px 56px;">
+  <header style="margin-bottom:24px;">
+    <h1 style="margin:0 0 16px; line-height:1.4;"><%= @article.title %></h1>
+
+    <% if @article.respond_to?(:published_at) && @article.published_at.present? %>
+      <p style="margin:0 0 16px; color:#666; font-size:14px;">
+        公開日: <%= @article.published_at.strftime("%Y/%m/%d") %>
+      </p>
+    <% end %>
+
+    <% if @article.respond_to?(:eyecatch) && @article.eyecatch.attached? %>
+      <div style="margin-bottom:16px; text-align:center;">
+        <%= image_tag @article.eyecatch, style: "max-width:100%; border-radius:12px;" %>
+      </div>
+    <% end %>
+
+    <% if @article.summary.present? %>
+      <p style="font-size:18px; color:#555; line-height:1.8; margin:0;">
+        <%= @article.summary %>
+      </p>
+    <% end %>
+  </header>
+
+  <div class="article-body" data-article-body="true">
+    <%= article_body_html %>
+  </div>
+</article>
 
 <style>
 .article-body a {
-color: #2563eb;
-text-decoration: underline;
+  color: #2563eb;
+  text-decoration: underline;
 }
 
 .article-body a:hover {
-opacity: 0.85;
+  opacity: 0.85;
 }
 
 .article-body figure {
-margin: 20px 0;
-text-align: center;
+  margin: 20px 0;
+  text-align: center;
 }
 
 .article-body figure img {
-max-width: 560px;
-width: 100%;
-height: auto;
-border-radius: 12px;
-display: inline-block;
+  max-width: 560px;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  display: inline-block;
 }
 
 .article-body .image-row {
-display: flex;
-flex-wrap: wrap;
-gap: 12px;
-align-items: flex-start;
-margin: 20px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 20px 0;
 }
 
 .article-body .image-row figure {
-flex: 1 1 240px;
-margin: 0;
+  flex: 1 1 240px;
+  margin: 0;
 }
 
 .article-body .image-row figure img {
-max-width: 100%;
-width: 100%;
+  max-width: 100%;
+  width: 100%;
 }
 
 .article-body figure.image-small img {
-max-width: 300px;
-width: auto;
+  max-width: 300px;
+  width: auto;
 }
 
 .article-body figure.image-medium img {
-max-width: 560px;
-width: 100%;
+  max-width: 560px;
+  width: 100%;
 }
 
 .article-body figure.image-large img {
-max-width: 900px;
-width: 100%;
+  max-width: 900px;
+  width: 100%;
 }
 
 .article-body figure.align-left {
-text-align: left;
+  text-align: left;
 }
 
 .article-body figure.align-center {
-text-align: center;
+  text-align: center;
 }
 
 .article-body figure.align-right {
-text-align: right;
+  text-align: right;
 }
 </style>
 
 <script>
 (() => {
-function isMarkerNode(node) {
-if (!node || node.nodeType !== 1) return false;
-if (!["P", "DIV"].includes(node.tagName)) return false;
-return node.children.length === 0;
-}
+  function isMarkerNode(node) {
+    if (!node || node.nodeType !== 1) return false;
+    if (!["P", "DIV"].includes(node.tagName)) return false;
+    return node.children.length === 0;
+  }
 
-function normalizeText(node) {
-return (node.textContent || "").replace(/\u00A0/g, " ").trim();
-}
+  function normalizeText(node) {
+    return (node.textContent || "").replace(/\u00A0/g, " ").trim();
+  }
 
-function nextMeaningfulSibling(node) {
-let current = node.nextSibling;
+  function nextMeaningfulSibling(node) {
+    let current = node.nextSibling;
 
-while (current) {
-if (current.nodeType === 1) {
-return current;
-}
-if (current.nodeType === 3 && current.textContent.trim() !== "") {
-return current;
-}
-current = current.nextSibling;
-}
+    while (current) {
+      if (current.nodeType === 1) return current;
+      if (current.nodeType === 3 && current.textContent.trim() !== "") return current;
+      current = current.nextSibling;
+    }
 
-return null;
-}
+    return null;
+  }
 
-function nextFigureAfter(node) {
-let current = nextMeaningfulSibling(node);
+  function nextFigureAfter(node) {
+    let current = nextMeaningfulSibling(node);
 
-while (current) {
-if (current.nodeType === 1) {
-if (current.tagName === "FIGURE") return current;
+    while (current) {
+      if (current.nodeType === 1) {
+        if (current.tagName === "FIGURE") return current;
 
-const nested = current.querySelector && current.querySelector("figure");
-if (nested) return nested;
-}
-current = nextMeaningfulSibling(current);
-}
+        const nested = current.querySelector && current.querySelector("figure");
+        if (nested) return nested;
+      }
+      current = nextMeaningfulSibling(current);
+    }
 
-return null;
-}
+    return null;
+  }
 
-function applyImageOptions(figure, size, align) {
-if (!figure) return;
+  function applyImageOptions(figure, size, align) {
+    if (!figure) return;
 
-figure.classList.remove("image-small", "image-medium", "image-large");
-figure.classList.remove("align-left", "align-center", "align-right");
+    figure.classList.remove("image-small", "image-medium", "image-large");
+    figure.classList.remove("align-left", "align-center", "align-right");
 
-if (size === "small") figure.classList.add("image-small");
-if (size === "medium") figure.classList.add("image-medium");
-if (size === "large") figure.classList.add("image-large");
+    if (size === "small") figure.classList.add("image-small");
+    if (size === "medium") figure.classList.add("image-medium");
+    if (size === "large") figure.classList.add("image-large");
 
-if (align === "left") figure.classList.add("align-left");
-if (align === "center") figure.classList.add("align-center");
-if (align === "right") figure.classList.add("align-right");
-}
+    if (align === "left") figure.classList.add("align-left");
+    if (align === "center") figure.classList.add("align-center");
+    if (align === "right") figure.classList.add("align-right");
+  }
 
-function processArticleBody() {
-const root = document.querySelector('[data-article-body="true"]');
-if (!root) return;
+  function processArticleBody() {
+    const root = document.querySelector('[data-article-body="true"]');
+    if (!root) return;
 
-const nodes = Array.from(root.children);
-let currentRow = null;
+    const nodes = Array.from(root.children);
+    let currentRow = null;
 
-nodes.forEach((node) => {
-if (!isMarkerNode(node)) return;
+    nodes.forEach((node) => {
+      if (!isMarkerNode(node)) return;
 
-const text = normalizeText(node);
+      const text = normalizeText(node);
 
-const imageMatch = text.match(/^\[image\s+size=(small|medium|large)\s+align=(left|center|right)\]$/i);
-if (imageMatch) {
-const figure = nextFigureAfter(node);
-applyImageOptions(figure, imageMatch[1].toLowerCase(), imageMatch[2].toLowerCase());
-node.remove();
-return;
-}
+      const imageMatch = text.match(/^\[image\s+size=(small|medium|large)\s+align=(left|center|right)\]$/i);
+      if (imageMatch) {
+        const figure = nextFigureAfter(node);
+        applyImageOptions(figure, imageMatch[1].toLowerCase(), imageMatch[2].toLowerCase());
+        node.remove();
+        return;
+      }
 
-if (/^\[image-row-start\]$/i.test(text)) {
-const row = document.createElement("div");
-row.className = "image-row";
-node.parentNode.insertBefore(row, node.nextSibling);
-currentRow = row;
-node.remove();
-return;
-}
+      if (/^\[image-row-start\]$/i.test(text)) {
+        const row = document.createElement("div");
+        row.className = "image-row";
+        node.parentNode.insertBefore(row, node.nextSibling);
+        currentRow = row;
+        node.remove();
+        return;
+      }
 
-if (/^\[image-row-end\]$/i.test(text)) {
-currentRow = null;
-node.remove();
-return;
-}
-});
+      if (/^\[image-row-end\]$/i.test(text)) {
+        currentRow = null;
+        node.remove();
+        return;
+      }
+    });
 
-// row start/end の間にある figure を image-row の中へ移動
-let activeRow = null;
-Array.from(root.children).forEach((node) => {
-if (node.classList && node.classList.contains("image-row")) {
-activeRow = node;
-return;
-}
+    let activeRow = null;
+    Array.from(root.children).forEach((node) => {
+      if (node.classList && node.classList.contains("image-row")) {
+        activeRow = node;
+        return;
+      }
 
-if (!activeRow) return;
+      if (!activeRow) return;
 
-if (node.tagName === "FIGURE") {
-activeRow.appendChild(node);
-return;
-}
+      if (node.tagName === "FIGURE") {
+        activeRow.appendChild(node);
+        return;
+      }
 
-const text = normalizeText(node);
-if (/^\[image-row-start\]$/i.test(text)) return;
-if (/^\[image-row-end\]$/i.test(text)) {
-activeRow = null;
-node.remove();
-return;
-}
+      const text = normalizeText(node);
+      if (/^\[image-row-start\]$/i.test(text)) return;
+      if (/^\[image-row-end\]$/i.test(text)) {
+        activeRow = null;
+        node.remove();
+        return;
+      }
 
-// image-row の後ろに普通の本文が来たら終了
-if (text !== "") {
-activeRow = null;
-}
-});
+      if (text !== "") {
+        activeRow = null;
+      }
+    });
 
-// 空の p/div を掃除
-root.querySelectorAll("p, div").forEach((node) => {
-if (node.classList.contains("image-row")) return;
-if (node.children.length > 0) return;
-if (normalizeText(node) === "") node.remove();
-});
-}
+    root.querySelectorAll("p, div").forEach((node) => {
+      if (node.classList.contains("image-row")) return;
+      if (node.children.length > 0) return;
+      if (normalizeText(node) === "") node.remove();
+    });
+  }
 
-document.addEventListener("DOMContentLoaded", processArticleBody);
-document.addEventListener("turbo:load", processArticleBody);
+  document.addEventListener("DOMContentLoaded", processArticleBody);
+  document.addEventListener("turbo:load", processArticleBody);
 })();
 </script>
