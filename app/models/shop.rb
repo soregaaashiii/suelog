@@ -170,7 +170,11 @@ class Shop < ApplicationRecord
 
   # 電話番号の重複防止（digitsのみ）
   before_validation :set_normalized_phone
-  validates :normalized_phone, uniqueness: true, allow_nil: true, allow_blank: true
+  validates :normalized_phone,
+            uniqueness: true,
+            allow_nil: true,
+            allow_blank: true,
+            if: :will_save_change_to_normalized_phone?
 
   # ジャンル正規化
   before_validation :normalize_genre_value
