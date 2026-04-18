@@ -1,3 +1,4 @@
+# /Users/kawamuratakuya/dev/suelog/app/helpers/application_helper.rb
 module ApplicationHelper
   def contribution_badge(count)
     case count
