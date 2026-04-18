@@ -170,6 +170,7 @@ class Shop < ApplicationRecord
 
   # 電話番号の重複防止（digitsのみ）
   before_validation :set_normalized_phone
+  before_validation :set_default_smoking_values
   validates :normalized_phone,
             uniqueness: true,
             allow_nil: true,
@@ -787,6 +788,11 @@ class Shop < ApplicationRecord
   def set_normalized_phone
     digits = phone.to_s.gsub(/[^0-9]/, "")
     self.normalized_phone = digits.presence
+  end
+
+  def set_default_smoking_values
+    self.smoking_area = "unknown" if smoking_area.blank?
+    self.smoking_type = "unknown" if smoking_type.blank?
   end
 
   def safe_attachments(collection)
