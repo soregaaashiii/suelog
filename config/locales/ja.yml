@@ -1,4 +1,8 @@
 ja:
+  date:
+    formats:
+      default: "%Y/%m/%d"
+
   activerecord:
     models:
       shop: "店舗"
