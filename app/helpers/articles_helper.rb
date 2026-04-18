@@ -28,12 +28,6 @@ module ArticlesHelper
     remove_image_marker_nodes!(fragment)
 
     fragment.to_html.html_safe
-  rescue StandardError
-    fallback_html = replace_shop_shortcodes(body.to_s)
-    fallback_fragment = Nokogiri::HTML::DocumentFragment.parse(fallback_html)
-    style_article_figures!(fallback_fragment)
-    remove_image_marker_nodes!(fallback_fragment)
-    fallback_fragment.to_html.html_safe
   end
 
   private
@@ -48,15 +42,16 @@ module ArticlesHelper
   def render_shop_card_shortcode(shop_id)
     shop = Shop.find_by(id: shop_id)
 
-    return missing_shop_card_html if shop.blank?
+    return missing_shop_card_html(shop_id) if shop.blank?
 
     render(partial: "articles/shop_card", locals: { shop: shop })
-  rescue StandardError
-    missing_shop_card_html
+  rescue StandardError => e
+    Rails.logger.error("[ArticlesHelper] shop card render failed for shop_id=#{shop_id}: #{e.class}: #{e.message}")
+    %(<div style="margin:16px 0; padding:12px; border:1px solid #f1c7c7; border-radius:10px; color:#a33;">店舗カードの表示に失敗しました（shop_id=#{shop_id}）</div>)
   end
 
-  def missing_shop_card_html
-    %(<div style="margin:16px 0; padding:12px; border:1px solid #f1c7c7; border-radius:10px; color:#a33;">店舗が見つかりません</div>)
+  def missing_shop_card_html(shop_id)
+    %(<div style="margin:16px 0; padding:12px; border:1px solid #f1c7c7; border-radius:10px; color:#a33;">店舗が見つかりません（shop_id=#{shop_id}）</div>)
   end
 
   def style_article_figures!(fragment)
