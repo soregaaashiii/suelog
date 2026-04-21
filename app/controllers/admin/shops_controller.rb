@@ -611,7 +611,8 @@ class Admin::ShopsController < Admin::BaseController
             smoking_type: smoking_type,
             tabelog_url: tabelog_url.presence,
             hotpepper_url: hotpepper_url.presence,
-            last_confirmed_on: last_confirmed_on
+            last_confirmed_on: last_confirmed_on,
+            smoking_unverified: true
           )
 
           if shop.opening_hours_text.blank? && shop.respond_to?(:derived_opening_hours_text, true)
@@ -626,6 +627,7 @@ class Admin::ShopsController < Admin::BaseController
 
           shop.approved = false
           shop.rejected = false if shop.respond_to?(:rejected=)
+          shop.smoking_unverified = true if shop.respond_to?(:smoking_unverified=)
 
           shop.save!
           success += 1
