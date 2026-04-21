@@ -207,7 +207,7 @@
     </div>
 
     <% if @shops.present? && @shops.any? %>
-      <%= render partial: "shared/shop_cards", locals: { shops: @shops } %>
+      <%= render partial: "shared/shop_cards", locals: { shops: @shops, open_now_map: @open_now_map } %>
 
       <div style="margin-top:20px; display:flex; justify-content:center;">
 <%= paginate @shops,

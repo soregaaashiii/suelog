@@ -1,4 +1,4 @@
-<%# /Users/kawamuratakuya/Desktop/吸えログデータ/dev/suelog/app/views/shared/_shop_cards.html.erb %>
+<%# /Users/kawamuratakuya/dev/suelog/app/views/shared/_shop_cards.html.erb %>
 
 <% shops ||= [] %>
 
@@ -8,6 +8,7 @@
       <% confirmed = shop.last_confirmed_on %>
       <% very_old = confirmed.present? && confirmed < 2.years.ago.to_date %>
       <% thumb = nil %>
+      <% thumb_variant = nil %>
       <% area_text = [shop.address, shop.nearest_station, shop.name].compact.join(" ") %>
       <% is_umeda_shop = area_text.include?("梅田") %>
       <% is_namba_shop = area_text.include?("難波") || area_text.include?("なんば") %>
@@ -39,26 +40,33 @@
       <% if shop.respond_to?(:thumbnail_attachment) %>
         <% begin %>
           <% candidate = shop.thumbnail_attachment %>
-          <% thumb = candidate if candidate.present? %>
+          <% if candidate.present? %>
+            <% thumb = candidate %>
+            <% if thumb.variable? %>
+              <% thumb_variant = thumb.variant(resize_to_limit: [480, 320]) %>
+            <% end %>
+          <% end %>
         <% rescue StandardError %>
           <% thumb = nil %>
+          <% thumb_variant = nil %>
         <% end %>
       <% end %>
 
       <article
-  class="shop-card <%= "shop-card--stale" if very_old %> shop-card--clickable"
-  onclick="if (!event.target.closest('a, button')) { window.location.href='<%= shop_path(shop) %>'; }"
-  role="link"
-  tabindex="0"
-  onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button')) { event.preventDefault(); window.location.href='<%= shop_path(shop) %>'; }">
+        class="shop-card <%= "shop-card--stale" if very_old %> shop-card--clickable"
+        onclick="if (!event.target.closest('a, button')) { window.location.href='<%= shop_path(shop) %>'; }"
+        role="link"
+        tabindex="0"
+        onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button')) { event.preventDefault(); window.location.href='<%= shop_path(shop) %>'; }">
         <%= link_to shop_path(shop), class: "shop-card__mediaLink" do %>
           <div class="shop-card__media">
             <% if thumb.present? %>
               <% begin %>
-                <%= image_tag url_for(thumb),
+                <%= image_tag(thumb_variant || thumb,
                       class: "shop-card__img",
                       alt: shop.name,
-                      loading: "lazy" %>
+                      loading: "lazy",
+                      decoding: "async") %>
               <% rescue StandardError %>
                 <div class="shop-card__placeholder">
                   <div class="shop-card__placeholderTitle"><%= shop.name %></div>
@@ -90,7 +98,9 @@
           <h3 class="shop-card__title">
             <%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink" %>
 
-            <% if shop.open_now? %>
+            <% shop_open_now = defined?(open_now_map) && open_now_map.present? ? open_now_map[shop.id] : shop.open_now? %>
+
+            <% if shop_open_now %>
               <span class="badge badge--open-inline">営業中</span>
             <% else %>
               <span class="badge badge--closed-inline">営業終了</span>
@@ -154,7 +164,6 @@
               <% end %>
             </div>
           <% end %>
-          
         </div>
       </article>
     <% end %>
@@ -218,12 +227,12 @@
     }
 
     .shop-card__rating {
-  margin-top: 6px;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
-}
+      margin-top: 6px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
     .shop-card__ratingStars {
       font-size: 14px;
@@ -249,11 +258,11 @@
     }
 
     .shop-card__areaLinks {
-  margin-top: 8px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
     .shop-card__areaLink {
       font-size: 12px;
@@ -266,23 +275,20 @@
       text-decoration: underline;
     }
 
-.shop-card--clickable {
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
+    .shop-card--clickable {
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
 
-.shop-card--clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 28px rgba(17, 17, 17, 0.08);
-}
+    .shop-card--clickable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(17, 17, 17, 0.08);
+    }
 
-.shop-card--clickable:focus-visible {
-  outline: 3px solid rgba(59, 109, 246, 0.28);
-  outline-offset: 2px;
-}
-
-
-
+    .shop-card--clickable:focus-visible {
+      outline: 3px solid rgba(59, 109, 246, 0.28);
+      outline-offset: 2px;
+    }
   </style>
 <% else %>
   <div class="empty-state">

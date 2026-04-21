@@ -462,85 +462,98 @@ end
   smoking_type = params[:smoking_type].to_s.strip
   keyword_q = normalized_keyword_query(params[:q])
 
-    base = Shop
-      .approved
-      .left_joins(:reviews)
-      .select(
-        "shops.*",
-        "COALESCE(AVG(CASE WHEN reviews.approved THEN reviews.rating END), 0) AS avg_rating",
-        "COALESCE(SUM(CASE WHEN reviews.approved THEN 1 ELSE 0 END), 0) AS reviews_count",
-        "MAX(CASE WHEN reviews.approved THEN reviews.created_at END) AS latest_review_at"
-      )
-      .group("shops.id")
+  base = Shop
+    .approved
+    .left_joins(:reviews)
+    .includes(
+  :food_photos_attachments,
+  :interior_photos_attachments,
+  :exterior_photos_attachments,
+  :menu_photos_attachments
+)
+    .select(
+      "shops.*",
+      "COALESCE(AVG(CASE WHEN reviews.approved THEN reviews.rating END), 0) AS avg_rating",
+      "COALESCE(SUM(CASE WHEN reviews.approved THEN 1 ELSE 0 END), 0) AS reviews_count",
+      "MAX(CASE WHEN reviews.approved THEN reviews.created_at END) AS latest_review_at"
+    )
+    .group("shops.id")
 
-    if @forced_area_keyword.present?
-      like = "%#{@forced_area_keyword}%"
-      area_sql = <<~SQL.squish
-        shops.area LIKE :like
-        OR shops.address LIKE :like
-        OR shops.nearest_station LIKE :like
-      SQL
-      base = base.where(area_sql, like: like)
-    end
-
-    if genre_terms.present?
-      genre_sql_parts = []
-      genre_bindings = {}
-
-      genre_terms.each_with_index do |term, idx|
-        key = :"genre_like_#{idx}"
-        genre_sql_parts << "(shops.genre LIKE :#{key} OR shops.genre_other LIKE :#{key})"
-        genre_bindings[key] = "%#{ActiveRecord::Base.sanitize_sql_like(term)}%"
-      end
-
-      genre_sql = genre_sql_parts.join(" OR ")
-      base = base.where(genre_sql, genre_bindings)
-    end
-
-    if station_q.present?
-      like = "%#{ActiveRecord::Base.sanitize_sql_like(station_q)}%"
-      base = base.where("shops.nearest_station LIKE ?", like)
-    end
-
-    if smoking_area.present?
-      smoking_area_value = Shop.smoking_areas[smoking_area]
-      base = base.where(shops: { smoking_area: smoking_area_value }) if smoking_area_value.present?
-    end
-
-    if smoking_type.present?
-      smoking_type_value = Shop.smoking_types[smoking_type]
-      base = base.where(shops: { smoking_type: smoking_type_value }) if smoking_type_value.present?
-    end
-
-    if keyword_q.present?
-      keyword_tokens = keyword_q.split(" ")
-      keyword_tokens.each do |token|
-        base = base.merge(Shop.keyword(token))
-      end
-    end
-
-    if params[:needs_review].present?
-      cutoff = 2.years.ago.to_date
-      base = base.where("shops.last_confirmed_on IS NULL OR shops.last_confirmed_on < ?", cutoff)
-    end
-
-    records = base.to_a
-    records.select!(&:open_now?) if @open_now_only
-    records = sort_shop_records(records, @current_sort)
-
-    @shops_count = records.size
-
-    requested_page = params[:page].to_i
-    requested_page = 1 if requested_page < 1
-
-    paginated = Kaminari.paginate_array(records).page(requested_page).per(@per)
-
-    if paginated.total_pages.positive? && requested_page > paginated.total_pages
-      paginated = Kaminari.paginate_array(records).page(1).per(@per)
-    end
-
-    @shops = paginated
+  if @forced_area_keyword.present?
+    like = "%#{@forced_area_keyword}%"
+    area_sql = <<~SQL.squish
+      shops.area LIKE :like
+      OR shops.address LIKE :like
+      OR shops.nearest_station LIKE :like
+    SQL
+    base = base.where(area_sql, like: like)
   end
+
+  if genre_terms.present?
+    genre_sql_parts = []
+    genre_bindings = {}
+
+    genre_terms.each_with_index do |term, idx|
+      key = :"genre_like_#{idx}"
+      genre_sql_parts << "(shops.genre LIKE :#{key} OR shops.genre_other LIKE :#{key})"
+      genre_bindings[key] = "%#{ActiveRecord::Base.sanitize_sql_like(term)}%"
+    end
+
+    genre_sql = genre_sql_parts.join(" OR ")
+    base = base.where(genre_sql, genre_bindings)
+  end
+
+  if station_q.present?
+    like = "%#{ActiveRecord::Base.sanitize_sql_like(station_q)}%"
+    base = base.where("shops.nearest_station LIKE ?", like)
+  end
+
+  if smoking_area.present?
+    smoking_area_value = Shop.smoking_areas[smoking_area]
+    base = base.where(shops: { smoking_area: smoking_area_value }) if smoking_area_value.present?
+  end
+
+  if smoking_type.present?
+    smoking_type_value = Shop.smoking_types[smoking_type]
+    base = base.where(shops: { smoking_type: smoking_type_value }) if smoking_type_value.present?
+  end
+
+  if keyword_q.present?
+    keyword_tokens = keyword_q.split(" ")
+    keyword_tokens.each do |token|
+      base = base.merge(Shop.keyword(token))
+    end
+  end
+
+  if params[:needs_review].present?
+    cutoff = 2.years.ago.to_date
+    base = base.where("shops.last_confirmed_on IS NULL OR shops.last_confirmed_on < ?", cutoff)
+  end
+
+  records = base.to_a
+
+  open_now_map = {}
+  records.each do |shop|
+    open_now_map[shop.id] = shop.open_now?
+  end
+
+  records.select! { |shop| open_now_map[shop.id] } if @open_now_only
+  records = sort_shop_records(records, @current_sort, open_now_map)
+
+  @shops_count = records.size
+
+  requested_page = params[:page].to_i
+  requested_page = 1 if requested_page < 1
+
+  paginated = Kaminari.paginate_array(records).page(requested_page).per(@per)
+
+  if paginated.total_pages.positive? && requested_page > paginated.total_pages
+    paginated = Kaminari.paginate_array(records).page(1).per(@per)
+  end
+
+  @open_now_map = open_now_map.slice(*paginated.map(&:id))
+  @shops = paginated
+end
 
   def effective_genre_param
     return normalized_genre_param(params[:genre]) if params[:genre].present?
@@ -629,25 +642,25 @@ end
          .strip
   end
 
-  def sort_shop_records(records, sort_key)
-    records.sort_by do |shop|
-      avg_rating = shop.try(:avg_rating).to_f
-      reviews_count = shop.try(:reviews_count).to_i
-      created_at_i = shop.created_at&.to_i || 0
-      open_penalty = shop.open_now? ? 0 : 1
+  def sort_shop_records(records, sort_key, open_now_map = {})
+  records.sort_by do |shop|
+    avg_rating = shop.try(:avg_rating).to_f
+    reviews_count = shop.try(:reviews_count).to_i
+    created_at_i = shop.created_at&.to_i || 0
+    open_penalty = open_now_map[shop.id] ? 0 : 1
 
-      case sort_key
-      when "rating"
-        [-avg_rating, -reviews_count, open_penalty, -created_at_i]
-      when "reviews_count"
-        [-reviews_count, -avg_rating, open_penalty, -created_at_i]
-      when "newest"
-        [-created_at_i, -avg_rating, -reviews_count, open_penalty]
-      else
-        [-avg_rating, -reviews_count, open_penalty, -created_at_i]
-      end
+    case sort_key
+    when "rating"
+      [-avg_rating, -reviews_count, open_penalty, -created_at_i]
+    when "reviews_count"
+      [-reviews_count, -avg_rating, open_penalty, -created_at_i]
+    when "newest"
+      [-created_at_i, -avg_rating, -reviews_count, open_penalty]
+    else
+      [-avg_rating, -reviews_count, open_penalty, -created_at_i]
     end
   end
+end
 
   def umeda_nav_links
     [
