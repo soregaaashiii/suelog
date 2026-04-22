@@ -107,7 +107,7 @@ Rails.application.routes.draw do
     post "page_view_tracking/exclude", to: "page_view_settings#exclude", as: :exclude_page_view_tracking
     delete "page_view_tracking/include", to: "page_view_settings#include", as: :include_page_view_tracking
 
-    resources :shops, only: [:index, :show, :edit, :update] do
+    resources :shops, only: [:index, :show, :new, :create, :edit, :update] do
       member do
         patch :approve
         patch :reject

@@ -181,6 +181,94 @@ class Admin::ShopsController < Admin::BaseController
     end
   end
 
+  def new
+    @shop = Shop.new
+    @shop.last_confirmed_on ||= Date.current if @shop.respond_to?(:last_confirmed_on)
+    @shop.smoking_unverified = true if @shop.respond_to?(:smoking_unverified=) && @shop.smoking_unverified.nil?
+
+    if @shop.respond_to?(:approved=) && @shop.approved.nil?
+      @shop.approved = false
+    end
+
+    if @shop.respond_to?(:rejected=) && @shop.rejected.nil?
+      @shop.rejected = false
+    end
+
+    if @shop.respond_to?(:on_hold=) && @shop.on_hold.nil?
+      @shop.on_hold = false
+    end
+
+    @status = params[:status].presence || "pending"
+    @source = params[:source].to_s.presence
+    @per = (params[:per].presence || 50).to_i
+    @page = (params[:page].presence || 1).to_i
+  end
+
+  def create
+    @shop = Shop.new(shop_params)
+    @status = params[:status].presence || "pending"
+    @source = params[:source].to_s.presence
+    @per = (params[:per].presence || 50).to_i
+    @page = (params[:page].presence || 1).to_i
+
+    action = params[:commit_action].to_s
+    notice = "店舗を登録しました"
+
+    ActiveRecord::Base.transaction do
+      normalize_admin_shop_defaults!(@shop)
+      populate_derived_hours_fields!(@shop)
+
+      @shop.save!
+
+      case action
+      when "approve"
+        if duplicate_exists_against_approved_shops?(@shop)
+          raise ActiveRecord::RecordInvalid.new(
+            @shop.tap do |s|
+              s.errors.add(:base, "承認済み店舗との重複の可能性があるため承認できません。詳細から重複候補を確認してください。")
+            end
+          )
+        end
+
+        attrs = {
+          approved: true,
+          rejected: false,
+          on_hold: false
+        }
+        attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+        @shop.update!(attrs)
+        notice = "店舗を登録して承認しました"
+      when "reject"
+        attrs = {
+          approved: false,
+          rejected: true,
+          on_hold: false
+        }
+        attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+        @shop.update!(attrs)
+        notice = "店舗を登録して却下しました"
+      when "hold"
+        attrs = {
+          approved: false,
+          rejected: false,
+          on_hold: true
+        }
+        attrs[:held_at] = Time.current if Shop.column_names.include?("held_at")
+
+        @shop.update!(attrs)
+        notice = "店舗を登録して保留に移動しました"
+      end
+    end
+
+    redirect_to admin_shops_path(status: @status, source: @source, per: @per, page: @page),
+                flash: { admin_notice: notice }
+  rescue ActiveRecord::RecordInvalid => e
+    flash.now[:admin_alert] = e.record.errors.full_messages.join(" / ")
+    render :new, status: :unprocessable_entity
+  end
+
   def approve
     status = params[:status].presence || "pending"
     shop = Shop.find(params[:id])
@@ -332,6 +420,7 @@ class Admin::ShopsController < Admin::BaseController
 
     ActiveRecord::Base.transaction do
       @shop.update!(shop_params)
+      populate_derived_hours_fields!(@shop)
 
       case action
       when "approve"
@@ -787,27 +876,63 @@ class Admin::ShopsController < Admin::BaseController
     states
   end
 
-  def shop_params
-    params.require(:shop).permit(
-      :name,
-      :address,
-      :area,
-      :nearest_station,
-      :phone,
-      :genre,
-      :genre_other,
-      :note,
-      :public_store_details,
-      :smoking_area,
-      :smoking_type,
-      :smoking_unverified,
-      :last_confirmed_on,
-      :opening_hours_text,
-      :holiday_hours_text,
-      :closed_days_text,
-      :tabelog_url,
-      :hotpepper_url,
-      opening_hours_json: {}
-    )
+  def normalize_admin_shop_defaults!(shop)
+    shop.last_confirmed_on ||= Date.current if shop.respond_to?(:last_confirmed_on)
+
+    if shop.respond_to?(:approved=) && shop.approved.nil?
+      shop.approved = false
+    end
+
+    if shop.respond_to?(:rejected=) && shop.rejected.nil?
+      shop.rejected = false
+    end
+
+    if shop.respond_to?(:on_hold=) && shop.on_hold.nil?
+      shop.on_hold = false
+    end
+
+    if shop.respond_to?(:smoking_unverified=) && shop.smoking_unverified.nil?
+      shop.smoking_unverified = true
+    end
   end
+
+  def populate_derived_hours_fields!(shop)
+    if shop.opening_hours_text.blank? && shop.respond_to?(:derived_opening_hours_text, true)
+      derived_text = shop.send(:derived_opening_hours_text)
+      shop.opening_hours_text = derived_text if derived_text.present?
+    end
+
+    if shop.closed_days_text.blank? && shop.respond_to?(:derived_closed_days_text, true)
+      derived_closed = shop.send(:derived_closed_days_text)
+      shop.closed_days_text = derived_closed if derived_closed.present?
+    end
+  end
+
+  def shop_params
+  params.require(:shop).permit(
+    :name,
+    :address,
+    :area,
+    :nearest_station,
+    :phone,
+    :genre,
+    :genre_other,
+    :note,
+    :public_store_details,
+    :smoking_area,
+    :smoking_type,
+    :smoking_unverified,
+    :last_confirmed_on,
+    :opening_hours_text,
+    :holiday_hours_text,
+    :closed_days_text,
+    :tabelog_url,
+    :hotpepper_url,
+    food_photos: [],
+    interior_photos: [],
+    exterior_photos: [],
+    menu_photos: [],
+    opening_hours_json: {}
+  )
+end
 end

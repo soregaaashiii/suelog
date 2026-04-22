@@ -10,10 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_10_150227) do
-  # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_catalog.plpgsql"
-
+ActiveRecord::Schema[8.1].define(version: 2026_04_14_221711) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -115,6 +112,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_10_150227) do
     t.index ["shop_id"], name: "index_reviews_on_shop_id"
   end
 
+  create_table "shop_clicks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "kind", null: false
+    t.integer "shop_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_shop_clicks_on_created_at"
+    t.index ["kind"], name: "index_shop_clicks_on_kind"
+    t.index ["shop_id"], name: "index_shop_clicks_on_shop_id"
+  end
+
   create_table "shop_edit_requests", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "genre"
@@ -128,7 +135,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_10_150227) do
     t.string "proposed_name"
     t.string "proposed_nearest_station"
     t.text "proposed_opening_hours"
-    t.jsonb "proposed_opening_hours_json", default: {}, null: false
+    t.json "proposed_opening_hours_json", default: {}, null: false
     t.text "proposed_opening_hours_text"
     t.string "proposed_phone"
     t.text "proposed_public_store_details"
@@ -142,7 +149,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_10_150227) do
     t.text "status_report_note"
     t.string "status_report_type"
     t.datetime "updated_at", null: false
-    t.index ["proposed_opening_hours_json"], name: "index_shop_edit_requests_on_proposed_opening_hours_json", using: :gin
+    t.index ["proposed_opening_hours_json"], name: "index_shop_edit_requests_on_proposed_opening_hours_json"
     t.index ["shop_id"], name: "index_shop_edit_requests_on_shop_id"
     t.index ["status_report_type"], name: "index_shop_edit_requests_on_status_report_type"
   end
@@ -181,7 +188,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_10_150227) do
     t.text "note"
     t.boolean "on_hold", default: false, null: false
     t.text "opening_hours"
-    t.jsonb "opening_hours_json"
+    t.json "opening_hours_json"
     t.text "opening_hours_text"
     t.string "phone"
     t.string "place_id"
@@ -202,22 +209,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_10_150227) do
     t.index ["source"], name: "index_shops_on_source"
   end
 
-  create_table "solid_cache_entries", force: :cascade do |t|
-    t.integer "byte_size", null: false
-    t.datetime "created_at", null: false
-    t.binary "key", null: false
-    t.bigint "key_hash", null: false
-    t.binary "value", null: false
-    t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
-    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
-    t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
-  end
-
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "page_views", "shops"
   add_foreign_key "review_reports", "reviews"
   add_foreign_key "reviews", "shops"
+  add_foreign_key "shop_clicks", "shops"
   add_foreign_key "shop_edit_requests", "shops"
   add_foreign_key "shop_reports", "shops"
 end
