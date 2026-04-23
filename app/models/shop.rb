@@ -85,6 +85,44 @@ class Shop < ApplicationRecord
     "都島", "守口市", "八尾", "山田", "淀屋橋", "四ツ橋"
   ].freeze
 
+  AREA_AUTO_RULES = {
+    "梅田" => [
+      "梅田",
+      "大阪駅",
+      "梅田駅",
+      "東梅田",
+      "東梅田駅",
+      "西梅田",
+      "西梅田駅",
+      "北新地",
+      "北新地駅",
+      "中崎町",
+      "中崎町駅",
+      "中津",
+      "中津駅",
+      "福島",
+      "福島駅"
+    ],
+    "難波" => [
+      "難波",
+      "なんば",
+      "難波駅",
+      "なんば駅",
+      "jr難波",
+      "jr難波駅",
+      "大阪難波",
+      "大阪難波駅",
+      "心斎橋",
+      "心斎橋駅",
+      "日本橋",
+      "日本橋駅",
+      "大国町",
+      "大国町駅",
+      "桜川",
+      "桜川駅"
+    ]
+  }.freeze
+
   # ===== Smoking status =====
   enum :smoking_area, {
     separated: 0,
@@ -170,7 +208,11 @@ class Shop < ApplicationRecord
 
   # 電話番号の重複防止（digitsのみ）
   before_validation :set_normalized_phone
+  before_validation :normalize_genre_value
+  before_validation :normalize_opening_hours_json
+  before_validation :assign_area_from_location_if_blank
   before_validation :set_default_smoking_values
+
   validates :normalized_phone,
             uniqueness: true,
             allow_nil: true,
@@ -178,10 +220,7 @@ class Shop < ApplicationRecord
             if: :will_save_change_to_normalized_phone?
 
   # ジャンル正規化
-  before_validation :normalize_genre_value
-
   # opening_hours_json は既存データ互換のため残す
-  before_validation :normalize_opening_hours_json
 
   # ===== Geocoding =====
   def geocode_address
@@ -696,6 +735,35 @@ class Shop < ApplicationRecord
   end
 
   private
+
+  def assign_area_from_location_if_blank
+    return if area.present?
+
+    inferred = infer_area_from_location
+    self.area = inferred if inferred.present?
+  end
+
+  def infer_area_from_location
+    station_text = normalize_area_match_text(nearest_station)
+    address_text = normalize_area_match_text(address)
+
+    AREA_AUTO_RULES.each do |area_name, keywords|
+      return area_name if keywords.any? { |keyword| station_text.include?(normalize_area_match_text(keyword)) }
+    end
+
+    AREA_AUTO_RULES.each do |area_name, keywords|
+      return area_name if keywords.any? { |keyword| address_text.include?(normalize_area_match_text(keyword)) }
+    end
+
+    nil
+  end
+
+  def normalize_area_match_text(text)
+    text.to_s
+        .unicode_normalize(:nfkc)
+        .downcase
+        .gsub(/[[:space:]]+/, "")
+  end
 
   def normalize_genre_value
     self.genre = genre.to_s.strip

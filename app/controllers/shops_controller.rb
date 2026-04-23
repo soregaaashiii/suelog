@@ -137,7 +137,6 @@ class ShopsController < ApplicationController
   def shop_params
     params.require(:shop).permit(
       :name,
-      :area,
       :address,
       :public_store_details,
       :last_confirmed_on,
