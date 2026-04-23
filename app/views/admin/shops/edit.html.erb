@@ -49,6 +49,21 @@
     </div>
 
     <div>
+      <div style="font-weight:700;">エリア</div>
+      <p style="margin:4px 0 8px; color:#666; font-size:12px; line-height:1.6;">
+        未設定のままでも保存できます。空欄なら住所・最寄駅から自動判定されます。
+      </p>
+      <%= f.select :area,
+      [
+        ["未設定", ""],
+        ["梅田", "梅田"],
+        ["難波", "難波"]
+      ],
+      {},
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
+
+    <div>
       <div style="font-weight:700;">ジャンル</div>
       <%= f.select :genre,
       [
