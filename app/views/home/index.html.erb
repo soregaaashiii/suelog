@@ -112,18 +112,7 @@
   <section class="home-section">
     <div class="section-head">
       <div>
-        <h2 class="section-title">
-          <% if @forced_station_label.present? %>
-            <%= "#{@forced_station_label}周辺で喫煙できる居酒屋・バー・カフェ" %>
-          <% else %>
-            <%= @page_heading %>
-          <% end %>
-        </h2>
-      </div>
-
-      <div class="result-count">
-        <span class="result-count__num"><%= @shops_count %></span>
-        <span class="result-count__text">件</span>
+        <p class="result-hit-text"><%= @shops_count %>件ヒット</p>
       </div>
     </div>
 
