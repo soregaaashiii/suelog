@@ -6,9 +6,9 @@ class ArticlesController < ApplicationController
 
     if @q.present?
       @articles = @articles.where(
-  "title LIKE :q OR summary LIKE :q",
-  q: "%#{@q}%"
-)
+        "title LIKE :q OR summary LIKE :q OR content LIKE :q",
+        q: "%#{@q}%"
+      )
     end
   end
 

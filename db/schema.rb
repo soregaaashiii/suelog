@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_14_221711) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_28_115129) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -51,6 +51,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_221711) do
 
   create_table "articles", force: :cascade do |t|
     t.text "admin_note"
+    t.text "content"
     t.datetime "created_at", null: false
     t.text "meta_description"
     t.boolean "published"
