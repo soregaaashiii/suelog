@@ -87,7 +87,7 @@ padding: 0 16px;
 }
 
 .main-content {
-padding-top: 14px;
+padding-top: 0;
 }
 
 .site-footer {
@@ -268,7 +268,7 @@ Hero
 ========================= */
 
 .hero {
-padding: 6px 0 8px;
+padding: 0 0 8px;
 }
 
 .hero--visual {
