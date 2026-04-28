@@ -1,7 +1,15 @@
-# /Users/kawamuratakuya/dev/suelog/app/controllers/articles_controller.rb
 class ArticlesController < ApplicationController
   def index
+    @q = params[:q].to_s.strip
+
     @articles = Article.published
+
+    if @q.present?
+      @articles = @articles.where(
+        "title LIKE :q OR summary LIKE :q OR body LIKE :q",
+        q: "%#{@q}%"
+      )
+    end
   end
 
   def show
