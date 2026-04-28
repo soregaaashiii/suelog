@@ -1701,6 +1701,10 @@ max-width: 100%;
 padding: 0 12px 40px;
 }
 
+.site-header {
+padding-top: 0;
+}
+
 .hero--visual {
 min-height: auto;
 }
@@ -1731,16 +1735,16 @@ border-radius: 18px;
 }
 
 .header-inner {
-padding: 10px 12px;
-gap: 8px;
+padding: 6px 12px 8px;
+gap: 6px;
 }
 
 .logo-main {
-font-size: 20px;
+font-size: 19px;
 }
 
 .logo-sub {
-font-size: 14px;
+font-size: 13px;
 }
 
 .nav {
@@ -1752,7 +1756,7 @@ gap: 6px;
 .nav-primary--cta {
 font-size: 12px;
 line-height: 1.2;
-min-height: 40px;
+min-height: 36px;
 }
 
 .nav-primary.nav-primary--cta {
