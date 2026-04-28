@@ -2020,9 +2020,25 @@ border-radius: 16px;
 
 .shop-card__actions,
 .shop-card2__actions,
-.search-actions,
 .hero__actions {
 flex-direction: column;
+}
+
+.hero__search .search-actions {
+position: static;
+width: 100%;
+margin-top: 8px;
+display: block;
+}
+
+.hero__search .search-btn,
+.hero__search .btn--dark.search-btn {
+width: 100%;
+min-width: 0;
+max-width: none;
+min-height: 44px;
+height: auto;
+margin: 0;
 }
 
 .btn,
