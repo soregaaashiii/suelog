@@ -174,13 +174,14 @@ end
               <% end %>
             </div>
 
-            <div class="search-field">
-              <%= text_field_tag :q, params[:q], placeholder: "キーワード（店名・住所など）", class: "search-input" %>
-            </div>
-          </div>
+            <div class="search-field search-field--with-button">
+              <%= text_field_tag :q, params[:q],
+                  placeholder: "キーワード（店名・住所など）",
+                  class: "search-input search-input--with-button" %>
 
-          <div class="search-actions">
-            <%= submit_tag "検索する", class: "btn btn--dark search-btn" %>
+              <%= submit_tag "検索",
+                  class: "search-inline-btn" %>
+            </div>
           </div>
         <% end %>
 
