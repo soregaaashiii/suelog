@@ -192,8 +192,17 @@
                     style: "padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; font-weight:700; border-radius:10px; text-decoration:none;" %>
 
                 <%= link_to "編集",
-                    edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+    edit_admin_shop_path(
+      shop,
+      from: "clicks",
+      status: @status,
+      source: @source,
+      per: @per,
+      page: @page,
+      q: @q,
+      sort: @sort
+    ),
+    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
                 <%= link_to "公開ページ",
                     shop_path(shop),

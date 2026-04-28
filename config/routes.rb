@@ -101,7 +101,13 @@ Rails.application.routes.draw do
 
   namespace :admin, path: "panel_8m4k" do
     get "analytics", to: "analytics#index", as: :analytics
+
+    # 送客一覧
+    # 旧URL: /panel_8m4k/shop_clicks
+    # 新URL: /panel_8m4k/shops/clicks
+    # どちらも同じ shops#clicks に通す
     get "shop_clicks", to: "shops#clicks", as: :shop_clicks
+    get "shops/clicks", to: "shops#clicks", as: :shops_clicks
 
     # この端末のPV集計除外 ON / OFF
     post "page_view_tracking/exclude", to: "page_view_settings#exclude", as: :exclude_page_view_tracking
