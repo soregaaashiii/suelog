@@ -146,6 +146,8 @@
 
             <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
               <span class="badge badge--unverified">未確認</span>
+            <% elsif confirmed.present? %>
+              <span class="badge badge--confirmed">確認済み</span>
             <% end %>
 
             <% if very_old %>
@@ -224,6 +226,12 @@
       background: #fff6db;
       color: #8a6500;
       border: 1px solid #f0de9c;
+    }
+
+    .badge--confirmed {
+      background: #e6f4ea;
+      color: #2e7d32;
+      border: 1px solid #b7dfc2;
     }
 
     .shop-card__rating {
