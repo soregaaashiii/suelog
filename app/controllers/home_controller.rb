@@ -105,7 +105,7 @@ def set_default_page_meta!
   @clear_filters_url = root_path
   @page_title = "吸えログ in大阪｜大阪で喫煙できる飲食店を探せる"
   @page_description = "大阪で喫煙できる飲食店を探せる吸えログ。席で喫煙可・喫煙所あり・加熱式のみなどの情報を掲載しています。"
-  @page_heading = "掲載店舗"
+  @page_heading = "ヒットした店舗"
   @page_subtitle = "大阪の喫煙可能店舗を一覧で確認できます"
   @area_intro_title = nil
   @area_intro_text = nil
@@ -540,6 +540,7 @@ end
   records.select! { |shop| open_now_map[shop.id] } if @open_now_only
   records = sort_shop_records(records, @current_sort, open_now_map)
 
+  @total_shops_count = Shop.approved.count
   @shops_count = records.size
 
   requested_page = params[:page].to_i
