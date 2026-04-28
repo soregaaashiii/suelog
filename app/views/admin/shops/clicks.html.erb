@@ -138,12 +138,13 @@
 
 <% if @shops.any? %>
   <div style="overflow-x:auto;">
-    <table style="width:100%; border-collapse:collapse; min-width:1100px;">
+    <table style="width:100%; border-collapse:collapse; min-width:1200px;">
       <thead>
         <tr style="border-bottom:2px solid #111;">
           <th align="left">店名</th>
           <th align="left">エリア</th>
           <th align="left">住所</th>
+          <th align="left">確認</th>
           <th align="right">合計</th>
           <th align="right">電話</th>
           <th align="right">地図</th>
@@ -169,6 +170,21 @@
               <%= shop.address.presence || "なし" %>
             </td>
 
+            <td style="padding:8px 10px 8px 0; white-space:nowrap;">
+              <% if shop.respond_to?(:last_confirmed_on) && shop.last_confirmed_on.present? %>
+                <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#e6f4ea; color:#137333; font-size:12px; font-weight:700; border:1px solid #b7dfc2;">
+                  確認済
+                </span>
+                <div style="font-size:11px; color:#666; margin-top:4px;">
+                  <%= shop.last_confirmed_on %>
+                </div>
+              <% else %>
+                <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#fdecea; color:#b00020; font-size:12px; font-weight:700; border:1px solid #f5c2c7;">
+                  未確認
+                </span>
+              <% end %>
+            </td>
+
             <td align="right" style="padding:8px 12px 8px 0; font-weight:700;">
               <%= click_counts[:total].to_i %>
             </td>
@@ -192,17 +208,17 @@
                     style: "padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; font-weight:700; border-radius:10px; text-decoration:none;" %>
 
                 <%= link_to "編集",
-    edit_admin_shop_path(
-      shop,
-      from: "clicks",
-      status: @status,
-      source: @source,
-      per: @per,
-      page: @page,
-      q: @q,
-      sort: @sort
-    ),
-    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+                    edit_admin_shop_path(
+                      shop,
+                      from: "clicks",
+                      status: @status,
+                      source: @source,
+                      per: @per,
+                      page: @page,
+                      q: @q,
+                      sort: @sort
+                    ),
+                    style: "padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
                 <%= link_to "公開ページ",
                     shop_path(shop),
