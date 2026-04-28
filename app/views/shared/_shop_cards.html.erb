@@ -145,9 +145,9 @@
             <% end %>
 
             <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
-              <span class="badge badge--unverified">喫煙未確認</span>
+              <span class="badge badge--unverified">喫煙情報未確認</span>
             <% elsif confirmed.present? %>
-              <span class="badge badge--confirmed">喫煙確認済</span>
+              <span class="badge badge--confirmed">喫煙情報確認済</span>
             <% end %>
 
             <% if very_old %>
