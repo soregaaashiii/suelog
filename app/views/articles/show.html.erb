@@ -49,6 +49,11 @@ article_body_html =
   <div class="article-body" data-article-body="true">
     <%= article_body_html %>
   </div>
+
+  <div style="margin-top:24px; padding-top:14px; border-top:1px solid #eee; color:#777; font-size:13px; line-height:1.8;">
+    <div>※本記事は<%= (@article.published_at.presence || @article.created_at).strftime("%Y年%-m月") %>に作成しました。</div>
+    <div>※掲載情報は変更される可能性があります。最新情報は店舗へご確認ください。</div>
+  </div>
 </article>
 
 <style>
