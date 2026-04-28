@@ -464,8 +464,25 @@ class Admin::ShopsController < Admin::BaseController
       end
     end
 
-    redirect_to admin_shops_path(status: params[:status], source: params[:source], per: params[:per], page: params[:page]),
-                flash: { admin_notice: notice }
+    if params[:from] == "clicks"
+      redirect_to admin_shop_clicks_path(
+        status: params[:status],
+        source: params[:source],
+        per: params[:per],
+        page: params[:page],
+        q: params[:q],
+        sort: params[:sort]
+      ),
+                  flash: { admin_notice: notice }
+    else
+      redirect_to admin_shops_path(
+        status: params[:status],
+        source: params[:source],
+        per: params[:per],
+        page: params[:page]
+      ),
+                  flash: { admin_notice: notice }
+    end
   rescue ActiveRecord::RecordInvalid => e
     @status = params[:status].presence || "pending"
     @source = params[:source].to_s.presence
