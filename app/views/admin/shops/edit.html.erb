@@ -95,11 +95,18 @@
     </div>
 
     <div>
+      <div style="font-weight:700;">最終確認日</div>
+      <%= f.date_field :last_confirmed_on,
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
+
+    <div>
       <div style="font-weight:700;">食べログURL</div>
       <%= f.url_field :tabelog_url,
       placeholder: "https://tabelog.com/...",
       style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
     </div>
+    
 
     <div>
       <div style="font-weight:700;">ホットペッパーURL</div>
