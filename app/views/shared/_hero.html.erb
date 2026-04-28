@@ -187,9 +187,9 @@ end
 
 
         <% if hero_chips.any? %>
-          <div class="active-filters">
-            <div class="active-filters__label">検索条件</div>
-            <div class="active-filters__list">
+          <div class="active-filters active-filters--hero">
+            <div class="active-filters__label active-filters__label--hero">検索条件</div>
+            <div class="active-filters__list active-filters__list--hero">
               <% hero_chips.each do |text, key| %>
                 <% new_q = hero_query.deep_dup %>
                 <% new_q.delete(key.to_s) %>
