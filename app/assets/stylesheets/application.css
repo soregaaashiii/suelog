@@ -199,9 +199,27 @@ Home Page
 ========================= */
 
 .home-page {
+position: relative;
 max-width: 1180px;
 margin: 0 auto;
 padding: 0 16px 48px;
+}
+
+.home-page::before {
+content: "";
+position: absolute;
+left: 50%;
+top: -44px;
+width: 100vw;
+height: 72px;
+transform: translateX(-50%);
+z-index: -1;
+pointer-events: none;
+background: linear-gradient(
+  180deg,
+  rgba(248, 246, 241, 0) 0%,
+  #f8f6f1 72%
+);
 }
 
 .home-section {
@@ -254,6 +272,23 @@ overflow: hidden;
 background: #111111;
 }
 
+.hero--visual::after {
+content: "";
+position: absolute;
+left: 0;
+right: 0;
+bottom: -1px;
+height: 96px;
+z-index: 2;
+pointer-events: none;
+background: linear-gradient(
+  180deg,
+  rgba(17, 17, 17, 0) 0%,
+  rgba(17, 17, 17, 0.46) 38%,
+  #f8f6f1 100%
+);
+}
+
 .hero__inner {
 width: 100%;
 max-width: 1180px;
@@ -267,7 +302,7 @@ align-items: stretch;
 
 .hero--visual .hero__inner {
 position: relative;
-z-index: 2;
+z-index: 3;
 min-height: 620px;
 display: flex;
 align-items: center;
@@ -1974,6 +2009,10 @@ display: inline-block;
 }
 
 body {
+background: #ffffff;
+}
+
+.main-content {
 background: #f8f6f1;
 }
 
