@@ -91,12 +91,19 @@ padding-top: 14px;
 }
 
 .site-footer {
-margin-top: 60px;
-padding: 30px 0;
+margin-top: 0;
+padding: 40px 0 60px;
 background: #111111;
 color: #ffffff;
 text-align: center;
 font-size: 12px;
+}
+
+.site-footer::before {
+content: "";
+display: block;
+height: 60px;
+background: #111111;
 }
 
 /* =========================
@@ -2335,4 +2342,13 @@ body.admin-layout {
 
 .hero-copy--overlay {
   margin: 2px 0 0;
+}
+
+/* ===== Footer背景調整 ===== */
+body {
+  background: #111111;
+}
+
+.main-content {
+  background: #f8f6f1;
 }
