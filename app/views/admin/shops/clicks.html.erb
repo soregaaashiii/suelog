@@ -171,16 +171,13 @@
             </td>
 
             <td style="padding:8px 10px 8px 0; white-space:nowrap;">
-              <% if shop.respond_to?(:last_confirmed_on) && shop.last_confirmed_on.present? %>
-                <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#e6f4ea; color:#137333; font-size:12px; font-weight:700; border:1px solid #b7dfc2;">
-                  確認済
-                </span>
-                <div style="font-size:11px; color:#666; margin-top:4px;">
-                  <%= shop.last_confirmed_on %>
-                </div>
-              <% else %>
+              <% if shop.respond_to?(:smoking_unverified) && shop.smoking_unverified? %>
                 <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#fdecea; color:#b00020; font-size:12px; font-weight:700; border:1px solid #f5c2c7;">
                   未確認
+                </span>
+              <% else %>
+                <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#e6f4ea; color:#137333; font-size:12px; font-weight:700; border:1px solid #b7dfc2;">
+                  確認済
                 </span>
               <% end %>
             </td>
