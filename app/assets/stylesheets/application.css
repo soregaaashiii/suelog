@@ -2512,3 +2512,9 @@ body {
   backdrop-filter: none;
 }
 
+.result-hit-text {
+margin: 10px 0 16px;
+font-size: 15px;
+font-weight: 800;
+color: #7a5a12;
+}

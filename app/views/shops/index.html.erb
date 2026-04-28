@@ -100,7 +100,7 @@
 
 <hr>
 
-<p>件数：<%= @shops_count %> 件</p>
+<p class="result-hit-text"><%= @shops_count %>件ヒット</p>
 <p><%= link_to "＋ お店を登録", new_shop_path %></p>
 
 <%= render partial: "shared/shop_cards", locals: { shops: @shops, open_now_map: @open_now_map } %>
