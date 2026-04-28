@@ -28,7 +28,7 @@ end
 <% genre_label["cafe"] = "カフェ" %>
 <% genre_label["yakiniku"] = "焼肉" %>
 
-<% genre_select_options = [["指定なし", ""]] %>
+<% genre_select_options = [["ジャンル", ""]] %>
 <% canonical_genres = [
   ["居酒屋", "izakaya"],
   ["バー・パブ", "bar"],
@@ -126,8 +126,6 @@ end
 
           <div class="search-grid search-grid--compact-hero">
             <div class="search-field">
-              <%= label_tag :smoking_area, "喫煙エリア" %>
-
               <% if request.path_parameters[:smoking_area].present? %>
                 <div class="search-input search-input--locked">
                   <%= smoking_area_label[current_smoking_area_value] || current_smoking_area_value %>
@@ -135,7 +133,7 @@ end
               <% else %>
                 <%= select_tag :smoking_area,
                     options_for_select([
-                      ["指定なし", ""],
+                      ["喫煙エリア", ""],
                       ["喫煙所あり", "separated"],
                       ["席で喫煙可", "all_smoking"]
                     ], current_smoking_area_value),
@@ -144,10 +142,9 @@ end
             </div>
 
             <div class="search-field">
-              <%= label_tag :smoking_type, "喫煙タイプ" %>
               <%= select_tag :smoking_type,
                   options_for_select([
-                    ["指定なし", ""],
+                    ["喫煙タイプ", ""],
                     ["紙・加熱式OK", "both_ok"],
                     ["加熱式のみ", "electronic_only"],
                     ["紙のみ", "paper_only"]
@@ -156,20 +153,16 @@ end
             </div>
 
             <div class="search-field">
-              <%= label_tag :station, "最寄駅" %>
-
               <% if @forced_station_label.present? %>
                 <div class="search-input search-input--locked">
                   <%= @forced_station_label %>
                 </div>
               <% else %>
-                <%= text_field_tag :station, current_station_value, placeholder: "指定なし", class: "search-input" %>
+                <%= text_field_tag :station, current_station_value, placeholder: "最寄駅", class: "search-input" %>
               <% end %>
             </div>
 
             <div class="search-field">
-              <%= label_tag :genre, "ジャンル" %>
-
               <% if @forced_genre_label.present? && params[:genre].blank? %>
                 <div class="search-input search-input--locked">
                   <%= @forced_genre_label %>
@@ -182,8 +175,7 @@ end
             </div>
 
             <div class="search-field">
-              <%= label_tag :q, "キーワード" %>
-              <%= text_field_tag :q, params[:q], placeholder: "店名・住所など", class: "search-input" %>
+              <%= text_field_tag :q, params[:q], placeholder: "キーワード（店名・住所など）", class: "search-input" %>
             </div>
           </div>
 
@@ -191,6 +183,7 @@ end
             <%= submit_tag "検索する", class: "btn btn--dark search-btn" %>
           </div>
         <% end %>
+
 
         <% if hero_chips.any? %>
           <div class="active-filters">
@@ -274,22 +267,16 @@ end
         <% end %>
       </div>
 
+      <div class="hero__meta-bar">
+        掲載<%= @shops_count || 0 %>件｜みんなで更新中
+      </div>
+
       <div class="hero__actions hero__actions--ctaRow">
         <%= link_to "近くで探す", map_path, class: "btn btn--dark hero__cta hero__cta--primary" %>
         <%= link_to "お店を登録", new_shop_path, class: "btn btn--gold hero__cta hero__cta--secondary" %>
       </div>
 
-      <div class="hero__stats hero__stats--inline">
-        <div class="hero-stat hero-stat--inline">
-          <span class="hero-stat__label">掲載件数</span>
-          <span class="hero-stat__value"><%= @shops_count || 0 %>件</span>
-        </div>
 
-        <div class="hero-stat hero-stat--inline">
-          <span class="hero-stat__label">更新形式</span>
-          <span class="hero-stat__value">ユーザー投稿型</span>
-        </div>
-      </div>
     </div>
   </div>
 </section>
