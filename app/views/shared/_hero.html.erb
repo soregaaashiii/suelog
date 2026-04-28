@@ -98,30 +98,38 @@ end
 
 <% hero_chips << ["キーワード：#{params[:q]}", :q] if params[:q].present? %>
 
-<section class="hero hero--fullbleed">
+<section class="hero hero--fullbleed hero--visual">
+  <div class="hero__bg" aria-hidden="true">
+    <%= image_tag "hero/hero-bg.png", class: "hero__bg-image", alt: "" %>
+  </div>
+
+  <div class="hero__shade" aria-hidden="true"></div>
+
   <div class="hero__inner">
-    <div class="hero__content hero__content--single">
-      <div class="hero__topline">
-        <div class="hero__eyebrow">SMOKING MAP OSAKA</div>
+    <div class="hero__content hero__content--single hero__content--visual">
+      <div class="hero__brand">
+        <%= image_tag "hero/hero-logo.png",
+            class: "hero__logo",
+            alt: "今、吸える店。" %>
+
+        <p class="hero-copy hero-copy--overlay">大阪で喫煙できる飲食店をすぐ検索</p>
       </div>
 
-      <h1 class="hero-title">今、吸える店。</h1>
-      <p class="hero-sub">大阪で喫煙可能な飲食店をすぐ検索</p>
-
-      <div class="hero__search">
+      <div class="hero__search hero__search--glass">
         <%= form_with url: (@search_form_url || root_path), method: :get, local: true, class: "search-form" do %>
           <%= hidden_field_tag :per, (@per.presence || 30) %>
+
           <%# ホームでは area を持たせない（404防止） %>
-<% unless request.path == root_path %>
-  <%= hidden_field_tag :area, @current_area_key if @current_area_key.present? && !@forced_area_label.present? %>
-<% end %>
+          <% unless request.path == root_path %>
+            <%= hidden_field_tag :area, @current_area_key if @current_area_key.present? && !@forced_area_label.present? %>
+          <% end %>
 
           <div class="search-grid">
             <div class="search-field">
               <%= label_tag :smoking_area, "喫煙エリア" %>
 
               <% if request.path_parameters[:smoking_area].present? %>
-                <div class="search-input" style="display:flex; align-items:center; color:#111; background:#f7f4ea;">
+                <div class="search-input search-input--locked">
                   <%= smoking_area_label[current_smoking_area_value] || current_smoking_area_value %>
                 </div>
               <% else %>
@@ -151,7 +159,7 @@ end
               <%= label_tag :station, "最寄駅" %>
 
               <% if @forced_station_label.present? %>
-                <div class="search-input" style="display:flex; align-items:center; color:#111; background:#f7f4ea;">
+                <div class="search-input search-input--locked">
                   <%= @forced_station_label %>
                 </div>
               <% else %>
@@ -163,7 +171,7 @@ end
               <%= label_tag :genre, "ジャンル" %>
 
               <% if @forced_genre_label.present? && params[:genre].blank? %>
-                <div class="search-input" style="display:flex; align-items:center; color:#111; background:#f7f4ea;">
+                <div class="search-input search-input--locked">
                   <%= @forced_genre_label %>
                 </div>
               <% else %>
@@ -258,30 +266,9 @@ end
                 <% end %>
               <% end %>
 
-              <% station_slug = request.path_parameters[:station].presence %>
-              <% genre_slug = request.path_parameters[:genre].presence %>
-              <% smoking_slug = request.path_parameters[:smoking_area].presence %>
-
-              <% clear_base_url =
-                if station_slug.present? && @current_area_key.to_s == "umeda"
-                  umeda_station_path(station_slug)
-                elsif station_slug.present? && @current_area_key.to_s == "namba"
-                  namba_station_path(station_slug)
-                elsif genre_slug.present? && @current_area_key.to_s == "umeda"
-                  umeda_genre_path(genre_slug)
-                elsif genre_slug.present? && @current_area_key.to_s == "namba"
-                  namba_genre_path(genre_slug)
-                elsif smoking_slug.present? && @current_area_key.to_s == "umeda"
-                  umeda_smoking_path(smoking_slug)
-                elsif smoking_slug.present? && @current_area_key.to_s == "namba"
-                  namba_smoking_path(smoking_slug)
-                else
-                  (@clear_filters_url || @search_form_url || root_path)
-                end %>
-
               <%= link_to "すべてクリア",
-    root_path(per: (@per.presence || 30)),
-    class: "filter-chip filter-chip--clear" %>
+                  root_path(per: (@per.presence || 30)),
+                  class: "filter-chip filter-chip--clear" %>
             </div>
           </div>
         <% end %>
