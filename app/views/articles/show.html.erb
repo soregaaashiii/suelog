@@ -17,25 +17,9 @@ meta_description =
 <%
 article_body_html =
   begin
-    sanitize(
-      render_article_body(@article.body.to_s),
-      tags: %w[
-        a img p br div span strong b em i u ul ol li h2 h3 h4 blockquote figure figcaption
-      ],
-      attributes: %w[
-        href src alt title target rel class style width height border
-      ]
-    )
+    render_article_body(@article.body.to_s).html_safe
   rescue StandardError
-    sanitize(
-      simple_format(@article.body.to_s),
-      tags: %w[
-        a img p br div span strong b em i u ul ol li h2 h3 h4 blockquote figure figcaption
-      ],
-      attributes: %w[
-        href src alt title target rel class style width height border
-      ]
-    )
+    simple_format(@article.body.to_s).html_safe
   end
 %>
 
@@ -80,6 +64,11 @@ article_body_html =
 
 .article-body a:hover {
   opacity: 0.85;
+}
+
+.article-body img {
+  max-width: 100%;
+  height: auto;
 }
 
 .article-body figure {
