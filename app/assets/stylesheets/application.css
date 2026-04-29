@@ -88,7 +88,7 @@ padding: 0 16px;
 
 .main-content {
 padding-top: 0;
-background: #f8f6f1;
+background: #e9dfd2;
 display: flow-root;
 }
 
@@ -226,8 +226,8 @@ z-index: -1;
 pointer-events: none;
 background: linear-gradient(
   180deg,
-  rgba(248, 246, 241, 0) 0%,
-  #f8f6f1 72%
+  rgba(233, 223, 210, 0) 0%,
+  #e9dfd2 72%
 );
 }
 
@@ -294,7 +294,7 @@ background: linear-gradient(
   180deg,
   rgba(17, 17, 17, 0) 0%,
   rgba(17, 17, 17, 0.46) 38%,
-  #f8f6f1 100%
+  #e9dfd2 100%
 );
 }
 
@@ -2553,7 +2553,7 @@ body {
 }
 
 .main-content {
-  background: #f8f6f1;
+  background: #efe7dc;
 }
 
 /* ===== Header背景を白で固定 ===== */
