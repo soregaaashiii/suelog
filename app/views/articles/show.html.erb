@@ -17,9 +17,25 @@ meta_description =
 <%
 article_body_html =
   begin
-    render_article_body(@article.body.to_s)
+    sanitize(
+      render_article_body(@article.body.to_s),
+      tags: %w[
+        a img p br div span strong b em i u ul ol li h2 h3 h4 blockquote figure figcaption
+      ],
+      attributes: %w[
+        href src alt title target rel class style width height border
+      ]
+    )
   rescue StandardError
-    simple_format(h(@article.body.to_s))
+    sanitize(
+      simple_format(@article.body.to_s),
+      tags: %w[
+        a img p br div span strong b em i u ul ol li h2 h3 h4 blockquote figure figcaption
+      ],
+      attributes: %w[
+        href src alt title target rel class style width height border
+      ]
+    )
   end
 %>
 
