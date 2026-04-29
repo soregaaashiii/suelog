@@ -52,6 +52,38 @@
         <% end %>
       <% end %>
 
+      <%
+      fallback_map = {
+        "居酒屋" => "yakitori.jpg",
+        "バー・パブ" => "bar.jpg",
+        "ラウンジ" => "lounge.jpg",
+        "スナック" => "snack.jpg",
+        "カフェ" => "cafe.jpg",
+        "喫茶店" => "cafe.jpg",
+        "焼肉" => "yakiniku.jpg",
+        "バーベキュー" => "yakiniku.jpg",
+        "寿司" => "sushi.jpg",
+        "和食" => "washoku.jpg",
+        "海鮮" => "sushi.jpg",
+        "中華" => "chinese.jpg",
+        "韓国料理" => "korean.jpg",
+        "エスニック" => "ethnic.jpg",
+        "洋食" => "western.jpg",
+        "レストラン" => "western.jpg",
+        "フレンチ" => "french.jpg",
+        "イタリアン" => "italian.jpg",
+        "アメリカ料理" => "american.jpg",
+        "ステーキ" => "steak.jpg",
+        "ラーメン" => "ramen.jpg",
+        "串カツ" => "kushikatsu.jpg",
+        "たこ焼き" => "takoyaki.jpg",
+        "お好み焼き" => "okonomiyaki.jpg",
+        "天ぷら" => "tempura.jpg"
+      }
+      %>
+
+      <% fallback_image = fallback_map[shop.display_genre] || "other.jpg" %>
+
       <article
         class="shop-card <%= "shop-card--stale" if very_old %> shop-card--clickable"
         onclick="if (!event.target.closest('a, button')) { window.location.href='<%= shop_path(shop) %>'; }"
@@ -60,6 +92,7 @@
         onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button')) { event.preventDefault(); window.location.href='<%= shop_path(shop) %>'; }">
         <%= link_to shop_path(shop), class: "shop-card__mediaLink" do %>
           <div class="shop-card__media">
+
             <% if thumb.present? %>
               <% begin %>
                 <%= image_tag(thumb_variant || thumb,
@@ -68,17 +101,34 @@
                       loading: "lazy",
                       decoding: "async") %>
               <% rescue StandardError %>
-                <div class="shop-card__placeholder">
-                  <div class="shop-card__placeholderTitle"><%= shop.name %></div>
-                  <div class="shop-card__placeholderSub">このお店の最新情報・写真を募集中！</div>
-                </div>
+                <%= image_tag "fallbacks/#{fallback_image}",
+                      class: "shop-card__img",
+                      alt: shop.name,
+                      loading: "lazy",
+                      decoding: "async" %>
               <% end %>
             <% else %>
-              <div class="shop-card__placeholder">
-                <div class="shop-card__placeholderTitle"><%= shop.name %></div>
-                <div class="shop-card__placeholderSub">このお店の最新情報・写真を募集中！</div>
-              </div>
+              <%= image_tag "fallbacks/#{fallback_image}",
+                    class: "shop-card__img",
+                    alt: shop.name,
+                    loading: "lazy",
+                    decoding: "async" %>
             <% end %>
+
+           <% unless thumb.present? %>
+  <!-- ▼画像が無いときだけ表示 -->
+  <div class="shop-card__overlay">
+
+    <!-- ▼これを追加 -->
+    <div class="shop-card__imageNote">※画像はイメージです</div>
+
+    <div class="shop-card__overlayTitle"><%= shop.name %></div>
+    <div class="shop-card__overlaySub">
+      このお店の最新情報・写真を募集中！
+    </div>
+  </div>
+<% end %>
+
           </div>
         <% end %>
 
@@ -96,7 +146,7 @@
           </div>
 
           <h3 class="shop-card__title">
-            <%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink" %>
+            <%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink text-outline" %>
 
             <% shop_open_now = defined?(open_now_map) && open_now_map.present? ? open_now_map[shop.id] : shop.open_now? %>
 
@@ -108,7 +158,7 @@
           </h3>
 
           <% if card_avg_rating.present? && card_reviews_count.positive? %>
-            <div class="shop-card__rating" aria-label="平均評価">
+            <div class="shop-card__rating">
               <span class="shop-card__ratingStars">
                 <%= "★" * card_star_count %><%= "☆" * (5 - card_star_count) %>
               </span>
@@ -171,133 +221,6 @@
     <% end %>
   </div>
 
-  <style>
-    .badge--open-inline {
-      margin-left: 8px;
-      vertical-align: middle;
-      background: #e6f4ea;
-      color: #137333;
-      border: 1px solid #b7dfbf;
-      font-size: 11px;
-      padding: 2px 7px;
-      border-radius: 999px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .badge--closed-inline {
-      margin-left: 8px;
-      vertical-align: middle;
-      background: #f4f4f4;
-      color: #666666;
-      border: 1px solid #dddddd;
-      font-size: 11px;
-      padding: 2px 7px;
-      border-radius: 999px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .badge--type-both {
-      background: #f6edd7;
-      color: #7a5a12;
-      border: 1px solid #eadbb5;
-    }
-
-    .badge--type-paper {
-      background: #fff4e5;
-      color: #9a5a00;
-      border: 1px solid #f0c98a;
-    }
-
-    .badge--type-electronic {
-      background: #eef4ff;
-      color: #1f4ea3;
-      border: 1px solid #c8d8fb;
-    }
-
-    .badge--type-unknown {
-      background: #f5f5f5;
-      color: #555555;
-      border: 1px solid #d8d8d8;
-    }
-
-    .badge--unverified {
-      background: #fff6db;
-      color: #8a6500;
-      border: 1px solid #f0de9c;
-    }
-
-    .badge--confirmed {
-      background: #e6f4ea;
-      color: #2e7d32;
-      border: 1px solid #b7dfc2;
-    }
-
-    .shop-card__rating {
-      margin-top: 6px;
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .shop-card__ratingStars {
-      font-size: 14px;
-      font-weight: 900;
-      color: #111111;
-      letter-spacing: 0.02em;
-    }
-
-    .shop-card__ratingValue {
-      font-size: 13px;
-      font-weight: 700;
-      color: #111111;
-    }
-
-    .shop-card__ratingCount {
-      font-size: 12px;
-      color: #666666;
-    }
-
-    .shop-card__rating--empty {
-      font-size: 12px;
-      color: #999999;
-    }
-
-    .shop-card__areaLinks {
-      margin-top: 8px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .shop-card__areaLink {
-      font-size: 12px;
-      color: #7a5a12;
-      text-decoration: none;
-      font-weight: 700;
-    }
-
-    .shop-card__areaLink:hover {
-      text-decoration: underline;
-    }
-
-    .shop-card--clickable {
-      cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .shop-card--clickable:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 28px rgba(17, 17, 17, 0.08);
-    }
-
-    .shop-card--clickable:focus-visible {
-      outline: 3px solid rgba(59, 109, 246, 0.28);
-      outline-offset: 2px;
-    }
-  </style>
 <% else %>
   <div class="empty-state">
     <p>該当する店舗がありません。</p>

@@ -1354,17 +1354,47 @@ flex-direction: column;
 justify-content: end;
 padding: 14px;
 background: linear-gradient(180deg, #f7f7f7 0%, #efefef 100%);
+
+/* ▼追加（これだけ） */
+position: relative;
+}
+
+/* ▼新規追加（完全限定） */
+.shop-card__imageNote {
+position: absolute;
+top: 6px;
+right: 8px;
+
+font-size: 10px;
+color: #fff;
+
+background: rgba(0,0,0,0.6);
+padding: 2px 6px;
+border-radius: 4px;
+
+pointer-events: none;
 }
 
 .shop-card__placeholderTitle {
 font-weight: 800;
-color: var(--black);
+color: #ffffff;
+
+/* ▼追加 */
+text-shadow:
+  0 1px 2px rgba(0,0,0,0.9),
+  0 0 4px rgba(0,0,0,0.8),
+  0 0 8px rgba(0,0,0,0.7);
 }
 
 .shop-card__placeholderSub {
 margin-top: 6px;
-color: var(--muted);
+color: #ffffff;
 font-size: 13px;
+
+/* ▼追加 */
+text-shadow:
+  0 1px 2px rgba(0,0,0,0.9),
+  0 0 4px rgba(0,0,0,0.8);
 }
 
 .shop-card__body {
@@ -1399,8 +1429,14 @@ font-size: 12px;
 margin: 0 0 6px;
 font-size: 20px;
 line-height: 1.28;
-}
 
+/* 元に戻す */
+color: #111111;
+
+/* 縁取りは弱く残す */
+text-shadow:
+  0 1px 2px rgba(0,0,0,0.15);
+}
 .shop-card__titleLink {
 color: var(--black);
 text-decoration: none;
@@ -1440,18 +1476,19 @@ border: 1px solid transparent;
 .badge--dark {
 background: var(--black);
 color: #ffffff;
+border: 1px solid var(--black);
 }
 
 .badge--line {
 background: #ffffff;
 color: var(--black);
-border-color: var(--line);
+border: 1px solid var(--line);
 }
 
 .badge--gold-soft {
 background: var(--gold-soft);
 color: var(--gold-text);
-border-color: #eadbb5;
+border: 1px solid #eadbb5;
 }
 
 .badge--muted {
@@ -2537,4 +2574,342 @@ margin: 0 0 12px;
 font-size: 15px;
 font-weight: 800;
 color: #7a5a12;
+}
+
+/* ===== バッジ強制復元（既存壊さない）===== */
+
+.shop-card__badges .badge--dark {
+  background: #111 !important;
+  color: #fff !important;
+  border: 1px solid #111 !important;
+}
+
+.shop-card__badges .badge--line {
+  background: #fff !important;
+  color: #111 !important;
+  border: 1px solid #e5e0d5 !important;
+}
+
+.shop-card__badges .badge--gold-soft {
+  background: #f6edd7 !important;
+  color: #7a5a12 !important;
+  border: 1px solid #eadbb5 !important;
+}
+
+.shop-card__badges .badge--type-both {
+  background: #f6edd7 !important;
+  color: #7a5a12 !important;
+  border: 1.5px solid #d6c08a !important; /* ←縁取り追加 */
+}
+
+.shop-card__badges .badge--confirmed {
+  background: #e6f4ea !important;
+  color: #137333 !important;
+}
+
+.shop-card__badges .badge--unverified {
+  background: #fff3cd !important;
+  color: #7a5a12 !important;
+}
+
+/* =========================
+  ▼ 営業中バッジ 修正（壊さず上書き）
+========================= */
+.shop-card__title .badge--open-inline {
+  background: #e6f4ea !important;
+  color: #137333 !important;
+  border: 1px solid #c7e7cf !important;
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  margin-left: 6px !important;
+  vertical-align: middle;
+}
+
+/* 営業終了 */
+.shop-card__title .badge--closed-inline {
+  background: #f8d7da !important;
+  color: #842029 !important;
+  border: 1px solid #f1b0b7 !important;
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  margin-left: 6px !important;
+}
+
+/* =========================
+  ▼ まだ評価なし 修正
+========================= */
+.shop-card__rating--empty {
+  font-size: 12px !important;
+  color: #999 !important;
+  font-weight: 500 !important;
+}
+
+/* =========================
+  ▼ 評価表示の全体バランス
+========================= */
+.shop-card__rating {
+  font-size: 12px !important;
+  color: #666 !important;
+}
+
+.shop-card__ratingStars {
+  color: #c6a75e !important;
+  font-size: 12px !important;
+}
+
+/* =========================
+  ▼ タイトル周りの強さ微調整（壊さない）
+========================= */
+.shop-card__title {
+  font-weight: 700;
+  color: #111;
+}
+
+.shop-card__titleLink {
+  color: inherit;
+}
+
+/* ===== 営業終了（弱くする）===== */
+.shop-card__title .badge--closed-inline {
+  background: #f3f3f3 !important;
+  color: #666 !important;
+  border: 1px solid #e0e0e0 !important;
+
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+
+  margin-left: 6px !important;
+}
+
+/* =========================
+  ▼ バッジ縁取り・視認性強化（壊さない）
+========================= */
+
+.shop-card__badges .badge {
+  border-width: 1px !important;
+  border-style: solid !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04) !important;
+}
+
+/* ↓これを追加（上書き） */
+.shop-card__badges .badge--type-both {
+  border: 1.5px solid #d6c08a !important;
+}
+
+/* 席で喫煙可（黒） */
+.shop-card__badges .badge--dark {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+
+/* 紙・加熱式OK（金） */
+.shop-card__badges .badge--gold-soft {
+  background: #f6edd7 !important;
+  color: #7a5a12 !important;
+  border-color: #e2d2a6 !important;
+}
+
+/* 喫煙所あり（白） */
+.shop-card__badges .badge--line {
+  background: #fff !important;
+  color: #111 !important;
+  border-color: #dcd6c8 !important;
+}
+
+/* 喫煙情報確認済（緑） */
+.shop-card__badges .badge--confirmed {
+  background: #e6f4ea !important;
+  color: #137333 !important;
+  border-color: #b7dfc2 !important;
+}
+
+/* 未確認（黄色） */
+.shop-card__badges .badge--unverified {
+  background: #fff3cd !important;
+  color: #7a5a12 !important;
+  border-color: #e6d69c !important;
+}
+
+/* =========================
+  ▼ 営業状態（縁もちゃんと出す）
+========================= */
+
+/* 営業中 */
+.shop-card__title .badge--open-inline {
+  background: #e6f4ea !important;
+  color: #137333 !important;
+  border: 1px solid #b7dfc2 !important;
+}
+
+/* 営業終了（弱く＋縁あり） */
+.shop-card__title .badge--closed-inline {
+  background: #f3f3f3 !important;
+  color: #666 !important;
+  border: 1px solid #dcdcdc !important;
+}
+
+/* =========================
+  ▼ 喫煙タイプ（金バッジ）縁取り強制
+========================= */
+
+.shop-card__badges .badge--type-both {
+  background: #f6edd7 !important;
+  color: #7a5a12 !important;
+  border: 1.5px solid #d6c08a !important; /* ←ここが本命 */
+}
+
+/* ついでに他も統一（崩れ防止） */
+.shop-card__badges .badge--type-paper {
+  border: 1.5px solid #e0c97a !important;
+}
+
+.shop-card__badges .badge--type-electronic {
+  border: 1.5px solid #bcd4f6 !important;
+}
+
+/* ===== バッジ最小リセット（影響範囲限定） ===== */
+.shop-card__badges .badge {
+  box-shadow: none !important;
+  border-width: 1px !important;   /* 太さを1pxに固定 */
+}
+
+/* 個別の色と縁（必要最小限だけ） */
+.shop-card__badges .badge--dark {
+  border-color: #111 !important;
+}
+
+.shop-card__badges .badge--line {
+  border-color: #ddd !important;
+}
+
+.shop-card__badges .badge--type-both {
+  border-color: #d6c08a !important;
+}
+
+.shop-card__badges .badge--type-paper {
+  border-color: #e0c97a !important;
+}
+
+.shop-card__badges .badge--type-electronic {
+  border-color: #bcd4f6 !important;
+}
+
+.shop-card__badges .badge--confirmed {
+  border-color: #b7dfc2 !important;
+}
+
+.shop-card__badges .badge--unverified {
+  border-color: #e6d69c !important;
+}
+
+.shop-card__badges .badge--muted {
+  border-color: #ddd !important;
+}
+
+/* ===== 店名の影だけ除去（ここも範囲限定） ===== */
+.shop-card__titleLink {
+  text-shadow: none !important;
+}
+
+/* ===== unknown系バッジを元に戻す ===== */
+.shop-card__badges .badge--type-unknown {
+  display: inline-block !important;
+
+  background: #f3f3f3 !important;
+  color: #666 !important;
+
+  border: 1px solid #ddd !important;
+  border-radius: 999px !important;
+
+  font-size: 12px !important;
+  padding: 4px 10px !important;
+}
+
+/* =========================
+▼ 梅田の一覧へ 完全修正（影響範囲限定）
+========================= */
+
+/* 必要なら限定（例：.area-linkなど） */
+.shop-card__actions .area-link {
+  font-size: 12px;
+  color: #777;
+}
+
+/* ホバーだけ軽く */
+.shop-card__actions a:hover {
+  color: #555 !important;
+  text-decoration: underline;
+}
+
+/* =========================
+   ▼ 「梅田の一覧へ」だけに限定（統一版）
+   ========================= */
+
+.shop-card__badges + a,
+.shop-card__badges + a:visited {
+  font-size: 12px !important;
+  color: #777 !important;
+  font-weight: 400 !important;
+
+  text-decoration: none !important;
+  border: none !important;
+  background: none !important;
+
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.shop-card__body a:hover {
+  color: #555 !important;
+  text-decoration: underline;
+}
+
+/* =========================
+▼ 画像上オーバーレイ（今回の本体）
+========================= */
+
+.shop-card__media {
+  position: relative;
+}
+.shop-card__overlay {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+
+  padding: 12px;
+
+  /* ★グラデーション削除（写真を暗くしない） */
+  background: none;
+
+  pointer-events: none;
+}
+
+.shop-card__overlayTitle {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+
+  /* ★縁取り強化（ここが本体） */
+  text-shadow:
+    0 1px 2px rgba(0,0,0,0.95),
+    0 0 4px rgba(0,0,0,0.9),
+    0 0 8px rgba(0,0,0,0.8);
+}
+
+.shop-card__overlaySub {
+  margin-top: 4px;
+
+  color: #eee;
+  font-size: 12px;
+
+  text-shadow:
+    0 1px 2px rgba(0,0,0,0.95),
+    0 0 4px rgba(0,0,0,0.9);
 }
