@@ -6,7 +6,13 @@ class MapsController < ApplicationController
     @shops = Shop
       .approved
       .where.not(latitude: nil, longitude: nil)
-      .order(created_at: :desc)
+      .order(
+        Arel.sql("
+          CASE WHEN last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
+          last_confirmed_on DESC,
+          created_at DESC
+        ")
+      )
 
     @shops_count = @shops.size
 

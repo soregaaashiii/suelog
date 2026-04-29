@@ -25,7 +25,13 @@ class ShopsController < ApplicationController
       scope = scope.near([lat, lng], 0.5, units: :km)
     end
 
-    @shops = scope
+    @shops = scope.order(
+      Arel.sql("
+        CASE WHEN last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
+        last_confirmed_on DESC,
+        created_at DESC
+      ")
+    )
   end
 
   def show
