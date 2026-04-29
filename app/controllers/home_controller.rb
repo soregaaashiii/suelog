@@ -649,16 +649,18 @@ end
     reviews_count = shop.try(:reviews_count).to_i
     created_at_i = shop.created_at&.to_i || 0
     open_penalty = open_now_map[shop.id] ? 0 : 1
+    confirmed_penalty = shop.last_confirmed_on.present? ? 0 : 1
+    confirmed_on_i = shop.last_confirmed_on&.to_time&.to_i || 0
 
     case sort_key
     when "rating"
-      [-avg_rating, -reviews_count, open_penalty, -created_at_i]
+      [confirmed_penalty, -confirmed_on_i, -avg_rating, -reviews_count, open_penalty, -created_at_i]
     when "reviews_count"
-      [-reviews_count, -avg_rating, open_penalty, -created_at_i]
+      [confirmed_penalty, -confirmed_on_i, -reviews_count, -avg_rating, open_penalty, -created_at_i]
     when "newest"
-      [-created_at_i, -avg_rating, -reviews_count, open_penalty]
+      [confirmed_penalty, -confirmed_on_i, -created_at_i, -avg_rating, -reviews_count, open_penalty]
     else
-      [-avg_rating, -reviews_count, open_penalty, -created_at_i]
+      [confirmed_penalty, -confirmed_on_i, -avg_rating, -reviews_count, open_penalty, -created_at_i]
     end
   end
 end
