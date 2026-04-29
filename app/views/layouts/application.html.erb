@@ -50,16 +50,15 @@
 
   <%= yield :head %>
 
-  <%# ぐるなびアフィリエイト サイト認証用（一時） %>
-  <img src="https://aff.gnavi.co.jp/images/track/cer.jpg?cid=4e1abd3708358763e2099a7e74ad7791196a9c414f32ec6056795d47457d1f83" />
-
   <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
   <%= javascript_importmap_tags %>
 </head>
 
 <body>
+  <%# ぐるなびアフィリエイト サイト認証用（一時）。認証完了後に削除OK %>
+  <img src="https://aff.gnavi.co.jp/images/track/cer.jpg?cid=4e1abd3708358763e2099a7e74ad7791196a9c414f32ec6056795d47457d1f83" />
+
   <% count = session[:contribution_count].to_i %>
-  
   <% badge = contribution_badge(count) %>
 
   <% if count > 0 %>
