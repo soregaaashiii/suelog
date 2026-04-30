@@ -1,0 +1,41 @@
+<%# /Users/kawamuratakuya/dev/suelog/app/views/admin/affiliate_ads/_form.html.erb %>
+
+<%= form_with model: [:admin, affiliate_ad], local: true, html: { multipart: true } do |f| %>
+
+  <div style="margin-bottom:12px;">
+    <div>キー（記事で使う）</div>
+    <%= f.text_field :key, placeholder: "bresmile",
+        style: "width:100%; padding:8px;" %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>リンクURL（A8）</div>
+    <%= f.text_field :url,
+        style: "width:100%; padding:8px;" %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>画像アップロード</div>
+    <%= f.file_field :image, direct_upload: true %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div>画像パス（任意）</div>
+    <%= f.text_field :image_path,
+        placeholder: "ads/bresmile.jpg",
+        style: "width:100%; padding:8px;" %>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label>
+      <%= f.check_box :active %>
+      表示する
+    </label>
+  </div>
+
+  <div>
+    <%= f.submit "保存",
+        style: "padding:10px 16px; background:#111; color:#fff; border:none; border-radius:8px; cursor:pointer;" %>
+  </div>
+
+<% end %>

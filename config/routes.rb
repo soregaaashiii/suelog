@@ -150,6 +150,9 @@ Rails.application.routes.draw do
 
     resources :contact_messages, only: [:index, :show, :destroy]
 
+    # 広告管理 ← 追加
+    resources :affiliate_ads
+
     # 記事管理
     resources :articles
   end
