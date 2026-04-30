@@ -44,7 +44,9 @@
       本文にショートコードを差し込めます。<br>
       店舗カードは <code>[shop id=1]</code>、画像サイズや配置は画像の直前に
       <code>[image size=medium align=center]</code> のように入れて使います。<br>
-      横並びは <code>[image-row-start]</code> と <code>[image-row-end]</code> で囲みます。
+        横並びは <code>[image-row-start]</code> と <code>[image-row-end]</code> で囲みます。<br>
+       サイドバー内部リンクは <code>[sidebar_links]</code>、広告は <code>[sidebar_ad]</code>〜<code>[/sidebar_ad]</code> で囲んで使います。<br>
+      旧形式の <code>[sidebar]</code> も内部リンクとして使えます。
     </div>
 
     <div class="article-snippet-buttons" style="display:flex; flex-wrap:wrap; gap:8px;">
@@ -56,6 +58,9 @@
       <button type="button" class="article-snippet-btn" data-snippet="[image size=medium align=right]">画像・右寄せ</button>
       <button type="button" class="article-snippet-btn" data-snippet="[image-row-start]">横並び開始</button>
       <button type="button" class="article-snippet-btn" data-snippet="[image-row-end]">横並び終了</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[sidebar_links]">サイドバー内部リンク</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[sidebar_ad]&#10;ここにA8広告コードを貼る&#10;[/sidebar_ad]">サイドバー広告</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[sidebar_ad]&#10;ここにA8広告コードを貼る&#10;[/sidebar_ad]&#10;[sidebar_links]">広告＋内部リンク</button>
     </div>
   </div>
 

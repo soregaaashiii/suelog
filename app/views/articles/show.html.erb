@@ -15,48 +15,193 @@ meta_description =
 <% content_for :meta_description, meta_description %>
 
 <%
+raw_article_body = @article.body.to_s
+
+sidebar_items = []
+
+article_body_source = raw_article_body.gsub(/\[sidebar_ad\](.*?)\[\/sidebar_ad\]|\[sidebar_links\]|\[sidebar\]/im) do
+  matched_text = Regexp.last_match(0)
+
+  if matched_text.match?(/\A\[sidebar_ad\]/i)
+    sidebar_items << {
+      type: :ad,
+      html: CGI.unescapeHTML(Regexp.last_match(1).to_s.strip).html_safe
+    }
+  else
+    sidebar_items << { type: :links }
+  end
+
+  ""
+end
+
+sidebar_enabled = sidebar_items.present?
+
 article_body_html =
   begin
-    CGI.unescapeHTML(render_article_body(@article.body.to_s)).html_safe
+    CGI.unescapeHTML(render_article_body(article_body_source)).html_safe
   rescue StandardError
-    CGI.unescapeHTML(simple_format(@article.body.to_s)).html_safe
+    CGI.unescapeHTML(simple_format(article_body_source)).html_safe
   end
 %>
 
-<article style="max-width:860px; margin:0 auto; padding:24px 16px 56px;">
-  <header style="margin-bottom:24px;">
-    <h1 style="margin:0 0 16px; line-height:1.4;"><%= @article.title %></h1>
+<div class="article-layout <%= sidebar_enabled ? 'article-layout--with-sidebar' : 'article-layout--single' %>">
+  <article class="article-main">
+    <header style="margin-bottom:24px;">
+      <h1 style="margin:0 0 16px; line-height:1.4;"><%= @article.title %></h1>
 
-    <% if @article.respond_to?(:published_at) && @article.published_at.present? %>
-      <p style="margin:0 0 16px; color:#666; font-size:14px;">
-        公開日: <%= @article.published_at.strftime("%Y/%m/%d") %>
-      </p>
-    <% end %>
+      <% if @article.respond_to?(:published_at) && @article.published_at.present? %>
+        <p style="margin:0 0 16px; color:#666; font-size:14px;">
+          公開日: <%= @article.published_at.strftime("%Y/%m/%d") %>
+        </p>
+      <% end %>
 
-    <% if @article.respond_to?(:eyecatch) && @article.eyecatch.attached? %>
-      <div style="margin-bottom:16px; text-align:center;">
-        <%= image_tag @article.eyecatch, style: "max-width:100%; border-radius:12px;" %>
-      </div>
-    <% end %>
+      <% if @article.respond_to?(:eyecatch) && @article.eyecatch.attached? %>
+        <div style="margin-bottom:16px; text-align:center;">
+          <%= image_tag @article.eyecatch, style: "max-width:100%; border-radius:12px;" %>
+        </div>
+      <% end %>
 
-    <% if @article.summary.present? %>
-      <p style="font-size:18px; color:#555; line-height:1.8; margin:0;">
-        <%= @article.summary %>
-      </p>
-    <% end %>
-  </header>
+      <% if @article.summary.present? %>
+        <p style="font-size:18px; color:#555; line-height:1.8; margin:0;">
+          <%= @article.summary %>
+        </p>
+      <% end %>
+    </header>
 
-  <div class="article-body" data-article-body="true">
-    <%= article_body_html %>
-  </div>
+    <div class="article-body" data-article-body="true">
+      <%= article_body_html %>
+    </div>
 
-  <div style="margin-top:24px; padding-top:14px; border-top:1px solid #eee; color:#777; font-size:13px; line-height:1.8;">
-    <div>※本記事は<%= (@article.published_at.presence || @article.created_at).strftime("%Y年%-m月") %>に作成しました。</div>
-    <div>※掲載情報は変更される可能性があります。最新情報は店舗へご確認ください。</div>
-  </div>
-</article>
+    <div style="margin-top:24px; padding-top:14px; border-top:1px solid #eee; color:#777; font-size:13px; line-height:1.8;">
+      <div>※本記事は<%= (@article.published_at.presence || @article.created_at).strftime("%Y年%-m月") %>に作成しました。</div>
+      <div>※掲載情報は変更される可能性があります。最新情報は店舗へご確認ください。</div>
+    </div>
+  </article>
+
+  <% if sidebar_enabled %>
+    <aside class="article-sidebar">
+      <% sidebar_items.each do |item| %>
+        <% if item[:type] == :ad %>
+          <div class="sidebar-box sidebar-box--ad">
+            <%= item[:html] %>
+          </div>
+        <% elsif item[:type] == :links %>
+          <div class="sidebar-box">
+            <div class="sidebar-title">大阪で喫煙できる店を探す</div>
+            <%= link_to "梅田で探す", umeda_path, class: "sidebar-link" %>
+            <%= link_to "難波で探す", namba_path, class: "sidebar-link" %>
+            <%= link_to "席で喫煙可の店", umeda_smoking_path("all_smoking"), class: "sidebar-link" %>
+            <%= link_to "喫煙所ありの店", umeda_smoking_path("separated"), class: "sidebar-link" %>
+          </div>
+
+          <div class="sidebar-box">
+            <div class="sidebar-title">おすすめ特集</div>
+            <%= link_to "特集記事一覧を見る", articles_path, class: "sidebar-link" %>
+          </div>
+        <% end %>
+      <% end %>
+    </aside>
+  <% end %>
+</div>
 
 <style>
+.article-layout {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 16px 56px;
+  display: grid;
+  gap: 28px;
+  align-items: start;
+}
+
+.article-layout--with-sidebar {
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.article-layout--single {
+  max-width: 860px;
+  display: block;
+}
+
+.article-main {
+  min-width: 0;
+}
+
+.article-sidebar {
+  align-self: start;
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 901px) {
+  .sidebar-box--ad.is-floating-sidebar-ad {
+    position: fixed;
+    left: var(--sidebar-floating-left);
+    right: auto;
+    top: var(--sidebar-floating-top, 8px);
+    bottom: auto;
+    width: var(--sidebar-floating-width);
+    z-index: 30;
+  }
+
+  .sidebar-floating-placeholder {
+    display: none;
+  }
+}
+
+.sidebar-box {
+  border: 1px solid #eee;
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.sidebar-box--ad {
+  overflow: hidden;
+}
+
+.sidebar-box--ad img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.sidebar-title {
+  font-weight: 900;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+.sidebar-link {
+  display: block;
+  padding: 10px 0;
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 700;
+  border-top: 1px solid #f1f1f1;
+}
+
+.sidebar-link:first-of-type {
+  border-top: 0;
+}
+
+.sidebar-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .article-layout {
+    display: block;
+    max-width: 860px;
+  }
+
+  .article-sidebar {
+    position: static;
+    margin-top: 24px;
+  }
+}
+
 .article-body a {
   color: #2563eb;
   text-decoration: underline;
@@ -255,7 +400,86 @@ article_body_html =
     });
   }
 
-  document.addEventListener("DOMContentLoaded", processArticleBody);
-  document.addEventListener("turbo:load", processArticleBody);
+  function setupFloatingLastSidebarAd() {
+    const sidebar = document.querySelector(".article-sidebar");
+    if (!sidebar) return;
+
+    const ads = sidebar.querySelectorAll(".sidebar-box--ad");
+    const lastAd = ads[ads.length - 1];
+    if (!lastAd) return;
+
+    let placeholder = sidebar.querySelector(".sidebar-floating-placeholder");
+    if (!placeholder) {
+      placeholder = document.createElement("div");
+      placeholder.className = "sidebar-floating-placeholder";
+      lastAd.parentNode.insertBefore(placeholder, lastAd);
+    }
+
+    function resetFloating() {
+      lastAd.classList.remove("is-floating-sidebar-ad");
+      lastAd.style.removeProperty("--sidebar-floating-left");
+      lastAd.style.removeProperty("--sidebar-floating-width");
+      lastAd.style.removeProperty("--sidebar-floating-top");
+      lastAd.style.removeProperty("position");
+      lastAd.style.removeProperty("top");
+      lastAd.style.removeProperty("left");
+      lastAd.style.removeProperty("width");
+      placeholder.style.display = "none";
+      placeholder.style.height = "0px";
+    }
+
+    function updateFloating() {
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        resetFloating();
+        return;
+      }
+
+      const layout = document.querySelector(".article-layout--with-sidebar");
+      if (!layout) {
+        resetFloating();
+        return;
+      }
+
+      const normalTop = 8;
+      const marker = lastAd.classList.contains("is-floating-sidebar-ad") ? placeholder : lastAd;
+      const markerRect = marker.getBoundingClientRect();
+
+      if (markerRect.top > normalTop) {
+        resetFloating();
+        return;
+      }
+
+      const sidebarRect = sidebar.getBoundingClientRect();
+      const footer = document.querySelector(".site-footer");
+      const footerRect = footer ? footer.getBoundingClientRect() : null;
+      const adHeight = lastAd.offsetHeight;
+
+      const floatingTop =
+        footerRect ? Math.min(normalTop, footerRect.top - adHeight) : normalTop;
+
+      placeholder.style.display = "block";
+      placeholder.style.height = `${adHeight}px`;
+
+      lastAd.classList.add("is-floating-sidebar-ad");
+      lastAd.style.position = "fixed";
+      lastAd.style.top = `${floatingTop}px`;
+      lastAd.style.left = `${sidebarRect.left}px`;
+      lastAd.style.width = `${sidebarRect.width}px`;
+    }
+
+    window.addEventListener("scroll", updateFloating, { passive: true });
+    window.addEventListener("resize", updateFloating);
+    updateFloating();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    processArticleBody();
+    setupFloatingLastSidebarAd();
+  });
+
+  document.addEventListener("turbo:load", () => {
+    processArticleBody();
+    setupFloatingLastSidebarAd();
+  });
 })();
 </script>

@@ -1,6 +1,7 @@
 # /Users/kawamuratakuya/dev/suelog/app/helpers/articles_helper.rb
 module ArticlesHelper
   SHOP_SHORTCODE_REGEX = /\[shop\s+id=(\d+)\]/i.freeze
+  SIDEBAR_SHORTCODE_REGEX = /\[sidebar\]/i.freeze
   IMAGE_MARKER_REGEX = /\A\[image.*\]\z/i.freeze
   IMAGE_ROW_START_REGEX = /\A\[image-row-start\]\z/i.freeze
   IMAGE_ROW_END_REGEX = /\A\[image-row-end\]\z/i.freeze
@@ -9,6 +10,9 @@ module ArticlesHelper
     return "".html_safe if body.blank?
 
     raw_body = body.to_s
+
+    # 記事本文に [sidebar] があるかを view 側で使えるように保持
+    @sidebar_enabled = raw_body.match?(SIDEBAR_SHORTCODE_REGEX)
 
     html =
       begin
@@ -22,6 +26,8 @@ module ArticlesHelper
       end
 
     html = replace_shop_shortcodes(html)
+    html = replace_sidebar_shortcodes(html)
+
     fragment = Nokogiri::HTML::DocumentFragment.parse(html)
 
     style_article_figures!(fragment)
@@ -37,6 +43,10 @@ module ArticlesHelper
       shop_id = Regexp.last_match(1).to_i
       render_shop_card_shortcode(shop_id)
     end
+  end
+
+  def replace_sidebar_shortcodes(text)
+    text.to_s.gsub(SIDEBAR_SHORTCODE_REGEX, "")
   end
 
   def render_shop_card_shortcode(shop_id)
