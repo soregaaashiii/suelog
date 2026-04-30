@@ -2,12 +2,12 @@
 
 <h1>広告一覧</h1>
 
-<p>
+<p style="margin:12px 0 16px;">
   <%= link_to "＋ 新規作成", new_admin_affiliate_ad_path,
-      style: "padding:8px 12px; background:#111; color:#fff; border-radius:8px; text-decoration:none;" %>
+      style: "padding:8px 12px; background:#111; color:#fff; border-radius:8px; text-decoration:none; font-weight:700;" %>
 </p>
 
-<table style="width:100%; border-collapse:collapse; margin-top:16px;">
+<table style="width:100%; border-collapse:collapse; margin-top:16px; background:#fff;">
   <thead>
     <tr style="background:#f5f5f5;">
       <th style="padding:8px; border:1px solid #ddd;">ID</th>
@@ -15,7 +15,7 @@
       <th style="padding:8px; border:1px solid #ddd;">画像</th>
       <th style="padding:8px; border:1px solid #ddd;">URL</th>
       <th style="padding:8px; border:1px solid #ddd;">状態</th>
-      <th style="padding:8px; border:1px solid #ddd;"></th>
+      <th style="padding:8px; border:1px solid #ddd;">操作</th>
     </tr>
   </thead>
 
@@ -23,29 +23,49 @@
     <% @affiliate_ads.each do |ad| %>
       <tr>
         <td style="padding:8px; border:1px solid #ddd;"><%= ad.id %></td>
-        <td style="padding:8px; border:1px solid #ddd;"><%= ad.key %></td>
 
-        <td style="padding:8px; border:1px solid #ddd;">
+        <td style="padding:8px; border:1px solid #ddd; font-weight:700;">
+          <code>[ad key=<%= ad.key %>]</code>
+        </td>
+
+        <td style="padding:8px; border:1px solid #ddd; text-align:center;">
           <% if ad.image.attached? %>
-            <%= image_tag ad.image, style: "width:120px;" %>
+            <%= image_tag ad.image, style: "max-width:120px; height:auto;" %>
           <% elsif ad.image_path.present? %>
-            <%= image_tag ad.image_path, style: "width:120px;" %>
+            <%= image_tag ad.image_path, style: "max-width:120px; height:auto;" %>
+          <% else %>
+            <span style="color:#999;">画像なし</span>
           <% end %>
         </td>
 
-        <td style="padding:8px; border:1px solid #ddd; font-size:12px;">
-          <%= truncate(ad.url, length: 60) %>
+        <td style="padding:8px; border:1px solid #ddd; font-size:12px; word-break:break-all;">
+          <%= truncate(ad.url.to_s, length: 80) %>
         </td>
 
         <td style="padding:8px; border:1px solid #ddd;">
-          <%= ad.active? ? "表示中" : "非表示" %>
+          <% if ad.active? %>
+            <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#e6f4ea; color:#137333; font-weight:700; font-size:12px;">表示中</span>
+          <% else %>
+            <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#f3f4f6; color:#666; font-weight:700; font-size:12px;">非表示</span>
+          <% end %>
         </td>
 
-        <td style="padding:8px; border:1px solid #ddd;">
-          <%= link_to "編集", edit_admin_affiliate_ad_path(ad) %> |
-          <%= link_to "削除", admin_affiliate_ad_path(ad),
+        <td style="padding:8px; border:1px solid #ddd; white-space:nowrap;">
+          <%= link_to "編集", edit_admin_affiliate_ad_path(ad) %>
+          <span style="color:#ccc;">｜</span>
+          <%= button_to "削除", admin_affiliate_ad_path(ad),
               method: :delete,
-              data: { confirm: "削除しますか？" } %>
+              form: { style: "display:inline;" },
+              data: { turbo_confirm: "削除しますか？" },
+              style: "border:none; background:transparent; color:#b00020; cursor:pointer; padding:0; font:inherit;" %>
+        </td>
+      </tr>
+    <% end %>
+
+    <% if @affiliate_ads.blank? %>
+      <tr>
+        <td colspan="6" style="padding:18px; border:1px solid #ddd; color:#777; text-align:center;">
+          広告はまだ登録されていません。
         </td>
       </tr>
     <% end %>

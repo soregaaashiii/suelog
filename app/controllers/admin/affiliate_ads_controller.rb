@@ -1,4 +1,4 @@
-class Admin::AffiliateAdsController < ApplicationController
+class Admin::AffiliateAdsController < Admin::BaseController
   before_action :set_affiliate_ad, only: [:edit, :update, :destroy]
 
   def index
