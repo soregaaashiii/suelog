@@ -17,9 +17,9 @@ meta_description =
 <%
 article_body_html =
   begin
-    render_article_body(@article.body.to_s).html_safe
+    CGI.unescapeHTML(render_article_body(@article.body.to_s)).html_safe
   rescue StandardError
-    simple_format(@article.body.to_s).html_safe
+    CGI.unescapeHTML(simple_format(@article.body.to_s)).html_safe
   end
 %>
 
