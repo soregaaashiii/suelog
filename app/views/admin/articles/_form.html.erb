@@ -45,7 +45,9 @@
       店舗カードは <code>[shop id=1]</code>、画像サイズや配置は画像の直前に
       <code>[image size=medium align=center]</code> のように入れて使います。<br>
         横並びは <code>[image-row-start]</code> と <code>[image-row-end]</code> で囲みます。<br>
-       サイドバー内部リンクは <code>[sidebar_links]</code>、広告は <code>[sidebar_ad]</code>〜<code>[/sidebar_ad]</code> で囲んで使います。<br>
+      サイドバー内部リンクは <code>[sidebar_links]</code>、広告は <code>[sidebar_ad]</code>〜<code>[/sidebar_ad]</code> で囲んで使います。<br>
+      管理広告は <code>[ad key=bresmile]</code> で使います。<br>
+      自前画像広告は <code>[ad image=ads/bresmile.jpg url=https://px.a8.net/...]</code> でも使えます。<br>
       旧形式の <code>[sidebar]</code> も内部リンクとして使えます。
     </div>
 
@@ -61,6 +63,8 @@
       <button type="button" class="article-snippet-btn" data-snippet="[sidebar_links]">サイドバー内部リンク</button>
       <button type="button" class="article-snippet-btn" data-snippet="[sidebar_ad]&#10;ここにA8広告コードを貼る&#10;[/sidebar_ad]">サイドバー広告</button>
       <button type="button" class="article-snippet-btn" data-snippet="[sidebar_ad]&#10;ここにA8広告コードを貼る&#10;[/sidebar_ad]&#10;[sidebar_links]">広告＋内部リンク</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[ad key=bresmile]">管理広告</button>
+      <button type="button" class="article-snippet-btn" data-snippet="[ad image=ads/bresmile.jpg url=https://px.a8.net/svt/ejp?a8mat=ここにA8リンク]">自前画像広告</button>
     </div>
   </div>
 

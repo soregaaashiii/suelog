@@ -1,0 +1,53 @@
+<%# /Users/kawamuratakuya/dev/suelog/app/views/admin/affiliate_ads/index.html.erb %>
+
+<h1>広告一覧</h1>
+
+<p>
+  <%= link_to "＋ 新規作成", new_admin_affiliate_ad_path,
+      style: "padding:8px 12px; background:#111; color:#fff; border-radius:8px; text-decoration:none;" %>
+</p>
+
+<table style="width:100%; border-collapse:collapse; margin-top:16px;">
+  <thead>
+    <tr style="background:#f5f5f5;">
+      <th style="padding:8px; border:1px solid #ddd;">ID</th>
+      <th style="padding:8px; border:1px solid #ddd;">キー</th>
+      <th style="padding:8px; border:1px solid #ddd;">画像</th>
+      <th style="padding:8px; border:1px solid #ddd;">URL</th>
+      <th style="padding:8px; border:1px solid #ddd;">状態</th>
+      <th style="padding:8px; border:1px solid #ddd;"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @affiliate_ads.each do |ad| %>
+      <tr>
+        <td style="padding:8px; border:1px solid #ddd;"><%= ad.id %></td>
+        <td style="padding:8px; border:1px solid #ddd;"><%= ad.key %></td>
+
+        <td style="padding:8px; border:1px solid #ddd;">
+          <% if ad.image.attached? %>
+            <%= image_tag ad.image, style: "width:120px;" %>
+          <% elsif ad.image_path.present? %>
+            <%= image_tag ad.image_path, style: "width:120px;" %>
+          <% end %>
+        </td>
+
+        <td style="padding:8px; border:1px solid #ddd; font-size:12px;">
+          <%= truncate(ad.url, length: 60) %>
+        </td>
+
+        <td style="padding:8px; border:1px solid #ddd;">
+          <%= ad.active? ? "表示中" : "非表示" %>
+        </td>
+
+        <td style="padding:8px; border:1px solid #ddd;">
+          <%= link_to "編集", edit_admin_affiliate_ad_path(ad) %> |
+          <%= link_to "削除", admin_affiliate_ad_path(ad),
+              method: :delete,
+              data: { confirm: "削除しますか？" } %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -2,6 +2,8 @@
 module ArticlesHelper
   SHOP_SHORTCODE_REGEX = /\[shop\s+id=(\d+)\]/i.freeze
   SIDEBAR_SHORTCODE_REGEX = /\[sidebar\]/i.freeze
+  AD_LINK_SHORTCODE_REGEX = /\[ad\s+image=([^\]\s]+)\s+url=([^\s\]]+)\]/i.freeze
+  AD_KEY_SHORTCODE_REGEX = /\[ad\s+key=([a-zA-Z0-9_-]+)\]/i.freeze
   IMAGE_MARKER_REGEX = /\A\[image.*\]\z/i.freeze
   IMAGE_ROW_START_REGEX = /\A\[image-row-start\]\z/i.freeze
   IMAGE_ROW_END_REGEX = /\A\[image-row-end\]\z/i.freeze
@@ -10,8 +12,6 @@ module ArticlesHelper
     return "".html_safe if body.blank?
 
     raw_body = body.to_s
-
-    # 記事本文に [sidebar] があるかを view 側で使えるように保持
     @sidebar_enabled = raw_body.match?(SIDEBAR_SHORTCODE_REGEX)
 
     html =
@@ -26,6 +26,8 @@ module ArticlesHelper
       end
 
     html = replace_shop_shortcodes(html)
+    html = replace_ad_key_shortcodes(html)
+    html = replace_ad_link_shortcodes(html)
     html = replace_sidebar_shortcodes(html)
 
     fragment = Nokogiri::HTML::DocumentFragment.parse(html)
@@ -47,6 +49,57 @@ module ArticlesHelper
 
   def replace_sidebar_shortcodes(text)
     text.to_s.gsub(SIDEBAR_SHORTCODE_REGEX, "")
+  end
+
+  def replace_ad_key_shortcodes(text)
+    text.to_s.gsub(AD_KEY_SHORTCODE_REGEX) do
+      key = Regexp.last_match(1).to_s.strip
+
+      ad =
+        begin
+          AffiliateAd.find_by(key: key, active: true)
+        rescue StandardError => e
+          Rails.logger.error("[ArticlesHelper] affiliate ad lookup failed key=#{key}: #{e.class}: #{e.message}")
+          nil
+        end
+
+      next "" if ad.blank?
+
+      image_path =
+        if ad.respond_to?(:image) && ad.image.attached?
+          url_for(ad.image)
+        else
+          ad.image_path.to_s
+        end
+
+      render_ad_link_html(image_path: image_path, url: ad.url.to_s)
+    end
+  end
+
+  def replace_ad_link_shortcodes(text)
+    text.to_s.gsub(AD_LINK_SHORTCODE_REGEX) do
+      image_path = Regexp.last_match(1).to_s.strip
+      url = Regexp.last_match(2).to_s.strip
+
+      render_ad_link_html(image_path: image_path, url: url)
+    end
+  end
+
+  def render_ad_link_html(image_path:, url:)
+    return "" if image_path.blank? || url.blank?
+
+    img_src =
+      if image_path.start_with?("http://", "https://", "/rails/active_storage/")
+        image_path
+      else
+        ActionController::Base.helpers.asset_path(image_path)
+      end
+
+    %(<div style="margin:20px 0; text-align:center;">
+        <a href="#{url}" target="_blank" rel="nofollow sponsored noopener" style="display:inline-block; max-width:100%;">
+             <img src="#{ERB::Util.html_escape(img_src)}" alt="広告" style="max-width:100%; height:auto; display:block; margin:0 auto;">
+        </a>
+      </div>)
   end
 
   def render_shop_card_shortcode(shop_id)
