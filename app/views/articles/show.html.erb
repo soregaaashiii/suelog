@@ -38,9 +38,9 @@ sidebar_enabled = sidebar_items.present?
 
 article_body_html =
   begin
-    CGI.unescapeHTML(render_article_body(article_body_source)).html_safe
+    render_article_body(article_body_source)
   rescue StandardError
-    CGI.unescapeHTML(simple_format(article_body_source)).html_safe
+    simple_format(article_body_source)
   end
 %>
 
