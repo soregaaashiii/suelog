@@ -14,21 +14,22 @@ module ArticlesHelper
     raw_body = body.to_s
     @sidebar_enabled = raw_body.match?(SIDEBAR_SHORTCODE_REGEX)
 
+    processed_body = raw_body
+    processed_body = replace_shop_shortcodes(processed_body)
+    processed_body = replace_ad_key_shortcodes(processed_body)
+    processed_body = replace_ad_link_shortcodes(processed_body)
+    processed_body = replace_sidebar_shortcodes(processed_body)
+
     html =
       begin
         if defined?(ActionText::Content)
-          ActionText::Content.new(raw_body).to_rendered_html_with_layout
+          ActionText::Content.new(processed_body).to_rendered_html_with_layout
         else
-          raw_body
+          processed_body
         end
       rescue StandardError
-        raw_body
+        processed_body
       end
-
-    html = replace_shop_shortcodes(html)
-    html = replace_ad_key_shortcodes(html)
-    html = replace_ad_link_shortcodes(html)
-    html = replace_sidebar_shortcodes(html)
 
     fragment = Nokogiri::HTML::DocumentFragment.parse(html)
 
