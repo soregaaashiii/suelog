@@ -68,7 +68,7 @@ module ArticlesHelper
 
       image_path =
         if ad.respond_to?(:image) && ad.image.attached?
-          url_for(ad.image)
+          Rails.application.routes.url_helpers.rails_blob_path(ad.image, only_path: true)
         else
           ad.image_path.to_s
         end
