@@ -420,7 +420,9 @@ class Admin::ShopsController < Admin::BaseController
 
     ActiveRecord::Base.transaction do
       @shop.update!(shop_params)
+      attach_uploaded_photos!(@shop)
       populate_derived_hours_fields!(@shop)
+      @shop.save! if @shop.changed?
 
       case action
       when "approve"
@@ -926,30 +928,55 @@ class Admin::ShopsController < Admin::BaseController
   end
 
   def shop_params
-  params.require(:shop).permit(
-    :name,
-    :address,
-    :area,
-    :nearest_station,
-    :phone,
-    :genre,
-    :genre_other,
-    :note,
-    :public_store_details,
-    :smoking_area,
-    :smoking_type,
-    :smoking_unverified,
-    :last_confirmed_on,
-    :opening_hours_text,
-    :holiday_hours_text,
-    :closed_days_text,
-    :tabelog_url,
-    :hotpepper_url,
-    food_photos: [],
-    interior_photos: [],
-    exterior_photos: [],
-    menu_photos: [],
-    opening_hours_json: {}
-  )
-end
+    params.require(:shop).permit(
+      :name,
+      :address,
+      :area,
+      :nearest_station,
+      :phone,
+      :genre,
+      :genre_other,
+      :note,
+      :public_store_details,
+      :smoking_area,
+      :smoking_type,
+      :smoking_unverified,
+      :last_confirmed_on,
+      :opening_hours_text,
+      :holiday_hours_text,
+      :closed_days_text,
+      :tabelog_url,
+      :hotpepper_url,
+      opening_hours_json: {}
+    )
+  end
+
+  def photo_params
+    params.require(:shop).permit(
+      food_photos: [],
+      interior_photos: [],
+      exterior_photos: [],
+      menu_photos: []
+    )
+  end
+
+  def attach_uploaded_photos!(shop)
+    photos = photo_params
+
+    photos[:food_photos].reject(&:blank?).each do |photo|
+      shop.food_photos.attach(photo)
+    end if photos[:food_photos].present?
+
+    photos[:interior_photos].reject(&:blank?).each do |photo|
+      shop.interior_photos.attach(photo)
+    end if photos[:interior_photos].present?
+
+    photos[:exterior_photos].reject(&:blank?).each do |photo|
+      shop.exterior_photos.attach(photo)
+    end if photos[:exterior_photos].present?
+
+    photos[:menu_photos].reject(&:blank?).each do |photo|
+      shop.menu_photos.attach(photo)
+    end if photos[:menu_photos].present?
+  end
 end

@@ -484,7 +484,8 @@ method: :patch, local: true, data: { turbo: false } do %>
 <label style="display:flex; gap:8px; align-items:center; margin-top:8px;">
 <input type="checkbox"
 name="apply[<%= key %>_blob_ids][]"
-value="<%= att.blob_id %>">
+value="<%= att.blob_id %>"
+checked>
 <span style="font-size:12px;">反映する</span>
 </label>
 </div>
