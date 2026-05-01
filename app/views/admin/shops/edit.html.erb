@@ -20,7 +20,7 @@
 
 <% rejected = (@shop.respond_to?(:rejected?) && @shop.rejected?) %>
 
-<%= form_with model: [:admin, @shop], method: :patch, local: true do |f| %>
+<%= form_with model: [:admin, @shop], method: :patch, local: true, html: { multipart: true } do |f| %>
   <%= hidden_field_tag :status, @status %>
   <%= hidden_field_tag :source, @source %>
   <%= hidden_field_tag :per, @per %>
