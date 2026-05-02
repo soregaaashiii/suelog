@@ -9,3 +9,12 @@ local:
 render:
   service: Disk
   root: <%= ENV.fetch("RAILS_STORAGE_PATH", Rails.root.join("storage")) %>
+
+r2:
+  service: S3
+  access_key_id: <%= ENV["R2_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["R2_SECRET_ACCESS_KEY"] %>
+  region: auto
+  bucket: <%= ENV["R2_BUCKET"] %>
+  endpoint: https://<%= ENV["R2_ACCOUNT_ID"] %>.r2.cloudflarestorage.com
+  force_path_style: true
