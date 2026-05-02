@@ -222,6 +222,30 @@
     <%= f.file_field :menu_photos, multiple: true, accept: "image/*", class: "shop-photo-input" %>
   </div>
 
+  <hr>
+
+  <h3>サムネ設定（一覧に出す写真）</h3>
+  <p style="color:#666; font-size:12px; line-height:1.6;">
+    ※ 一覧に表示する写真を選べます。未設定なら自動で選ばれます。
+  </p>
+
+  <div style="margin:12px 0;">
+    <div style="font-weight:700;">種類</div>
+    <%= f.select :thumbnail_kind,
+      [["自動", "auto"], ["料理", "food"], ["外観", "exterior"], ["内観", "interior"], ["メニュー", "menu"]],
+      {},
+      style: "width:100%; max-width:300px; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+  </div>
+
+  <div style="margin:12px 0;">
+    <div style="font-weight:700;">何枚目（1〜）</div>
+    <%= f.number_field :thumbnail_index,
+      min: 1,
+      max: 20,
+      step: 1,
+      style: "width:120px; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+  </div>
+
   <div style="margin-top:18px;">
     <%= f.submit "登録する",
         style: "padding:10px 14px; border:1px solid #111; border-radius:12px; background:#111; color:#fff; font-weight:700;" %>
