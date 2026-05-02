@@ -14,10 +14,30 @@ module ArticlesHelper
     raw_body = body.to_s
     @sidebar_enabled = raw_body.match?(SIDEBAR_SHORTCODE_REGEX)
 
-    processed_body = raw_body
-    processed_body = replace_shop_shortcodes(processed_body)
-    processed_body = replace_ad_key_shortcodes(processed_body)
-    processed_body = replace_ad_link_shortcodes(processed_body)
+    shortcode_replacements = {}
+
+    processed_body = raw_body.gsub(SHOP_SHORTCODE_REGEX) do
+      token = "__SUELOG_SHOP_SHORTCODE_#{shortcode_replacements.length}__"
+      shop_id = Regexp.last_match(1).to_i
+      shortcode_replacements[token] = render_shop_card_shortcode(shop_id)
+      token
+    end
+
+    processed_body = processed_body.gsub(AD_KEY_SHORTCODE_REGEX) do
+      token = "__SUELOG_AD_KEY_SHORTCODE_#{shortcode_replacements.length}__"
+      key = Regexp.last_match(1).to_s.strip
+      shortcode_replacements[token] = render_ad_key_shortcode(key)
+      token
+    end
+
+    processed_body = processed_body.gsub(AD_LINK_SHORTCODE_REGEX) do
+      token = "__SUELOG_AD_LINK_SHORTCODE_#{shortcode_replacements.length}__"
+      image_path = Regexp.last_match(1).to_s.strip
+      url = Regexp.last_match(2).to_s.strip
+      shortcode_replacements[token] = render_ad_link_html(image_path: image_path, url: url)
+      token
+    end
+
     processed_body = replace_sidebar_shortcodes(processed_body)
 
     html =
@@ -31,6 +51,10 @@ module ArticlesHelper
       rescue StandardError
         processed_body
       end
+
+    shortcode_replacements.each do |token, replacement_html|
+      html = html.gsub(token, replacement_html.to_s)
+    end
 
     fragment = Nokogiri::HTML::DocumentFragment.parse(html)
 
@@ -51,6 +75,26 @@ module ArticlesHelper
 
   def replace_sidebar_shortcodes(text)
     text.to_s.gsub(SIDEBAR_SHORTCODE_REGEX, "")
+  end
+  def render_ad_key_shortcode(key)
+    ad =
+      begin
+        AffiliateAd.find_by(key: key, active: true)
+      rescue StandardError => e
+        Rails.logger.error("[ArticlesHelper] affiliate ad lookup failed key=#{key}: #{e.class}: #{e.message}")
+        nil
+      end
+
+    return "" if ad.blank?
+
+    image_path =
+      if ad.respond_to?(:image) && ad.image.attached?
+        Rails.application.routes.url_helpers.rails_blob_path(ad.image, only_path: true)
+      else
+        ad.image_path.to_s
+      end
+
+    render_ad_link_html(image_path: image_path, url: ad.url.to_s)
   end
 
   def replace_ad_key_shortcodes(text)
@@ -94,8 +138,15 @@ module ArticlesHelper
       if image_path.start_with?("http://", "https://", "/rails/active_storage/")
         image_path
       else
-        ActionController::Base.helpers.asset_path(image_path)
+        begin
+          ActionController::Base.helpers.asset_path(image_path)
+        rescue Propshaft::MissingAssetError, Sprockets::Rails::Helper::AssetNotFound, StandardError => e
+          Rails.logger.warn("[ArticlesHelper] ad image asset not found image_path=#{image_path}: #{e.class}: #{e.message}")
+          nil
+        end
       end
+
+    return "" if img_src.blank?
 
     %(<div style="margin:20px 0; text-align:center;">
         <a href="#{url}" target="_blank" rel="nofollow sponsored noopener" style="display:inline-block; max-width:100%;">
