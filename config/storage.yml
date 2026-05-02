@@ -18,3 +18,5 @@ r2:
   bucket: <%= ENV["R2_BUCKET"] %>
   endpoint: https://<%= ENV["R2_ACCOUNT_ID"] %>.r2.cloudflarestorage.com
   force_path_style: true
+  upload:
+    checksum_algorithm: null
