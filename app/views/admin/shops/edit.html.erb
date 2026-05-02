@@ -271,11 +271,37 @@
           <% end %>
 
           <%= file_field_tag "shop[#{field}][]",
+          <%= file_field_tag "shop[#{field}][]",
             multiple: true,
             accept: "image/*",
             style: "display:block; width:100%;" %>
         </div>
       <% end %>
+
+      <div style="margin-top:14px; padding:12px; border:1px solid #f1f1f1; border-radius:12px; background:#fffdf8;">
+        <div style="font-weight:800; margin-bottom:8px;">サムネ設定（一覧に出す写真）</div>
+        <p style="margin:0 0 10px; color:#666; font-size:13px; line-height:1.7;">
+          一覧カードに出す写真を指定できます。自動の場合は既存ロジックで選ばれます。
+        </p>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+          <div>
+            <div style="font-weight:700; margin-bottom:4px;">種類</div>
+            <%= f.select :thumbnail_kind,
+              [["自動", "auto"], ["料理", "food"], ["外観", "exterior"], ["内観", "interior"], ["メニュー", "menu"]],
+              {},
+              style: "padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+          </div>
+
+          <div>
+            <div style="font-weight:700; margin-bottom:4px;">何枚目（1〜）</div>
+            <%= f.number_field :thumbnail_index,
+              in: 1..20,
+              step: 1,
+              style: "width:140px; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

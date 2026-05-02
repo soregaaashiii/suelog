@@ -948,6 +948,8 @@ class Admin::ShopsController < Admin::BaseController
       :closed_days_text,
       :tabelog_url,
       :hotpepper_url,
+      :thumbnail_kind,
+      :thumbnail_index,
       opening_hours_json: {}
     )
   end
