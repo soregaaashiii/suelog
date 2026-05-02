@@ -23,7 +23,8 @@ module ArticlesHelper
     html =
       begin
         if defined?(ActionText::Content)
-          ActionText::Content.new(processed_body).to_rendered_html_with_layout
+          rendered = ActionText::Content.new(processed_body).to_rendered_html_with_layout
+          CGI.unescapeHTML(rendered)
         else
           processed_body
         end

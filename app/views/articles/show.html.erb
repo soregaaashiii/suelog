@@ -25,7 +25,7 @@ article_body_source = raw_article_body.gsub(/\[sidebar_ad\](.*?)\[\/sidebar_ad\]
   if matched_text.match?(/\A\[sidebar_ad\]/i)
     sidebar_items << {
       type: :ad,
-      html: CGI.unescapeHTML(Regexp.last_match(1).to_s.strip).html_safe
+      html: render_article_body(Regexp.last_match(1).to_s.strip)
     }
   else
     sidebar_items << { type: :links }
