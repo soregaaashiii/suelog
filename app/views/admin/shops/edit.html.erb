@@ -234,6 +234,49 @@
       rows: 6,
       style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
     </div>
+
+    <div style="grid-column:1/-1; margin-top:6px; padding:14px; border:1px solid #eee; border-radius:12px; background:#fff;">
+      <div style="font-weight:800; font-size:16px; margin-bottom:8px;">写真管理</div>
+      <p style="margin:0 0 12px; color:#666; font-size:13px; line-height:1.7;">
+        写真を追加できます。削除したい写真は「削除」にチェックを入れてから更新してください。
+      </p>
+
+      <% {
+        food_photos: "料理写真",
+        interior_photos: "内観写真",
+        exterior_photos: "外観写真",
+        menu_photos: "メニュー写真"
+      }.each do |field, label| %>
+        <div style="margin:0 0 18px; padding:12px; border:1px solid #f1f1f1; border-radius:12px; background:#fafafa;">
+          <div style="font-weight:800; margin-bottom:8px;"><%= label %></div>
+
+          <% photos = @shop.public_send(field) %>
+
+          <% if photos.attached? %>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+              <% photos.each do |photo| %>
+                <div style="width:120px; padding:8px; border:1px solid #e5e7eb; border-radius:10px; background:#fff;">
+                  <%= image_tag photo,
+                    style: "width:100%; height:86px; object-fit:cover; border-radius:8px; display:block; margin-bottom:6px;" %>
+
+                  <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:#b00020; font-weight:700;">
+                    <%= check_box_tag "remove_#{field}_ids[]", photo.id, false %>
+                    削除
+                  </label>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <p style="margin:0 0 8px; color:#777; font-size:13px;">現在の写真はありません。</p>
+          <% end %>
+
+          <%= file_field_tag "shop[#{field}][]",
+            multiple: true,
+            accept: "image/*",
+            style: "display:block; width:100%;" %>
+        </div>
+      <% end %>
+    </div>
   </div>
 
   <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">

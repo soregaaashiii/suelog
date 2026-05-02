@@ -420,6 +420,7 @@ class Admin::ShopsController < Admin::BaseController
 
     ActiveRecord::Base.transaction do
       @shop.update!(shop_params)
+      purge_removed_photos!(@shop)
       attach_uploaded_photos!(@shop)
       populate_derived_hours_fields!(@shop)
       @shop.save! if @shop.changed?
@@ -958,6 +959,22 @@ class Admin::ShopsController < Admin::BaseController
       exterior_photos: [],
       menu_photos: []
     )
+  end
+
+  def purge_removed_photos!(shop)
+    {
+      food_photos: params[:remove_food_photos_ids],
+      interior_photos: params[:remove_interior_photos_ids],
+      exterior_photos: params[:remove_exterior_photos_ids],
+      menu_photos: params[:remove_menu_photos_ids]
+    }.each do |field, ids|
+      ids = Array(ids).map(&:to_s)
+      next if ids.blank?
+
+      shop.public_send(field).attachments.each do |attachment|
+        attachment.purge_later if ids.include?(attachment.id.to_s)
+      end
+    end
   end
 
   def attach_uploaded_photos!(shop)
