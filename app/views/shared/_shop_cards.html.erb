@@ -105,7 +105,23 @@
           <div class="shop-card__media">
 
             <% if card_photos.present? %>
-              <div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; width:100%; height:100%; -webkit-overflow-scrolling:touch;">
+              <% if card_photos.size > 1 %>
+                <button type="button"
+                  aria-label="前の画像"
+                  onclick="event.preventDefault(); event.stopPropagation(); var sc=this.parentElement.querySelector('[data-shop-card-slider]'); if(sc){ var max=sc.scrollWidth-sc.clientWidth; if(sc.scrollLeft <= 2){ sc.scrollTo({ left:max, behavior:'smooth' }); } else { sc.scrollBy({ left:-sc.clientWidth, behavior:'smooth' }); } }"
+                  style="position:absolute; left:10px; top:50%; transform:translateY(-50%); z-index:5; width:34px; height:46px; border:0; border-radius:999px; background:rgba(255,255,255,0.6); backdrop-filter:blur(4px); color:rgba(17,17,17,0.72); font-size:22px; font-weight:500; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; padding:0;">
+                  ‹
+                </button>
+
+                <button type="button"
+                  aria-label="次の画像"
+                  onclick="event.preventDefault(); event.stopPropagation(); var sc=this.parentElement.querySelector('[data-shop-card-slider]'); if(sc){ var max=sc.scrollWidth-sc.clientWidth; if(sc.scrollLeft >= max - 2){ sc.scrollTo({ left:0, behavior:'smooth' }); } else { sc.scrollBy({ left:sc.clientWidth, behavior:'smooth' }); } }"
+                  style="position:absolute; right:10px; top:50%; transform:translateY(-50%); z-index:5; width:34px; height:46px; border:0; border-radius:999px; background:rgba(255,255,255,0.6); backdrop-filter:blur(4px); color:rgba(17,17,17,0.72); font-size:22px; font-weight:500; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; padding:0;">
+                  ›
+                </button>
+              <% end %>
+
+              <div data-shop-card-slider data-loop="true" data-shop-url="<%= shop_path(shop) %>" style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; width:100%; height:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
                 <% card_photos.each do |photo| %>
                   <div style="flex:0 0 100%; width:100%; height:100%; scroll-snap-align:start;">
                     <% begin %>
@@ -125,6 +141,19 @@
                   </div>
                 <% end %>
               </div>
+
+              <% if card_photos.size > 1 %>
+                <div class="shop-card__dots"
+                  style="position:absolute; bottom:7px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:6; padding:4px 6px; border-radius:999px; background:rgba(17,17,17,0.18); backdrop-filter:blur(4px);">
+                  <% card_photos.each_with_index do |_, i| %>
+                    <span
+                      class="shop-card__dot <%= "is-active" if i.zero? %>"
+                      data-index="<%= i %>"
+                      style="width:6px; height:6px; border-radius:999px; background:<%= i.zero? ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.5)" %>; display:block;">
+                    </span>
+                  <% end %>
+                </div>
+              <% end %>
             <% else %>
               <%= image_tag "fallbacks/#{fallback_image}",
                     class: "shop-card__img",
@@ -133,19 +162,16 @@
                     decoding: "async" %>
             <% end %>
 
-           <% unless card_photos.present? %>
-  <!-- ▼画像が無いときだけ表示 -->
-  <div class="shop-card__overlay">
+            <% unless card_photos.present? %>
+              <div class="shop-card__overlay">
+                <div class="shop-card__imageNote">※画像はイメージです</div>
 
-    <!-- ▼これを追加 -->
-    <div class="shop-card__imageNote">※画像はイメージです</div>
-
-    <div class="shop-card__overlayTitle"><%= shop.name %></div>
-    <div class="shop-card__overlaySub">
-      このお店の最新情報・写真を募集中！
-    </div>
-  </div>
-<% end %>
+                <div class="shop-card__overlayTitle"><%= shop.name %></div>
+                <div class="shop-card__overlaySub">
+                  このお店の最新情報・写真を募集中！
+                </div>
+              </div>
+            <% end %>
 
           </div>
         <% end %>
@@ -239,6 +265,188 @@
     <% end %>
   </div>
 
+  <script>
+    (function() {
+      function bindShopCardSlider() {
+        document.querySelectorAll("[data-shop-card-slider]").forEach(function(slider) {
+if (slider.dataset.loopBound === "1") return;
+slider.dataset.loopBound = "1"; // Turbo戻り対策
+
+          if (slider.dataset.cloned === "1") return;
+          slider.dataset.cloned = "1";
+
+          var originalItems = Array.from(slider.children);
+          if (originalItems.length <= 1) return;
+
+          var firstClone = originalItems[0].cloneNode(true);
+          var lastClone = originalItems[originalItems.length - 1].cloneNode(true);
+
+          firstClone.dataset.sliderClone = "true";
+          lastClone.dataset.sliderClone = "true";
+
+          slider.appendChild(firstClone);
+          slider.insertBefore(lastClone, originalItems[0]);
+
+          var slideWidth = slider.clientWidth || 1;
+
+          requestAnimationFrame(function() {
+            slider.scrollLeft = slideWidth;
+          });
+
+          var media = slider.closest(".shop-card__media");
+          var dotsWrap = media ? media.querySelector(".shop-card__dots") : null;
+          var dots = dotsWrap ? dotsWrap.querySelectorAll(".shop-card__dot") : [];
+
+          var pointerStartX = 0;
+          var pointerStartY = 0;
+          var moved = false;
+          var isJumping = false;
+
+          function refreshSlideWidth() {
+            slideWidth = slider.clientWidth || 1;
+          }
+
+          function realIndex() {
+            refreshSlideWidth();
+
+            var index = Math.round(slider.scrollLeft / slideWidth) - 1;
+
+            if (index < 0) index = originalItems.length - 1;
+            if (index >= originalItems.length) index = 0;
+
+            return index;
+          }
+
+          function updateDots() {
+            if (!dots.length) return;
+
+            var index = realIndex();
+
+            dots.forEach(function(dot, i) {
+              dot.style.background = i === index
+                ? "rgba(255,255,255,0.95)"
+                : "rgba(255,255,255,0.5)";
+              dot.style.transform = i === index ? "scale(1.15)" : "scale(1)";
+            });
+          }
+
+          function fixLoopPosition() {
+            if (isJumping) return;
+
+            refreshSlideWidth();
+
+            var rawIndex = Math.round(slider.scrollLeft / slideWidth);
+
+            if (rawIndex <= 0) {
+              isJumping = true;
+              slider.style.scrollBehavior = "auto";
+              slider.scrollLeft = slideWidth * originalItems.length;
+              slider.style.scrollBehavior = "";
+              isJumping = false;
+            } else if (rawIndex >= originalItems.length + 1) {
+              isJumping = true;
+              slider.style.scrollBehavior = "auto";
+              slider.scrollLeft = slideWidth;
+              slider.style.scrollBehavior = "";
+              isJumping = false;
+            }
+          }
+
+          slider.addEventListener("scroll", function() {
+            window.clearTimeout(slider._loopTimer);
+
+            slider._loopTimer = window.setTimeout(function() {
+              fixLoopPosition();
+              updateDots();
+            }, 220);
+          }, { passive: true });
+
+          if ("onscrollend" in window) {
+            slider.addEventListener("scrollend", function() {
+              window.clearTimeout(slider._loopTimer);
+              fixLoopPosition();
+              updateDots();
+            }, { passive: true });
+          }
+
+          dots.forEach(function(dot, i) {
+            dot.addEventListener("click", function(event) {
+              event.preventDefault();
+              event.stopPropagation();
+
+              refreshSlideWidth();
+
+              isJumping = true;
+
+              slider.scrollTo({
+                left: slideWidth * (i + 1),
+                behavior: "smooth"
+              });
+
+              window.setTimeout(function() {
+                isJumping = false;
+                fixLoopPosition();
+                updateDots();
+              }, 260);
+            });
+          });
+
+          slider.addEventListener("pointerdown", function(event) {
+            pointerStartX = event.clientX;
+            pointerStartY = event.clientY;
+            moved = false;
+          }, { passive: true });
+
+          slider.addEventListener("pointermove", function(event) {
+            if (Math.abs(event.clientX - pointerStartX) > 8 || Math.abs(event.clientY - pointerStartY) > 8) {
+              moved = true;
+            }
+          }, { passive: true });
+
+          slider.addEventListener("pointerup", function() {
+            window.setTimeout(function() {
+              fixLoopPosition();
+              updateDots();
+            }, 120);
+          }, { passive: true });
+
+          slider.addEventListener("click", function(event) {
+            if (moved) return;
+
+            var url = slider.dataset.shopUrl;
+            if (url) {
+              event.preventDefault();
+              event.stopPropagation();
+              window.location.href = url;
+            }
+          });
+
+          window.addEventListener("resize", function() {
+            refreshSlideWidth();
+            slider.scrollLeft = slideWidth * (realIndex() + 1);
+            updateDots();
+          });
+
+          updateDots();
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", bindShopCardSlider);
+      document.addEventListener("turbo:load", bindShopCardSlider);
+
+      document.addEventListener("turbo:before-cache", function() {
+        document.querySelectorAll("[data-shop-card-slider]").forEach(function(slider) {
+          slider.querySelectorAll("[data-slider-clone='true']").forEach(function(clone) {
+            clone.remove();
+          });
+
+          slider.removeAttribute("data-loop-bound");
+          slider.removeAttribute("data-cloned");
+          slider.scrollLeft = 0;
+        });
+      });
+    })();
+  </script>
 <% else %>
   <div class="empty-state">
     <p>該当する店舗がありません。</p>
