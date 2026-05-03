@@ -207,6 +207,42 @@ style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border
 
 <hr>
 
+<h3>現在登録されている写真</h3>
+<p style="color:#666; font-size:12px; line-height:1.6;">
+※ すでに登録されている写真です。ここから削除はできません。追加したい写真だけ下から送信してください。
+</p>
+
+<% {
+food_photos: "料理写真",
+interior_photos: "内観写真",
+exterior_photos: "外観写真",
+menu_photos: "メニュー写真"
+}.each do |field, label| %>
+<div style="margin:12px 0; padding:12px; border:1px solid #eee; border-radius:12px; background:#fafafa;">
+<div style="font-weight:800; margin-bottom:8px;"><%= label %></div>
+
+<% photos = @shop.public_send(field) %>
+
+<% if photos.attached? %>
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+<% photos.each do |photo| %>
+<div style="width:120px; padding:8px; border:1px solid #e5e7eb; border-radius:10px; background:#fff;">
+<%= image_tag photo,
+style: "width:100%; height:86px; object-fit:cover; border-radius:8px; display:block;" %>
+</div>
+<% end %>
+
+<div id="<%= field.to_s.sub('_photos', '').sub('food', 'food').sub('interior', 'interior').sub('exterior', 'exterior').sub('menu', 'menu') %>-preview" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+</div>
+<% else %>
+<p style="margin:0 0 10px; color:#777; font-size:13px;">現在の写真はありません。</p>
+<div id="<%= field.to_s.sub('_photos', '').sub('food', 'food').sub('interior', 'interior').sub('exterior', 'exterior').sub('menu', 'menu') %>-preview" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+<% end %>
+</div>
+<% end %>
+
+<hr>
+
 <h3>写真（必須・編集依頼に添付）</h3>
 <p style="color:#666; font-size:12px; line-height:1.6;">
 ※ 料理/内観/外観/メニューのどれでもOK。<strong>どれか1枚</strong>は必ず添付してください。<br>
@@ -215,22 +251,22 @@ style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border
 
 <div style="margin:12px 0;">
 <div style="font-weight:700;">料理の写真（複数OK）</div>
-<%= f.file_field :food_photos, multiple: true, accept: "image/*" %>
+<%= f.file_field :food_photos, multiple: true, accept: "image/*", data: { preview_target: "food-preview" } %>
 </div>
 
 <div style="margin:12px 0;">
 <div style="font-weight:700;">内観の写真（複数OK）</div>
-<%= f.file_field :interior_photos, multiple: true, accept: "image/*" %>
+<%= f.file_field :interior_photos, multiple: true, accept: "image/*", data: { preview_target: "interior-preview" } %>
 </div>
 
 <div style="margin:12px 0;">
 <div style="font-weight:700;">外観の写真（複数OK）</div>
-<%= f.file_field :exterior_photos, multiple: true, accept: "image/*" %>
+<%= f.file_field :exterior_photos, multiple: true, accept: "image/*", data: { preview_target: "exterior-preview" } %>
 </div>
 
 <div style="margin:12px 0;">
 <div style="font-weight:700;">メニューの写真（複数OK）</div>
-<%= f.file_field :menu_photos, multiple: true, accept: "image/*" %>
+<%= f.file_field :menu_photos, multiple: true, accept: "image/*", data: { preview_target: "menu-preview" } %>
 </div>
 
 <hr>
@@ -287,7 +323,68 @@ style: "padding:10px 14px; border:1px solid #111; border-radius:12px; background
     });
   }
 
+  function bindPhotoPreviews() {
+    document.querySelectorAll("input[type='file'][data-preview-target]").forEach(function(input) {
+      if (input.dataset.previewBound === "1") return;
+      input.dataset.previewBound = "1";
+
+      input.addEventListener("change", function() {
+        renderPreview(input);
+      });
+    });
+  }
+
+  function renderPreview(input) {
+    var target = document.getElementById(input.dataset.previewTarget);
+    if (!target) return;
+
+    target.innerHTML = "";
+
+    Array.from(input.files).forEach(function(file, index) {
+      if (!file.type.match(/^image\//)) return;
+
+      var reader = new FileReader();
+
+      reader.onload = function(e) {
+        var box = document.createElement("div");
+        box.style.cssText = "position:relative; width:120px; padding:8px; border:1px solid #e5e7eb; border-radius:10px; background:#fff;";
+
+        var img = document.createElement("img");
+        img.src = e.target.result;
+        img.style.cssText = "width:100%; height:86px; object-fit:cover; border-radius:8px; display:block;";
+
+        var remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.style.cssText = "position:absolute; top:2px; right:2px; width:24px; height:24px; border-radius:999px; border:1px solid #b00020; background:#fff; color:#b00020; font-weight:900; cursor:pointer;";
+
+        remove.addEventListener("click", function() {
+          removeFile(input, index);
+          renderPreview(input);
+        });
+
+        box.appendChild(img);
+        box.appendChild(remove);
+        target.appendChild(box);
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function removeFile(input, removeIndex) {
+    var dt = new DataTransfer();
+
+    Array.from(input.files).forEach(function(file, index) {
+      if (index !== removeIndex) dt.items.add(file);
+    });
+
+    input.files = dt.files;
+  }
+
   document.addEventListener("DOMContentLoaded", bindHoursPresetButtons);
   document.addEventListener("turbo:load", bindHoursPresetButtons);
+  document.addEventListener("DOMContentLoaded", bindPhotoPreviews);
+  document.addEventListener("turbo:load", bindPhotoPreviews);
 })();
 </script>

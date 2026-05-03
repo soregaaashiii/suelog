@@ -84,6 +84,17 @@
 
       <% fallback_image = fallback_map[shop.display_genre] || "other.jpg" %>
 
+      <% card_photos = [] %>
+      <% card_photos << thumb if thumb.present? %>
+      <% [:food_photos, :interior_photos, :exterior_photos, :menu_photos].each do |photo_field| %>
+        <% next unless shop.respond_to?(photo_field) %>
+        <% shop.public_send(photo_field).each do |photo| %>
+          <% next if thumb.present? && photo.id == thumb.id %>
+          <% card_photos << photo %>
+        <% end %>
+      <% end %>
+      <% card_photos = card_photos.compact.uniq { |photo| photo.id } %>
+
       <article
         class="shop-card <%= "shop-card--stale" if very_old %> shop-card--clickable"
         onclick="if (!event.target.closest('a, button')) { window.location.href='<%= shop_path(shop) %>'; }"
@@ -93,20 +104,27 @@
         <%= link_to shop_path(shop), class: "shop-card__mediaLink" do %>
           <div class="shop-card__media">
 
-            <% if thumb.present? %>
-              <% begin %>
-                <%= image_tag(thumb_variant || thumb,
-                      class: "shop-card__img",
-                      alt: shop.name,
-                      loading: "lazy",
-                      decoding: "async") %>
-              <% rescue StandardError %>
-                <%= image_tag "fallbacks/#{fallback_image}",
-                      class: "shop-card__img",
-                      alt: shop.name,
-                      loading: "lazy",
-                      decoding: "async" %>
-              <% end %>
+            <% if card_photos.present? %>
+              <div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; width:100%; height:100%; -webkit-overflow-scrolling:touch;">
+                <% card_photos.each do |photo| %>
+                  <div style="flex:0 0 100%; width:100%; height:100%; scroll-snap-align:start;">
+                    <% begin %>
+                      <% photo_variant = photo.variable? ? photo.variant(resize_to_limit: [480, 320]) : photo %>
+                      <%= image_tag(photo_variant,
+                            class: "shop-card__img",
+                            alt: shop.name,
+                            loading: "lazy",
+                            decoding: "async") %>
+                    <% rescue StandardError %>
+                      <%= image_tag "fallbacks/#{fallback_image}",
+                            class: "shop-card__img",
+                            alt: shop.name,
+                            loading: "lazy",
+                            decoding: "async" %>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
             <% else %>
               <%= image_tag "fallbacks/#{fallback_image}",
                     class: "shop-card__img",
@@ -115,7 +133,7 @@
                     decoding: "async" %>
             <% end %>
 
-           <% unless thumb.present? %>
+           <% unless card_photos.present? %>
   <!-- ▼画像が無いときだけ表示 -->
   <div class="shop-card__overlay">
 

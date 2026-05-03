@@ -113,7 +113,8 @@ data: (@shop.opening_hours_data || {}) %>
 
 <div style="margin-top:12px;">
 <%= f.label :exterior_photos, "外観の写真（複数OK）" %><br>
-<%= f.file_field :exterior_photos, multiple: true, accept: "image/*" %>
+<%= f.file_field :exterior_photos, multiple: true, accept: "image/*", data: { preview_target: "exterior-preview" } %>
+<div id="exterior-preview" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;"></div>
 </div>
 
 <div style="margin-top:12px;">
