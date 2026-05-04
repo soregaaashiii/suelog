@@ -44,6 +44,8 @@ class ShopsController < ApplicationController
 
     ip_hash = ip_hash_for_request
     @my_review = @shop.reviews.find_by(ip_hash: ip_hash)
+
+    @nearby_shops = nearby_shops_for(@shop)
   end
 
   def new
@@ -139,6 +141,34 @@ class ShopsController < ApplicationController
   end
 
   private
+
+  def nearby_shops_for(shop)
+    return [] unless shop.latitude.present? && shop.longitude.present?
+
+    scope = Shop.approved
+                .where.not(id: shop.id)
+                .where.not(latitude: nil, longitude: nil)
+                .includes(
+                  food_photos_attachments: :blob,
+                  interior_photos_attachments: :blob,
+                  exterior_photos_attachments: :blob,
+                  menu_photos_attachments: :blob
+                )
+
+    if shop.smoking_area.present? && shop.smoking_area != "unknown"
+      scope = scope.where(smoking_area: shop.smoking_area)
+    end
+
+    nearby = scope.near([shop.latitude, shop.longitude], 1.0, units: :km)
+
+    nearby.order(
+      Arel.sql("
+        CASE WHEN last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
+        last_confirmed_on DESC,
+        created_at DESC
+      ")
+    ).limit(6).to_a
+  end
 
   def shop_params
     params.require(:shop).permit(
