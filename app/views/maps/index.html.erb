@@ -129,6 +129,11 @@ let markers = [];
 let myLocationMarker = null;
 let filteredShops = [...allShops];
 
+const initialParams = new URLSearchParams(window.location.search);
+const initialLat = parseFloat(initialParams.get("lat"));
+const initialLng = parseFloat(initialParams.get("lng"));
+const hasInitialLocation = Number.isFinite(initialLat) && Number.isFinite(initialLng);
+
 const smokingAreaLabels = {
   all_smoking: "席で喫煙可",
   separated: "喫煙所あり"
@@ -436,6 +441,31 @@ function clearSingleFilter(key) {
   applyFilters();
 }
 
+function setMyLocationMarker(lat, lng, options = {}) {
+  const me = { lat: lat, lng: lng };
+
+  if (myLocationMarker) {
+    myLocationMarker.setMap(null);
+  }
+
+  myLocationMarker = new google.maps.Marker({
+    map: map,
+    position: me,
+    title: "現在地",
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 8,
+      fillColor: "#2563eb",
+      fillOpacity: 1,
+      strokeColor: "#ffffff",
+      strokeWeight: 2
+    }
+  });
+
+  map.setCenter(me);
+  map.setZoom(options.zoom || 15);
+}
+
 function showMyLocation() {
   if (!navigator.geolocation) {
     setStatus("このブラウザでは現在地を取得できません。");
@@ -446,31 +476,7 @@ function showMyLocation() {
 
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      const me = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      };
-
-      if (myLocationMarker) {
-        myLocationMarker.setMap(null);
-      }
-
-      myLocationMarker = new google.maps.Marker({
-        map: map,
-        position: me,
-        title: "現在地",
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: "#2563eb",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2
-        }
-      });
-
-      map.setCenter(me);
-      map.setZoom(15);
+      setMyLocationMarker(pos.coords.latitude, pos.coords.longitude);
       setStatus("現在地を表示しています。");
     },
     () => {
@@ -549,9 +555,12 @@ function initMap() {
   infoWindow = new google.maps.InfoWindow();
   bindFilterEvents();
 
-    applyFilters();
+  applyFilters();
 
-  if (filteredShops.length === 0) {
+  if (hasInitialLocation) {
+    setMyLocationMarker(initialLat, initialLng);
+    setStatus("現在地周辺の店舗を表示しています。");
+  } else if (filteredShops.length === 0) {
     setStatus("地図に表示できる店舗がありません。");
   }
 }
