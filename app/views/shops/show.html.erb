@@ -919,6 +919,24 @@
     </div>
   </section>
 
+  <section class="shop-show__section" style="padding:14px; margin-bottom:16px;">
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <%= link_to "今営業中の喫煙可",
+                  root_path(open_now: 1),
+                  class: "ss-btn ss-btn--dark" %>
+
+      <%= link_to "席で吸える店だけ",
+                  root_path(smoking_area: "all_smoking"),
+                  class: "ss-btn ss-btn--ghost" %>
+
+      <% if @shop.latitude.present? && @shop.longitude.present? %>
+        <%= link_to "近くで探す",
+                    map_path(lat: @shop.latitude, lng: @shop.longitude),
+                    class: "ss-btn ss-btn--ghost" %>
+      <% end %>
+    </div>
+  </section>
+
   <% if flash[:notice].present? %>
     <div class="ss-alert ss-alert--notice"><%= flash[:notice] %></div>
   <% end %>
@@ -950,15 +968,15 @@
 
             <% if is_umeda_shop %>
               <div class="shop-show__microLinks">
-                <%= link_to "梅田で喫煙できる店", umeda_path, class: "shop-show__microLink" %>
-                <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "shop-show__microLink" %>
-                <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "shop-show__microLink" %>
+                 <%= link_to "梅田で喫煙できる店", umeda_path, class: "shop-show__microLink" %>
+                <%= link_to "今営業中 × 席で喫煙可", umeda_smoking_path("all_smoking", open_now: 1), class: "shop-show__microLink" %>
+                <%= link_to "今営業中 × 喫煙所あり", umeda_smoking_path("separated", open_now: 1), class: "shop-show__microLink" %>
               </div>
             <% elsif is_namba_shop %>
               <div class="shop-show__microLinks">
                 <%= link_to "難波で喫煙できる店", namba_path, class: "shop-show__microLink" %>
-                <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "shop-show__microLink" %>
-                <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "shop-show__microLink" %>
+                <%= link_to "今営業中 × 席で喫煙可", namba_smoking_path("all_smoking", open_now: 1), class: "shop-show__microLink" %>
+                <%= link_to "今営業中 × 喫煙所あり", namba_smoking_path("separated", open_now: 1), class: "shop-show__microLink" %>
               </div>
             <% end %>
           </div>
@@ -1078,7 +1096,7 @@
 
           <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
             <%= link_to "今営業中の店を見る",
-                        root_path(smoking_area: "all_smoking"),
+                        root_path(smoking_area: "all_smoking", open_now: 1),
                         class: "ss-btn ss-btn--ghost" %>
 
             <%= link_to "近くの店を探す",
@@ -1101,7 +1119,7 @@
           <div id="shop-map" class="shop-show__map"></div>
 
           <p class="shop-show__mapLink">
-            <%= link_to "Googleマップで開く",
+            <%= link_to "ルートを見る",
                         track_click_shop_path(@shop, kind: "map_click", target_url: google_map_query_url),
                         target: "_blank",
                         rel: "noopener" %>
@@ -1196,7 +1214,7 @@
           </div>
 
           <p class="shop-show__mapLink">
-            <%= link_to "Googleマップで開く",
+            <%= link_to "ルートを見る",
                         track_click_shop_path(@shop, kind: "map_click", target_url: google_map_search_url),
                         target: "_blank",
                         rel: "noopener" %>
@@ -1467,6 +1485,44 @@
           </p>
         <% end %>
       </section>
+
+      <% if defined?(@same_genre_shops) && @same_genre_shops.present? %>
+        <section class="shop-show__section">
+          <div class="shop-show__sectionHeader">
+            <div>
+              <h2 class="shop-show__sectionTitle">同じジャンルの喫煙できるお店</h2>
+              <p style="margin:6px 0 0; color:#666666; font-size:13px; line-height:1.7;">
+                同じジャンルで、喫煙条件が近い店舗を表示しています。
+              </p>
+            </div>
+
+            <span class="shop-show__sectionMeta">
+              同ジャンル
+            </span>
+          </div>
+
+          <%= render partial: "shared/shop_cards", locals: { shops: @same_genre_shops } %>
+        </section>
+      <% end %>
+
+      <% if defined?(@popular_shops) && @popular_shops.present? %>
+        <section class="shop-show__section">
+          <div class="shop-show__sectionHeader">
+            <div>
+              <h2 class="shop-show__sectionTitle">よく見られている喫煙可のお店</h2>
+              <p style="margin:6px 0 0; color:#666666; font-size:13px; line-height:1.7;">
+                電話・地図・予約リンクなどのクリックが多い店舗を表示しています。
+              </p>
+            </div>
+
+            <span class="shop-show__sectionMeta">
+              人気
+            </span>
+          </div>
+
+          <%= render partial: "shared/shop_cards", locals: { shops: @popular_shops } %>
+        </section>
+      <% end %>
 
       <section class="shop-show__section">
         <h2 class="shop-show__sectionTitle">口コミ</h2>

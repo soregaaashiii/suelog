@@ -46,6 +46,8 @@ class ShopsController < ApplicationController
     @my_review = @shop.reviews.find_by(ip_hash: ip_hash)
 
     @nearby_shops = nearby_shops_for(@shop)
+    @same_genre_shops = same_genre_shops_for(@shop)
+    @popular_shops = popular_shops_for(@shop)
   end
 
   def new
@@ -164,13 +166,87 @@ class ShopsController < ApplicationController
         scope
       end
 
-    nearby.order(
-      Arel.sql("
-        CASE WHEN last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
-        last_confirmed_on DESC,
-        created_at DESC
-      ")
-    ).limit(6).to_a
+    sorted = nearby.to_a.sort_by do |s|
+      [
+        (s.respond_to?(:open_now?) && s.open_now?) ? 0 : 1,
+        s.last_confirmed_on.present? ? 0 : 1,
+        - (s.last_confirmed_on.to_i rescue 0),
+        - s.created_at.to_i
+      ]
+    end
+
+    sorted.first(6)
+  end
+
+  def same_genre_shops_for(shop)
+    genre_value = shop.genre.to_s.strip
+    genre_other_value = shop.genre_other.to_s.strip
+
+    return [] if genre_value.blank? && genre_other_value.blank?
+
+    scope = Shop.approved
+                .where.not(id: shop.id)
+                .includes(
+                  food_photos_attachments: :blob,
+                  interior_photos_attachments: :blob,
+                  exterior_photos_attachments: :blob,
+                  menu_photos_attachments: :blob
+                )
+
+    if shop.smoking_area.present? && shop.smoking_area != "unknown"
+      scope = scope.where(smoking_area: shop.smoking_area)
+    end
+
+    genre_conditions = []
+    genre_bindings = {}
+
+    if genre_value.present?
+      genre_conditions << "shops.genre = :genre_value"
+      genre_bindings[:genre_value] = genre_value
+    end
+
+    if genre_other_value.present?
+      genre_conditions << "shops.genre_other = :genre_other_value"
+      genre_bindings[:genre_other_value] = genre_other_value
+    end
+
+    scope = scope.where(genre_conditions.join(" OR "), genre_bindings)
+
+    sorted = scope.to_a.sort_by do |s|
+      [
+        (s.respond_to?(:open_now?) && s.open_now?) ? 0 : 1,
+        s.last_confirmed_on.present? ? 0 : 1,
+        - (s.last_confirmed_on.to_i rescue 0),
+        - s.created_at.to_i
+      ]
+    end
+
+    sorted.first(6)
+  end
+
+  def popular_shops_for(shop)
+    Shop.approved
+        .where.not(id: shop.id)
+        .left_joins(:shop_clicks)
+        .includes(
+          food_photos_attachments: :blob,
+          interior_photos_attachments: :blob,
+          exterior_photos_attachments: :blob,
+          menu_photos_attachments: :blob
+        )
+        .select(
+          "shops.*",
+          "COUNT(shop_clicks.id) AS clicks_count"
+        )
+        .group("shops.id")
+        .order(Arel.sql("
+          COUNT(shop_clicks.id) DESC,
+          CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
+          shops.last_confirmed_on DESC,
+          shops.created_at DESC
+        "))
+        .limit(6)
+        .to_a
   end
 
   def shop_params

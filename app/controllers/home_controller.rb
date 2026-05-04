@@ -612,7 +612,8 @@ end
   end
 
   def open_now_only_param?
-    ActiveModel::Type::Boolean.new.cast(params[:open_now_only])
+    ActiveModel::Type::Boolean.new.cast(params[:open_now_only]) ||
+      ActiveModel::Type::Boolean.new.cast(params[:open_now])
   end
 
   def cleaned_listing_query

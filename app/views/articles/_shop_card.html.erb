@@ -1,8 +1,15 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/articles/_shop_card.html.erb %>
 
-<div style="border:1px solid #ddd; border-radius:10px; padding:12px; margin:16px 0; background:#fff;">
-  <div style="font-weight:700; font-size:16px; line-height:1.6;">
-    <%= shop.name %>
+<%= link_to shop_path(shop), style: "display:block; text-decoration:none; color:inherit;" do %>
+<div style="border:1px solid #e8e3d7; border-radius:14px; padding:14px; margin:18px 0; background:#fff; box-shadow:0 8px 24px rgba(17,17,17,0.04); cursor:pointer;">
+  <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <div style="font-weight:800; font-size:17px; line-height:1.6; color:#111;">
+      <%= shop.name %>
+    </div>
+
+    <div style="font-size:12px; font-weight:800; color:#7a5a12; white-space:nowrap; padding-top:3px;">
+      詳細を見る →
+    </div>
   </div>
 
   <% if shop.address.present? %>
@@ -14,23 +21,41 @@
   <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
     <% case shop.smoking_area.to_s %>
     <% when "all_smoking" %>
-      <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#fff7e6; color:#c6a75e; font-size:12px; font-weight:700;">
+      <span style="display:inline-block; padding:5px 9px; border-radius:999px; background:#111; color:#fff; font-size:12px; font-weight:800;">
         席で喫煙可
       </span>
     <% when "separated" %>
-      <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#f3f4f6; color:#333; font-size:12px; font-weight:700;">
+      <span style="display:inline-block; padding:5px 9px; border-radius:999px; background:#fff; color:#111; border:1px solid #e8e3d7; font-size:12px; font-weight:800;">
         喫煙所あり
       </span>
     <% end %>
 
+    <% if shop.respond_to?(:smoking_unverified) %>
+      <% if shop.smoking_unverified %>
+        <span style="display:inline-block; padding:5px 9px; border-radius:999px; background:#fff3f3; color:#a33; border:1px solid #f1c7c7; font-size:12px; font-weight:700;">
+          喫煙情報未確認
+        </span>
+      <% else %>
+        <span style="display:inline-block; padding:5px 9px; border-radius:999px; background:#eef7ee; color:#2f6b3b; border:1px solid #d8e7d7; font-size:12px; font-weight:800;">
+          喫煙情報確認済
+        </span>
+      <% end %>
+    <% end %>
+
     <% if shop.respond_to?(:smoking_type_label) && shop.smoking_type_label.present? && shop.smoking_type_label != "不明" %>
-      <span style="display:inline-block; padding:4px 8px; border-radius:999px; background:#f8fafc; color:#444; font-size:12px;">
+      <span style="display:inline-block; padding:5px 9px; border-radius:999px; background:#f6edd7; color:#7a5a12; border:1px solid #eadbb5; font-size:12px; font-weight:700;">
         <%= shop.smoking_type_label %>
+      </span>
+    <% end %>
+
+    <% if shop.respond_to?(:open_now?) && shop.open_now? %>
+      <span style="display:inline-block; padding:5px 9px; border-radius:999px; background:#eef7ee; color:#2f6b3b; border:1px solid #d8e7d7; font-size:12px; font-weight:800;">
+        営業中
       </span>
     <% end %>
   </div>
 
-  <div style="margin-top:10px;">
-    <%= link_to "店舗ページを見る", shop_path(shop), style: "color:#007bff; text-decoration:underline;" %>
+  <%# カード全体クリック化のためCTAボタン削除 %>
   </div>
-</div>
+  </div>
+<% end %>
