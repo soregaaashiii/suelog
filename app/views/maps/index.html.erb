@@ -626,7 +626,7 @@ function initMap() {
     applyFilters();
   }
 
-  if (hasInitialLocation) {
+  if (!restored && hasInitialLocation) {
     setMyLocationMarker(initialLat, initialLng);
     setStatus("現在地周辺の店舗を表示しています。");
   } else if (!restored && filteredShops.length === 0) {
