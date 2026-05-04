@@ -196,6 +196,13 @@
 
             <% if shop_open_now %>
               <span class="badge badge--open-inline">営業中</span>
+
+              <% if (label = closing_soon_label(shop)).present? %>
+                <span style="margin-left:6px; color:#b00020; font-size:12px; font-weight:800;">
+                  <%= label %>
+                </span>
+              <% end %>
+
             <% else %>
               <span class="badge badge--closed-inline">営業終了</span>
             <% end %>
