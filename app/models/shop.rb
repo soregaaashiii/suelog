@@ -460,6 +460,46 @@ class Shop < ApplicationRecord
     weekday_ranges.any? { |open_min, close_min| within_range?(now_min, open_min, close_min) }
   end
 
+  def today_closing_time
+    now = Time.zone.now
+    now_min = now.hour * 60 + now.min
+
+    ranges =
+      if holiday_today? && time_ranges_from_text(holiday_hours_text).present?
+        time_ranges_from_text(holiday_hours_text)
+      elsif opening_hours_data[today_key].present?
+        today = opening_hours_data[today_key]
+        return nil if truthy?(today["closed"])
+
+        open_min = hhmm_to_min(today["open"])
+        close_min = hhmm_to_min(today["close"])
+        open_min.present? && close_min.present? ? [[open_min, close_min]] : []
+      else
+        time_ranges_from_text(opening_hours_text, weekday_label_for_today)
+      end
+
+    current_range = ranges.find { |open_min, close_min| within_range?(now_min, open_min, close_min) }
+    return nil if current_range.blank?
+
+    _open_min, close_min = current_range
+
+    closing_date = Time.zone.today
+
+    if close_min <= now_min
+      closing_date += 1.day
+    end
+
+    hour = close_min / 60
+    min = close_min % 60
+
+    if hour >= 24
+      closing_date += (hour / 24).days
+      hour = hour % 24
+    end
+
+    Time.zone.local(closing_date.year, closing_date.month, closing_date.day, hour, min)
+  end
+
   def opening_hours_lines
     order = [
       ["月", "monday"],
