@@ -595,7 +595,7 @@ function restoreMapState() {
       if (openNowOnlyEl) openNowOnlyEl.checked = !!state.filters.openNowOnly;
     }
 
-applyFilters();
+    applyFilters({ preserveViewport: true });
 
     if (Number.isFinite(state.lat) && Number.isFinite(state.lng)) {
       map.setCenter({ lat: state.lat, lng: state.lng });
