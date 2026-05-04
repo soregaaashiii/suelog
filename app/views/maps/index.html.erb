@@ -465,8 +465,10 @@ function setMyLocationMarker(lat, lng, options = {}) {
     }
   });
 
-  map.setCenter(me);
-  map.setZoom(options.zoom || 15);
+  if (!options.preserveCenter) {
+    map.setCenter(me);
+    map.setZoom(options.zoom || 15);
+  }
 }
 
 function saveMapState() {
@@ -476,10 +478,16 @@ function saveMapState() {
   const zoom = map.getZoom();
   const { keywordEl, stationEl, genreEl, smokingAreaEl, smokingTypeEl, openNowOnlyEl } = getFilterElements();
 
+  const myLocationPosition = myLocationMarker ? myLocationMarker.getPosition() : null;
+
   const state = {
     lat: center ? center.lat() : null,
     lng: center ? center.lng() : null,
     zoom: zoom,
+    myLocation: {
+      lat: myLocationPosition ? myLocationPosition.lat() : null,
+      lng: myLocationPosition ? myLocationPosition.lng() : null
+    },
     filters: {
       keyword: keywordEl?.value || "",
       station: stationEl?.value || "",
@@ -596,6 +604,14 @@ function restoreMapState() {
     }
 
     applyFilters({ preserveViewport: true });
+
+    if (
+      state.myLocation &&
+      Number.isFinite(state.myLocation.lat) &&
+      Number.isFinite(state.myLocation.lng)
+    ) {
+      setMyLocationMarker(state.myLocation.lat, state.myLocation.lng, { preserveCenter: true });
+    }
 
     if (Number.isFinite(state.lat) && Number.isFinite(state.lng)) {
       map.setCenter({ lat: state.lat, lng: state.lng });
