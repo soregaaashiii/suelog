@@ -200,8 +200,7 @@ function buildInfoHtml(shop) {
       ${shop.smoking_type_label ? `<div style="font-size:12px; color:#444;">喫煙タイプ：${escapeHtml(shop.smoking_type_label)}</div>` : ""}
       <div style="margin-top:8px;">
         <a href="${escapeHtml(shop.url)}"
-   target="_blank"
-   rel="noopener noreferrer"
+   data-map-link
    style="display:inline-block; padding:8px 12px; background:#111; color:#fff; border-radius:999px; text-decoration:none; font-weight:700; font-size:12px;">
   詳細を見る
 </a>
@@ -466,6 +465,32 @@ function setMyLocationMarker(lat, lng, options = {}) {
   map.setZoom(options.zoom || 15);
 }
 
+function saveMapState() {
+  if (!map) return;
+
+  const center = map.getCenter();
+  const zoom = map.getZoom();
+  const { keywordEl, stationEl, genreEl, smokingAreaEl, smokingTypeEl, openNowOnlyEl } = getFilterElements();
+
+  const state = {
+    lat: center ? center.lat() : null,
+    lng: center ? center.lng() : null,
+    zoom: zoom,
+    filters: {
+      keyword: keywordEl?.value || "",
+      station: stationEl?.value || "",
+      genre: genreEl?.value || "",
+      smokingArea: smokingAreaEl?.value || "",
+      smokingType: smokingTypeEl?.value || "",
+      openNowOnly: !!openNowOnlyEl?.checked
+    }
+  };
+
+  try {
+    sessionStorage.setItem("suelog_map_state", JSON.stringify(state));
+  } catch(e) {}
+}
+
 function showMyLocation() {
   if (!navigator.geolocation) {
     setStatus("このブラウザでは現在地を取得できません。");
@@ -538,6 +563,46 @@ function bindFilterEvents() {
   if (myBtn) {
     myBtn.addEventListener("click", showMyLocation);
   }
+
+  document.addEventListener("click", function(event) {
+    const link = event.target.closest("[data-map-link]");
+    if (!link) return;
+
+    saveMapState();
+  });
+}
+
+function restoreMapState() {
+  try {
+    const saved = sessionStorage.getItem("suelog_map_state");
+    if (!saved) return false;
+
+    const state = JSON.parse(saved);
+    sessionStorage.removeItem("suelog_map_state");
+
+    if (state.filters) {
+      const { keywordEl, stationEl, genreEl, smokingAreaEl, smokingTypeEl, openNowOnlyEl } = getFilterElements();
+
+      if (keywordEl) keywordEl.value = state.filters.keyword || "";
+      if (stationEl) stationEl.value = state.filters.station || "";
+      if (genreEl) genreEl.value = state.filters.genre || "";
+      if (smokingAreaEl) smokingAreaEl.value = state.filters.smokingArea || "";
+      if (smokingTypeEl) smokingTypeEl.value = state.filters.smokingType || "";
+      if (openNowOnlyEl) openNowOnlyEl.checked = !!state.filters.openNowOnly;
+    }
+
+    applyFilters();
+
+    if (Number.isFinite(state.lat) && Number.isFinite(state.lng)) {
+      map.setCenter({ lat: state.lat, lng: state.lng });
+      if (state.zoom) map.setZoom(state.zoom);
+    }
+
+    setStatus("前回の地図状態を復元しました。");
+    return true;
+  } catch(e) {
+    return false;
+  }
 }
 
 function initMap() {
@@ -555,12 +620,16 @@ function initMap() {
   infoWindow = new google.maps.InfoWindow();
   bindFilterEvents();
 
-  applyFilters();
+  const restored = restoreMapState();
+
+  if (!restored) {
+    applyFilters();
+  }
 
   if (hasInitialLocation) {
     setMyLocationMarker(initialLat, initialLng);
     setStatus("現在地周辺の店舗を表示しています。");
-  } else if (filteredShops.length === 0) {
+  } else if (!restored && filteredShops.length === 0) {
     setStatus("地図に表示できる店舗がありません。");
   }
 }
