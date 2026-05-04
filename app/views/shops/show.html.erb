@@ -908,6 +908,14 @@
       <% if @shop.last_confirmed_on.present? %>
         <span class="ss-badge ss-badge--line">最終確認：<%= @shop.last_confirmed_on %></span>
       <% end %>
+
+      <% hero_reviews_count = @approved_reviews.size %>
+      <% if hero_reviews_count.positive? %>
+        <% hero_average_rating = (@approved_reviews.sum { |r| r.rating.to_f } / hero_reviews_count).round(1) %>
+        <span class="ss-badge ss-badge--gold">
+          ★<%= hero_average_rating %>・口コミ<%= hero_reviews_count %>件
+        </span>
+      <% end %>
     </div>
   </section>
 

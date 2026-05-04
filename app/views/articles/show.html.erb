@@ -72,6 +72,19 @@ article_body_html =
       <%= article_body_html %>
     </div>
 
+    <div style="margin-top:32px;">
+      <h2 style="font-size:20px; margin-bottom:12px;">この記事で紹介したお店</h2>
+
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <% @article.body.to_s.scan(/\[shop\s+id=(\d+)\]/i).flatten.uniq.each do |shop_id| %>
+          <% shop = Shop.find_by(id: shop_id) %>
+          <% if shop.present? %>
+            <%= render partial: "articles/shop_card", locals: { shop: shop } %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
     <div style="margin-top:24px; padding-top:14px; border-top:1px solid #eee; color:#777; font-size:13px; line-height:1.8;">
       <div>※本記事は<%= (@article.published_at.presence || @article.created_at).strftime("%Y年%-m月") %>に作成しました。</div>
       <div>※掲載情報は変更される可能性があります。最新情報は店舗へご確認ください。</div>
