@@ -21,6 +21,12 @@
           <%= link_to "編集", edit_admin_article_path(article) %>
           |
           <%= link_to "削除", admin_article_path(article), data: { turbo_method: :delete, turbo_confirm: "削除しますか？" } %>
+          |
+          <% if article.published? %>
+            <%= link_to "公開ページ", article_path(article), target: "_blank", rel: "noopener" %>
+          <% else %>
+            <span style="color:#999;">未公開</span>
+          <% end %>
         </td>
       </tr>
     <% end %>

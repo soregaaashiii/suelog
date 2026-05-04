@@ -157,6 +157,7 @@ class ShopsController < ApplicationController
       :opening_hours_text,
       :holiday_hours_text,
       :closed_days_text,
+      :special_hours_note,
       opening_hours_json: {},
       food_photos: [],
       interior_photos: [],

@@ -176,6 +176,11 @@ end
 public_store_details = safe_str(req.proposed_public_store_details)
 attrs[:public_store_details] = public_store_details if public_store_details.present?
 
+if req.respond_to?(:proposed_special_hours_note)
+special_hours_note = safe_str(req.proposed_special_hours_note)
+attrs[:special_hours_note] = special_hours_note if special_hours_note.present?
+end
+
 req_note = safe_str(req.note)
 attrs[:note] = req_note if req_note.present?
 

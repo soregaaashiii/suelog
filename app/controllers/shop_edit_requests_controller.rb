@@ -16,9 +16,11 @@ def new
   proposed_thumbnail_kind: (@shop.thumbnail_kind.presence || "auto"),
   proposed_thumbnail_index: (@shop.thumbnail_index.presence || 1),
   proposed_public_store_details: @shop.public_store_details,
+  proposed_special_hours_note: (@shop.respond_to?(:special_hours_note) ? @shop.special_hours_note : nil),
   note: @shop.note,
   proposed_opening_hours_json: (@shop.opening_hours_data || {})
 )
+
 
 assign_simple_hours_from_shop!(@req, @shop)
 end
@@ -38,9 +40,11 @@ def create
   proposed_thumbnail_kind: (@shop.thumbnail_kind.presence || "auto"),
   proposed_thumbnail_index: (@shop.thumbnail_index.presence || 1),
   proposed_public_store_details: @shop.public_store_details,
+  proposed_special_hours_note: (@shop.respond_to?(:special_hours_note) ? @shop.special_hours_note : nil),
   note: @shop.note,
   proposed_opening_hours_json: (@shop.opening_hours_data || {})
 )
+
 
 assign_simple_hours_from_shop!(@req, @shop)
 @req.assign_attributes(req_params)
@@ -68,6 +72,11 @@ if @req.respond_to?(:proposed_last_confirmed_on) && @req.proposed_last_confirmed
 end
 
 @req.proposed_public_store_details = @shop.public_store_details if blankish?(@req.proposed_public_store_details)
+
+if @req.respond_to?(:proposed_special_hours_note) && blankish?(@req.proposed_special_hours_note) && @shop.respond_to?(:special_hours_note)
+@req.proposed_special_hours_note = @shop.special_hours_note
+end
+
 @req.note = @shop.note if blankish?(@req.note)
 
 if blankish?(@req.proposed_thumbnail_kind)
@@ -112,6 +121,7 @@ def req_params
 params.require(:shop_edit_request).permit(
   :proposer_name,
   :proposed_public_store_details,
+  :proposed_special_hours_note,
   :note,
   :proposed_name,
   :proposed_address,

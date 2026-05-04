@@ -946,6 +946,7 @@ class Admin::ShopsController < Admin::BaseController
       :opening_hours_text,
       :holiday_hours_text,
       :closed_days_text,
+      :special_hours_note,
       :tabelog_url,
       :hotpepper_url,
       :thumbnail_kind,

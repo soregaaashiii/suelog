@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_30_065709) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_04_065930) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -152,6 +152,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_30_065709) do
     t.text "proposed_public_store_details"
     t.integer "proposed_smoking_area"
     t.integer "proposed_smoking_type"
+    t.text "proposed_special_hours_note"
     t.integer "proposed_thumbnail_index"
     t.string "proposed_thumbnail_kind"
     t.string "proposer_name"
@@ -209,6 +210,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_30_065709) do
     t.integer "smoking_type"
     t.boolean "smoking_unverified", default: false, null: false
     t.string "source"
+    t.text "special_hours_note"
     t.string "tabelog_url"
     t.integer "taste"
     t.integer "thumbnail_index"

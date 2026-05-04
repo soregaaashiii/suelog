@@ -986,15 +986,28 @@
           <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
         </div>
 
-        <div class="shop-show__infoRow">
-          <div class="shop-show__infoHead">祝日営業時間</div>
-          <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
-        </div>
+        <% holiday_hours_display = @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text.to_s.strip : "" %>
+        <% closed_days_display = @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.strip : "" %>
+        <% holiday_closed = closed_days_display.split(/[・、,\s\/]+/).any? { |day| ["祝日", "祝", "祝日休み", "祝日休業"].include?(day) } %>
+
+        <% unless holiday_closed %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">祝日営業時間</div>
+            <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= holiday_hours_display.present? ? holiday_hours_display.gsub(" / ", "\n") : "未設定" %></div>
+          </div>
+        <% end %>
 
         <div class="shop-show__infoRow">
           <div class="shop-show__infoHead">定休日</div>
           <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
         </div>
+
+        <% if @shop.respond_to?(:special_hours_note) && @shop.special_hours_note.present? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">営業時間補足</div>
+            <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.special_hours_note.to_s %></div>
+          </div>
+        <% end %>
 
         <% public_store_details_text = @shop.respond_to?(:public_store_details) ? @shop.public_store_details.to_s.strip.presence : nil %>
 

@@ -88,61 +88,75 @@
       { style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border-radius:12px;" } %>
   </div>
 
-  <div style="margin:12px 0; padding:14px; border:1px solid #eee; border-radius:12px; background:#fffdf8;">
-    <div style="font-weight:800; font-size:16px; margin-bottom:8px;">営業時間</div>
-    <p style="margin:0 0 10px; color:#666; font-size:13px; line-height:1.7;">
-      曜日ごとの細かい入力はやめて、見たまま入れてください。<br>
-      例）月-木 17:00-23:00 / 金土 17:00-02:00 / 日 15:00-22:00<br>
-      例）11:30-14:00, 17:00-23:00 のように中休みもそのまま書けます。
-    </p>
+   <div style="margin:12px 0; padding:14px; border:1px solid #eee; border-radius:12px; background:#fffdf8;" data-controller="hours-builder">
+  <div style="font-weight:800; font-size:16px; margin-bottom:8px;">営業時間</div>
 
-    <div style="margin-bottom:8px;">
-      <div style="font-weight:700; margin-bottom:6px;">定型文</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="毎日 17:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">毎日 夜営業</button>
-        <button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">ランチ＋ディナー</button>
-        <button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="火-日 18:00-24:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">夜のみ</button>
-        <button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="通常営業と同じ" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日=通常営業</button>
-        <button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="休業" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日休業</button>
-        <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="なし" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">定休日なし</button>
-        <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="不定休" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">不定休</button>
-        <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="月曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">月曜休み</button>
-        <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="水曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">水曜休み</button>
+  <p style="margin:0 0 12px; color:#666; font-size:13px; line-height:1.7;">
+    営業日にチェックを入れて、営業時間を選択してください。チェックなしの曜日は定休日として表示されます。<br>
+    喫煙時間は未指定なら「営業時間中は喫煙可」として扱います。
+  </p>
+
+  <% days = [
+    ["mon", "月"], ["tue", "火"], ["wed", "水"], ["thu", "木"], ["fri", "金"],
+    ["sat", "土"], ["sun", "日"], ["holiday", "祝日"], ["before_holiday", "祝前"]
+  ] %>
+
+  <% time_options = [["未設定", ""]] + (0..47).map { |i| t = "%02d:%02d" % [i / 2, (i % 2) * 30]; [t, t] } %>
+
+  <div style="display:grid; gap:10px;">
+    <% days.each do |key, label| %>
+      <div data-hours-row="<%= key %>" style="padding:10px; border:1px solid #eadfca; border-radius:12px; background:#fff;">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:800; margin-bottom:8px;">
+          <input type="checkbox" data-hours-open>
+          <span style="width:42px;"><%= label %></span>
+          <span style="font-size:12px; color:#777;">営業日</span>
+          <button type="button" data-copy-hours-to-all style="margin-left:auto; padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer; font-size:12px;">
+            他の日に反映
+          </button>
+        </label>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; font-weight:700; color:#555;">営業時間1</span>
+          <%= select_tag nil, options_for_select(time_options), data: { hours_start1: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+          <span>〜</span>
+          <%= select_tag nil, options_for_select(time_options), data: { hours_end1: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+
+          <span style="font-size:12px; font-weight:700; color:#555;">営業時間2</span>
+          <%= select_tag nil, options_for_select(time_options), data: { hours_start2: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+          <span>〜</span>
+          <%= select_tag nil, options_for_select(time_options), data: { hours_end2: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700;">
+            <input type="checkbox" data-smoking-same checked>
+            喫煙時間は営業時間と同じ
+          </label>
+
+          <span style="font-size:12px; font-weight:700; color:#555;">喫煙可</span>
+          <%= select_tag nil, options_for_select(time_options), data: { smoking_start: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+          <span>〜</span>
+          <%= select_tag nil, options_for_select(time_options), data: { smoking_end: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+        </div>
       </div>
-    </div>
-
-    <div style="margin-bottom:10px;">
-      <div style="font-weight:700; margin-bottom:4px;">通常営業時間</div>
-      <%= f.text_area :opening_hours_text,
-        rows: 3,
-        placeholder: "例）月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00",
-        id: "shop_opening_hours_text",
-        style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
-    </div>
-
-    <div style="margin-bottom:10px;">
-      <div style="font-weight:700; margin-bottom:4px;">祝日営業時間</div>
-      <%= f.text_area :holiday_hours_text,
-        rows: 2,
-        placeholder: "例）12:00-23:00 / 通常営業と同じ / 休業",
-        id: "shop_holiday_hours_text",
-        style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
-    </div>
-
-    <div>
-      <div style="font-weight:700; margin-bottom:4px;">定休日</div>
-      <%= f.text_field :closed_days_text,
-        placeholder: "例）水曜 / 不定休 / なし",
-        id: "shop_closed_days_text",
-        style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
-    </div>
-
-    <% if @shop.opening_hours_json.present? %>
-      <p style="margin:10px 0 0; color:#8a6d3b; font-size:12px;">
-        ※ 以前の曜日別データはDBに残っていますが、今後の編集はこの簡易入力を優先します。
-      </p>
     <% end %>
   </div>
+
+  <%= f.hidden_field :opening_hours_text, id: "shop_opening_hours_text" %>
+  <%= f.hidden_field :holiday_hours_text, id: "shop_holiday_hours_text" %>
+  <%= f.hidden_field :closed_days_text, id: "shop_closed_days_text" %>
+
+  <div style="margin-top:14px;">
+    <div style="font-weight:700;">営業時間の補足</div>
+    <p style="margin:4px 0 8px; color:#666; font-size:13px; line-height:1.7;">
+      年末年始・ゴールデンウィーク・お盆など、通常と違う営業時間がある場合に入力してください。
+    </p>
+    <%= f.text_area :special_hours_note,
+      rows: 3,
+      placeholder: "例：年末年始は営業時間が変更になる場合があります。詳しくは店舗へご確認ください。",
+      style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+  </div>
+</div>
 
   <div style="margin:12px 0;">
     <div style="font-weight:700;">電話番号（任意）</div>
@@ -307,30 +321,3 @@
   </div>
 <% end %>
 
-<script>
-(function() {
-  function bindHoursPresetButtons() {
-    document.querySelectorAll(".hours-preset-btn").forEach(function(button) {
-      if (button.dataset.bound === "1") return;
-      button.dataset.bound = "1";
-
-      button.addEventListener("click", function(event) {
-        event.preventDefault();
-
-        var targetId = button.dataset.target;
-        var value = button.dataset.value;
-        var target = document.getElementById(targetId);
-
-        if (!target) return;
-
-        target.value = value;
-        target.dispatchEvent(new Event("input", { bubbles: true }));
-        target.dispatchEvent(new Event("change", { bubbles: true }));
-      });
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded", bindHoursPresetButtons);
-  document.addEventListener("turbo:load", bindHoursPresetButtons);
-})();
-</script>
