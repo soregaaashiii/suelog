@@ -1041,13 +1041,13 @@
 
           <div class="shop-show__bookingActions">
             <% if @shop.phone.present? && tel_target_url.present? %>
-              <%= link_to "電話予約する",
+              <%= link_to "今すぐ電話する",
                           track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
                           class: "ss-btn ss-btn--dark" %>
             <% end %>
 
             <% if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present? && tabelog_track_url.present? %>
-              <%= link_to "食べログで見る",
+              <%= link_to "空席・詳細を見る（食べログ）",
                           tabelog_track_url,
                           target: "_blank",
                           rel: "nofollow noopener",
@@ -1055,7 +1055,7 @@
             <% end %>
 
             <% if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present? && hotpepper_track_url.present? %>
-              <%= link_to "ホットペッパーで予約",
+              <%= link_to "空席を確認・予約する",
                           hotpepper_track_url,
                           target: "_blank",
                           rel: "nofollow noopener",
@@ -1435,14 +1435,14 @@
       <section class="shop-show__section">
         <div class="shop-show__sectionHeader">
           <div>
-            <h2 class="shop-show__sectionTitle">近くの喫煙できるお店</h2>
+            <h2 class="shop-show__sectionTitle">この店が合わなければ、近くの候補もチェック</h2>
             <p style="margin:6px 0 0; color:#666666; font-size:13px; line-height:1.7;">
-              このお店の周辺で、喫煙条件が近い店舗を表示しています。
+              周辺で喫煙条件が近いお店を表示しています。満席・定休日だった時の次候補探しに使えます。
             </p>
           </div>
 
           <span class="shop-show__sectionMeta">
-            周辺候補
+            次候補
           </span>
         </div>
 

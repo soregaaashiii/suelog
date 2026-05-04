@@ -69,6 +69,7 @@ Rails.application.routes.draw do
 
   resources :shops do
     member do
+      get :track_click
       post :track_click
     end
 
