@@ -188,6 +188,19 @@ function buildStatusBadgeHtml(shop) {
   `;
 }
 
+function walkingMinutesFromCurrentLocation(shop) {
+  if (!myLocationMarker) return null;
+
+  const current = myLocationMarker.getPosition();
+  if (!current || !shop.lat || !shop.lng) return null;
+
+  const currentLatLng = new google.maps.LatLng(current.lat(), current.lng());
+  const shopLatLng = new google.maps.LatLng(Number(shop.lat), Number(shop.lng));
+  const distanceMeters = google.maps.geometry.spherical.computeDistanceBetween(currentLatLng, shopLatLng);
+
+  return Math.max(1, Math.round((distanceMeters / 1000) * 12));
+}
+
 function buildInfoHtml(shop) {
   return `
     <div style="min-width:220px; line-height:1.7;">
@@ -195,6 +208,7 @@ function buildInfoHtml(shop) {
       <div style="font-weight:800; margin-bottom:6px;">${escapeHtml(shop.name)}</div>
       ${shop.address ? `<div style="font-size:12px; color:#444;">住所：${escapeHtml(shop.address)}</div>` : ""}
       ${shop.nearest_station ? `<div style="font-size:12px; color:#444;">最寄駅：${escapeHtml(shop.nearest_station)}</div>` : ""}
+      ${walkingMinutesFromCurrentLocation(shop) ? `<div style="font-size:12px; color:#7a5a12; font-weight:800;">現在地から徒歩${walkingMinutesFromCurrentLocation(shop)}分</div>` : ""}
       ${shop.genre_label ? `<div style="font-size:12px; color:#444;">ジャンル：${escapeHtml(shop.genre_label)}</div>` : ""}
       ${shop.smoking_area_label ? `<div style="font-size:12px; color:#444;">喫煙エリア：${escapeHtml(shop.smoking_area_label)}</div>` : ""}
       ${shop.smoking_type_label ? `<div style="font-size:12px; color:#444;">喫煙タイプ：${escapeHtml(shop.smoking_type_label)}</div>` : ""}
@@ -658,5 +672,5 @@ window.initMap = initMap;
 </script>
 
 <script async defer
-src="https://maps.googleapis.com/maps/api/js?key=<%= ENV.fetch("GOOGLE_MAPS_API_KEY", "") %>&callback=initMap">
+src="https://maps.googleapis.com/maps/api/js?key=<%= ENV.fetch("GOOGLE_MAPS_API_KEY", "") %>&libraries=geometry&callback=initMap">
 </script>
