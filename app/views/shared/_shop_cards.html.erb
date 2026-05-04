@@ -217,6 +217,12 @@
 
           <p class="shop-card__address">
             <%= shop.nearest_station.presence || "最寄駅未設定" %>
+
+            <% if shop.respond_to?(:distance) && shop.distance.present? %>
+              <span style="margin-left:8px; color:#666666; font-size:12px; font-weight:700;">
+                徒歩<%= [(shop.distance.to_f * 12).round, 1].max %>分
+              </span>
+            <% end %>
           </p>
 
           <div class="shop-card__badges">
