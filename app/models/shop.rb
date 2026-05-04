@@ -430,24 +430,34 @@ class Shop < ApplicationRecord
   end
 
   def open_now?
-    today = opening_hours_data[today_key]
-    return false if today.blank?
-    return false if truthy?(today["closed"])
-
     now = Time.zone.now
     now_min = now.hour * 60 + now.min
 
-    open_min = hhmm_to_min(today["open"])
-    close_min = hhmm_to_min(today["close"])
-    return false if open_min.nil? || close_min.nil?
-
-    if truthy?(today["break_enabled"])
-      bs = hhmm_to_min(today["break_start"])
-      be = hhmm_to_min(today["break_end"])
-      return false if bs && be && within_range?(now_min, bs, be)
+    if holiday_today?
+      holiday_ranges = time_ranges_from_text(holiday_hours_text)
+      return holiday_ranges.any? { |open_min, close_min| within_range?(now_min, open_min, close_min) } if holiday_ranges.present?
     end
 
-    within_range?(now_min, open_min, close_min)
+    today = opening_hours_data[today_key]
+
+    if today.present?
+      return false if truthy?(today["closed"])
+
+      open_min = hhmm_to_min(today["open"])
+      close_min = hhmm_to_min(today["close"])
+      return false if open_min.nil? || close_min.nil?
+
+      if truthy?(today["break_enabled"])
+        bs = hhmm_to_min(today["break_start"])
+        be = hhmm_to_min(today["break_end"])
+        return false if bs && be && within_range?(now_min, bs, be)
+      end
+
+      return within_range?(now_min, open_min, close_min)
+    end
+
+    weekday_ranges = time_ranges_from_text(opening_hours_text, weekday_label_for_today)
+    weekday_ranges.any? { |open_min, close_min| within_range?(now_min, open_min, close_min) }
   end
 
   def opening_hours_lines
@@ -800,7 +810,41 @@ class Shop < ApplicationRecord
 
     rows.map(&:first).join("・")
   end
+  def holiday_today?
+    today = Time.zone.today
 
+    # ひとまず祝日営業時間が入っている日は、祝日用の時間も候補として見る。
+    # 祝日判定ライブラリを入れていないため、通常営業時間が読めない問題の回避を優先する。
+    today.saturday? || today.sunday? || holiday_hours_text.present?
+  end
+
+  def weekday_label_for_today
+    %w[日 月 火 水 木 金 土][Time.zone.today.wday]
+  end
+
+  def time_ranges_from_text(text, target_label = nil)
+    raw = text.to_s
+    return [] if raw.blank?
+
+    lines = raw.split(/\r?\n|\/|、|,|，/).map(&:strip).reject(&:blank?)
+
+    target_lines =
+      if target_label.present?
+        lines.select { |line| line.include?(target_label) }
+      else
+        lines
+      end
+
+    target_lines.flat_map do |line|
+      line.scan(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/).filter_map do |open_text, close_text|
+        open_min = hhmm_to_min(open_text)
+        close_min = hhmm_to_min(close_text)
+        next if open_min.nil? || close_min.nil?
+
+        [open_min, close_min]
+      end
+    end
+  end
   def today_key
     %w[sunday monday tuesday wednesday thursday friday saturday][Time.zone.today.wday]
   end
@@ -811,13 +855,31 @@ class Shop < ApplicationRecord
     m = hhmm.to_s.match(/\A(\d{1,2}):(\d{2})\z/)
     return nil unless m
 
-    m[1].to_i * 60 + m[2].to_i
+    hour = m[1].to_i
+    min = m[2].to_i
+
+    return nil if min < 0 || min > 59
+    return nil if hour < 0 || hour > 24
+    return nil if hour == 24 && min != 0
+
+    hour * 60 + min
   end
 
   def within_range?(now_min, start_min, end_min)
+    return false if now_min.nil? || start_min.nil? || end_min.nil?
+
+    # 00:00-24:00 は終日営業として扱う
+    return true if start_min == 0 && end_min == 1440
+
+    # 24:00 は当日終端として扱う
+    if end_min == 1440
+      return now_min >= start_min && now_min < 1440
+    end
+
     if end_min > start_min
       now_min >= start_min && now_min < end_min
     else
+      # 例: 18:00-05:00 のような日跨ぎ営業
       now_min >= start_min || now_min < end_min
     end
   end

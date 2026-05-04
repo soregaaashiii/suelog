@@ -897,7 +897,12 @@
       <% end %>
 
       <% if @shop.respond_to?(:open_now?) && @shop.open_now? %>
-        <span class="ss-badge ss-badge--green">営業中</span>
+        <span class="ss-badge ss-badge--green">
+          営業中
+          <% if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? %>
+            （本日営業）
+          <% end %>
+        </span>
       <% end %>
 
       <% if @shop.last_confirmed_on.present? %>

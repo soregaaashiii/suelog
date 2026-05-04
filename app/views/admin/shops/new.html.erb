@@ -101,7 +101,7 @@
     ["sat", "土"], ["sun", "日"], ["holiday", "祝日"], ["before_holiday", "祝前"]
   ] %>
 
-  <% time_options = [["未設定", ""]] + (0..47).map { |i| t = "%02d:%02d" % [i / 2, (i % 2) * 30]; [t, t] } %>
+  <% time_options = [["未設定", ""]] + (0..96).map { |i| t = "%02d:%02d" % [i / 4, (i % 4) * 15]; [t, t] } %>
 
   <div style="display:grid; gap:10px;">
     <% days.each do |key, label| %>
