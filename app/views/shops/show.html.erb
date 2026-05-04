@@ -540,6 +540,100 @@
   object-fit: cover;
 }
 
+.shop-photo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.shop-photo-modal.is-open {
+  display: block;
+}
+
+.shop-photo-modal__viewport {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.shop-photo-modal__slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 52px 14px 72px;
+  box-sizing: border-box;
+}
+
+.shop-photo-modal__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.shop-photo-modal__close,
+.shop-photo-modal__prev,
+.shop-photo-modal__next {
+  position: absolute;
+  z-index: 10000;
+  border: 0;
+  background: rgba(255, 255, 255, 0.72);
+  color: #111;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.shop-photo-modal__close {
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.shop-photo-modal__prev,
+.shop-photo-modal__next {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 52px;
+  border-radius: 999px;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.shop-photo-modal__prev {
+  left: 10px;
+}
+
+.shop-photo-modal__next {
+  right: 10px;
+}
+
+.shop-photo-modal__count {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .shop-show__photoEmpty {
   margin: 0;
   color: #666666;
@@ -1107,17 +1201,19 @@
               role="tabpanel">
               <% if group[:photos].present? %>
                 <div class="shop-show__photoGrid">
-                  <% group[:photos].each do |photo| %>
-                    <a
-                      href="<%= url_for(photo) %>"
-                      target="_blank"
-                      rel="noopener"
-                      class="shop-show__photoCard">
+                  <% group[:photos].each_with_index do |photo, photo_index| %>
+                    <button
+                      type="button"
+                      class="shop-show__photoCard"
+                      data-photo-modal-open
+                      data-photo-group="<%= group[:key] %>"
+                      data-photo-index="<%= photo_index %>"
+                      style="padding:0; cursor:pointer;">
                       <%= image_tag url_for(photo),
                                     class: "shop-show__photoCardImage",
                                     alt: "#{@shop.name}の#{group[:label]}写真",
                                     loading: "lazy" %>
-                    </a>
+                    </button>
                   <% end %>
                 </div>
               <% else %>
@@ -1125,6 +1221,31 @@
               <% end %>
             </div>
           <% end %>
+        </div>
+
+        <div class="shop-photo-modal" data-photo-modal aria-hidden="true">
+          <button type="button" class="shop-photo-modal__close" data-photo-modal-close aria-label="閉じる">×</button>
+          <button type="button" class="shop-photo-modal__prev" data-photo-modal-prev aria-label="前の写真">‹</button>
+          <button type="button" class="shop-photo-modal__next" data-photo-modal-next aria-label="次の写真">›</button>
+
+          <% shop_photo_groups.each do |group| %>
+            <div
+              class="shop-photo-modal__viewport"
+              data-photo-modal-viewport
+              data-photo-group="<%= group[:key] %>"
+              style="<%= group[:key] == 'all' ? '' : 'display:none;' %>">
+              <% group[:photos].each do |photo| %>
+                <div class="shop-photo-modal__slide">
+                  <%= image_tag url_for(photo),
+                                class: "shop-photo-modal__img",
+                                alt: "#{@shop.name}の#{group[:label]}写真",
+                                loading: "lazy" %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <div class="shop-photo-modal__count" data-photo-modal-count></div>
         </div>
 
         <script>
@@ -1156,9 +1277,129 @@
               });
             }
 
-            document.addEventListener("turbo:load", initShopPhotoTabs);
-            document.addEventListener("DOMContentLoaded", initShopPhotoTabs);
+            function initShopPhotoModal() {
+              const modal = document.querySelector("[data-photo-modal]");
+              if (!modal || modal.dataset.ready === "true") return;
+              modal.dataset.ready = "true";
+
+              const openButtons = document.querySelectorAll("[data-photo-modal-open]");
+              const closeButton = modal.querySelector("[data-photo-modal-close]");
+              const prevButton = modal.querySelector("[data-photo-modal-prev]");
+              const nextButton = modal.querySelector("[data-photo-modal-next]");
+              const count = modal.querySelector("[data-photo-modal-count]");
+              const viewports = modal.querySelectorAll("[data-photo-modal-viewport]");
+
+              let activeViewport = null;
+
+              function currentSlides() {
+                return activeViewport ? activeViewport.querySelectorAll(".shop-photo-modal__slide") : [];
+              }
+
+              function currentIndex() {
+                if (!activeViewport) return 0;
+                return Math.round(activeViewport.scrollLeft / Math.max(activeViewport.clientWidth, 1));
+              }
+
+              function updateCount() {
+                const slides = currentSlides();
+                if (!count || !slides.length) return;
+                count.textContent = (currentIndex() + 1) + " / " + slides.length;
+              }
+
+              function showGroup(groupKey) {
+                viewports.forEach(function(viewport) {
+                  const active = viewport.getAttribute("data-photo-group") === groupKey;
+                  viewport.style.display = active ? "flex" : "none";
+                  if (active) activeViewport = viewport;
+                });
+              }
+
+              function scrollToIndex(index, behavior) {
+                if (!activeViewport) return;
+                activeViewport.scrollTo({
+                  left: activeViewport.clientWidth * index,
+                  behavior: behavior || "auto"
+                });
+                window.setTimeout(updateCount, behavior === "smooth" ? 220 : 30);
+              }
+
+              function openModal(groupKey, index) {
+                showGroup(groupKey);
+                modal.classList.add("is-open");
+                modal.setAttribute("aria-hidden", "false");
+                document.body.style.overflow = "hidden";
+
+                window.requestAnimationFrame(function() {
+                  scrollToIndex(index, "auto");
+                  updateCount();
+                });
+              }
+
+              function closeModal() {
+                modal.classList.remove("is-open");
+                modal.setAttribute("aria-hidden", "true");
+                document.body.style.overflow = "";
+              }
+
+              openButtons.forEach(function(button) {
+                button.addEventListener("click", function(event) {
+                  event.preventDefault();
+                  openModal(button.getAttribute("data-photo-group"), parseInt(button.getAttribute("data-photo-index"), 10) || 0);
+                });
+              });
+
+              closeButton.addEventListener("click", closeModal);
+
+              prevButton.addEventListener("click", function() {
+                const slides = currentSlides();
+                if (!slides.length) return;
+                const nextIndex = currentIndex() <= 0 ? slides.length - 1 : currentIndex() - 1;
+                scrollToIndex(nextIndex, "smooth");
+              });
+
+              nextButton.addEventListener("click", function() {
+                const slides = currentSlides();
+                if (!slides.length) return;
+                const nextIndex = currentIndex() >= slides.length - 1 ? 0 : currentIndex() + 1;
+                scrollToIndex(nextIndex, "smooth");
+              });
+
+              viewports.forEach(function(viewport) {
+                viewport.addEventListener("scroll", function() {
+                  window.clearTimeout(viewport._countTimer);
+                  viewport._countTimer = window.setTimeout(updateCount, 80);
+                }, { passive: true });
+              });
+
+              modal.addEventListener("click", function(event) {
+                if (event.target === modal) closeModal();
+              });
+
+              document.addEventListener("keydown", function(event) {
+                if (!modal.classList.contains("is-open")) return;
+
+                if (event.key === "Escape") closeModal();
+                if (event.key === "ArrowLeft") prevButton.click();
+                if (event.key === "ArrowRight") nextButton.click();
+              });
+
+              document.addEventListener("turbo:before-cache", function() {
+                closeModal();
+              });
+            }
+
+            document.addEventListener("turbo:load", function() {
+              initShopPhotoTabs();
+              initShopPhotoModal();
+            });
+
+            document.addEventListener("DOMContentLoaded", function() {
+              initShopPhotoTabs();
+              initShopPhotoModal();
+            });
+
             initShopPhotoTabs();
+            initShopPhotoModal();
           })();
         </script>
       </section>
