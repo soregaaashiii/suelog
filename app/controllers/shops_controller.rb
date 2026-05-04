@@ -143,11 +143,8 @@ class ShopsController < ApplicationController
   private
 
   def nearby_shops_for(shop)
-    return [] unless shop.latitude.present? && shop.longitude.present?
-
     scope = Shop.approved
                 .where.not(id: shop.id)
-                .where.not(latitude: nil, longitude: nil)
                 .includes(
                   food_photos_attachments: :blob,
                   interior_photos_attachments: :blob,
@@ -159,7 +156,13 @@ class ShopsController < ApplicationController
       scope = scope.where(smoking_area: shop.smoking_area)
     end
 
-    nearby = scope.near([shop.latitude, shop.longitude], 1.0, units: :km)
+    nearby =
+      if shop.latitude.present? && shop.longitude.present?
+        geo_scope = scope.where.not(latitude: nil, longitude: nil)
+        geo_scope.near([shop.latitude, shop.longitude], 3.0, units: :km)
+      else
+        scope
+      end
 
     nearby.order(
       Arel.sql("

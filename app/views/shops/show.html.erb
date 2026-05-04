@@ -938,10 +938,14 @@
             <% if is_umeda_shop %>
               <div class="shop-show__microLinks">
                 <%= link_to "梅田で喫煙できる店", umeda_path, class: "shop-show__microLink" %>
+                <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "shop-show__microLink" %>
+                <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "shop-show__microLink" %>
               </div>
             <% elsif is_namba_shop %>
               <div class="shop-show__microLinks">
                 <%= link_to "難波で喫煙できる店", namba_path, class: "shop-show__microLink" %>
+                <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "shop-show__microLink" %>
+                <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "shop-show__microLink" %>
               </div>
             <% end %>
           </div>
@@ -1058,6 +1062,17 @@
                           class: "ss-btn ss-btn--dark" %>
             <% end %>
           </div>
+
+          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+            <%= link_to "今営業中の店を見る",
+                        root_path(smoking_area: "all_smoking"),
+                        class: "ss-btn ss-btn--ghost" %>
+
+            <%= link_to "近くの店を探す",
+                        map_path(lat: @shop.latitude, lng: @shop.longitude),
+                        class: "ss-btn ss-btn--ghost" if @shop.latitude.present? %>
+          </div>
+
         </section>
       <% end %>
 
@@ -1415,6 +1430,29 @@
             initShopPhotoModal();
           })();
         </script>
+      </section>
+
+      <section class="shop-show__section">
+        <div class="shop-show__sectionHeader">
+          <div>
+            <h2 class="shop-show__sectionTitle">近くの喫煙できるお店</h2>
+            <p style="margin:6px 0 0; color:#666666; font-size:13px; line-height:1.7;">
+              このお店の周辺で、喫煙条件が近い店舗を表示しています。
+            </p>
+          </div>
+
+          <span class="shop-show__sectionMeta">
+            周辺候補
+          </span>
+        </div>
+
+        <% if defined?(@nearby_shops) && @nearby_shops.present? %>
+          <%= render partial: "shared/shop_cards", locals: { shops: @nearby_shops } %>
+        <% else %>
+          <p style="margin:0; color:#666666; font-size:14px;">
+            近くの候補を取得できませんでした。
+          </p>
+        <% end %>
       </section>
 
       <section class="shop-show__section">

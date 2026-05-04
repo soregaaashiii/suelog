@@ -207,53 +207,7 @@
   </div>
 </div>
 
-      <div style="margin-bottom:8px;">
-        <div style="font-weight:700; margin-bottom:6px;">定型文</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="毎日 17:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">毎日 夜営業</button>
-          <button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">ランチ＋ディナー</button>
-          <button type="button" class="hours-preset-btn" data-target="shop_opening_hours_text" data-value="火-日 18:00-24:00" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">夜のみ</button>
-          <button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="通常営業と同じ" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日=通常営業</button>
-          <button type="button" class="hours-preset-btn" data-target="shop_holiday_hours_text" data-value="休業" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">祝日休業</button>
-          <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="なし" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">定休日なし</button>
-          <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="不定休" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">不定休</button>
-          <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="月曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">月曜休み</button>
-          <button type="button" class="hours-preset-btn" data-target="shop_closed_days_text" data-value="水曜" style="padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:999px; cursor:pointer;">水曜休み</button>
-        </div>
-      </div>
 
-      <div style="margin-bottom:10px;">
-        <div style="font-weight:700; margin-bottom:4px;">通常営業時間</div>
-        <%= f.text_area :opening_hours_text,
-        rows: 3,
-        placeholder: "例）月-金 11:30-14:00, 17:00-23:00 / 土日 12:00-23:00",
-        style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;",
-        id: "shop_opening_hours_text" %>
-      </div>
-
-      <div style="margin-bottom:10px;">
-        <div style="font-weight:700; margin-bottom:4px;">祝日営業時間</div>
-        <%= f.text_area :holiday_hours_text,
-        rows: 2,
-        placeholder: "例）12:00-23:00 / 通常営業と同じ / 休業",
-        style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;",
-        id: "shop_holiday_hours_text" %>
-      </div>
-
-      <div>
-        <div style="font-weight:700; margin-bottom:4px;">定休日</div>
-        <%= f.text_field :closed_days_text,
-        placeholder: "例）水曜 / 不定休 / なし",
-        style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;",
-        id: "shop_closed_days_text" %>
-      </div>
-
-      <% if @shop.opening_hours_json.present? %>
-        <p style="margin:10px 0 0; color:#8a6d3b; font-size:12px;">
-          ※ 以前の曜日別データはDBに残っていますが、今後の編集はこの簡易入力を優先します。
-        </p>
-      <% end %>
-    </div>
 
     <div>
       <div style="font-weight:700;">喫煙エリア</div>
