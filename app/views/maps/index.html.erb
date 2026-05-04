@@ -381,7 +381,7 @@ function renderActiveFilterChips() {
   list.innerHTML = chipsHtml + clearAllHtml;
 }
 
-function applyFilters() {
+function applyFilters(options = {}) {
   const { keyword, station, genre, smokingArea, smokingType, openNowOnly } = getCurrentFilterValues();
 
   filteredShops = allShops.filter((shop) => {
@@ -406,7 +406,11 @@ function applyFilters() {
   });
 
   renderMarkers(filteredShops);
-  fitMarkersToBounds();
+
+  if (!options.preserveViewport) {
+    fitMarkersToBounds();
+  }
+
   renderActiveFilterChips();
 
   if (filteredShops.length === 0) {
@@ -591,7 +595,7 @@ function restoreMapState() {
       if (openNowOnlyEl) openNowOnlyEl.checked = !!state.filters.openNowOnly;
     }
 
-    applyFilters();
+applyFilters();
 
     if (Number.isFinite(state.lat) && Number.isFinite(state.lng)) {
       map.setCenter({ lat: state.lat, lng: state.lng });
