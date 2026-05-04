@@ -1077,6 +1077,13 @@
                           class: "ss-btn ss-btn--dark" %>
             <% end %>
 
+            <button type="button"
+                    class="ss-btn ss-btn--ghost"
+                    data-current-location-search
+                    style="cursor:pointer;">
+              現在地から近くで探す
+            </button>
+
             <% if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present? && tabelog_track_url.present? %>
               <%= link_to "空席・詳細を見る（食べログ）",
                           tabelog_track_url,
@@ -1766,3 +1773,39 @@
     </section>
   </div>
 </div>
+
+<script>
+  (function() {
+    function bindCurrentLocationSearch() {
+      document.querySelectorAll("[data-current-location-search]").forEach(function(button) {
+        if (button.dataset.locationBound === "1") return;
+        button.dataset.locationBound = "1";
+
+        button.addEventListener("click", function() {
+          if (!navigator.geolocation) {
+            alert("位置情報が使えません");
+            return;
+          }
+
+          button.disabled = true;
+          button.textContent = "現在地を取得中...";
+
+          navigator.geolocation.getCurrentPosition(function(position) {
+            var lat = position.coords.latitude;
+            var lng = position.coords.longitude;
+
+            window.location.href = "/map?lat=" + encodeURIComponent(lat) + "&lng=" + encodeURIComponent(lng);
+          }, function() {
+            button.disabled = false;
+            button.textContent = "現在地から近くで探す";
+            alert("位置情報の取得に失敗しました");
+          });
+        });
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", bindCurrentLocationSearch);
+    document.addEventListener("turbo:load", bindCurrentLocationSearch);
+    bindCurrentLocationSearch();
+  })();
+</script>
