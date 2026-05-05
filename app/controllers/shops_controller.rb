@@ -212,6 +212,11 @@ class ShopsController < ApplicationController
 
     scope = scope.where(genre_conditions.join(" OR "), genre_bindings)
 
+    if shop.latitude.present? && shop.longitude.present?
+      scope = scope.where.not(latitude: nil, longitude: nil)
+                   .near([shop.latitude, shop.longitude], 5.0, units: :km)
+    end
+
     sorted = scope.to_a.sort_by do |s|
       [
         (s.respond_to?(:open_now?) && s.open_now?) ? 0 : 1,
@@ -225,28 +230,35 @@ class ShopsController < ApplicationController
   end
 
   def popular_shops_for(shop)
-    Shop.approved
-        .where.not(id: shop.id)
-        .left_joins(:shop_clicks)
-        .includes(
-          food_photos_attachments: :blob,
-          interior_photos_attachments: :blob,
-          exterior_photos_attachments: :blob,
-          menu_photos_attachments: :blob
-        )
-        .select(
-          "shops.*",
-          "COUNT(shop_clicks.id) AS clicks_count"
-        )
-        .group("shops.id")
-        .order(Arel.sql("
-          COUNT(shop_clicks.id) DESC,
-          CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
-          shops.last_confirmed_on DESC,
-          shops.created_at DESC
-        "))
-        .limit(6)
-        .to_a
+    scope = Shop.approved
+                .where.not(id: shop.id)
+                .left_joins(:shop_clicks)
+                .includes(
+                  food_photos_attachments: :blob,
+                  interior_photos_attachments: :blob,
+                  exterior_photos_attachments: :blob,
+                  menu_photos_attachments: :blob
+                )
+                .select(
+                  "shops.*",
+                  "COUNT(shop_clicks.id) AS clicks_count"
+                )
+                .group("shops.id")
+
+    if shop.latitude.present? && shop.longitude.present?
+      scope = scope.where.not(latitude: nil, longitude: nil)
+                   .near([shop.latitude, shop.longitude], 5.0, units: :km)
+    end
+
+    scope
+      .order(Arel.sql("
+        COUNT(shop_clicks.id) DESC,
+        CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
+        shops.last_confirmed_on DESC,
+        shops.created_at DESC
+      "))
+      .limit(6)
+      .to_a
   end
 
   def shop_params
