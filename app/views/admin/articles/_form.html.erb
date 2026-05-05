@@ -84,6 +84,37 @@
     </label>
   </div>
 
+  <div style="margin-bottom:12px; padding:14px; border:1px solid #e5e7eb; border-radius:12px; background:#fffdf8;">
+    <div style="font-weight:800; margin-bottom:10px;">エリアページおすすめ表示</div>
+
+    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px;">
+      <label style="display:inline-flex; align-items:center; gap:8px;">
+        <%= check_box_tag "article[recommended_area_list][]",
+                          "umeda",
+                          article.recommended_area_list.include?("umeda") %>
+        <span>梅田おすすめに表示</span>
+      </label>
+
+      <label style="display:inline-flex; align-items:center; gap:8px;">
+        <%= check_box_tag "article[recommended_area_list][]",
+                          "namba",
+                          article.recommended_area_list.include?("namba") %>
+        <span>難波おすすめに表示</span>
+      </label>
+    </div>
+
+    <div>
+      <div style="font-weight:700; margin-bottom:6px;">表示順</div>
+      <%= f.number_field :recommended_order,
+            min: 0,
+            step: 1,
+            style: "width:160px; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+      <div style="font-size:12px; color:#666; margin-top:6px;">
+        数字が小さい記事ほど上に表示されます。未設定なら0でOKです。
+      </div>
+    </div>
+  </div>
+
   <div style="margin-bottom:12px;">
     <div style="font-weight:700; margin-bottom:6px;">公開日時</div>
     <%= f.datetime_local_field :published_at, style: "padding:10px; border:1px solid #ddd; border-radius:10px;" %>

@@ -11,6 +11,11 @@ class Article < ApplicationRecord
       .order(published_at: :desc, created_at: :desc)
   }
 
+  scope :recommended_for, ->(area_key) {
+    where("recommended_areas LIKE ?", "%#{area_key}%")
+      .order(recommended_order: :asc, published_at: :desc, created_at: :desc)
+  }
+
   validates :title, presence: true
   validates :slug, presence: true, uniqueness: true
   validates :summary, length: { maximum: 300 }, allow_blank: true
@@ -23,6 +28,14 @@ class Article < ApplicationRecord
 
   def publishable?
     published? && (published_at.blank? || published_at <= Time.current)
+  end
+
+  def recommended_area_list
+    recommended_areas.to_s.split(",").map(&:strip).reject(&:blank?)
+  end
+
+  def recommended_area_list=(values)
+    self.recommended_areas = Array(values).reject(&:blank?).join(",")
   end
 
   private

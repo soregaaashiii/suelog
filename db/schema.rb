@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_04_065930) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_05_153906) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -66,6 +66,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_04_065930) do
     t.text "meta_description"
     t.boolean "published"
     t.datetime "published_at"
+    t.text "recommended_areas", default: "", null: false
+    t.integer "recommended_order", default: 0, null: false
     t.string "seo_title"
     t.string "slug"
     t.text "summary"

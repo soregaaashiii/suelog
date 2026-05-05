@@ -101,6 +101,7 @@ end
   private
 
 def set_default_page_meta!
+  @recommended_articles = Article.none
   @search_form_url = root_path
   @clear_filters_url = root_path
   @page_title = "吸えログ in大阪｜大阪で喫煙できる飲食店を探せる"
@@ -447,6 +448,7 @@ end
   end
 
   def build_listing!
+  set_recommended_articles!
   @per = params[:per].to_i
   @per = 30 unless [30, 50, 100].include?(@per)
 
@@ -555,6 +557,17 @@ end
   @open_now_map = open_now_map.slice(*paginated.map(&:id))
   @shops = paginated
 end
+
+  def set_recommended_articles!
+    return unless @is_area_page
+    return if @current_area_key.blank?
+
+    @recommended_articles =
+      Article
+        .published
+        .recommended_for(@current_area_key)
+        .limit(3)
+  end
 
   def effective_genre_param
     return normalized_genre_param(params[:genre]) if params[:genre].present?

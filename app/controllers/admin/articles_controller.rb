@@ -61,7 +61,9 @@ params.require(:article).permit(
 :seo_title,
 :meta_description,
 :eyecatch,
-:body
+:body,
+:recommended_order,
+recommended_area_list: []
 )
 end
 end

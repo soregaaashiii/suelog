@@ -79,6 +79,22 @@
             <% end %>
           </div>
         <% end %>
+
+        <% if @recommended_articles.present? %>
+          <div style="margin-top:16px; padding-top:14px; border-top:1px solid #e8e3d7;">
+            <div style="font-weight:900; margin-bottom:10px; color:#111;">
+              <%= @forced_area_label.presence || "このエリア" %>のおすすめ記事
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <% @recommended_articles.each do |article| %>
+                <%= link_to article.title,
+                            article_path(article),
+                            class: "btn btn--gold" %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
       </div>
     </section>
   <% end %>
