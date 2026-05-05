@@ -95,12 +95,7 @@
       <% end %>
       <% card_photos = card_photos.compact.uniq { |photo| photo.id } %>
 
-      <article
-        class="shop-card <%= "shop-card--stale" if very_old %> shop-card--clickable"
-        onclick="if (!event.target.closest('a, button')) { window.location.href='<%= shop_path(shop) %>'; }"
-        role="link"
-        tabindex="0"
-        onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button')) { event.preventDefault(); window.location.href='<%= shop_path(shop) %>'; }">
+      <article class="shop-card <%= "shop-card--stale" if very_old %> shop-card--clickable">
         <%= link_to shop_path(shop), class: "shop-card__mediaLink" do %>
           <div class="shop-card__media">
 

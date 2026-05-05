@@ -134,6 +134,39 @@
     else
       nil
     end
+
+  related_area_links = []
+
+  if is_umeda_shop
+    related_area_links << ["梅田で喫煙できる店一覧", umeda_path]
+    related_area_links << ["梅田で席で喫煙可", umeda_smoking_path("all_smoking")]
+    related_area_links << ["梅田で喫煙所あり", umeda_smoking_path("separated")]
+  elsif is_namba_shop
+    related_area_links << ["難波で喫煙できる店一覧", namba_path]
+    related_area_links << ["難波で席で喫煙可", namba_smoking_path("all_smoking")]
+    related_area_links << ["難波で喫煙所あり", namba_smoking_path("separated")]
+  end
+
+  related_genre_slug =
+    if genre_label_text.include?("居酒屋")
+      "izakaya"
+    elsif genre_label_text.match?(/バー|パブ|ハブ|ラウンジ/)
+      "bar"
+    elsif genre_label_text.match?(/カフェ|喫茶/)
+      "cafe"
+    elsif genre_label_text.include?("焼肉")
+      "yakiniku"
+    else
+      nil
+    end
+
+  if related_genre_slug.present?
+    if is_umeda_shop
+      related_area_links << ["梅田の#{genre_label_text}", umeda_genre_path(related_genre_slug)]
+    elsif is_namba_shop
+      related_area_links << ["難波の#{genre_label_text}", namba_genre_path(related_genre_slug)]
+    end
+  end
 %>
 
 <% content_for :title, page_title_parts.join("｜") %>
@@ -1613,6 +1646,21 @@
         </script>
       </section>
 
+      <% if related_area_links.present? %>
+        <section class="shop-show__section">
+          <h2 class="shop-show__sectionTitle"><%= area_label %>の喫煙可店舗を条件で探す</h2>
+          <p style="color:#666; margin:0 0 12px;">
+            同じエリアの喫煙可能店を一覧や条件別に探せます。
+          </p>
+
+          <div class="shop-show__relatedLinks">
+            <% related_area_links.each do |label, path| %>
+              <%= link_to label, path, class: "shop-show__relatedChip" %>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
       <section class="shop-show__section">
         <div class="shop-show__sectionHeader">
           <div>
@@ -1879,30 +1927,6 @@
       </section>
     <% end %>
 
-    <% if is_umeda_shop || is_namba_shop %>
-      <section class="shop-show__section">
-        <h2 class="shop-show__sectionTitle">このエリアでも探す</h2>
-        <p style="color:#666; margin:0 0 12px;">
-          同じエリアの喫煙可能店を一覧で見られます。
-        </p>
-
-        <div class="shop-show__relatedLinks">
-          <% if is_umeda_shop %>
-            <%= link_to "梅田で喫煙できる店一覧", umeda_path, class: "shop-show__relatedChip" %>
-            <%= link_to "梅田で席で喫煙可", umeda_smoking_path("all_smoking"), class: "shop-show__relatedChip" %>
-            <%= link_to "梅田で喫煙所あり", umeda_smoking_path("separated"), class: "shop-show__relatedChip" %>
-            <%= link_to "梅田の居酒屋", umeda_genre_path("izakaya"), class: "shop-show__relatedChip" %>
-          <% end %>
-
-          <% if is_namba_shop %>
-            <%= link_to "難波で喫煙できる店一覧", namba_path, class: "shop-show__relatedChip" %>
-            <%= link_to "難波で席で喫煙可", namba_smoking_path("all_smoking"), class: "shop-show__relatedChip" %>
-            <%= link_to "難波で喫煙所あり", namba_smoking_path("separated"), class: "shop-show__relatedChip" %>
-            <%= link_to "難波の居酒屋", namba_genre_path("izakaya"), class: "shop-show__relatedChip" %>
-          <% end %>
-        </div>
-      </section>
-    <% end %>
 
     <hr class="shop-show__divider">
 
