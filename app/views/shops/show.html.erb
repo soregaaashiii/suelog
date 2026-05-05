@@ -56,8 +56,21 @@
   end
   page_description_parts << "#{area_label}で喫煙可能な飲食店を探すなら吸えログ。"
 
+  referrer_path = nil
+
+  if request.referer.present?
+    begin
+      referrer_uri = URI.parse(request.referer)
+      referrer_path = referrer_uri.path if referrer_uri.host == request.host && referrer_uri.path != request.path
+    rescue URI::InvalidURIError
+      referrer_path = nil
+    end
+  end
+
   back_path =
-    if is_umeda_shop
+    if referrer_path.present?
+      request.referer
+    elsif is_umeda_shop
       umeda_path
     elsif is_namba_shop
       namba_path
@@ -66,7 +79,15 @@
     end
 
   back_label =
-    if is_umeda_shop
+    if referrer_path == root_path
+      "← ホームに戻る"
+    elsif referrer_path&.start_with?("/umeda")
+      "← 梅田の一覧に戻る"
+    elsif referrer_path&.start_with?("/namba")
+      "← 難波の一覧に戻る"
+    elsif referrer_path.present?
+      "← 前のページに戻る"
+    elsif is_umeda_shop
       "← 梅田の一覧に戻る"
     elsif is_namba_shop
       "← 難波の一覧に戻る"
@@ -75,7 +96,15 @@
     end
 
   footer_back_label =
-    if is_umeda_shop
+    if referrer_path == root_path
+      "ホームに戻る"
+    elsif referrer_path&.start_with?("/umeda")
+      "梅田の一覧に戻る"
+    elsif referrer_path&.start_with?("/namba")
+      "難波の一覧に戻る"
+    elsif referrer_path.present?
+      "前のページに戻る"
+    elsif is_umeda_shop
       "梅田の一覧に戻る"
     elsif is_namba_shop
       "難波の一覧に戻る"
@@ -99,7 +128,7 @@
   primary_booking_url = hotpepper_track_url.presence || tabelog_track_url.presence
   primary_booking_label =
     if hotpepper_track_url.present?
-      "空席を確認・予約する"
+      "予約できるか確認する"
     elsif tabelog_track_url.present?
       "空席・詳細を見る"
     else
@@ -260,12 +289,24 @@
 }
 
 .shop-show__hero {
-  background: linear-gradient(135deg, #fffdf8 0%, #ffffff 60%);
+  position: relative;
+  overflow: hidden;
+  background: #fffdf8;
   border: 1px solid #e8e3d7;
-  border-radius: 22px;
-  padding: 18px;
+  border-radius: 6px;
+  padding: 20px 18px 18px;
   box-shadow: 0 10px 30px rgba(17, 17, 17, 0.04);
   margin-bottom: 16px;
+}
+
+.shop-show__hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #111111 0%, #c6a75e 100%);
 }
 
 .shop-show__title {
@@ -298,7 +339,7 @@
 .shop-show__section {
   background: #ffffff;
   border: 1px solid #e8e3d7;
-  border-radius: 20px;
+  border-radius: 6px;
   padding: 18px;
   box-shadow: 0 10px 30px rgba(17, 17, 17, 0.03);
 }
@@ -426,20 +467,52 @@
 }
 
 .shop-show__cvPrimary {
-  background: #111111 !important;
+  background: linear-gradient(180deg, #2a2a2a 0%, #111111 100%) !important;
   color: #ffffff !important;
-  border-color: #111111 !important;
-  box-shadow: 0 10px 24px rgba(17, 17, 17, 0.16);
+  border: 1px solid rgba(198, 167, 94, 0.55) !important;
+  border-radius: 10px !important;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  box-shadow:
+    0 10px 24px rgba(17, 17, 17, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .shop-show__cvSub {
   background: #ffffff !important;
   color: #111111 !important;
-  border-color: #d7c7a0 !important;
+  border: 1px solid #111111 !important;
+  border-radius: 10px !important;
+  font-weight: 800;
 }
 
 .shop-show__stickyCta {
   display: none;
+}
+
+@media (max-width: 720px) {
+  .shop-show__stickyCta {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+
+    display: block;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 1px solid #e8e3d7;
+    box-shadow: 0 -10px 24px rgba(17, 17, 17, 0.10);
+  }
+
+  .shop-show__stickyCta .ss-btn {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  body {
+    padding-bottom: 76px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -870,7 +943,7 @@
 @media (max-width: 720px) {
   .shop-show__hero,
   .shop-show__section {
-    border-radius: 16px;
+    border-radius: 6px;
     padding: 14px;
   }
 
@@ -1155,43 +1228,32 @@
         </div>
       </section>
     <% else %>
-      <% if @shop.phone.present? || (@shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present?) || (@shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present?) %>
+      <% if primary_booking_url.present? || @shop.latitude.present? || @shop.longitude.present? %>
         <section class="shop-show__section">
           <h2 class="shop-show__sectionTitle">予約・詳細</h2>
 
-          <div class="shop-show__bookingActions">
-            <% if primary_booking_url.present? %>
+          <% if primary_booking_url.present? %>
+            <div class="shop-show__bookingActions">
               <%= link_to primary_booking_label,
                           primary_booking_url,
                           target: "_blank",
                           rel: "nofollow noopener",
                           class: "ss-btn ss-btn--dark shop-show__cvPrimary" %>
-            <% end %>
+            </div>
+          <% end %>
 
-            <% if @shop.phone.present? && tel_target_url.present? %>
-              <%= link_to "電話する",
-                          track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
-                          class: "ss-btn ss-btn--ghost shop-show__cvSub" %>
-            <% end %>
-
+          <div class="shop-show__bookingActions">
             <button type="button"
                     class="ss-btn ss-btn--ghost"
                     data-current-location-search
                     style="cursor:pointer;">
               現在地から近くで探す
             </button>
-          </div>
 
-          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
             <%= link_to "今営業中の店を見る",
                         root_path(smoking_area: "all_smoking", open_now: 1),
                         class: "ss-btn ss-btn--ghost" %>
-
-            <%= link_to "近くの店を探す",
-                        map_path(lat: @shop.latitude, lng: @shop.longitude),
-                        class: "ss-btn ss-btn--ghost" if @shop.latitude.present? %>
           </div>
-
         </section>
       <% end %>
 
@@ -1854,21 +1916,13 @@
     </section>
   </div>
 
-  <% if @shop.approved? && (primary_booking_url.present? || (@shop.phone.present? && tel_target_url.present?)) %>
+  <% if @shop.approved? && primary_booking_url.present? %>
     <div class="shop-show__stickyCta">
-      <% if primary_booking_url.present? %>
-        <%= link_to primary_booking_label,
-                    primary_booking_url,
-                    target: "_blank",
-                    rel: "nofollow noopener",
-                    class: "ss-btn ss-btn--dark shop-show__cvPrimary" %>
-      <% end %>
-
-      <% if @shop.phone.present? && tel_target_url.present? %>
-        <%= link_to "電話する",
-                    track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
-                    class: "ss-btn ss-btn--ghost shop-show__cvSub" %>
-      <% end %>
+      <%= link_to primary_booking_label,
+                  primary_booking_url,
+                  target: "_blank",
+                  rel: "nofollow noopener",
+                  class: "ss-btn ss-btn--dark shop-show__cvPrimary" %>
     </div>
   <% end %>
 </div>

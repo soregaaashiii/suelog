@@ -1449,11 +1449,95 @@ opacity: 0.8;
 
 .shop-card__address {
 margin: 0 0 10px;
-color: #444444;
-font-size: 14px;
+color: #666666;
+font-size: 13px;
 line-height: 1.45;
 min-height: 0;
 word-break: break-word;
+}
+
+.shop-card__cvLead {
+display: flex;
+align-items: center;
+gap: 6px;
+flex-wrap: wrap;
+margin: 4px 0 10px;
+}
+
+.shop-card__cvPill {
+display: inline-flex;
+align-items: center;
+min-height: 30px;
+padding: 0 10px;
+border-radius: 999px;
+font-size: 12px;
+font-weight: 900;
+letter-spacing: 0.02em;
+line-height: 1;
+white-space: nowrap;
+}
+
+.shop-card__cvPill--allSmoking {
+background: #111111;
+color: #ffffff;
+border: 1px solid #111111;
+}
+
+.shop-card__cvPill--separated {
+background: #ffffff;
+color: #111111;
+border: 1px solid #111111;
+}
+
+.shop-card__cvPill--type {
+background: #f6edd7;
+color: #7a5a12;
+border: 1px solid #d6c08a;
+}
+
+.shop-card__cvPill--typeLimited {
+background: #ffffff;
+color: #7a5a12;
+border: 1px solid #d6c08a;
+}
+
+.shop-card__cvPill--typeLimited {
+background: #ffffff;
+color: #7a5a12;
+border: 1px solid #d6c08a;
+}
+
+.shop-card__cvPill--muted {
+background: #f3f3f3;
+color: #666666;
+border: 1px solid #dddddd;
+}
+
+.shop-card__cvTrust {
+display: inline-flex;
+align-items: center;
+min-height: 30px;
+padding: 0 10px;
+border-radius: 999px;
+background: #ffffff;
+font-size: 12px;
+font-weight: 900;
+line-height: 1;
+white-space: nowrap;
+}
+
+/* 確認済み：信頼情報（強） */
+.shop-card__cvTrust--confirmed {
+background: #666666;
+color: #ffffff;
+border: 1px solid #666666;
+}
+
+/* 未確認：信頼情報（弱） */
+.shop-card__cvTrust--unverified {
+background: #ffffff;
+color: #666666;
+border: 1px solid #bdbdbd;
 }
 
 .shop-card__badges {
@@ -1461,6 +1545,10 @@ display: flex;
 flex-wrap: wrap;
 gap: 6px;
 margin-bottom: 8px;
+}
+
+.shop-card__badges--sub {
+margin-bottom: 10px;
 }
 
 .badge {
@@ -1502,6 +1590,68 @@ border-color: #e4e4e4;
 display: flex;
 flex-wrap: wrap;
 gap: 10px;
+}
+
+.shop-card__actions--primary {
+margin-top: 10px;
+}
+
+.shop-card__detailBtn {
+width: 100%;
+min-height: 44px;
+
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 6px;
+
+background: linear-gradient(180deg, #2a2a2a 0%, #111111 100%) !important;
+color: #ffffff !important;
+
+border: 1px solid rgba(198, 167, 94, 0.38) !important;
+border-radius: 10px !important;
+
+font-size: 14px;
+font-weight: 800;
+letter-spacing: 0.05em;
+
+box-shadow:
+  0 6px 16px rgba(0,0,0,0.18),
+  inset 0 1px 0 rgba(255,255,255,0.06);
+
+transition:
+  transform 0.18s ease,
+  box-shadow 0.18s ease,
+  border-color 0.18s ease,
+  background 0.18s ease;
+}
+
+/* ▶ 擬似アイコン（コードいじらず追加） */
+.shop-card__detailBtn::after {
+content: "→";
+font-size: 13px;
+opacity: 0.8;
+transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.shop-card__detailBtn:hover {
+color: #ffffff !important;
+text-decoration: none !important;
+
+transform: translateY(-2px);
+
+border-color: #c6a75e !important;
+
+background: linear-gradient(180deg, #303030 0%, #111111 100%) !important;
+
+box-shadow:
+  0 10px 24px rgba(0,0,0,0.22),
+  inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.shop-card__detailBtn:hover::after {
+transform: translateX(3px);
+opacity: 1;
 }
 
 /* =========================
@@ -2432,8 +2582,62 @@ grid-column: 1 / -1;
 }
 }
 
+.shop-show__infoTable {
+width: 100%;
+border-collapse: collapse;
+background: #ffffff;
+}
+
+.shop-show__infoTable tr {
+border-bottom: 1px solid #ece6da;
+}
+
+.shop-show__infoTable tr:last-child {
+border-bottom: 0;
+}
+
+.shop-show__infoTable th,
+.shop-show__infoTable td {
+padding: 13px 12px;
+vertical-align: top;
+font-size: 14px;
+line-height: 1.65;
+}
+
+.shop-show__infoTable th {
+width: 34%;
+background: #faf8f2;
+color: #3f3a34;
+font-weight: 900;
+border-right: 1px solid #ece6da;
+white-space: nowrap;
+}
+
+.shop-show__infoTable td {
+color: #222222;
+background: #ffffff;
+}
+
 .shop-show__infoCell--multiline {
 white-space: pre-wrap;
+}
+
+@media (max-width: 640px) {
+  .shop-show__infoTable th,
+  .shop-show__infoTable td {
+    display: block;
+    width: 100%;
+    padding: 11px 12px;
+  }
+
+  .shop-show__infoTable th {
+    border-right: 0;
+    border-bottom: 1px solid #ece6da;
+  }
+
+  .shop-show__infoTable td {
+    padding-top: 10px;
+  }
 }
 
 .shop-show__microLinks {
@@ -2848,11 +3052,15 @@ color: #7a5a12;
 }
 
 /* =========================
-   ▼ 「梅田の一覧へ」だけに限定（統一版）
+   ▼ エリア補助リンク（梅田の一覧へ / 難波の一覧へ）
    ========================= */
 
-.shop-card__badges + a,
-.shop-card__badges + a:visited {
+.shop-card__areaLinks {
+  margin-top: 8px;
+}
+
+.shop-card__areaLink,
+.shop-card__areaLink:visited {
   font-size: 12px !important;
   color: #777 !important;
   font-weight: 400 !important;
@@ -2862,12 +3070,15 @@ color: #7a5a12;
   background: none !important;
 
   display: inline-block;
-  margin-top: 4px;
+}
+
+.shop-card__areaLink:hover {
+  color: #555 !important;
+  text-decoration: underline !important;
 }
 
 .shop-card__body a:hover {
-  color: #555 !important;
-  text-decoration: underline;
+  color: inherit;
 }
 
 /* =========================
@@ -2914,4 +3125,64 @@ color: #7a5a12;
   text-shadow:
     0 1px 2px rgba(0,0,0,0.95),
     0 0 4px rgba(0,0,0,0.9);
+}
+
+/* =========================
+  ▼ 店舗詳細ページ：角丸を抑えて締める
+========================= */
+
+.shop-show__hero,
+.shop-show__summary,
+.shop-show__section,
+.shop-show__panel {
+  border-radius: 4px !important;
+}
+
+.shop-show__hero {
+  position: relative;
+  overflow: hidden;
+  background: #fffdf8 !important;
+  border: 1px solid #e8e3d7 !important;
+}
+
+.shop-show__hero::before {
+  content: "";
+  display: block;
+  height: 4px;
+  background: linear-gradient(90deg, #111111 0%, #c6a75e 100%);
+}
+
+/* =========================
+▼ スマホ固定CTA（予約ボタン）
+========================= */
+
+.shop-show__stickyCta {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .shop-show__stickyCta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    padding: 10px 12px;
+    background: #ffffff;
+    border-top: 1px solid #e5e0d5;
+
+    z-index: 1000;
+  }
+
+  .shop-show__stickyCta .ss-btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 15px;
+    font-weight: 900;
+  }
+
+  /* 下に隠れないように余白確保 */
+  body {
+    padding-bottom: 70px;
+  }
 }

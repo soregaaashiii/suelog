@@ -202,7 +202,6 @@
                   <%= label %>
                 </span>
               <% end %>
-
             <% else %>
               <span class="badge badge--closed-inline">営業終了</span>
             <% end %>
@@ -222,8 +221,41 @@
             </div>
           <% end %>
 
+          <div class="shop-card__cvLead">
+            <% if shop.smoking_area == "all_smoking" %>
+              <span class="shop-card__cvPill shop-card__cvPill--allSmoking">席で喫煙可</span>
+            <% elsif shop.smoking_area == "separated" %>
+              <span class="shop-card__cvPill shop-card__cvPill--separated">喫煙所あり</span>
+            <% elsif shop.smoking_area == "unknown" %>
+              <span class="shop-card__cvPill shop-card__cvPill--muted">喫煙エリア不明</span>
+            <% end %>
+
+            <% if shop.smoking_type == "both_ok" %>
+              <span class="shop-card__cvPill shop-card__cvPill--type">紙・加熱式OK</span>
+            <% elsif shop.smoking_type == "paper_only" %>
+              <span class="shop-card__cvPill shop-card__cvPill--typeLimited">紙のみ</span>
+            <% elsif shop.smoking_type == "electronic_only" %>
+              <span class="shop-card__cvPill shop-card__cvPill--typeLimited">加熱式のみ</span>
+            <% elsif shop.smoking_type == "unknown" %>
+              <span class="shop-card__cvPill shop-card__cvPill--muted">喫煙タイプ不明</span>
+            <% end %>
+
+            <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
+              <span class="shop-card__cvTrust shop-card__cvTrust--unverified">未確認</span>
+            <% elsif confirmed.present? %>
+              <span class="shop-card__cvTrust shop-card__cvTrust--confirmed">確認済み</span>
+            <% end %>
+
+            <% if very_old %>
+              <span class="shop-card__cvPill shop-card__cvPill--muted">確認日が古い可能性</span>
+            <% end %>
+          </div>
+
           <p class="shop-card__address">
             <%= shop.nearest_station.presence || "最寄駅未設定" %>
+            <% if shop.address.present? %>
+              / <%= shop.address %>
+            <% end %>
 
             <% if shop.respond_to?(:distance) && shop.distance.present? %>
               <span style="display:inline-flex; align-items:center; margin-left:8px; padding:2px 7px; border-radius:999px; background:#f6edd7; color:#7a5a12; font-size:11px; font-weight:900; white-space:nowrap;">
@@ -232,34 +264,10 @@
             <% end %>
           </p>
 
-          <div class="shop-card__badges">
-            <% if shop.smoking_area == "all_smoking" %>
-              <span class="badge badge--dark">席で喫煙可</span>
-            <% elsif shop.smoking_area == "separated" %>
-              <span class="badge badge--line">喫煙所あり</span>
-            <% elsif shop.smoking_area == "unknown" %>
-              <span class="badge badge--type-unknown">喫煙エリア不明</span>
-            <% end %>
-
-            <% if shop.smoking_type == "both_ok" %>
-              <span class="badge badge--type-both">紙・加熱式OK</span>
-            <% elsif shop.smoking_type == "paper_only" %>
-              <span class="badge badge--type-paper">紙のみ</span>
-            <% elsif shop.smoking_type == "electronic_only" %>
-              <span class="badge badge--type-electronic">加熱式のみ</span>
-            <% elsif shop.smoking_type == "unknown" %>
-              <span class="badge badge--type-unknown">喫煙タイプ不明</span>
-            <% end %>
-
-            <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
-              <span class="badge badge--unverified">喫煙情報未確認</span>
-            <% elsif confirmed.present? %>
-              <span class="badge badge--confirmed">喫煙情報確認済</span>
-            <% end %>
-
-            <% if very_old %>
-              <span class="badge badge--muted">確認日が古い可能性</span>
-            <% end %>
+          <div class="shop-card__actions shop-card__actions--primary">
+            <%= link_to "今すぐこの店を見る",
+                        shop_path(shop),
+                        class: "btn btn--dark shop-card__detailBtn" %>
           </div>
 
           <% if is_umeda_shop || is_namba_shop %>
