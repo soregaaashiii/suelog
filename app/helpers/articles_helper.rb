@@ -2,6 +2,7 @@
 module ArticlesHelper
   SHOP_SHORTCODE_REGEX = /\[shop\s+id=(\d+)\]/i.freeze
   SIDEBAR_SHORTCODE_REGEX = /\[sidebar\]/i.freeze
+  ARTICLE_CTA_SHORTCODE_REGEX = /\[article-cta\]/i.freeze
   AD_LINK_SHORTCODE_REGEX = /\[ad\s+image=([^\]\s]+)\s+url=([^\s\]]+)\]/i.freeze
   AD_KEY_SHORTCODE_REGEX = /\[ad\s+key=([a-zA-Z0-9_-]+)\]/i.freeze
   IMAGE_MARKER_REGEX = /\A\[image.*\]\z/i.freeze
@@ -13,6 +14,7 @@ module ArticlesHelper
 
     raw_body = body.to_s
     @sidebar_enabled = raw_body.match?(SIDEBAR_SHORTCODE_REGEX)
+    article_cta_already_inserted = raw_body.match?(ARTICLE_CTA_SHORTCODE_REGEX)
 
     shortcode_replacements = {}
 
@@ -35,6 +37,12 @@ module ArticlesHelper
       image_path = Regexp.last_match(1).to_s.strip
       url = Regexp.last_match(2).to_s.strip
       shortcode_replacements[token] = render_ad_link_html(image_path: image_path, url: url)
+      token
+    end
+
+    processed_body = processed_body.gsub(ARTICLE_CTA_SHORTCODE_REGEX) do
+      token = "__SUELOG_ARTICLE_CTA_SHORTCODE_#{shortcode_replacements.length}__"
+      shortcode_replacements[token] = render_article_cta_shortcode
       token
     end
 
@@ -61,12 +69,43 @@ module ArticlesHelper
     style_article_figures!(fragment)
     remove_image_marker_nodes!(fragment)
 
+    unless article_cta_already_inserted
+      cta_fragment = Nokogiri::HTML::DocumentFragment.parse(render_article_cta_shortcode)
+      fragment.add_child(cta_fragment)
+
+      shops_html = render(
+        partial: "shared/shop_cards",
+        locals: { shops: popular_shops_for_article(limit: 3) }
+      )
+
+      shops_fragment = Nokogiri::HTML::DocumentFragment.parse(shops_html)
+
+      fragment.add_child(Nokogiri::HTML::DocumentFragment.parse(%(
+        <div style="margin:32px 0 8px;">
+          <h2 style="font-size:18px; font-weight:900; margin-bottom:12px;">
+            よく見られている喫煙可のお店
+          </h2>
+        </div>
+      )))
+
+      fragment.add_child(shops_fragment)
+    end
+
     fragment.to_html.html_safe
   end
 
-  private
+private
 
-  def replace_shop_shortcodes(text)
+def popular_shops_for_article(limit: 3)
+  Shop.approved
+      .left_joins(:shop_clicks)
+      .select("shops.*, COUNT(shop_clicks.id) AS clicks_count")
+      .group("shops.id")
+      .order(Arel.sql("COUNT(shop_clicks.id) DESC, shops.last_confirmed_on DESC"))
+      .limit(limit)
+end
+
+def replace_shop_shortcodes(text)
     text.to_s.gsub(SHOP_SHORTCODE_REGEX) do
       shop_id = Regexp.last_match(1).to_i
       render_shop_card_shortcode(shop_id)
@@ -153,6 +192,41 @@ module ArticlesHelper
              <img src="#{ERB::Util.html_escape(img_src)}" alt="広告" style="max-width:100%; height:auto; display:block; margin:0 auto;">
         </a>
       </div>)
+  end
+
+  def render_article_cta_shortcode
+    %(
+      <div style="margin:24px 0; padding:14px; border:1px solid #e8e3d7; border-radius:16px; background:#fffdf8; box-shadow:0 6px 18px rgba(17,17,17,0.04);">
+        <div style="font-size:20px; font-weight:900; color:#111; line-height:1.5; margin-bottom:8px;">
+          今すぐ行ける喫煙可の店を探す
+        </div>
+
+        <p style="margin:0 0 14px; color:#666; font-size:14px; line-height:1.8;">
+          「とりあえず今吸える店に行きたい」なら、ここから探せます。
+        </p>
+
+        <div style="display:grid; gap:8px; max-width:420px; margin:0 auto;">
+          <a href="/?open_now_only=1"
+             style="display:flex; align-items:center; justify-content:center; min-height:38px; padding:0 12px; background:#111; color:#fff; border-radius:999px; text-decoration:none; font-size:13px; font-weight:900;">
+            今営業中の喫煙可を見る
+          </a>
+
+          <a href="/?smoking_area=all_smoking"
+             style="display:flex; align-items:center; justify-content:center; min-height:38px; padding:0 12px; background:#fff; color:#111; border:1px solid #e8e3d7; border-radius:999px; text-decoration:none; font-size:13px; font-weight:900;">
+            席で吸える店だけ見る
+          </a>
+
+          <a href="/map"
+             style="display:flex; align-items:center; justify-content:center; min-height:38px; padding:0 12px; background:#fff; color:#111; border:1px solid #e8e3d7; border-radius:999px; text-decoration:none; font-size:13px; font-weight:900;">
+            近くの店を地図で探す
+          </a>
+        </div>
+
+        <p style="margin:12px 0 0; color:#777; font-size:12px; line-height:1.7;">
+          ※営業時間や喫煙可否は変更される場合があります。来店前に店舗へご確認ください。
+        </p>
+      </div>
+    )
   end
 
   def render_shop_card_shortcode(shop_id)

@@ -996,6 +996,13 @@
         </div>
 
         <div class="shop-show__infoRow">
+          <div class="shop-show__infoHead">ジャンル</div>
+          <div class="shop-show__infoCell">
+            <%= @shop.respond_to?(:display_genre) ? @shop.display_genre.presence || "未設定" : @shop.genre.presence || "未設定" %>
+          </div>
+        </div>
+
+        <div class="shop-show__infoRow">
           <div class="shop-show__infoHead">喫煙エリア</div>
           <div class="shop-show__infoCell">
             <%= @shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "未設定" %>
