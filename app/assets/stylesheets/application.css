@@ -116,9 +116,10 @@ Header
 position: sticky;
 top: 0;
 z-index: 50;
-background: #ffffff;
-backdrop-filter: none;
-border-bottom: 1px solid var(--line);
+background: rgba(17, 17, 17, 0.72);
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+border-bottom: 1px solid rgba(198, 167, 94, 0.24);
 }
 
 .header-inner {
@@ -139,7 +140,7 @@ min-width: 0;
 .logo {
 font-weight: 900;
 font-size: 18px;
-color: var(--black);
+color: #ffffff;
 letter-spacing: 0.02em;
 }
 
@@ -169,7 +170,7 @@ flex-wrap: wrap;
 }
 
 .nav-link {
-color: var(--black);
+color: rgba(255, 255, 255, 0.92);
 padding: 8px 14px;
 border-radius: 999px;
 font-weight: 700;
@@ -177,7 +178,7 @@ font-size: 14px;
 }
 
 .nav-link:hover {
-background: var(--surface-alt);
+background: rgba(255, 255, 255, 0.12);
 }
 
 .nav-primary {
@@ -2556,10 +2557,11 @@ body {
   background: #efe7dc;
 }
 
-/* ===== Header背景を白で固定 ===== */
+/* ===== Header背景をヒーローになじむ半透明黒で固定 ===== */
 .site-header {
-  background: #ffffff;
-  backdrop-filter: none;
+  background: rgba(17, 17, 17, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .result-hit-text {
