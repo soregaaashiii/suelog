@@ -226,7 +226,7 @@
             <%= shop.nearest_station.presence || "最寄駅未設定" %>
 
             <% if shop.respond_to?(:distance) && shop.distance.present? %>
-              <span style="margin-left:8px; color:#666666; font-size:12px; font-weight:700;">
+              <span style="display:inline-flex; align-items:center; margin-left:8px; padding:2px 7px; border-radius:999px; background:#f6edd7; color:#7a5a12; font-size:11px; font-weight:900; white-space:nowrap;">
                 徒歩<%= [(shop.distance.to_f * 12).round, 1].max %>分
               </span>
             <% end %>

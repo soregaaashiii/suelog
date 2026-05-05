@@ -3,13 +3,14 @@ module ArticlesHelper
   SHOP_SHORTCODE_REGEX = /\[shop\s+id=(\d+)\]/i.freeze
   SIDEBAR_SHORTCODE_REGEX = /\[sidebar\]/i.freeze
   ARTICLE_CTA_SHORTCODE_REGEX = /\[article-cta\]/i.freeze
+  RELATED_ARTICLES_SHORTCODE_REGEX = /\[related-articles\s+([^\]]+)\]/i.freeze
   AD_LINK_SHORTCODE_REGEX = /\[ad\s+image=([^\]\s]+)\s+url=([^\s\]]+)\]/i.freeze
   AD_KEY_SHORTCODE_REGEX = /\[ad\s+key=([a-zA-Z0-9_-]+)\]/i.freeze
   IMAGE_MARKER_REGEX = /\A\[image.*\]\z/i.freeze
   IMAGE_ROW_START_REGEX = /\A\[image-row-start\]\z/i.freeze
   IMAGE_ROW_END_REGEX = /\A\[image-row-end\]\z/i.freeze
 
-  def render_article_body(body)
+  def render_article_body(body, include_article_footer: true)
     return "".html_safe if body.blank?
 
     raw_body = body.to_s
@@ -46,6 +47,12 @@ module ArticlesHelper
       token
     end
 
+    processed_body = processed_body.gsub(RELATED_ARTICLES_SHORTCODE_REGEX) do
+      token = "__SUELOG_RELATED_ARTICLES_SHORTCODE_#{shortcode_replacements.length}__"
+      shortcode_replacements[token] = render_related_articles_shortcode(Regexp.last_match(1).to_s)
+      token
+    end
+
     processed_body = replace_sidebar_shortcodes(processed_body)
 
     html =
@@ -69,7 +76,7 @@ module ArticlesHelper
     style_article_figures!(fragment)
     remove_image_marker_nodes!(fragment)
 
-    unless article_cta_already_inserted
+    if include_article_footer && !article_cta_already_inserted
       cta_fragment = Nokogiri::HTML::DocumentFragment.parse(render_article_cta_shortcode)
       fragment.add_child(cta_fragment)
 
@@ -103,6 +110,74 @@ def popular_shops_for_article(limit: 3)
       .group("shops.id")
       .order(Arel.sql("COUNT(shop_clicks.id) DESC, shops.last_confirmed_on DESC"))
       .limit(limit)
+end
+
+def render_related_articles_shortcode(attrs_text)
+  slugs = attrs_text.to_s[/slugs=([^\s\]]+)/i, 1].to_s.split(",").map(&:strip).reject(&:blank?)
+  urls = attrs_text.to_s[/urls=([^\s\]]+)/i, 1].to_s.split(",").map(&:strip).reject(&:blank?)
+
+  url_slugs = urls.filter_map do |url|
+    url.to_s.split("?").first.split("/articles/").last.presence
+  end
+
+  target_slugs = (slugs + url_slugs).uniq
+  return "" if target_slugs.blank?
+
+  articles = Article.published.where(slug: target_slugs).index_by(&:slug)
+  ordered_articles = target_slugs.filter_map { |slug| articles[slug] }
+  return "" if ordered_articles.blank?
+
+  items_html = ordered_articles.map do |article|
+    title = ERB::Util.html_escape(article.title.to_s)
+    summary = ERB::Util.html_escape(article.summary.to_s.presence || "関連記事を見る")
+    path = Rails.application.routes.url_helpers.article_path(article)
+
+    image_html =
+      if article.respond_to?(:eyecatch) && article.eyecatch.attached?
+        image_path = Rails.application.routes.url_helpers.rails_blob_path(article.eyecatch, only_path: true)
+
+        %(
+          <div style="flex:0 0 92px; width:92px; height:68px; border-radius:10px; overflow:hidden; background:#f3f3f3;">
+            <img src="#{ERB::Util.html_escape(image_path)}" alt="#{title}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;">
+          </div>
+        )
+      else
+        %(
+          <div style="flex:0 0 92px; width:92px; height:68px; border-radius:10px; background:#f6edd7; display:flex; align-items:center; justify-content:center; color:#7a5a12; font-size:12px; font-weight:900;">
+            関連記事
+          </div>
+        )
+      end
+
+    %(
+      <a href="#{path}" style="display:flex; gap:12px; align-items:center; padding:12px 0; border-top:1px solid #eee6d6; color:#111; text-decoration:none;">
+        #{image_html}
+
+        <div style="min-width:0; flex:1;">
+          <div style="font-size:15px; font-weight:900; line-height:1.55;">
+            #{title}
+          </div>
+          <div style="margin-top:3px; color:#666; font-size:12px; line-height:1.6;">
+            #{summary}
+          </div>
+        </div>
+
+        <div style="flex:0 0 auto; color:#c6a75e; font-size:20px; font-weight:900;">
+          ›
+        </div>
+      </a>
+    )
+  end.join
+
+  %(
+    <div style="margin:24px 0; padding:14px 16px; border:1px solid #e8e3d7; border-radius:16px; background:#fffdf8;">
+    
+
+      <div>
+        #{items_html}
+      </div>
+    </div>
+  )
 end
 
 def replace_shop_shortcodes(text)
