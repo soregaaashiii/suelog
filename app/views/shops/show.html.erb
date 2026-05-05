@@ -1411,6 +1411,7 @@
         <% end %>
       </section>
 
+
       <section class="shop-show__section">
         <div class="shop-show__sectionHeader">
           <h2 class="shop-show__sectionTitle" style="margin-bottom:0;">写真</h2>
@@ -1645,6 +1646,44 @@
           })();
         </script>
       </section>
+
+      <% if defined?(@related_articles) && @related_articles.present? %>
+        <section class="shop-show__section">
+          <div class="shop-show__sectionHeader">
+            <div>
+              <h2 class="shop-show__sectionTitle">このエリアの喫煙可記事も見る</h2>
+              <p style="margin:6px 0 0; color:#666666; font-size:13px; line-height:1.7;">
+                喫煙できるお店をテーマ別にまとめた記事もチェックできます。
+              </p>
+            </div>
+
+            <span class="shop-show__sectionMeta">
+              関連記事
+            </span>
+          </div>
+
+          <div class="shop-show__articleCards">
+            <% @related_articles.each do |article| %>
+              <%= link_to article_path(article), class: "shop-show__articleCard" do %>
+                <% if article.respond_to?(:eyecatch) && article.eyecatch.attached? %>
+                  <div class="shop-show__articleThumb">
+                    <%= image_tag article.eyecatch, alt: article.title, loading: "lazy" %>
+                  </div>
+                <% end %>
+
+                <div class="shop-show__articleBody">
+                  <div class="shop-show__articleLabel">関連記事</div>
+                  <h3 class="shop-show__articleTitle"><%= article.title %></h3>
+
+                  <% if article.summary.present? %>
+                    <p class="shop-show__articleSummary"><%= article.summary %></p>
+                  <% end %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
 
       <% if related_area_links.present? %>
         <section class="shop-show__section">

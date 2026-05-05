@@ -48,6 +48,7 @@ class ShopsController < ApplicationController
     @nearby_shops = nearby_shops_for(@shop)
     @same_genre_shops = same_genre_shops_for(@shop)
     @popular_shops = popular_shops_for(@shop)
+    @related_articles = related_articles_for(@shop)
   end
 
   def new
@@ -259,6 +260,60 @@ class ShopsController < ApplicationController
       "))
       .limit(6)
       .to_a
+  end
+
+  def related_articles_for(shop)
+    return [] unless defined?(Article)
+
+    area_text = [shop.area, shop.address, shop.nearest_station].compact.join(" ")
+    shop_genres = [shop.genre.to_s.strip, shop.genre_other.to_s.strip].reject(&:blank?)
+
+    area_keywords = []
+
+    if area_text.include?("梅田") || area_text.include?("大阪駅") || area_text.include?("北新地")
+      area_keywords << "梅田"
+    end
+
+    if area_text.include?("難波") || area_text.include?("なんば") || area_text.include?("心斎橋") || area_text.include?("日本橋")
+      area_keywords << "難波"
+      area_keywords << "なんば"
+    end
+
+    articles = Article.published.with_attached_eyecatch.limit(30).to_a
+
+    scored_articles =
+      articles.map do |article|
+        text = [
+          article.title,
+          article.summary,
+          article.admin_note
+        ].compact.join(" ")
+
+        score = 0
+
+        area_keywords.each do |keyword|
+          score += 10 if text.include?(keyword)
+        end
+
+        shop_genres.each do |genre|
+          score += 6 if text.include?(genre)
+        end
+
+        score += 2 if article.eyecatch.attached?
+
+        [article, score]
+      end
+
+    matched =
+      scored_articles
+        .select { |_article, score| score.positive? }
+        .sort_by { |article, score| [-score, -(article.published_at || article.created_at).to_i] }
+        .map(&:first)
+        .first(3)
+
+    return matched if matched.present?
+
+    articles.first(3)
   end
 
   def shop_params
