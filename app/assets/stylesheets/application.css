@@ -2672,22 +2672,47 @@ text-underline-offset: 2px;
 opacity: 0.85;
 }
 
+.shop-show__relatedLinks {
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+}
+
 .shop-show__relatedChip {
 display: inline-flex;
 align-items: center;
-min-height: 36px;
-padding: 0 12px;
+justify-content: center;
+min-height: 40px;
+padding: 0 14px;
 border-radius: 999px;
 background: #ffffff;
 border: 1px solid #e8e3d7;
 color: #111111;
 font-size: 13px;
-font-weight: 700;
+font-weight: 800;
 text-decoration: none;
+box-shadow: 0 4px 12px rgba(17, 17, 17, 0.03);
 }
 
 .shop-show__relatedChip:hover {
 border-color: #d7c7a0;
+}
+
+@media (max-width: 640px) {
+  .shop-show__relatedLinks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .shop-show__relatedChip {
+    width: 100%;
+    min-height: 54px;
+    padding: 0 10px;
+    border-radius: 12px;
+    text-align: center;
+    line-height: 1.35;
+  }
 }
 
 .shop-show__articleCards {
