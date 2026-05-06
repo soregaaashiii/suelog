@@ -1152,16 +1152,7 @@
   </div>
 
   <section class="shop-show__hero">
-    <h1 class="shop-show__title">
-      <%= @shop.name %>
-
-      <% if @shop.respond_to?(:open_now?) && @shop.open_now? %>
-        <span class="ss-badge ss-badge--green" style="vertical-align:middle; margin-left:10px; font-size:12px;">
-          営業中
-        </span>
-      <% end %>
-    </h1>
-
+    <h1 class="shop-show__title"><%= @shop.name %></h1>
     <p class="shop-show__sub">
       ジャンル：<%= @shop.display_genre.presence || "未設定" %>
     </p>
