@@ -492,11 +492,82 @@
   margin-top: 8px;
 }
 
+.shop-show__bookingSection {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(198, 167, 94, 0.12), transparent 34%),
+    linear-gradient(135deg, #fffdf8 0%, #ffffff 72%);
+}
+
+.shop-show__bookingHead {
+  margin-bottom: 14px;
+}
+
+.shop-show__bookingLead {
+  margin: 6px 0 0;
+  color: #666666;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.shop-show__bookingMain {
+  margin-top: 12px;
+}
+
+.shop-show__bookingPrimary {
+  width: 100%;
+  min-height: 54px;
+  font-size: 16px;
+}
+
+.shop-show__bookingSubActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.shop-show__bookingSub {
+  min-height: 44px;
+}
+
 .shop-show__heroActions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 16px;
+}
+
+.shop-show__heroActions--fv {
+  align-items: center;
+  margin-top: 18px;
+}
+
+.shop-show__fvPrimary {
+  min-height: 48px;
+  padding: 0 18px;
+  font-size: 15px;
+}
+
+.shop-show__fvSub {
+  min-height: 48px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .shop-show__heroActions--fv {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .shop-show__fvPrimary,
+  .shop-show__fvSub {
+    width: 100%;
+    min-height: 46px;
+  }
 }
 
 .shop-show__cvPrimary {
@@ -517,6 +588,49 @@
   border: 1px solid #111111 !important;
   border-radius: 10px !important;
   font-weight: 800;
+}
+
+.shop-show__quickActions {
+  padding: 14px !important;
+  margin-bottom: 16px;
+  background: #fffdf8;
+}
+
+.shop-show__quickActionsInner {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.shop-show__quickAction {
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.shop-show__quickAction--primary {
+  border-color: rgba(198, 167, 94, 0.55) !important;
+}
+
+@media (max-width: 640px) {
+  .shop-show__quickActionsInner {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-show__quickAction {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .shop-show__bookingSubActions {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-show__bookingPrimary,
+  .shop-show__bookingSub {
+    width: 100%;
+  }
 }
 
 .shop-show__stickyCta {
@@ -1089,38 +1203,38 @@
     </div>
 
     <% if primary_booking_url.present? || (@shop.phone.present? && tel_target_url.present?) %>
-      <div class="shop-show__heroActions">
+      <div class="shop-show__heroActions shop-show__heroActions--fv">
         <% if primary_booking_url.present? %>
-          <%= link_to primary_booking_label,
+          <%= link_to primary_booking_label.presence || "予約できるか確認する",
                       primary_booking_url,
                       target: "_blank",
                       rel: "nofollow noopener",
-                      class: "ss-btn ss-btn--dark shop-show__cvPrimary" %>
+                      class: "ss-btn ss-btn--dark shop-show__cvPrimary shop-show__fvPrimary" %>
         <% end %>
 
         <% if @shop.phone.present? && tel_target_url.present? %>
           <%= link_to "電話する",
                       track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
-                      class: "ss-btn ss-btn--ghost shop-show__cvSub" %>
+                      class: "ss-btn ss-btn--ghost shop-show__cvSub shop-show__fvSub" %>
         <% end %>
       </div>
     <% end %>
   </section>
 
-  <section class="shop-show__section" style="padding:14px; margin-bottom:16px;">
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+  <section class="shop-show__section shop-show__quickActions">
+    <div class="shop-show__quickActionsInner">
       <%= link_to "今営業中の喫煙可",
                   root_path(open_now: 1),
-                  class: "ss-btn ss-btn--dark" %>
+                  class: "ss-btn ss-btn--dark shop-show__quickAction shop-show__quickAction--primary" %>
 
       <%= link_to "席で吸える店だけ",
                   root_path(smoking_area: "all_smoking"),
-                  class: "ss-btn ss-btn--ghost" %>
+                  class: "ss-btn ss-btn--ghost shop-show__quickAction" %>
 
       <% if @shop.latitude.present? && @shop.longitude.present? %>
         <%= link_to "近くで探す",
                     map_path(lat: @shop.latitude, lng: @shop.longitude),
-                    class: "ss-btn ss-btn--ghost" %>
+                    class: "ss-btn ss-btn--ghost shop-show__quickAction" %>
       <% end %>
     </div>
   </section>
@@ -1262,22 +1376,27 @@
       </section>
     <% else %>
       <% if primary_booking_url.present? || @shop.latitude.present? || @shop.longitude.present? %>
-        <section class="shop-show__section">
-          <h2 class="shop-show__sectionTitle">予約・詳細</h2>
+        <section class="shop-show__section shop-show__bookingSection">
+          <div class="shop-show__bookingHead">
+            <h2 class="shop-show__sectionTitle">予約・来店前に確認</h2>
+            <p class="shop-show__bookingLead">
+              空席や予約可否を確認してから向かうと安心です。
+            </p>
+          </div>
 
           <% if primary_booking_url.present? %>
-            <div class="shop-show__bookingActions">
-              <%= link_to primary_booking_label,
+            <div class="shop-show__bookingMain">
+              <%= link_to primary_booking_label.presence || "予約できるか確認する",
                           primary_booking_url,
                           target: "_blank",
                           rel: "nofollow noopener",
-                          class: "ss-btn ss-btn--dark shop-show__cvPrimary" %>
+                          class: "ss-btn ss-btn--dark shop-show__cvPrimary shop-show__bookingPrimary" %>
             </div>
           <% end %>
 
-          <div class="shop-show__bookingActions">
+          <div class="shop-show__bookingSubActions">
             <button type="button"
-                    class="ss-btn ss-btn--ghost"
+                    class="ss-btn ss-btn--ghost shop-show__bookingSub"
                     data-current-location-search
                     style="cursor:pointer;">
               現在地から近くで探す
@@ -1285,7 +1404,7 @@
 
             <%= link_to "今営業中の店を見る",
                         root_path(smoking_area: "all_smoking", open_now: 1),
-                        class: "ss-btn ss-btn--ghost" %>
+                        class: "ss-btn ss-btn--ghost shop-show__bookingSub" %>
           </div>
         </section>
       <% end %>
@@ -1981,7 +2100,7 @@
 
   <% if @shop.approved? && primary_booking_url.present? %>
     <div class="shop-show__stickyCta">
-      <%= link_to primary_booking_label,
+      <%= link_to primary_booking_label.presence || "予約できるか確認する",
                   primary_booking_url,
                   target: "_blank",
                   rel: "nofollow noopener",

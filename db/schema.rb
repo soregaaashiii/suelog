@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_05_153906) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_06_060640) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -126,10 +126,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_153906) do
   end
 
   create_table "shop_clicks", force: :cascade do |t|
+    t.integer "article_id"
     t.datetime "created_at", null: false
     t.string "kind", null: false
     t.integer "shop_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["article_id", "shop_id", "kind"], name: "index_shop_clicks_on_article_id_and_shop_id_and_kind"
+    t.index ["article_id"], name: "index_shop_clicks_on_article_id"
     t.index ["created_at"], name: "index_shop_clicks_on_created_at"
     t.index ["kind"], name: "index_shop_clicks_on_kind"
     t.index ["shop_id"], name: "index_shop_clicks_on_shop_id"
@@ -229,6 +232,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_153906) do
   add_foreign_key "page_views", "shops"
   add_foreign_key "review_reports", "reviews"
   add_foreign_key "reviews", "shops"
+  add_foreign_key "shop_clicks", "articles"
   add_foreign_key "shop_clicks", "shops"
   add_foreign_key "shop_edit_requests", "shops"
   add_foreign_key "shop_reports", "shops"

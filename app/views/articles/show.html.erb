@@ -72,6 +72,38 @@ article_body_html =
       <%= article_body_html %>
     </div>
 
+    <section class="article-exit">
+      <div class="article-exit__head">
+        <div class="article-exit__label">次に探す</div>
+        <h2 class="article-exit__title">大阪で喫煙できるお店を条件から探す</h2>
+        <p class="article-exit__lead">
+          記事で気になるお店が見つからなかった場合は、営業中・席で喫煙可・エリア別に探せます。
+        </p>
+      </div>
+
+      <div class="article-exit__actions">
+        <%= link_to "今営業中の喫煙可を探す",
+                    root_path(open_now: 1),
+                    class: "article-exit__btn article-exit__btn--primary" %>
+
+        <%= link_to "席で吸える店を見る",
+                    root_path(smoking_area: "all_smoking"),
+                    class: "article-exit__btn" %>
+
+        <%= link_to "梅田で探す",
+                    umeda_path,
+                    class: "article-exit__btn" %>
+
+        <%= link_to "難波で探す",
+                    namba_path,
+                    class: "article-exit__btn" %>
+      </div>
+
+      <div class="article-exit__sub">
+        <%= link_to "特集記事一覧を見る →", articles_path, class: "article-exit__more" %>
+      </div>
+    </section>
+
     <div style="margin-top:24px; padding-top:14px; border-top:1px solid #eee; color:#777; font-size:13px; line-height:1.8;">
       <div>※本記事は<%= (@article.published_at.presence || @article.created_at).strftime("%Y年%-m月") %>に作成しました。</div>
       <div>※掲載情報は変更される可能性があります。最新情報は店舗へご確認ください。</div>

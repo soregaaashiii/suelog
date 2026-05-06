@@ -22,7 +22,11 @@ Rails.application.routes.draw do
   get "contact/done", to: "contact_messages#done", as: :done_contact_messages
 
   # 記事
-  resources :articles, only: [:index, :show]
+  resources :articles, only: [:index, :show] do
+    member do
+      get :track_shop_click
+    end
+  end
 
   # Area landing / filtered pages
   get "umeda",

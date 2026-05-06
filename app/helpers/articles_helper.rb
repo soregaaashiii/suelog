@@ -75,6 +75,7 @@ module ArticlesHelper
 
     style_article_figures!(fragment)
     remove_image_marker_nodes!(fragment)
+    rewrite_article_shop_links!(fragment)
 
     if include_article_footer && !article_cta_already_inserted
       cta_fragment = Nokogiri::HTML::DocumentFragment.parse(render_article_cta_shortcode)
@@ -102,6 +103,18 @@ module ArticlesHelper
   end
 
 private
+
+def rewrite_article_shop_links!(fragment)
+  return if @article.blank?
+
+  fragment.css("a[href]").each do |link|
+    href = link["href"].to_s
+    shop_id = href[%r{\A/shops/(\d+)(?:\z|[?#])}, 1]
+    next if shop_id.blank?
+
+    link["href"] = Rails.application.routes.url_helpers.track_shop_click_article_path(@article, shop_id: shop_id)
+  end
+end
 
 def popular_shops_for_article(limit: 3)
   Shop.approved
