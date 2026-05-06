@@ -149,6 +149,9 @@
           <th align="right">電話</th>
           <th align="right">地図</th>
           <th align="right">アフィリ</th>
+          <th align="right">記事</th>
+          <th align="right">記事流入率</th>
+          <th align="left">主な記事</th>
           <th align="left">操作</th>
         </tr>
       </thead>
@@ -196,6 +199,37 @@
 
             <td align="right" style="padding:8px 12px 8px 0;">
               <%= click_counts[:affiliate_click].to_i %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0;">
+              <%= click_counts[:article_shop_click].to_i %>
+            </td>
+
+            <td align="right" style="padding:8px 12px 8px 0; color:#7a5a12; font-weight:700;">
+              <%= click_counts[:article_flow_rate].to_f %>%
+            </td>
+
+            <td style="padding:8px 12px 8px 0; min-width:220px;">
+              <% article_clicks = (@article_shop_clicks_by_shop_id || {})[shop.id] || [] %>
+
+              <% if article_clicks.present? %>
+                <% article_clicks.group_by(&:article).sort_by { |_article, clicks| -clicks.size }.first(3).each do |article, clicks| %>
+                  <div style="font-size:12px; line-height:1.5; margin-bottom:4px;">
+                    <% if article.present? %>
+                      <%= link_to article.title,
+                                  article_path(article),
+                                  target: "_blank",
+                                  rel: "noopener",
+                                  style: "color:#111; font-weight:700;" %>
+                    <% else %>
+                      <span style="color:#777;">記事不明</span>
+                    <% end %>
+                    <span style="color:#777;">（<%= clicks.size %>件）</span>
+                  </div>
+                <% end %>
+              <% else %>
+                <span style="color:#999; font-size:12px;">なし</span>
+              <% end %>
             </td>
 
             <td style="padding:8px 0;">

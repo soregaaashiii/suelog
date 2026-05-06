@@ -90,9 +90,12 @@ module ArticlesHelper
 
       fragment.add_child(Nokogiri::HTML::DocumentFragment.parse(%(
         <div style="margin:32px 0 8px;">
-          <h2 style="font-size:18px; font-weight:900; margin-bottom:12px;">
-            よく見られている喫煙可のお店
+          <h2 style="font-size:18px; font-weight:900; margin-bottom:6px;">
+            喫煙状況を確認してお店を選ぶ
           </h2>
+          <p style="margin:0 0 12px; color:#666; font-size:13px; line-height:1.7;">
+            気になるお店は、店舗ページで喫煙可否・営業時間・地図を確認できます。
+          </p>
         </div>
       )))
 
@@ -286,11 +289,11 @@ def replace_shop_shortcodes(text)
     %(
       <div style="margin:24px 0; padding:14px; border:1px solid #e8e3d7; border-radius:16px; background:#fffdf8; box-shadow:0 6px 18px rgba(17,17,17,0.04);">
         <div style="font-size:20px; font-weight:900; color:#111; line-height:1.5; margin-bottom:8px;">
-          今すぐ行ける喫煙可の店を探す
+          今吸える店をすぐ確認する
         </div>
 
         <p style="margin:0 0 14px; color:#666; font-size:14px; line-height:1.8;">
-          「とりあえず今吸える店に行きたい」なら、ここから探せます。
+          喫煙可否・営業時間・地図を見ながら、今行けるお店を探せます。
         </p>
 
         <div style="display:grid; gap:8px; max-width:420px; margin:0 auto;">

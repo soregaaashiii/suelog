@@ -120,19 +120,46 @@
     <%= f.datetime_local_field :published_at, style: "padding:10px; border:1px solid #ddd; border-radius:10px;" %>
   </div>
 
-  <div style="margin-bottom:12px;">
-    <div style="font-weight:700; margin-bottom:6px;">SEOタイトル</div>
-    <%= f.text_field :seo_title, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
-  </div>
+  <div style="margin:18px 0 12px; padding:14px; border:1px solid #e8e3d7; border-radius:12px; background:#fffdf8;">
+    <div style="font-weight:900; margin-bottom:8px;">Search Console改善メモ</div>
+    <div style="color:#666; font-size:13px; line-height:1.7; margin-bottom:12px;">
+      表示回数があるのにCTRが低い記事は、SEOタイトルとmeta descriptionを見直してください。
+      目安：SEOタイトルは30〜36文字前後、meta descriptionは80〜120文字前後。
+    </div>
 
-  <div style="margin-bottom:12px;">
-    <div style="font-weight:700; margin-bottom:6px;">meta description</div>
-    <%= f.text_area :meta_description, rows: 3, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
-  </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-weight:700; margin-bottom:6px;">SEOタイトル</div>
+      <%= f.text_field :seo_title,
+            maxlength: 70,
+            placeholder: "例：【2026年最新版】梅田の喫煙可居酒屋｜今吸える店だけ厳選",
+            style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+      <div style="font-size:12px; color:#666; margin-top:6px;">
+        検索結果で最もクリック率に影響します。主要キーワード＋ベネフィットを入れるのがおすすめです。
+      </div>
+    </div>
 
-  <div style="margin-bottom:12px;">
-    <div style="font-weight:700; margin-bottom:6px;">管理メモ</div>
-    <%= f.text_area :admin_note, rows: 3, style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+    <div style="margin-bottom:12px;">
+      <div style="font-weight:700; margin-bottom:6px;">meta description</div>
+      <%= f.text_area :meta_description,
+            rows: 3,
+            maxlength: 180,
+            placeholder: "例：梅田で喫煙できる居酒屋を厳選。席で吸える店、喫煙所ありの店、営業中の店を探せます。",
+            style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+      <div style="font-size:12px; color:#666; margin-top:6px;">
+        記事の内容・エリア・喫煙条件・読むメリットを短く入れてください。
+      </div>
+    </div>
+
+    <div style="margin-bottom:0;">
+      <div style="font-weight:700; margin-bottom:6px;">管理メモ</div>
+      <%= f.text_area :admin_note,
+            rows: 4,
+            placeholder: "例：Search Consoleで表示回数あり・CTR低め。タイトルに「今営業中」「席で吸える」を追加検討。",
+            style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" %>
+      <div style="font-size:12px; color:#666; margin-top:6px;">
+        Search Consoleの気づき、狙うキーワード、次回改善メモを残せます。
+      </div>
+    </div>
   </div>
 
   <%= f.submit "保存", style: "padding:10px 16px; border:none; border-radius:10px; background:#111; color:#fff; font-weight:700; cursor:pointer;" %>

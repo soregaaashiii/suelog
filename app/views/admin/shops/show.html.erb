@@ -33,7 +33,31 @@
       <div><strong>電話クリック:</strong> <%= (@click_counts || {})[:phone_click].to_i %>件</div>
       <div><strong>地図クリック:</strong> <%= (@click_counts || {})[:map_click].to_i %>件</div>
       <div><strong>アフィリエイトクリック:</strong> <%= (@click_counts || {})[:affiliate_click].to_i %>件</div>
+      <div><strong>記事から店舗クリック:</strong> <%= (@click_counts || {})[:article_shop_click].to_i %>件</div>
     </div>
+
+    <% if defined?(@article_shop_clicks_by_article) && @article_shop_clicks_by_article.present? %>
+      <div style="margin-top:14px; padding-top:12px; border-top:1px solid #eee;">
+        <h3 style="margin:0 0 8px; font-size:15px;">記事別内訳</h3>
+
+        <div style="display:grid; gap:6px;">
+          <% @article_shop_clicks_by_article.sort_by { |_article, count| -count }.each do |article, count| %>
+            <div style="font-size:13px; line-height:1.6;">
+              <% if article.present? %>
+                <%= link_to article.title,
+                            article_path(article),
+                            target: "_blank",
+                            rel: "noopener",
+                            style: "color:#111; font-weight:700;" %>
+              <% else %>
+                <span style="color:#777;">記事不明</span>
+              <% end %>
+              <span style="color:#777;">（<%= count %>件）</span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
   </div>
 
   <div style="display:flex; gap:10px; flex-wrap:wrap;">

@@ -91,6 +91,7 @@ class Admin::ShopsController < Admin::BaseController
     shop_ids = scope.pluck(:id)
 
     @shop_click_counts = {}
+    @article_shop_clicks_by_shop_id = {}
     click_totals_by_shop_id = {}
 
     if defined?(ShopClick) && shop_ids.present?
@@ -99,17 +100,33 @@ class Admin::ShopsController < Admin::BaseController
         .group(:shop_id, :kind)
         .count
 
+      @article_shop_clicks_by_shop_id =
+        ShopClick
+          .where(shop_id: shop_ids, kind: "article_shop_click")
+          .includes(:article)
+          .group_by(&:shop_id)
+
       shop_ids.each do |shop_id|
         phone = raw_click_counts[[shop_id, "phone_click"]].to_i
         map = raw_click_counts[[shop_id, "map_click"]].to_i
         affiliate = raw_click_counts[[shop_id, "affiliate_click"]].to_i
-        total = phone + map + affiliate
+        article_shop = raw_click_counts[[shop_id, "article_shop_click"]].to_i
+        total = phone + map + affiliate + article_shop
+
+        article_flow_rate =
+          if total.positive?
+            ((article_shop.to_f / total) * 100).round(1)
+          else
+            0.0
+          end
 
         @shop_click_counts[shop_id] = {
           total: total,
           phone_click: phone,
           map_click: map,
-          affiliate_click: affiliate
+          affiliate_click: affiliate,
+          article_shop_click: article_shop,
+          article_flow_rate: article_flow_rate
         }
 
         click_totals_by_shop_id[shop_id] = total
@@ -166,18 +183,37 @@ class Admin::ShopsController < Admin::BaseController
       total: 0,
       phone_click: 0,
       map_click: 0,
-      affiliate_click: 0
+      affiliate_click: 0,
+      article_shop_click: 0
     }
+
+    @article_shop_clicks =
+      if @shop.respond_to?(:shop_clicks)
+        @shop.shop_clicks
+             .where(kind: "article_shop_click")
+             .includes(:article)
+             .order(created_at: :desc)
+             .limit(30)
+      else
+        []
+      end
+
+    @article_shop_clicks_by_article =
+      @article_shop_clicks
+        .group_by(&:article)
+        .transform_values(&:count)
 
     if @shop.respond_to?(:shop_clicks)
       grouped_counts = @shop.shop_clicks.group(:kind).count
       @click_counts[:phone_click] = grouped_counts["phone_click"].to_i
       @click_counts[:map_click] = grouped_counts["map_click"].to_i
       @click_counts[:affiliate_click] = grouped_counts["affiliate_click"].to_i
+      @click_counts[:article_shop_click] = grouped_counts["article_shop_click"].to_i
       @click_counts[:total] =
         @click_counts[:phone_click] +
         @click_counts[:map_click] +
-        @click_counts[:affiliate_click]
+        @click_counts[:affiliate_click] +
+        @click_counts[:article_shop_click]
     end
   end
 

@@ -54,6 +54,29 @@ class Admin::AnalyticsController < Admin::BaseController
 
     article_ids = Array(@article_shop_click_rankings).map { |row| row.article_id.to_i }.uniq
 
+    @article_page_view_counts =
+      if defined?(PageView) && article_ids.present? && PageView.column_names.include?("article_id")
+        PageView
+          .where(article_id: article_ids)
+          .group(:article_id)
+          .count
+      else
+        {}
+      end
+
+    @article_shop_click_rates =
+      article_ids.each_with_object({}) do |article_id, hash|
+        views = @article_page_view_counts[article_id].to_i
+        clicks = Array(@article_shop_click_rankings).find { |row| row.article_id.to_i == article_id }&.clicks_count.to_i
+
+        hash[article_id] =
+          if views.positive?
+            ((clicks.to_f / views) * 100).round(1)
+          else
+            0.0
+          end
+      end
+
     @article_shop_clicks_last_7_days =
       if defined?(ShopClick) && article_ids.present?
         ShopClick
@@ -110,5 +133,40 @@ class Admin::AnalyticsController < Admin::BaseController
       else
         {}
       end
+
+    @article_affiliate_rates =
+      article_ids.each_with_object({}) do |article_id, hash|
+        destinations = (@article_shop_click_destinations || {})[article_id] || []
+        article_shop_clicks = destinations.sum { |dest| dest.clicks_count.to_i }
+        affiliate_clicks = destinations.sum do |dest|
+          (@destination_shop_action_counts || {}).dig(dest.shop_id.to_i, :affiliate_click).to_i
+        end
+
+        hash[article_id] =
+          if article_shop_clicks.positive?
+            ((affiliate_clicks.to_f / article_shop_clicks) * 100).round(1)
+          else
+            0.0
+          end
+      end
+
+    @improvement_candidate_articles =
+      Array(@article_shop_click_rankings)
+        .select do |row|
+          article_id = row.article_id.to_i
+          views = (@article_page_view_counts || {})[article_id].to_i
+          rate = (@article_shop_click_rates || {})[article_id].to_f
+
+          views >= 20 && rate < 3.0
+        end
+        .sort_by do |row|
+          article_id = row.article_id.to_i
+
+          [
+            -(@article_page_view_counts || {})[article_id].to_i,
+            (@article_shop_click_rates || {})[article_id].to_f
+          ]
+        end
+        .first(10)
   end
 end

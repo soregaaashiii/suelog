@@ -83,10 +83,17 @@
             </div>
 
             <div style="text-align:right;">
-              <% last_7_days_clicks = (@article_shop_clicks_last_7_days || {})[row.article_id.to_i].to_i %>
+              <% article_id = row.article_id.to_i %>
+              <% last_7_days_clicks = (@article_shop_clicks_last_7_days || {})[article_id].to_i %>
+              <% page_views = (@article_page_view_counts || {})[article_id].to_i %>
+              <% click_rate = (@article_shop_click_rates || {})[article_id].to_f %>
+              <% affiliate_rate = (@article_affiliate_rates || {})[article_id].to_f %>
 
               <div style="font-weight:900;">送客：<%= row.clicks_count.to_i %>件</div>
               <div style="color:#137333; font-size:12px; font-weight:800;">直近7日：<%= last_7_days_clicks %>件</div>
+              <div style="color:#666; font-size:12px;">記事PV：<%= page_views %>件</div>
+              <div style="color:#7a5a12; font-size:12px; font-weight:800;">送客率：<%= click_rate %>%</div>
+              <div style="color:#666; font-size:12px;">予約/アフィリ率：<%= affiliate_rate %>%</div>
               <div style="color:#666; font-size:12px;">送客先店舗：<%= row.shops_count.to_i %>件</div>
             </div>
           </div>
@@ -139,5 +146,55 @@
     </div>
   <% else %>
     <p style="color:#666; margin:0;">まだ記事から店舗へのクリックはありません。</p>
+  <% end %>
+</div>
+
+
+<hr>
+
+<h2>改善候補記事</h2>
+
+<div style="margin: 12px 0 20px; padding: 14px 16px; border: 1px solid #ddd; border-radius: 12px; background: #fff;">
+  <p style="margin:0 0 12px; color:#666; font-size:13px;">
+    PVはあるのに店舗送客率が低い記事です。タイトル・導入文・店舗カード周りの改善候補として使えます。
+  </p>
+
+  <% if defined?(@improvement_candidate_articles) && @improvement_candidate_articles.present? %>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <% @improvement_candidate_articles.each do |row| %>
+        <% article_id = row.article_id.to_i %>
+        <% page_views = (@article_page_view_counts || {})[article_id].to_i %>
+        <% click_rate = (@article_shop_click_rates || {})[article_id].to_f %>
+
+        <div style="border:1px solid #eee; padding:12px 14px; border-radius:12px; background:#fafafa;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+            <div>
+              <strong><%= row.article_title %></strong>
+              <div style="margin-top:4px; color:#777; font-size:12px;">
+                /<%= row.article_slug %>
+              </div>
+            </div>
+
+            <div style="text-align:right;">
+              <div style="font-weight:900;">記事PV：<%= page_views %>件</div>
+              <div style="color:#b00020; font-size:12px; font-weight:800;">送客率：<%= click_rate %>%</div>
+              <div style="color:#666; font-size:12px;">送客：<%= row.clicks_count.to_i %>件</div>
+            </div>
+          </div>
+
+          <p style="margin:10px 0 0; display:flex; gap:10px; flex-wrap:wrap;">
+            <%= link_to "記事を見る",
+                        article_path(row.article_slug),
+                        target: "_blank",
+                        rel: "noopener" %>
+
+            <%= link_to "記事を編集",
+                        edit_admin_article_path(article_id) %>
+          </p>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p style="color:#666; margin:0;">現在、改善候補記事はありません。</p>
   <% end %>
 </div>
