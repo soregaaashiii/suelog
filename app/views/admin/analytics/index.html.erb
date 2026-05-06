@@ -50,3 +50,94 @@
 <% else %>
 <p style="color:#666;">まだ閲覧がありません。</p>
 <% end %>
+
+<hr>
+
+<h2 id="article-click-ranking">記事別送客ランキング</h2>
+
+<div style="margin: 12px 0 20px; padding: 14px 16px; border: 1px solid #ddd; border-radius: 12px; background: #fff;">
+  <p style="margin:0 0 12px; color:#666; font-size:13px;">
+    記事内の店舗カードから店舗ページへ送客したクリック数です。
+  </p>
+
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px;">
+    <%= link_to "累計順",
+                admin_analytics_path(article_click_sort: "total", anchor: "article-click-ranking"),
+                style: "display:inline-flex; align-items:center; min-height:34px; padding:0 12px; border-radius:999px; border:1px solid #ddd; text-decoration:none; font-weight:800; color:#111; background:#{@article_click_sort == 'last_7_days' ? '#fff' : '#111'}; color:#{@article_click_sort == 'last_7_days' ? '#111' : '#fff'};" %>
+
+    <%= link_to "直近7日順",
+                admin_analytics_path(article_click_sort: "last_7_days", anchor: "article-click-ranking"),
+                style: "display:inline-flex; align-items:center; min-height:34px; padding:0 12px; border-radius:999px; border:1px solid #ddd; text-decoration:none; font-weight:800; color:#111; background:#{@article_click_sort == 'last_7_days' ? '#111' : '#fff'}; color:#{@article_click_sort == 'last_7_days' ? '#fff' : '#111'};" %>
+  </div>
+
+  <% if defined?(@article_shop_click_rankings) && @article_shop_click_rankings.present? %>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <% @article_shop_click_rankings.each do |row| %>
+        <div style="border:1px solid #eee; padding:12px 14px; border-radius:12px; background:#fafafa;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+            <div>
+              <strong><%= row.article_title %></strong>
+              <div style="margin-top:4px; color:#777; font-size:12px;">
+                /<%= row.article_slug %>
+              </div>
+            </div>
+
+            <div style="text-align:right;">
+              <% last_7_days_clicks = (@article_shop_clicks_last_7_days || {})[row.article_id.to_i].to_i %>
+
+              <div style="font-weight:900;">送客：<%= row.clicks_count.to_i %>件</div>
+              <div style="color:#137333; font-size:12px; font-weight:800;">直近7日：<%= last_7_days_clicks %>件</div>
+              <div style="color:#666; font-size:12px;">送客先店舗：<%= row.shops_count.to_i %>件</div>
+            </div>
+          </div>
+
+          <% destinations = (@article_shop_click_destinations || {})[row.article_id.to_i] || [] %>
+
+          <% if destinations.present? %>
+            <div style="margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
+              <div style="font-size:12px; color:#666; font-weight:700; margin-bottom:6px;">
+                送客先店舗
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <% destinations.first(5).each do |dest| %>
+                  <% action_counts = (@destination_shop_action_counts || {})[dest.shop_id.to_i] || {} %>
+
+                  <div style="padding:8px 0; border-top:1px solid #eee;">
+                    <div style="display:flex; justify-content:space-between; gap:10px; font-size:13px; line-height:1.5;">
+                      <%= link_to dest.shop_name,
+                                  admin_shop_path(dest.shop_id),
+                                  style: "color:#111; font-weight:700;" %>
+
+                      <span style="color:#666; white-space:nowrap;">
+                        送客 <%= dest.clicks_count.to_i %>件
+                      </span>
+                    </div>
+
+                    <div style="margin-top:4px; display:flex; gap:8px; flex-wrap:wrap; color:#777; font-size:12px;">
+                      <span>電話 <%= action_counts[:phone_click].to_i %></span>
+                      <span>地図 <%= action_counts[:map_click].to_i %></span>
+                      <span>予約/アフィリ <%= action_counts[:affiliate_click].to_i %></span>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <p style="margin:10px 0 0; display:flex; gap:10px; flex-wrap:wrap;">
+            <%= link_to "記事を見る",
+                        article_path(row.article_slug),
+                        target: "_blank",
+                        rel: "noopener" %>
+
+            <%= link_to "記事を編集",
+                        edit_admin_article_path(row.article_id) %>
+          </p>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p style="color:#666; margin:0;">まだ記事から店舗へのクリックはありません。</p>
+  <% end %>
+</div>
