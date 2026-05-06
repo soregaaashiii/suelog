@@ -2424,7 +2424,7 @@ align-items: center;
 justify-content: center;
 min-height: 48px;
 padding: 0 12px;
-border-radius: 12px;
+border-radius: 4px;
 background: #ffffff;
 border: 1px solid #e8e3d7;
 color: #111111;
@@ -2465,7 +2465,7 @@ text-decoration: underline !important;
 @media (max-width: 640px) {
   .article-exit {
     padding: 16px;
-    border-radius: 6px;
+    border-radius: 0;
   }
 
   .article-exit__actions {
@@ -2963,7 +2963,8 @@ overflow: hidden;
   .area-card,
   .shop-card,
   .shop-card2,
-  .empty-state {
+  .empty-state,
+  .article-exit {
     border-radius: 0 !important;
   }
 }
@@ -3469,4 +3470,28 @@ color: #7a5a12;
   body {
     padding-bottom: calc(82px + env(safe-area-inset-bottom));
   }
+}
+
+/* ===== 記事内カード・記事下CTA：角丸調整 ===== */
+
+/* 記事内の店舗カードは角丸を完全に取る */
+.article-body .shop-card,
+.article-body .shop-card2 {
+  border-radius: 0 !important;
+}
+
+/* 「今吸える店をすぐ確認する」CTAカードは角丸を完全に取る */
+.article-body > div[style*="今吸える店"],
+.article-body div[style*="background:#fffdf8"] {
+  border-radius: 0 !important;
+}
+
+/* 「大阪で喫煙できるお店を条件から探す」本体は四角のまま */
+.article-exit {
+  border-radius: 0 !important;
+}
+
+/* 「大阪で喫煙できるお店を条件から探す」のボタンは元に戻す */
+.article-exit__btn {
+  border-radius: 12px !important;
 }

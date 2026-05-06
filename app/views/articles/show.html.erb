@@ -57,7 +57,7 @@ article_body_html =
 
       <% if @article.respond_to?(:eyecatch) && @article.eyecatch.attached? %>
         <div style="margin-bottom:16px; text-align:center;">
-          <%= image_tag @article.eyecatch, style: "max-width:100%; border-radius:12px;" %>
+          <%= image_tag @article.eyecatch, style: "max-width:100%; border-radius:8px;" %>
         </div>
       <% end %>
 
@@ -184,7 +184,7 @@ article_body_html =
 .sidebar-box {
   border: 1px solid #eee;
   background: #fff;
-  border-radius: 14px;
+  border-radius: 10px;
   padding: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
 }
@@ -257,7 +257,7 @@ article_body_html =
   max-width: 560px;
   width: 100%;
   height: auto;
-  border-radius: 12px;
+  border-radius: 8px;
   display: inline-block;
 }
 
