@@ -749,6 +749,9 @@ class Admin::ShopsController < Admin::BaseController
           # コレクターCSV列フォールバック
           genre = fields[2] if genre.blank?
 
+          # 最後の保険：ジャンルが空なら「その他」で取り込む
+          genre = "その他" if genre.blank?
+
           genre_other = normalize_str.call(raw_genre_other_value)
 
           Rails.logger.warn(
