@@ -564,12 +564,38 @@ class Admin::ShopsController < Admin::BaseController
     end
 
     pick = lambda do |row, keys|
+      row_hash = row.to_h
+
+      normalized_row_hash =
+        row_hash.each_with_object({}) do |(header, value), h|
+          normalized_header =
+            header.to_s
+                  .encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+                  .sub(/\A\uFEFF/, "")
+                  .strip
+                  .downcase
+
+          h[normalized_header] = value
+        end
+
       keys.each do |k|
-        v = row[k]
-        v = row[k.to_s] if v.nil? && k.is_a?(Symbol)
-        v = row[k.to_sym] if v.nil? && k.is_a?(String)
+        candidates = [
+          k,
+          k.to_s,
+          k.to_sym,
+          k.to_s.strip,
+          k.to_s.strip.downcase
+        ]
+
+        candidates.each do |candidate|
+          v = row[candidate]
+          return v if v.present?
+        end
+
+        v = normalized_row_hash[k.to_s.strip.downcase]
         return v if v.present?
       end
+
       nil
     end
 
