@@ -45,6 +45,16 @@
   <%# Google Search Console 用。確認コードを入手したら content を差し替え %>
   <%# <meta name="google-site-verification" content="ここに確認コードを入れる"> %>
 
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-52F3XYKRRS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-52F3XYKRRS');
+</script>
+
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
