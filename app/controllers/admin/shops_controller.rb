@@ -654,17 +654,28 @@ class Admin::ShopsController < Admin::BaseController
             next
           end
 
-          name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
-          phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
-          address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
+          fields = row.fields.map { |v| normalize_str.call(v) }
 
-          fields = row.fields
+          # コレクターCSV固定列
+          # 0: maps_url
+          # 1: name
+          # 2: genre
+          # 3: address
 
-          # コレクターCSVの列順フォールバック:
-          # place_id,maps_url,name,genre,address,last_confirmed_on,smoking_area,smoking_type,area,nearest_station,phone,...
-          name = normalize_str.call(fields[2]) if name.blank?
-          address = normalize_str.call(fields[4]) if address.blank?
-          phone = normalize_str.call(fields[10]) if phone.blank?
+          name =
+            normalize_str.call(
+              pick.call(row, [:name, "name", "店名"])
+            ).presence || fields[1]
+
+          phone =
+            normalize_str.call(
+              pick.call(row, [:phone, "phone", "電話番号"])
+            ).presence || fields[10]
+
+          address =
+            normalize_str.call(
+              pick.call(row, [:address, "address", "住所", "formatted_address"])
+            ).presence || fields[3]
 
           if name.blank? && address.blank? && phone.blank?
             skipped_blank += 1
@@ -735,9 +746,8 @@ class Admin::ShopsController < Admin::BaseController
             genre = normalize_str.call(raw_genre_other_value)
           end
 
-          # コレクターCSVの列順フォールバック:
-          # place_id,maps_url,name,genre,address,last_confirmed_on,smoking_area,smoking_type,area,nearest_station,phone,...
-          genre = normalize_str.call(fields[3]) if genre.blank?
+          # コレクターCSV列フォールバック
+          genre = fields[2] if genre.blank?
 
           genre_other = normalize_str.call(raw_genre_other_value)
 
