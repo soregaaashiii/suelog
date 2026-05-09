@@ -4,6 +4,7 @@
 require "csv"
 require "json"
 require "date"
+require "digest"
 
 class Admin::ShopsController < Admin::BaseController
   def index
@@ -564,10 +565,8 @@ class Admin::ShopsController < Admin::BaseController
     end
 
     pick = lambda do |row, keys|
-      row_hash = row.to_h
-
       normalized_row_hash =
-        row_hash.each_with_object({}) do |(header, value), h|
+        row.to_h.each_with_object({}) do |(header, value), h|
           normalized_header =
             header.to_s
                   .encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
@@ -579,19 +578,6 @@ class Admin::ShopsController < Admin::BaseController
         end
 
       keys.each do |k|
-        candidates = [
-          k,
-          k.to_s,
-          k.to_sym,
-          k.to_s.strip,
-          k.to_s.strip.downcase
-        ]
-
-        candidates.each do |candidate|
-          v = row[candidate]
-          return v if v.present?
-        end
-
         v = normalized_row_hash[k.to_s.strip.downcase]
         return v if v.present?
       end
@@ -626,10 +612,21 @@ class Admin::ShopsController < Admin::BaseController
 
     begin
       csv_text = file.read
-      csv_text = csv_text.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-      csv_text.sub!(/\A\uFEFF/, "")
+      csv_text = csv_text.to_s
+      csv_text = csv_text.force_encoding("UTF-8")
+      csv_text = csv_text.sub(/\A\uFEFF/, "")
 
-      rows = CSV.parse(csv_text, headers: true)
+      Rails.logger.warn(
+        "[CSV UPLOAD DEBUG] filename=#{file.original_filename} size=#{csv_text.bytesize} sha256=#{Digest::SHA256.hexdigest(csv_text)} valid_encoding=#{csv_text.valid_encoding?}"
+      )
+
+      rows = CSV.parse(
+        csv_text,
+        headers: true,
+        encoding: "UTF-8",
+        liberal_parsing: true,
+        quote_char: '"'
+      )
 
       if rows.empty?
         return redirect_to admin_shops_path, flash: { admin_alert: "CSVのデータ行が0件です。ヘッダだけ、またはCSV形式が不正です。" }
@@ -654,28 +651,31 @@ class Admin::ShopsController < Admin::BaseController
             next
           end
 
-          fields = row.fields.map { |v| normalize_str.call(v) }
+          headers = row.headers.map do |header|
+            header.to_s
+                  .encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+                  .sub(/\A\uFEFF/, "")
+                  .strip
+                  .downcase
+          end
 
-          # コレクターCSV固定列
-          # 0: maps_url
-          # 1: name
-          # 2: genre
-          # 3: address
+          fields = row.fields
+          collector_csv =
+            headers.include?("place_id") &&
+            headers.include?("maps_url") &&
+            headers.include?("name") &&
+            headers.include?("genre") &&
+            headers.include?("address")
 
-          name =
-            normalize_str.call(
-              pick.call(row, [:name, "name", "店名"])
-            ).presence || fields[1]
+          name = normalize_str.call(pick.call(row, [:name, "name", "店名"]))
+          phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
+          address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
 
-          phone =
-            normalize_str.call(
-              pick.call(row, [:phone, "phone", "電話番号"])
-            ).presence || fields[10]
-
-          address =
-            normalize_str.call(
-              pick.call(row, [:address, "address", "住所", "formatted_address"])
-            ).presence || fields[3]
+          if fields.size >= 11 && fields[1].to_s.include?("query_place_id=")
+            name = normalize_str.call(fields[2]) if name.blank?
+            address = normalize_str.call(fields[4]) if address.blank? || address.match?(/\A\d{3}-?\d{4}(?:\s+\d+)?\z/)
+            phone = normalize_str.call(fields[10]) if phone.blank?
+          end
 
           if name.blank? && address.blank? && phone.blank?
             skipped_blank += 1
@@ -742,16 +742,16 @@ class Admin::ShopsController < Admin::BaseController
 
           genre = normalize_str.call(raw_genre_value)
 
+          if fields.size >= 11 && fields[1].to_s.include?("query_place_id=")
+            genre = normalize_str.call(fields[3]) if genre.blank?
+          end
+
           if genre.blank? && raw_genre_other_value.present?
             genre = normalize_str.call(raw_genre_other_value)
           end
 
-          # コレクターCSV列フォールバック
-          genre = fields[2] if genre.blank?
-
           # 最後の保険：ジャンルが空なら「その他」で取り込む
           genre = "その他" if genre.blank?
-
           genre_other = normalize_str.call(raw_genre_other_value)
 
           Rails.logger.warn(
@@ -837,7 +837,9 @@ class Admin::ShopsController < Admin::BaseController
               e.message
             end
 
-          message = "#{idx + 2}行目: #{e.class} - #{detail}"
+          debug_fields = row.fields.first(12).map.with_index { |v, i| "#{i}=#{v.inspect}" }.join(" | ")
+
+          message = "#{idx + 2}行目: #{e.class} - #{detail} / 読取 name=#{name.inspect} genre=#{genre.inspect} address=#{address.inspect} phone=#{phone.inspect} / fields=#{debug_fields}"
           error_messages << message
           Rails.logger.error(
             "[CSV IMPORT ERROR] #{message} row=#{row.to_h.inspect} raw_genre=#{raw_genre_value.inspect} normalized_genre=#{genre.inspect}"
