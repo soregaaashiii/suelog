@@ -658,6 +658,14 @@ class Admin::ShopsController < Admin::BaseController
           phone = normalize_str.call(pick.call(row, [:phone, "phone", "電話番号"]))
           address = normalize_str.call(pick.call(row, [:address, "address", "住所", "formatted_address"]))
 
+          fields = row.fields
+
+          # コレクターCSVの列順フォールバック:
+          # place_id,maps_url,name,genre,address,last_confirmed_on,smoking_area,smoking_type,area,nearest_station,phone,...
+          name = normalize_str.call(fields[2]) if name.blank?
+          address = normalize_str.call(fields[4]) if address.blank?
+          phone = normalize_str.call(fields[10]) if phone.blank?
+
           if name.blank? && address.blank? && phone.blank?
             skipped_blank += 1
             Rails.logger.info("[CSV IMPORT SKIP EMPTY KEY FIELDS] line=#{idx + 2} row=#{row_hash.inspect}")
@@ -726,6 +734,10 @@ class Admin::ShopsController < Admin::BaseController
           if genre.blank? && raw_genre_other_value.present?
             genre = normalize_str.call(raw_genre_other_value)
           end
+
+          # コレクターCSVの列順フォールバック:
+          # place_id,maps_url,name,genre,address,last_confirmed_on,smoking_area,smoking_type,area,nearest_station,phone,...
+          genre = normalize_str.call(fields[3]) if genre.blank?
 
           genre_other = normalize_str.call(raw_genre_other_value)
 
