@@ -50,6 +50,7 @@ CSV.open(output_path, "w") do |csv|
   ]
 
   Shop.where(tabelog_url: nil)
+      .where(approved: true)
       .where.not(name: [nil, ""])
       .find_each do |shop|
 
