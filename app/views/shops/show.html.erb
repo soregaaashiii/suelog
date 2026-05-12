@@ -116,7 +116,10 @@
   tel_target_url = tel_digits.present? ? "tel:#{tel_digits}" : nil
 
   tabelog_track_url =
-    if @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present?
+    if @shop.respond_to?(:tabelog_affiliate_url) && @shop.tabelog_affiliate_url.present?
+      track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.tabelog_affiliate_url)
+
+    elsif @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present?
       track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.tabelog_url)
     end
 
