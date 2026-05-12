@@ -46,26 +46,28 @@ CSV.foreach(csv_path, headers: true) do |row|
     next
   end
 
-  phone = normalize_phone(row["phone"])
-  address = normalize_address(row["address"])
+  shop_name = row["name"].to_s.strip
 
-shop = Shop.find_by(
-  "REPLACE(REPLACE(REPLACE(phone, '-', ''), ' ', ''), '　', '') = ?",
-  phone
-)
+  normalized_shop_name = shop_name.gsub(/[[:space:]]/, "").downcase
 
-  if shop.nil?
-    shop = Shop.all.find do |s|
-      normalize_address(s.address) == address
-    end
+  matched_shops = Shop.where.not(name: [nil, ""]).select do |s|
+    s.name.to_s.gsub(/[[:space:]]/, "").downcase == normalized_shop_name
   end
+
+  if matched_shops.count > 1
+    puts "Skipped duplicate name: #{shop_name}"
+    skipped += 1
+    next
+  end
+
+  shop = matched_shops.first
 
   if shop.present?
     shop.update!(
       tabelog_url: tabelog_url,
       tabelog_affiliate_url: affiliate_url,
       tabelog_matched_at: Time.current,
-      tabelog_match_method: phone.present? ? "phone" : "address"
+      tabelog_match_method: "name"
     )
 
     matched += 1
