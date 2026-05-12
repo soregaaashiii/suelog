@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_06_060640) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_12_050509) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -216,6 +216,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_06_060640) do
     t.boolean "smoking_unverified", default: false, null: false
     t.string "source"
     t.text "special_hours_note"
+    t.string "tabelog_affiliate_url"
+    t.string "tabelog_match_method"
+    t.datetime "tabelog_matched_at"
     t.string "tabelog_url"
     t.integer "taste"
     t.integer "thumbnail_index"
