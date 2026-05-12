@@ -19,6 +19,19 @@ def normalize_address(address)
          .gsub("号", "")
 end
 
+def normalize_shop_name(name)
+  name.to_s
+      .tr("０-９Ａ-Ｚａ-ｚ", "0-9A-Za-z")
+      .tr("＆×", "&x")
+      .gsub(/【旧店名】[^）)]*/, "")
+      .gsub(/（旧店名[^）]*）/, "")
+      .gsub(/\(旧店名[^)]*\)/, "")
+      .gsub(/（[^）]*）/, "")
+      .gsub(/\([^)]*\)/, "")
+      .gsub(/[[:space:]]/, "")
+      .downcase
+end
+
 csv_path = Rails.root.join("tmp/tabelog_links.csv")
 
 unless File.exist?(csv_path)
@@ -48,10 +61,10 @@ CSV.foreach(csv_path, headers: true) do |row|
 
   shop_name = row["name"].to_s.strip
 
-  normalized_shop_name = shop_name.gsub(/[[:space:]]/, "").downcase
+  normalized_shop_name = normalize_shop_name(shop_name)
 
   matched_shops = Shop.where.not(name: [nil, ""]).select do |s|
-    s.name.to_s.gsub(/[[:space:]]/, "").downcase == normalized_shop_name
+    normalize_shop_name(s.name) == normalized_shop_name
   end
 
   if matched_shops.count > 1
