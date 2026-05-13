@@ -138,15 +138,28 @@
     hotpepper_track_url.presence ||
     tabelog_track_url.presence
 
-  primary_booking_label =
+  primary_booking_provider =
     if custom_affiliate_track_url.present?
-      @shop.custom_affiliate_label.presence || "公式サイトを見る"
+      "custom"
     elsif hotpepper_track_url.present?
-      "予約できるか確認する"
+      "hotpepper"
     elsif tabelog_track_url.present?
-      "空席・詳細を見る"
-    else
-      nil
+      "tabelog"
+    end
+
+  primary_booking_provider_label =
+    case primary_booking_provider
+    when "hotpepper"
+      "HotPepper"
+    when "tabelog"
+      "食べログ"
+    when "custom"
+      @shop.custom_affiliate_label.presence || "公式サイト"
+    end
+
+  primary_booking_label =
+    if primary_booking_url.present?
+      "空席を確認"
     end
 
   related_area_links = []
@@ -585,15 +598,44 @@
 }
 
 .shop-show__cvPrimary {
-  background: linear-gradient(180deg, #2a2a2a 0%, #111111 100%) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(198, 167, 94, 0.55) !important;
   border-radius: 10px !important;
   font-weight: 900;
   letter-spacing: 0.04em;
   box-shadow:
     0 10px 24px rgba(17, 17, 17, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.shop-show__cvPrimary--custom {
+  background: linear-gradient(180deg, #2a2a2a 0%, #111111 100%) !important;
+  border: 1px solid rgba(198, 167, 94, 0.55) !important;
+}
+
+.shop-show__cvPrimary--hotpepper {
+  background: #e60012 !important;
+  border: 1px solid #cc0010 !important;
+}
+
+.shop-show__cvPrimary--tabelog {
+  background: #f39800 !important;
+  border: 1px solid #e08900 !important;
+}
+
+.shop-show__cvPrimaryLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+.shop-show__cvPrimaryProvider {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.92;
+  letter-spacing: 0.02em;
 }
 
 .shop-show__cvSub {
@@ -974,6 +1016,98 @@
   border-color: #cfc4a5;
 }
 
+.shop-show__articleCards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.shop-show__articleCard {
+  display: flex;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid #e8e3d7;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fffdf8;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.shop-show__articleCard:hover {
+  transform: translateY(-2px);
+  border-color: #d8c79a;
+  box-shadow: 0 12px 28px rgba(17, 17, 17, 0.08);
+}
+
+.shop-show__articleThumb {
+  width: 120px;
+  min-width: 120px;
+  height: 120px;
+  overflow: hidden;
+  background: #f3f3f3;
+}
+
+.shop-show__articleThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.shop-show__articleBody {
+  padding: 12px 12px 12px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.shop-show__articleLabel {
+  font-size: 11px;
+  font-weight: 800;
+  color: #7a5a12;
+  margin-bottom: 6px;
+}
+
+.shop-show__articleTitle {
+  margin: 0;
+  color: #111111;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.shop-show__articleSummary {
+  margin: 8px 0 0;
+  color: #666666;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .shop-show__articleCards {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-show__articleThumb {
+    width: 96px;
+    min-width: 96px;
+    height: 96px;
+  }
+
+  .shop-show__articleTitle {
+    font-size: 14px;
+  }
+
+  .shop-show__articleSummary {
+    font-size: 12px;
+  }
+}
+
 .ss-badge {
   display: inline-flex;
   align-items: center;
@@ -1219,11 +1353,21 @@
     <% if primary_booking_url.present? || (@shop.phone.present? && tel_target_url.present?) %>
       <div class="shop-show__heroActions shop-show__heroActions--fv">
         <% if primary_booking_url.present? %>
-          <%= link_to primary_booking_label.presence || "予約できるか確認する",
-                      primary_booking_url,
+          <%= link_to primary_booking_url,
                       target: "_blank",
                       rel: "sponsored nofollow noopener",
-                      class: "ss-btn ss-btn--dark shop-show__cvPrimary shop-show__fvPrimary" %>
+                      class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--#{primary_booking_provider} shop-show__fvPrimary" do %>
+
+            <span class="shop-show__cvPrimaryLabel">
+              <span><%= primary_booking_label %></span>
+
+              <% if primary_booking_provider_label.present? %>
+                <span class="shop-show__cvPrimaryProvider">
+                  <%= primary_booking_provider_label %>
+                </span>
+              <% end %>
+            </span>
+          <% end %>
         <% end %>
 
         <% if @shop.phone.present? && tel_target_url.present? %>
@@ -1400,11 +1544,21 @@
 
           <% if primary_booking_url.present? %>
             <div class="shop-show__bookingMain">
-              <%= link_to primary_booking_label.presence || "予約できるか確認する",
-                          primary_booking_url,
+              <%= link_to primary_booking_url,
                           target: "_blank",
                           rel: "sponsored nofollow noopener",
-                          class: "ss-btn ss-btn--dark shop-show__cvPrimary shop-show__bookingPrimary" %>
+                          class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--#{primary_booking_provider} shop-show__bookingPrimary" do %>
+
+                <span class="shop-show__cvPrimaryLabel">
+                  <span><%= primary_booking_label %></span>
+
+                  <% if primary_booking_provider_label.present? %>
+                    <span class="shop-show__cvPrimaryProvider">
+                      <%= primary_booking_provider_label %>
+                    </span>
+                  <% end %>
+                </span>
+              <% end %>
             </div>
           <% end %>
 
