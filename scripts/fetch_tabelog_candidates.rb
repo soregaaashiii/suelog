@@ -27,10 +27,20 @@ def short_shop_name(name)
     .gsub(/【[^】]*】/, "")
     .gsub(/（[^）]*）/, "")
     .gsub(/\([^)]*\)/, "")
+    .gsub(/個室居酒屋|完全個室|大衆酒場|大衆居酒屋|海鮮居酒屋|焼き鳥|焼鳥|肉バル|酒場|居酒屋/, "")
     .gsub(/大阪梅田店\z/, "")
     .gsub(/梅田店\z/, "")
+    .gsub(/お初天神店\z/, "")
+    .gsub(/東通り店\z/, "")
+    .gsub(/阪急東通り店\z/, "")
+    .gsub(/茶屋町店\z/, "")
+    .gsub(/大阪駅前店\z/, "")
+    .gsub(/大阪駅前第[一二三四１２３４1-4]ビル店\z/, "")
     .gsub(/大阪店\z/, "")
     .gsub(/本店\z/, "")
+    .gsub(/別館\z/, "")
+    .gsub(/新館\z/, "")
+    .gsub(/[[:space:]]+/, " ")
     .gsub(/店\z/, "")
     .strip
 end
@@ -59,41 +69,25 @@ def build_search_queries(shop)
 
   queries = []
 
-  queries << [
-    "site:tabelog.com",
-    name,
-    "大阪",
-    "梅田"
-  ].join(" ")
+  # まずはGoogleの補完を使う。site指定より拾いやすい。
+  queries << "#{name} 食べログ"
+  queries << "#{name} 梅田 食べログ"
+  queries << "#{name} 大阪 食べログ"
 
-  if town.present?
-    queries << [
-      "site:tabelog.com",
-      name,
-      "大阪市北区",
-      town
-    ].join(" ")
-
-    queries << [
-      name,
-      town,
-      "食べログ"
-    ].join(" ")
-  end
+  # site指定は補助として使う。
+  queries << "site:tabelog.com #{name}"
 
   if short_name.present? && short_name != name
-    queries << [
-      "site:tabelog.com",
-      short_name,
-      "大阪",
-      "梅田"
-    ].join(" ")
+    queries << "#{short_name} 食べログ"
+    queries << "#{short_name} 梅田 食べログ"
+    queries << "#{short_name} 大阪 食べログ"
+    queries << "site:tabelog.com #{short_name}"
+  end
 
-    queries << [
-      short_name,
-      "梅田",
-      "食べログ"
-    ].join(" ")
+  # 住所は強く使わず、町名だけ最後の補助にする。
+  if town.present?
+    queries << "#{name} #{town} 食べログ"
+    queries << "#{short_name} #{town} 食べログ" if short_name.present? && short_name != name
   end
 
   queries.uniq
@@ -102,12 +96,14 @@ end
 def fetch_google_result(query)
   uri = URI("https://serpapi.com/search.json")
 
-  params = {
-    q: query,
-    api_key: SERPAPI_KEY,
-    engine: "google",
-    num: 5
-  }
+params = {
+  q: query,
+  api_key: SERPAPI_KEY,
+  engine: "google",
+  num: 10,
+  hl: "ja",
+  gl: "jp"
+}
 
   uri.query = URI.encode_www_form(params)
 
@@ -148,8 +144,12 @@ def candidate_score(shop, result)
   normalized_short_name = short_shop_name(shop.name).downcase
   town = address_town(shop.address)
 
-  score += 50 if normalized_name.present? && normalized_title.include?(normalized_name)
-  score += 35 if normalized_short_name.present? && normalized_title.include?(normalized_short_name)
+  normalized_snippet = normalize_search_text(snippet).downcase
+
+  score += 35 if normalized_name.present? && normalized_title.include?(normalized_name)
+  score += 30 if normalized_short_name.present? && normalized_title.include?(normalized_short_name)
+  score += 20 if normalized_name.present? && normalized_snippet.include?(normalized_name)
+  score += 15 if normalized_short_name.present? && normalized_snippet.include?(normalized_short_name)
   score += 20 if town.present? && (title.include?(town) || snippet.include?(town))
   score += 15 if title.include?("梅田") || snippet.include?("梅田")
   score += 15 if title.include?("大阪") || snippet.include?("大阪")
@@ -163,7 +163,7 @@ def best_tabelog_result(shop, organic_results)
 
   candidates
     .map { |r| [r, candidate_score(shop, r)] }
-    .select { |_r, score| score >= 50 }
+    .select { |_r, score| score >= 30 }
     .max_by { |_r, score| score }
 end
 
