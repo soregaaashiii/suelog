@@ -204,6 +204,14 @@ class Shop < ApplicationRecord
             format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]), message: "は正しいURLを入力してください" },
             allow_blank: true
 
+  validates :custom_affiliate_url,
+            format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]), message: "は正しいURLを入力してください" },
+            allow_blank: true
+
+  validates :custom_affiliate_label,
+            length: { maximum: 50 },
+            allow_blank: true
+
   validate :last_confirmed_on_cannot_be_future
 
   # 電話番号の重複防止（digitsのみ）

@@ -764,6 +764,9 @@ class Admin::ShopsController < Admin::BaseController
           tabelog_url = normalize_str.call(
             pick.call(row, [:tabelog_url, "tabelog_url", "食べログURL", "tabelog"])
           )
+          tabelog_affiliate_url = normalize_str.call(
+            pick.call(row, [:tabelog_affiliate_url, "tabelog_affiliate_url", :affiliate_url, "affiliate_url", "食べログアフィリエイトURL"])
+          )
           hotpepper_url = normalize_str.call(
             pick.call(row, [:hotpepper_url, "hotpepper_url", "ホットペッパーURL", "hotpepper"])
           )
@@ -806,6 +809,7 @@ class Admin::ShopsController < Admin::BaseController
             smoking_area: smoking_area,
             smoking_type: smoking_type,
             tabelog_url: tabelog_url.presence,
+            tabelog_affiliate_url: tabelog_affiliate_url.presence,
             hotpepper_url: hotpepper_url.presence,
             last_confirmed_on: last_confirmed_on,
             smoking_unverified: true
@@ -1037,6 +1041,7 @@ class Admin::ShopsController < Admin::BaseController
       :closed_days_text,
       :special_hours_note,
       :tabelog_url,
+      :tabelog_affiliate_url,
       :hotpepper_url,
       :thumbnail_kind,
       :thumbnail_index,

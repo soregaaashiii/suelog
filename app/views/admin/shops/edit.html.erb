@@ -110,6 +110,26 @@
       style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
     </div>
 
+    <div>
+      <div style="font-weight:700;">食べログアフィリエイトURL</div>
+      <%= f.url_field :tabelog_affiliate_url,
+      placeholder: "https://ck.jp.ap.valuecommerce.com/...",
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
+
+    <div>
+      <div style="font-weight:700;">独自送客ボタン名</div>
+      <%= f.text_field :custom_affiliate_label,
+      placeholder: "例：公式サイトで予約する",
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
+
+    <div>
+      <div style="font-weight:700;">独自送客URL</div>
+      <%= f.url_field :custom_affiliate_url,
+      placeholder: "https://example.com/...",
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
 
     <div>
       <div style="font-weight:700;">ホットペッパーURL</div>
@@ -131,7 +151,7 @@
     ["sat", "土"], ["sun", "日"], ["holiday", "祝日"], ["before_holiday", "祝前"]
   ] %>
 
-  <% time_options = [["未設定", ""]] + (0..47).map { |i| t = "%02d:%02d" % [i / 2, (i % 2) * 30]; [t, t] } %>
+  <% time_options = [["未設定", ""]] + (0..96).map { |i| t = "%02d:%02d" % [i / 4, (i % 4) * 15]; [t, t] } %>
 
   <div style="display:grid; gap:10px;">
     <% days.each do |key, label| %>

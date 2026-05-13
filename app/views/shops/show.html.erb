@@ -115,6 +115,11 @@
   tel_digits = @shop.phone.to_s.gsub(/[^0-9]/, "")
   tel_target_url = tel_digits.present? ? "tel:#{tel_digits}" : nil
 
+  custom_affiliate_track_url =
+    if @shop.respond_to?(:custom_affiliate_url) && @shop.custom_affiliate_url.present?
+      track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.custom_affiliate_url)
+    end
+
   tabelog_track_url =
     if @shop.respond_to?(:tabelog_affiliate_url) && @shop.tabelog_affiliate_url.present?
       track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.tabelog_affiliate_url)
@@ -128,9 +133,15 @@
       track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.hotpepper_url)
     end
 
-  primary_booking_url = hotpepper_track_url.presence || tabelog_track_url.presence
+  primary_booking_url =
+    custom_affiliate_track_url.presence ||
+    hotpepper_track_url.presence ||
+    tabelog_track_url.presence
+
   primary_booking_label =
-    if hotpepper_track_url.present?
+    if custom_affiliate_track_url.present?
+      @shop.custom_affiliate_label.presence || "公式サイトを見る"
+    elsif hotpepper_track_url.present?
       "予約できるか確認する"
     elsif tabelog_track_url.present?
       "空席・詳細を見る"
@@ -1211,7 +1222,7 @@
           <%= link_to primary_booking_label.presence || "予約できるか確認する",
                       primary_booking_url,
                       target: "_blank",
-                      rel: "nofollow noopener",
+                      rel: "sponsored nofollow noopener",
                       class: "ss-btn ss-btn--dark shop-show__cvPrimary shop-show__fvPrimary" %>
         <% end %>
 
@@ -1392,7 +1403,7 @@
               <%= link_to primary_booking_label.presence || "予約できるか確認する",
                           primary_booking_url,
                           target: "_blank",
-                          rel: "nofollow noopener",
+                          rel: "sponsored nofollow noopener",
                           class: "ss-btn ss-btn--dark shop-show__cvPrimary shop-show__bookingPrimary" %>
             </div>
           <% end %>

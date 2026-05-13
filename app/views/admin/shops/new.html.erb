@@ -189,6 +189,27 @@
   </div>
 
   <div style="margin:12px 0;">
+    <div style="font-weight:700;">食べログアフィリエイトURL（任意）</div>
+    <%= f.url_field :tabelog_affiliate_url,
+      placeholder: "https://ck.jp.ap.valuecommerce.com/...",
+      style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+  </div>
+
+  <div style="margin:12px 0;">
+    <div style="font-weight:700;">独自送客ボタン名（任意）</div>
+    <%= f.text_field :custom_affiliate_label,
+      placeholder: "例：公式サイトで予約する",
+      style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+  </div>
+
+  <div style="margin:12px 0;">
+    <div style="font-weight:700;">独自送客URL（任意）</div>
+    <%= f.url_field :custom_affiliate_url,
+      placeholder: "https://example.com/...",
+      style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
+  </div>
+
+  <div style="margin:12px 0;">
     <div style="font-weight:700;">ホットペッパーURL（任意）</div>
     <%= f.url_field :hotpepper_url,
       placeholder: "https://www.hotpepper.jp/...",
