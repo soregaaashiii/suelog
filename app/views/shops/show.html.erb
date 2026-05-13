@@ -124,7 +124,9 @@
     if @shop.respond_to?(:tabelog_affiliate_url) && @shop.tabelog_affiliate_url.present?
       track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.tabelog_affiliate_url)
 
-    elsif @shop.respond_to?(:tabelog_url) && @shop.tabelog_url.present?
+    elsif @shop.respond_to?(:tabelog_url) &&
+          @shop.tabelog_url.to_s.start_with?("http") &&
+          !@shop.tabelog_url.to_s.include?("not-found.local")
       track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.tabelog_url)
     end
 

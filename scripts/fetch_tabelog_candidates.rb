@@ -175,7 +175,7 @@ CSV.open(output_path, "w") do |csv|
     "status"
   ]
 
-  Shop.where(tabelog_url: nil)
+ Shop.where(tabelog_url: [nil, ""])
       .where(approved: true)
       .where.not(name: [nil, ""])
       .find_each do |shop|
@@ -224,9 +224,17 @@ CSV.open(output_path, "w") do |csv|
 
       puts "Saved: #{shop.name} score=#{matched_score} query=#{matched_query}"
     else
+      not_found_url = "https://not-found.local/#{Time.current.strftime('%y%m%d')}"
+
+      shop.update!(
+        tabelog_url: not_found_url,
+        tabelog_match_method: "serpapi_not_found",
+        tabelog_matched_at: Time.current
+      )
+
       csv << [
         shop.name,
-        nil,
+        not_found_url,
         nil,
         "not_found"
       ]
