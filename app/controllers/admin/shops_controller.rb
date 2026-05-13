@@ -1043,6 +1043,8 @@ class Admin::ShopsController < Admin::BaseController
       :tabelog_url,
       :tabelog_affiliate_url,
       :hotpepper_url,
+      :custom_affiliate_url,
+      :custom_affiliate_label,
       :thumbnail_kind,
       :thumbnail_index,
       opening_hours_json: {}

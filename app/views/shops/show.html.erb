@@ -133,34 +133,36 @@
       track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.hotpepper_url)
     end
 
-  primary_booking_url =
-    custom_affiliate_track_url.presence ||
-    hotpepper_track_url.presence ||
-    tabelog_track_url.presence
+  booking_links = []
 
-  primary_booking_provider =
-    if custom_affiliate_track_url.present?
-      "custom"
-    elsif hotpepper_track_url.present?
-      "hotpepper"
-    elsif tabelog_track_url.present?
-      "tabelog"
-    end
+  if custom_affiliate_track_url.present?
+    booking_links << {
+      url: custom_affiliate_track_url,
+      provider: "custom",
+      provider_label: @shop.custom_affiliate_label.presence || "公式サイト",
+      label: "空席を確認"
+    }
+  end
 
-  primary_booking_provider_label =
-    case primary_booking_provider
-    when "hotpepper"
-      "HotPepper"
-    when "tabelog"
-      "食べログ"
-    when "custom"
-      @shop.custom_affiliate_label.presence || "公式サイト"
-    end
+  if hotpepper_track_url.present?
+    booking_links << {
+      url: hotpepper_track_url,
+      provider: "hotpepper",
+      provider_label: "HotPepper",
+      label: "空席を確認"
+    }
+  end
 
-  primary_booking_label =
-    if primary_booking_url.present?
-      "空席を確認"
-    end
+  if tabelog_track_url.present?
+    booking_links << {
+      url: tabelog_track_url,
+      provider: "tabelog",
+      provider_label: "食べログ",
+      label: "空席を確認"
+    }
+  end
+
+  primary_booking_url = booking_links.first&.dig(:url)
 
   related_area_links = []
 
@@ -539,6 +541,8 @@
 }
 
 .shop-show__bookingMain {
+  display: grid;
+  gap: 10px;
   margin-top: 12px;
 }
 
@@ -1350,20 +1354,20 @@
       <% end %>
     </div>
 
-    <% if primary_booking_url.present? || (@shop.phone.present? && tel_target_url.present?) %>
+    <% if booking_links.present? || (@shop.phone.present? && tel_target_url.present?) %>
       <div class="shop-show__heroActions shop-show__heroActions--fv">
-        <% if primary_booking_url.present? %>
-          <%= link_to primary_booking_url,
+        <% booking_links.each do |booking_link| %>
+          <%= link_to booking_link[:url],
                       target: "_blank",
                       rel: "sponsored nofollow noopener",
-                      class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--#{primary_booking_provider} shop-show__fvPrimary" do %>
+                      class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--#{booking_link[:provider]} shop-show__fvPrimary" do %>
 
             <span class="shop-show__cvPrimaryLabel">
-              <span><%= primary_booking_label %></span>
+              <span><%= booking_link[:label] %></span>
 
-              <% if primary_booking_provider_label.present? %>
+              <% if booking_link[:provider_label].present? %>
                 <span class="shop-show__cvPrimaryProvider">
-                  <%= primary_booking_provider_label %>
+                  <%= booking_link[:provider_label] %>
                 </span>
               <% end %>
             </span>
@@ -1533,7 +1537,7 @@
         </div>
       </section>
     <% else %>
-      <% if primary_booking_url.present? || @shop.latitude.present? || @shop.longitude.present? %>
+      <% if booking_links.present? || @shop.latitude.present? || @shop.longitude.present? %>
         <section class="shop-show__section shop-show__bookingSection">
           <div class="shop-show__bookingHead">
             <h2 class="shop-show__sectionTitle">予約・来店前に確認</h2>
@@ -1542,22 +1546,24 @@
             </p>
           </div>
 
-          <% if primary_booking_url.present? %>
+          <% if booking_links.present? %>
             <div class="shop-show__bookingMain">
-              <%= link_to primary_booking_url,
-                          target: "_blank",
-                          rel: "sponsored nofollow noopener",
-                          class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--#{primary_booking_provider} shop-show__bookingPrimary" do %>
+              <% booking_links.each do |booking_link| %>
+                <%= link_to booking_link[:url],
+                            target: "_blank",
+                            rel: "sponsored nofollow noopener",
+                            class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--#{booking_link[:provider]} shop-show__bookingPrimary" do %>
 
-                <span class="shop-show__cvPrimaryLabel">
-                  <span><%= primary_booking_label %></span>
+                  <span class="shop-show__cvPrimaryLabel">
+                    <span><%= booking_link[:label] %></span>
 
-                  <% if primary_booking_provider_label.present? %>
-                    <span class="shop-show__cvPrimaryProvider">
-                      <%= primary_booking_provider_label %>
-                    </span>
-                  <% end %>
-                </span>
+                    <% if booking_link[:provider_label].present? %>
+                      <span class="shop-show__cvPrimaryProvider">
+                        <%= booking_link[:provider_label] %>
+                      </span>
+                    <% end %>
+                  </span>
+                <% end %>
               <% end %>
             </div>
           <% end %>
@@ -2266,13 +2272,24 @@
     </section>
   </div>
 
-  <% if @shop.approved? && primary_booking_url.present? %>
+  <% if @shop.approved? && booking_links.present? %>
     <div class="shop-show__stickyCta">
-      <%= link_to primary_booking_label.presence || "予約できるか確認する",
-                  primary_booking_url,
+      <% booking_link = booking_links.first %>
+
+      <%= link_to booking_link[:url],
                   target: "_blank",
                   rel: "nofollow noopener",
-                  class: "ss-btn ss-btn--dark shop-show__cvPrimary" %>
+                 class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--#{booking_link[:provider]}" do %>
+  <span class="shop-show__cvPrimaryLabel">
+    <span><%= booking_link[:label] %></span>
+
+    <% if booking_link[:provider_label].present? %>
+      <span class="shop-show__cvPrimaryProvider">
+        <%= booking_link[:provider_label] %>
+      </span>
+    <% end %>
+  </span>
+<% end %>
     </div>
   <% end %>
 </div>

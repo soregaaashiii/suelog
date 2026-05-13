@@ -127,7 +127,7 @@ class ShopsController < ApplicationController
       return
     end
 
-    unless safe_redirect_target?(target_url)
+    unless safe_redirect_target?(target_url, kind: kind)
       redirect_to shop_path(@shop), alert: "遷移先URLが不正です"
       return
     end
@@ -402,10 +402,23 @@ class ShopsController < ApplicationController
     ["ご協力ありがとうございます！ ご協力回数：#{count}回（バッジ：#{badge[:name]}）", nil]
   end
 
-  def safe_redirect_target?(url)
+  def safe_redirect_target?(url, kind: nil)
     return false if url.blank?
 
     uri = URI.parse(url)
+
+    if kind == "phone_click"
+      return false unless uri.scheme == "tel"
+
+      target_phone = normalize_phone(uri.opaque.presence || uri.path)
+      shop_phone = normalize_phone(@shop&.phone)
+
+      return false if target_phone.blank?
+      return false if shop_phone.present? && target_phone != shop_phone
+
+      return true
+    end
+
     return false unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
 
     true
