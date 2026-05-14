@@ -27,7 +27,7 @@ article_body_source.gsub!(sidebar_ad_regex) do
 
   sidebar_items << {
     type: :ad,
-    html: sidebar_ad_body.html_safe
+    html: render_article_body(sidebar_ad_body, include_article_footer: false)
   }
 
   ""

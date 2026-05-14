@@ -2390,13 +2390,25 @@ font-weight: 900 !important;
 line-height: 1.45 !important;
 }
 
-.article-body .trix-content div,
-.article-body .trix-content p,
-.article-body .trix-content li {
+.article-body .trix-content > div,
+.article-body .trix-content > p,
+.article-body .trix-content > ul,
+.article-body .trix-content > ol {
 font-size: 16px !important;
 line-height: 1.9 !important;
 font-weight: 400 !important;
 margin-bottom: 1em;
+}
+
+/* 記事内の店舗カードには本文用の余白・文字指定を当てない */
+.article-body .trix-content .shop-card,
+.article-body .trix-content .shop-card *,
+.article-body .trix-content .shop-card2,
+.article-body .trix-content .shop-card2 * {
+font-size: revert;
+line-height: normal;
+font-weight: revert;
+margin-bottom: 0;
 }
 
 .article-body a {
