@@ -2380,11 +2380,7 @@ opacity: 0.8;
 .article-body p:empty,
 .article-body div:empty,
 .article-body p:has(br:only-child),
-.article-body div:has(br:only-child),
-.trix-content p:empty,
-.trix-content div:empty,
-.trix-content p:has(br:only-child),
-.trix-content div:has(br:only-child) {
+.article-body div:has(br:only-child) {
   display: none !important;
   margin: 0 !important;
   padding: 0 !important;
