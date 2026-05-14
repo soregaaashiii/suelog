@@ -166,7 +166,7 @@ def render_related_articles_shortcode(attrs_text)
       end
 
     %(
-      <a href="#{path}" style="display:flex; gap:12px; align-items:center; padding:12px 0; border-top:1px solid #eee6d6; color:#111; text-decoration:none;">
+      <a href="#{path}" style="display:flex; gap:12px; align-items:center; padding:12px 16px; border-top:1px solid #eee6d6; color:#111; text-decoration:none;">
         #{image_html}
 
         <div style="min-width:0; flex:1;">
@@ -185,11 +185,9 @@ def render_related_articles_shortcode(attrs_text)
     )
   end.join
 
-  %(
-    <div style="margin:24px 0; padding:14px 16px; border:1px solid #e8e3d7; border-radius:16px; background:#fffdf8;">
-    
-
-      <div>
+   %(
+    <div style="margin:0 0 -1px; padding:0; border:1px solid #e8e3d7; border-radius:0; background:#fffdf8;">
+      <div style="margin:0; padding:0;">
         #{items_html}
       </div>
     </div>

@@ -2372,8 +2372,32 @@ text-decoration: underline;
 opacity: 0.8;
 }
 
+/* =========================
+  ▼ 記事本文内の空行ブロックを完全に消す
+  ※関連記事カード間の謎の余白対策
+========================= */
+
+.article-body p:empty,
+.article-body div:empty,
+.article-body p:has(br:only-child),
+.article-body div:has(br:only-child),
+.trix-content p:empty,
+.trix-content div:empty,
+.trix-content p:has(br:only-child),
+.trix-content div:has(br:only-child) {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  line-height: 0 !important;
+}
+
+/* 記事内の関連記事カードっぽいリンクブロックを強制密着 */
+/* 削除：関連記事以外にも効いてレイアウト干渉するため */
+
 .article-exit {
-margin-top: 34px;
+margin-top: 24px;
 padding: 18px;
 background:
   radial-gradient(circle at top right, rgba(198, 167, 94, 0.12), transparent 34%),
@@ -3495,3 +3519,7 @@ color: #7a5a12;
 .article-exit__btn {
   border-radius: 12px !important;
 }
+/* =========================
+  ▼ 記事本文内：関連記事カード調整
+  ※関連記事ショートコード側で制御するため削除
+========================= */
