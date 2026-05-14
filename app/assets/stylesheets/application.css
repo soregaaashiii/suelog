@@ -2363,6 +2363,42 @@ justify-content: center;
 }
 }
 
+.article-body .trix-content {
+display: block !important;
+visibility: visible !important;
+opacity: 1 !important;
+height: auto !important;
+max-height: none !important;
+overflow: visible !important;
+color: #111111 !important;
+font-size: 16px !important;
+line-height: 1.9 !important;
+font-weight: 400 !important;
+word-break: break-word;
+}
+
+.article-body .trix-content * {
+max-width: 100%;
+line-height: inherit;
+}
+
+.article-body .trix-content h1,
+.article-body .trix-content h2,
+.article-body .trix-content h3,
+.article-body .trix-content strong {
+font-weight: 900 !important;
+line-height: 1.45 !important;
+}
+
+.article-body .trix-content div,
+.article-body .trix-content p,
+.article-body .trix-content li {
+font-size: 16px !important;
+line-height: 1.9 !important;
+font-weight: 400 !important;
+margin-bottom: 1em;
+}
+
 .article-body a {
 color: #2563eb;
 text-decoration: underline;
@@ -2378,9 +2414,14 @@ opacity: 0.8;
 ========================= */
 
 .article-body p:empty,
-.article-body div:empty,
-.article-body p:has(br:only-child),
-.article-body div:has(br:only-child) {
+.article-body div:empty {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.article-related-shortcode p:has(br:only-child),
+.article-related-shortcode div:has(br:only-child) {
   display: none !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -2389,8 +2430,46 @@ opacity: 0.8;
   line-height: 0 !important;
 }
 
-/* 記事内の関連記事カードっぽいリンクブロックを強制密着 */
-/* 削除：関連記事以外にも効いてレイアウト干渉するため */
+/* 記事内の関連記事カードをコンパクト化 */
+.article-related-shortcode {
+  margin: 12px 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+}
+
+.article-related-shortcode > div:first-child {
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+}
+
+.article-related-shortcode__items {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.article-related-shortcode__items a {
+  padding: 8px 12px !important;
+  gap: 10px !important;
+  min-height: auto !important;
+}
+
+.article-related-shortcode__items a > div:first-child {
+  width: 72px !important;
+  height: 54px !important;
+  flex: 0 0 72px !important;
+  border-radius: 0 !important;
+}
+
+.article-related-shortcode__items a > div:first-child img {
+  border-radius: 0 !important;
+}
+
+.article-related-shortcode__items a div {
+  margin-bottom: 0 !important;
+}
 
 .article-exit {
 margin-top: 24px;
@@ -3501,8 +3580,7 @@ color: #7a5a12;
 }
 
 /* 「今吸える店をすぐ確認する」CTAカードは角丸を完全に取る */
-.article-body > div[style*="今吸える店"],
-.article-body div[style*="background:#fffdf8"] {
+.article-body > div[style*="今吸える店"] {
   border-radius: 0 !important;
 }
 
@@ -3519,3 +3597,24 @@ color: #7a5a12;
   ▼ 記事本文内：関連記事カード調整
   ※関連記事ショートコード側で制御するため削除
 ========================= */
+
+/* =========================
+  ▼ 関連記事ショートコード表示固定
+========================= */
+
+.article-body .article-related-shortcode {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  min-height: 1px !important;
+  overflow: visible !important;
+}
+
+.article-body .article-related-shortcode a {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #111111 !important;
+  text-decoration: none !important;
+}

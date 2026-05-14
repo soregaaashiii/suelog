@@ -57,12 +57,7 @@ module ArticlesHelper
 
     html =
       begin
-        if defined?(ActionText::Content)
-          rendered = ActionText::Content.new(processed_body).to_rendered_html_with_layout
-          CGI.unescapeHTML(rendered)
-        else
-          processed_body
-        end
+        processed_body
       rescue StandardError
         processed_body
       end
@@ -185,9 +180,14 @@ def render_related_articles_shortcode(attrs_text)
     )
   end.join
 
-   %(
-    <div style="margin:0 0 -1px; padding:0; border:1px solid #e8e3d7; border-radius:0; background:#fffdf8;">
-      <div style="margin:0; padding:0;">
+  %(
+    <div class="article-related-shortcode" style="margin:24px 0; padding:14px 16px; border:1px solid #e8e3d7; border-radius:16px; background:#fffdf8; display:block !important; visibility:visible !important; opacity:1 !important;">
+
+      <div style="font-size:18px; font-weight:900; color:#111; margin-bottom:12px;">
+        関連記事
+      </div>
+
+      <div class="article-related-shortcode__items">
         #{items_html}
       </div>
     </div>

@@ -19,18 +19,29 @@ raw_article_body = @article.body.to_s
 
 sidebar_items = []
 
-article_body_source = raw_article_body.gsub(/\[sidebar_ad\](.*?)\[\/sidebar_ad\]|\[sidebar_links\]|\[sidebar\]/im) do
-  matched_text = Regexp.last_match(0)
+sidebar_ad_regex = /\[sidebar_ad\](.*?)\[\/sidebar_ad\]/im
+article_body_source = raw_article_body.to_s.dup
 
-  if matched_text.match?(/\A\[sidebar_ad\]/i)
-    sidebar_items << {
-      type: :ad,
-      html: render_article_body(Regexp.last_match(1).to_s.strip, include_article_footer: false)
-    }
-  else
-    sidebar_items << { type: :links }
-  end
+article_body_source.gsub!(sidebar_ad_regex) do
+  sidebar_ad_body = Regexp.last_match(1).to_s.strip
 
+  sidebar_items << {
+    type: :ad,
+    html: sidebar_ad_body.html_safe
+  }
+
+  ""
+end
+
+
+
+article_body_source.gsub!(/\[sidebar_links\]/i) do
+  sidebar_items << { type: :links }
+  ""
+end
+
+article_body_source.gsub!(/\[sidebar\]/i) do
+  sidebar_items << { type: :links }
   ""
 end
 
@@ -68,9 +79,9 @@ article_body_html =
       <% end %>
     </header>
 
-    <div class="article-body" data-article-body="true">
-      <%= article_body_html %>
-    </div>
+<div class="article-body" data-article-body="true">
+  <%= article_body_html %>
+</div>
 
     <section class="article-exit">
       <div class="article-exit__head">
@@ -112,7 +123,7 @@ article_body_html =
 
   <% if sidebar_enabled %>
     <aside class="article-sidebar">
-      <% sidebar_items.each do |item| %>
+      <% sidebar_items.sort_by { |item| item[:type] == :ad ? 1 : 0 }.each do |item| %>
         <% if item[:type] == :ad %>
           <div class="sidebar-box sidebar-box--ad">
             <%= item[:html] %>
@@ -232,6 +243,17 @@ article_body_html =
     position: static;
     margin-top: 24px;
   }
+}
+
+.article-body > .trix-content,
+.article-body .trix-content {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  color: #111111 !important;
 }
 
 .article-body a {
@@ -505,12 +527,10 @@ article_body_html =
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    processArticleBody();
     setupFloatingLastSidebarAd();
   });
 
   document.addEventListener("turbo:load", () => {
-    processArticleBody();
     setupFloatingLastSidebarAd();
   });
 })();
