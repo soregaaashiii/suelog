@@ -48,7 +48,13 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where(source: @source)
     end
 
-    @total_count = scope.count
+    @total_count =
+      if @status == "tabelog_missing"
+        scope.except(:select, :group, :order).distinct.count(:id)
+      else
+        scope.count
+      end
+
     @total_pages = (@total_count.to_f / @per).ceil
     @total_pages = 1 if @total_pages <= 0
 
