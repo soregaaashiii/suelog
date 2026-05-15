@@ -12,10 +12,20 @@ if SERPAPI_KEY.blank?
 end
 
 def build_search_query(shop)
+  area_hint =
+    if shop.address.to_s.include?("北区")
+      "梅田"
+    elsif shop.address.to_s.include?("中央区")
+      "難波"
+    else
+      "大阪"
+    end
+
   [
-    "site:tabelog.com",
+    "site:tabelog.com/osaka/",
     shop.name,
-    shop.address.to_s.gsub("日本、〒", "")
+    area_hint,
+    "食べログ"
   ].join(" ")
 end
 
@@ -50,6 +60,60 @@ def normalize_tabelog_url(url)
   url.to_s.split("?").first.sub(%r{/?$}, "/")
 end
 
+def normalize_name(text)
+  text.to_s
+      .downcase
+      .unicode_normalize(:nfkc)
+      .gsub(/[[:space:]]+/, "")
+      .gsub(/[・･]/, "")
+      .gsub(/[“”"'`]/, "")
+      .gsub(/（.*?）|\(.*?\)/, "")
+      .gsub(/梅田店|大阪駅前店|大阪梅田店|お初天神店|東通り店|本店/, "")
+end
+
+def title_matches?(shop, title)
+  normalized_shop_name = normalize_name(shop.name)
+  normalized_title = normalize_name(title)
+
+  return false if normalized_shop_name.blank? || normalized_title.blank?
+
+  normalized_title.include?(normalized_shop_name) ||
+    normalized_shop_name.include?(normalized_title)
+end
+
+def address_matches?(shop, snippet)
+  address = shop.address.to_s
+  snippet = snippet.to_s
+
+  ward =
+    if address.include?("北区")
+      "北区"
+    elsif address.include?("中央区")
+      "中央区"
+    elsif address.include?("福島区")
+      "福島区"
+    elsif address.include?("西区")
+      "西区"
+    end
+
+  return true if ward.blank?
+
+  snippet.include?(ward) || snippet.include?("大阪")
+end
+
+def matched_tabelog_result(shop, organic_results)
+  organic_results.find do |result|
+    url = normalize_tabelog_url(result["link"])
+
+    next false if url.blank?
+    next false unless tabelog_shop_url?(url)
+    next false unless title_matches?(shop, result["title"])
+    next false unless address_matches?(shop, result["snippet"])
+
+    true
+  end
+end
+
 updated = 0
 skipped = 0
 failed = 0
@@ -67,11 +131,8 @@ scope.find_each do |shop|
 
   organic_results = result&.dig("organic_results") || []
 
-  candidate = organic_results
-    .map { |r| r["link"] }
-    .compact
-    .map { |url| normalize_tabelog_url(url) }
-    .find { |url| tabelog_shop_url?(url) }
+  matched_result = matched_tabelog_result(shop, organic_results)
+  candidate = normalize_tabelog_url(matched_result&.dig("link"))
 
   if candidate.blank?
     puts "  候補なし"
