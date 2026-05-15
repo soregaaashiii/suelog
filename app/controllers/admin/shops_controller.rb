@@ -37,7 +37,7 @@ class Admin::ShopsController < Admin::BaseController
         .where(approved: true)
         .where(tabelog_affiliate_url: [nil, ""])
         .where.not("COALESCE(tabelog_url, '') LIKE ?", "https://not-found.local/%")
-        .left_joins(:shop_clicks)
+        .joins("LEFT JOIN shop_clicks ON shop_clicks.shop_id = shops.id")
         .group("shops.id")
         .order(Arel.sql("COUNT(shop_clicks.id) DESC, shops.created_at DESC"))
     else
