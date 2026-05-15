@@ -10,11 +10,12 @@
   <%= link_to "怪しい食べログ候補",
       admin_shops_path(status: "tabelog_suspect", source: @source, per: @per, page: 1),
       style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#fff3cd; color:#7a4b00; border:1px solid #e0b84f; text-decoration:none; font-weight:700;" %>
+
+  <%= link_to "アフィリエイト未設定",
+      admin_shops_path(status: "tabelog_missing", source: @source, per: @per, page: 1),
+      style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#eef8f0; color:#137333; border:1px solid #137333; text-decoration:none; font-weight:700;" %>
 </div>
 
-<%# =========================
-CSV一括インポート
-========================= %>
 <div style="margin:10px 0; padding:12px; border:1px solid #ddd; border-radius:12px; background:#fafafa;">
   <div style="font-weight:900; margin-bottom:8px;">CSV一括インポート</div>
 
@@ -39,45 +40,46 @@ CSV一括インポート
   <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
     <div>
       <strong>表示：</strong>
+
       <% if @status == "all" %>
         <strong>すべて</strong>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "怪しい食べログ候補", admin_shops_path(status: "tabelog_suspect", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "保留一覧", holds_admin_shops_path %>
-      <% elsif @status == "rejected" %>
-        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <strong>却下</strong>｜
-        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "怪しい食べログ候補", admin_shops_path(status: "tabelog_suspect", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "保留一覧", holds_admin_shops_path %>
-      <% elsif @status == "unverified" %>
-        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-        <strong>未確認のみ</strong>｜
-        <%= link_to "保留一覧", holds_admin_shops_path %>
-      <% elsif @status == "tabelog_suspect" %>
-        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
-        <strong>怪しい食べログ候補</strong>｜
-        <%= link_to "保留一覧", holds_admin_shops_path %>
-      <% elsif @status == "hold" %>
-        <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
-        <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
-        <strong>保留一覧</strong>
       <% else %>
         <%= link_to "すべて", admin_shops_path(status: "all", source: @source, per: @per, page: 1) %>｜
+      <% end %>
+
+      <% if @status == "pending" || @status.blank? %>
         <strong>承認待ち</strong>｜
+      <% else %>
+        <%= link_to "承認待ち", admin_shops_path(status: "pending", source: @source, per: @per, page: 1) %>｜
+      <% end %>
+
+      <% if @status == "rejected" %>
+        <strong>却下</strong>｜
+      <% else %>
         <%= link_to "却下", admin_shops_path(status: "rejected", source: @source, per: @per, page: 1) %>｜
+      <% end %>
+
+      <% if @status == "unverified" %>
+        <strong>未確認のみ</strong>｜
+      <% else %>
         <%= link_to "未確認のみ", admin_shops_path(status: "unverified", source: @source, per: @per, page: 1) %>｜
+      <% end %>
+
+      <% if @status == "tabelog_suspect" %>
+        <strong>怪しい食べログ候補</strong>｜
+      <% else %>
         <%= link_to "怪しい食べログ候補", admin_shops_path(status: "tabelog_suspect", source: @source, per: @per, page: 1) %>｜
+      <% end %>
+
+      <% if @status == "tabelog_missing" %>
+        <strong>アフィリエイト未設定</strong>｜
+      <% else %>
+        <%= link_to "アフィリエイト未設定", admin_shops_path(status: "tabelog_missing", source: @source, per: @per, page: 1) %>｜
+      <% end %>
+
+      <% if @status == "hold" %>
+        <strong>保留一覧</strong>
+      <% else %>
         <%= link_to "保留一覧", holds_admin_shops_path %>
       <% end %>
     </div>
@@ -147,7 +149,6 @@ CSV一括インポート
     <input type="hidden" name="source" value="<%= @source %>">
     <input type="hidden" name="per" value="<%= @per %>">
     <input type="hidden" name="page" value="<%= @page %>">
-
     <input type="hidden" name="shop_ids_csv" id="shop_ids_csv" value="">
 
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; padding:10px; border:1px solid #eee; border-radius:12px; background:#fafafa;">
@@ -238,6 +239,7 @@ CSV一括インポート
               end %>
 
           <% click_counts = (@shop_click_counts || {})[shop.id] || {} %>
+          <% candidate_url = shop.respond_to?(:tabelog_candidate_url) ? shop.tabelog_candidate_url : nil %>
 
           <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
             <td style="padding:10px 0;">
@@ -249,7 +251,7 @@ CSV一括インポート
                 <strong><%= shop.name %></strong>
 
                 <%= link_to "Google検索",
-                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address].compact.join(' '))}",
+                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, '食べログ'].compact.join(' '))}",
                     target: "_blank",
                     rel: "noopener",
                     style: "display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:8px; text-decoration:none; font-size:12px; background:#fff;" %>
@@ -273,6 +275,12 @@ CSV一括インポート
 
               <% if Shop.column_names.include?("source") && shop.respond_to?(:source) && shop.source.present? %>
                 <div style="color:#666; font-size:12px; margin-top:4px;">source：<%= shop.source %></div>
+              <% end %>
+
+              <% if @status == "tabelog_missing" %>
+                <div style="color:#b00020; font-size:12px; margin-top:6px; font-weight:700;">
+                  食べログアフィリエイト未設定
+                </div>
               <% end %>
             </td>
 
@@ -355,8 +363,6 @@ CSV一括インポート
                     edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
-                <% candidate_url = shop.respond_to?(:tabelog_candidate_url) ? shop.tabelog_candidate_url : nil %>
-
                 <% if candidate_url.present? %>
                   <%= link_to "食べログ候補",
                       candidate_url,
@@ -375,6 +381,12 @@ CSV一括インポート
                       method: :patch,
                       data: { turbo: false, turbo_confirm: "食べログなしとしてダミーURLを登録しますか？" },
                       style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
+                <% elsif @status == "tabelog_missing" %>
+                  <%= button_to "食べログなし",
+                      mark_tabelog_not_found_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                      method: :patch,
+                      data: { turbo: false, turbo_confirm: "食べログなしとしてダミーURLを登録しますか？" },
+                      style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
                 <% elsif shop.tabelog_url.present? %>
                   <%= link_to "食べログ",
                       shop.tabelog_url,
@@ -388,16 +400,28 @@ CSV一括インポート
                     method: :patch,
                     local: true,
                     style: "display:flex; gap:6px; align-items:center; flex-wrap:wrap;" do |f| %>
-                  <%= f.url_field :tabelog_candidate_url,
-                      value: candidate_url.presence,
-                      placeholder: "食べログ候補URL",
-                      style: "width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:10px;" %>
+                  <% if @status == "tabelog_missing" %>
+                    <%= f.url_field :tabelog_url,
+                        value: shop.tabelog_url.presence,
+                        placeholder: "食べログURL",
+                        style: "width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:10px;" %>
 
-                  <%= f.hidden_field :tabelog_candidate_affiliate_url, value: candidate_url.presence %>
-                  <%= f.hidden_field :tabelog_candidate_method, value: "admin_manual_candidate" %>
+                    <%= f.hidden_field :tabelog_match_method, value: "admin_manual" %>
 
-                  <%= f.submit "候補URL更新",
-                      style: "padding:6px 10px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; font-weight:700;" %>
+                    <%= f.submit "URL更新",
+                        style: "padding:6px 10px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; font-weight:700;" %>
+                  <% else %>
+                    <%= f.url_field :tabelog_candidate_url,
+                        value: candidate_url.presence,
+                        placeholder: "食べログ候補URL",
+                        style: "width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:10px;" %>
+
+                    <%= f.hidden_field :tabelog_candidate_affiliate_url, value: candidate_url.presence %>
+                    <%= f.hidden_field :tabelog_candidate_method, value: "admin_manual_candidate" %>
+
+                    <%= f.submit "候補URL更新",
+                        style: "padding:6px 10px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; font-weight:700;" %>
+                  <% end %>
                 <% end %>
 
                 <%= link_to "公開ページ",

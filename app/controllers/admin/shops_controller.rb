@@ -5,6 +5,7 @@ require "csv"
 require "json"
 require "date"
 require "digest"
+require "cgi"
 
 class Admin::ShopsController < Admin::BaseController
   def index
@@ -31,6 +32,11 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where(on_hold: true)
     when "tabelog_suspect"
       scope = scope.where.not(tabelog_candidate_url: [nil, ""])
+    when "tabelog_missing"
+      scope = scope
+        .where(approved: true)
+        .where(tabelog_affiliate_url: [nil, ""])
+        .where.not("COALESCE(tabelog_url, '') LIKE ?", "https://not-found.local/%")
     else
       scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
     end
@@ -379,7 +385,9 @@ class Admin::ShopsController < Admin::BaseController
     shop = Shop.find(params[:id])
 
     candidate_url = shop.tabelog_candidate_url.to_s.strip
-    candidate_affiliate_url = shop.tabelog_candidate_affiliate_url.to_s.strip.presence || candidate_url
+    candidate_affiliate_url =
+      shop.tabelog_candidate_affiliate_url.to_s.strip.presence ||
+      build_tabelog_affiliate_url(candidate_url)
 
     if candidate_url.blank?
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
@@ -522,6 +530,29 @@ class Admin::ShopsController < Admin::BaseController
           :tabelog_candidate_affiliate_url,
           :tabelog_candidate_method
         )
+      end
+
+      if permitted_shop_params.key?(:tabelog_url) &&
+         permitted_shop_params[:tabelog_url].blank?
+        permitted_shop_params = permitted_shop_params.except(
+          :tabelog_url,
+          :tabelog_affiliate_url,
+          :tabelog_match_method
+        )
+      end
+
+      if permitted_shop_params[:tabelog_url].present?
+        permitted_shop_params[:tabelog_affiliate_url] =
+          build_tabelog_affiliate_url(permitted_shop_params[:tabelog_url])
+        permitted_shop_params[:tabelog_match_method] =
+          permitted_shop_params[:tabelog_match_method].presence || "admin_manual"
+      end
+
+      if permitted_shop_params[:tabelog_candidate_url].present?
+        permitted_shop_params[:tabelog_candidate_affiliate_url] =
+          build_tabelog_affiliate_url(permitted_shop_params[:tabelog_candidate_url])
+        permitted_shop_params[:tabelog_candidate_method] =
+          permitted_shop_params[:tabelog_candidate_method].presence || "admin_manual_candidate"
       end
 
       @shop.update!(permitted_shop_params)
@@ -938,6 +969,19 @@ class Admin::ShopsController < Admin::BaseController
   end
 
   private
+
+  VALUECOMMERCE_SID = "3769275"
+  VALUECOMMERCE_PID = "892611116"
+
+  def build_tabelog_affiliate_url(url)
+    raw_url = url.to_s.strip
+    return nil if raw_url.blank?
+    return raw_url if raw_url.include?("ck.jp.ap.valuecommerce.com/servlet/referral")
+    return raw_url if raw_url.include?("not-found.local")
+    return raw_url unless raw_url.include?("tabelog.com/")
+
+    "https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=#{VALUECOMMERCE_SID}&pid=#{VALUECOMMERCE_PID}&vc_url=#{CGI.escape(raw_url)}"
+  end
 
   def duplicate_exists_against_approved_shops?(shop)
     duplicate_scope_for_approved_shops(shop).exists?
