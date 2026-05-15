@@ -29,6 +29,8 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where(smoking_unverified: true)
     when "hold"
       scope = scope.where(on_hold: true)
+    when "tabelog_suspect"
+      scope = scope.where(tabelog_match_method: "serpapi_suspect")
     else
       scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
     end
@@ -1042,6 +1044,7 @@ class Admin::ShopsController < Admin::BaseController
       :special_hours_note,
       :tabelog_url,
       :tabelog_affiliate_url,
+      :tabelog_match_method,
       :hotpepper_url,
       :custom_affiliate_url,
       :custom_affiliate_label,
