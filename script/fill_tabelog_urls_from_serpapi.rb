@@ -11,22 +11,32 @@ if SERPAPI_KEY.blank?
   exit 1
 end
 
+def address_town_hint(address)
+  normalized_address = address.to_s
+                              .unicode_normalize(:nfkc)
+                              .gsub("日本、〒", "")
+                              .gsub(/\d{3}-?\d{4}/, "")
+                              .strip
+
+  match = normalized_address.match(/大阪府大阪市[^区]+区(.+?)(?:\d|丁目|番|号|[-−ー―])/)
+  return match[1].to_s.strip if match && match[1].present?
+
+  match = normalized_address.match(/大阪市[^区]+区(.+?)(?:\d|丁目|番|号|[-−ー―])/)
+  return match[1].to_s.strip if match && match[1].present?
+
+  nil
+end
+
 def build_search_query(shop)
-  area_hint =
-    if shop.address.to_s.include?("北区")
-      "梅田"
-    elsif shop.address.to_s.include?("中央区")
-      "難波"
-    else
-      "大阪"
-    end
+  town_hint = address_town_hint(shop.address)
 
   [
     "site:tabelog.com/osaka/",
     shop.name,
-    area_hint,
+    town_hint,
+    "大阪",
     "食べログ"
-  ].join(" ")
+  ].compact.join(" ")
 end
 
 def fetch_google_result(query)
@@ -36,7 +46,7 @@ def fetch_google_result(query)
     q: query,
     api_key: SERPAPI_KEY,
     engine: "google",
-    num: 5,
+    num: 10,
     hl: "ja",
     gl: "jp"
   }
@@ -68,7 +78,8 @@ def normalize_name(text)
       .gsub(/[・･]/, "")
       .gsub(/[“”"'`]/, "")
       .gsub(/（.*?）|\(.*?\)/, "")
-      .gsub(/梅田店|大阪駅前店|大阪梅田店|お初天神店|東通り店|本店/, "")
+      .gsub(/梅田店|大阪駅前店|大阪梅田店|お初天神店|東通り店|阪急東通り店|北新地店|茶屋町店|兎我野町店|本店/, "")
+      .gsub(/大阪駅前第\dビル店/, "")
 end
 
 def title_matches?(shop, title)
@@ -114,6 +125,18 @@ def matched_tabelog_result(shop, organic_results)
   end
 end
 
+def suspect_tabelog_result(shop, organic_results)
+  organic_results.find do |result|
+    url = normalize_tabelog_url(result["link"])
+
+    next false if url.blank?
+    next false unless tabelog_shop_url?(url)
+    next false unless address_matches?(shop, result["snippet"])
+
+    true
+  end
+end
+
 updated = 0
 skipped = 0
 failed = 0
@@ -132,7 +155,9 @@ scope.find_each do |shop|
   organic_results = result&.dig("organic_results") || []
 
   matched_result = matched_tabelog_result(shop, organic_results)
-  candidate = normalize_tabelog_url(matched_result&.dig("link"))
+  suspect_result = matched_result.presence || suspect_tabelog_result(shop, organic_results)
+
+  candidate = normalize_tabelog_url(suspect_result&.dig("link"))
 
   if candidate.blank?
     puts "  候補なし"
@@ -141,16 +166,23 @@ scope.find_each do |shop|
     next
   end
 
+  match_method =
+    if matched_result.present?
+      "serpapi_auto"
+    else
+      "serpapi_suspect"
+    end
+
   affiliate_url = candidate
 
   shop.update!(
     tabelog_url: candidate,
     tabelog_affiliate_url: affiliate_url,
     tabelog_matched_at: Time.current,
-    tabelog_match_method: "serpapi_auto"
+    tabelog_match_method: match_method
   )
 
-  puts "  保存: #{candidate}"
+  puts "  保存: #{candidate} / #{match_method}"
   updated += 1
 
   sleep 0.3
