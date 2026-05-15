@@ -37,6 +37,9 @@ class Admin::ShopsController < Admin::BaseController
         .where(approved: true)
         .where(tabelog_affiliate_url: [nil, ""])
         .where.not("COALESCE(tabelog_url, '') LIKE ?", "https://not-found.local/%")
+        .left_joins(:shop_clicks)
+        .group("shops.id")
+        .order(Arel.sql("COUNT(shop_clicks.id) DESC, shops.created_at DESC"))
     else
       scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
     end
