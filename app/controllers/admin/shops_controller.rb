@@ -39,7 +39,7 @@ class Admin::ShopsController < Admin::BaseController
         .where.not("COALESCE(tabelog_url, '') LIKE ?", "https://not-found.local/%")
         .joins("LEFT JOIN shop_clicks ON shop_clicks.shop_id = shops.id")
         .group("shops.id")
-        .order(Arel.sql("COUNT(shop_clicks.id) DESC, shops.created_at DESC"))
+        .reorder(Arel.sql("COUNT(shop_clicks.id) DESC, shops.created_at DESC"))
     else
       scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
     end
