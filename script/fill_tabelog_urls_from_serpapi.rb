@@ -54,7 +54,7 @@ updated = 0
 skipped = 0
 failed = 0
 
-scope = Shop.where(tabelog_url: [nil, ""]).limit(100)
+scope = Shop.approved.where(tabelog_url: [nil, ""]).limit(100)
 
 puts "対象店舗数: #{scope.count}"
 
