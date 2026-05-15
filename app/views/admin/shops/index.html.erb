@@ -369,6 +369,12 @@ CSV一括インポート
                       method: :patch,
                       data: { turbo: false, turbo_confirm: "この食べログ候補を公開URLとして承認しますか？" },
                       style: "padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; border-radius:10px; font-weight:700;" %>
+
+                  <%= button_to "食べログなし",
+                      mark_tabelog_not_found_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                      method: :patch,
+                      data: { turbo: false, turbo_confirm: "食べログなしとしてダミーURLを登録しますか？" },
+                      style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
                 <% elsif shop.tabelog_url.present? %>
                   <%= link_to "食べログ",
                       shop.tabelog_url,

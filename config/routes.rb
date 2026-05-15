@@ -124,6 +124,7 @@ Rails.application.routes.draw do
         patch :reject
         patch :hold
         patch :approve_tabelog_candidate
+        patch :mark_tabelog_not_found
       end
 
       collection do

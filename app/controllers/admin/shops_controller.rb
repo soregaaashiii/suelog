@@ -405,6 +405,30 @@ class Admin::ShopsController < Admin::BaseController
                 flash: { admin_alert: "食べログ候補の承認に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   end
 
+  def mark_tabelog_not_found
+    status = params[:status].presence || "tabelog_suspect"
+    shop = Shop.find(params[:id])
+
+    dummy_url = "https://not-found.local/#{Time.zone.today.strftime('%y%m%d')}"
+
+    shop.update!(
+      tabelog_url: dummy_url,
+      tabelog_affiliate_url: nil,
+      tabelog_matched_at: Time.current,
+      tabelog_match_method: "admin_not_found",
+      tabelog_candidate_url: nil,
+      tabelog_candidate_affiliate_url: nil,
+      tabelog_candidate_matched_at: nil,
+      tabelog_candidate_method: nil
+    )
+
+    redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+                flash: { admin_notice: "食べログなしとしてダミーURLを登録しました" }
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+                flash: { admin_alert: "ダミーURL登録に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
+  end
+
   def bulk_update
     status = params[:status].presence || "pending"
 
@@ -489,7 +513,18 @@ class Admin::ShopsController < Admin::BaseController
     notice = "更新しました"
 
     ActiveRecord::Base.transaction do
-      @shop.update!(shop_params)
+      permitted_shop_params = shop_params
+
+      if permitted_shop_params.key?(:tabelog_candidate_url) &&
+         permitted_shop_params[:tabelog_candidate_url].blank?
+        permitted_shop_params = permitted_shop_params.except(
+          :tabelog_candidate_url,
+          :tabelog_candidate_affiliate_url,
+          :tabelog_candidate_method
+        )
+      end
+
+      @shop.update!(permitted_shop_params)
       purge_removed_photos!(@shop)
       attach_uploaded_photos!(@shop)
       populate_derived_hours_fields!(@shop)
