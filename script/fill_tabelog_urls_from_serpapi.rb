@@ -175,14 +175,29 @@ scope.find_each do |shop|
 
   affiliate_url = candidate
 
-  shop.update!(
-    tabelog_url: candidate,
-    tabelog_affiliate_url: affiliate_url,
-    tabelog_matched_at: Time.current,
-    tabelog_match_method: match_method
-  )
+  if matched_result.present?
+    shop.update!(
+      tabelog_url: candidate,
+      tabelog_affiliate_url: affiliate_url,
+      tabelog_matched_at: Time.current,
+      tabelog_match_method: match_method,
+      tabelog_candidate_url: nil,
+      tabelog_candidate_affiliate_url: nil,
+      tabelog_candidate_matched_at: nil,
+      tabelog_candidate_method: nil
+    )
 
-  puts "  保存: #{candidate} / #{match_method}"
+    puts "  自動保存: #{candidate} / #{match_method}"
+  else
+    shop.update!(
+      tabelog_candidate_url: candidate,
+      tabelog_candidate_affiliate_url: affiliate_url,
+      tabelog_candidate_matched_at: Time.current,
+      tabelog_candidate_method: match_method
+    )
+
+    puts "  候補保存: #{candidate} / #{match_method}"
+  end
   updated += 1
 
   sleep 0.3

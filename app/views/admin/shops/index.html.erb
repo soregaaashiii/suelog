@@ -355,12 +355,26 @@ CSV一括インポート
                     edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
-                <% if shop.tabelog_url.present? %>
+                <% candidate_url = shop.respond_to?(:tabelog_candidate_url) ? shop.tabelog_candidate_url : nil %>
+
+                <% if candidate_url.present? %>
                   <%= link_to "食べログ候補",
-                      shop.tabelog_url,
+                      candidate_url,
                       target: "_blank",
                       rel: "noopener nofollow",
                       style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #e0b84f; background:#fff8e1; color:#7a4b00; border-radius:10px; text-decoration:none; font-weight:700;" %>
+
+                  <%= button_to "候補を承認",
+                      approve_tabelog_candidate_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                      method: :patch,
+                      data: { turbo: false, turbo_confirm: "この食べログ候補を公開URLとして承認しますか？" },
+                      style: "padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; border-radius:10px; font-weight:700;" %>
+                <% elsif shop.tabelog_url.present? %>
+                  <%= link_to "食べログ",
+                      shop.tabelog_url,
+                      target: "_blank",
+                      rel: "noopener nofollow",
+                      style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
                 <% end %>
 
                 <%= form_with model: [:admin, shop],
@@ -368,15 +382,15 @@ CSV一括インポート
                     method: :patch,
                     local: true,
                     style: "display:flex; gap:6px; align-items:center; flex-wrap:wrap;" do |f| %>
-                  <%= f.url_field :tabelog_url,
-                      value: shop.tabelog_url,
-                      placeholder: "食べログURL",
+                  <%= f.url_field :tabelog_candidate_url,
+                      value: candidate_url.presence,
+                      placeholder: "食べログ候補URL",
                       style: "width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:10px;" %>
 
-                  <%= f.hidden_field :tabelog_affiliate_url, value: shop.tabelog_url %>
-                  <%= f.hidden_field :tabelog_match_method, value: "admin_manual" %>
+                  <%= f.hidden_field :tabelog_candidate_affiliate_url, value: candidate_url.presence %>
+                  <%= f.hidden_field :tabelog_candidate_method, value: "admin_manual_candidate" %>
 
-                  <%= f.submit "URL更新",
+                  <%= f.submit "候補URL更新",
                       style: "padding:6px 10px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; font-weight:700;" %>
                 <% end %>
 

@@ -30,7 +30,7 @@ class Admin::ShopsController < Admin::BaseController
     when "hold"
       scope = scope.where(on_hold: true)
     when "tabelog_suspect"
-      scope = scope.where(tabelog_match_method: "serpapi_suspect")
+      scope = scope.where.not(tabelog_candidate_url: [nil, ""])
     else
       scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
     end
@@ -372,6 +372,37 @@ class Admin::ShopsController < Admin::BaseController
   rescue ActiveRecord::RecordInvalid => e
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                 flash: { admin_alert: "保留への移動に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
+  end
+
+  def approve_tabelog_candidate
+    status = params[:status].presence || "tabelog_suspect"
+    shop = Shop.find(params[:id])
+
+    candidate_url = shop.tabelog_candidate_url.to_s.strip
+    candidate_affiliate_url = shop.tabelog_candidate_affiliate_url.to_s.strip.presence || candidate_url
+
+    if candidate_url.blank?
+      redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+                  flash: { admin_alert: "食べログ候補URLがありません" }
+      return
+    end
+
+    shop.update!(
+      tabelog_url: candidate_url,
+      tabelog_affiliate_url: candidate_affiliate_url,
+      tabelog_matched_at: Time.current,
+      tabelog_match_method: "admin_approved_candidate",
+      tabelog_candidate_url: nil,
+      tabelog_candidate_affiliate_url: nil,
+      tabelog_candidate_matched_at: nil,
+      tabelog_candidate_method: nil
+    )
+
+    redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+                flash: { admin_notice: "食べログ候補を承認しました" }
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+                flash: { admin_alert: "食べログ候補の承認に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   end
 
   def bulk_update
@@ -1045,6 +1076,9 @@ class Admin::ShopsController < Admin::BaseController
       :tabelog_url,
       :tabelog_affiliate_url,
       :tabelog_match_method,
+      :tabelog_candidate_url,
+      :tabelog_candidate_affiliate_url,
+      :tabelog_candidate_method,
       :hotpepper_url,
       :custom_affiliate_url,
       :custom_affiliate_label,

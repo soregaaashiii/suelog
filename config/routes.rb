@@ -123,6 +123,7 @@ Rails.application.routes.draw do
         patch :approve
         patch :reject
         patch :hold
+        patch :approve_tabelog_candidate
       end
 
       collection do
