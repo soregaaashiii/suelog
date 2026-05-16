@@ -824,6 +824,66 @@ class Shop < ApplicationRecord
     []
   end
 
+  def freshness_score
+    score = 0
+
+    if last_confirmed_on.present?
+      days = (Date.current - last_confirmed_on).to_i
+
+      score +=
+        if days <= 30
+          60
+        elsif days <= 90
+          45
+        elsif days <= 180
+          30
+        elsif days <= 365
+          15
+        else
+          5
+        end
+    end
+
+    score += 20 if approved?
+    score += 10 if respond_to?(:tabelog_affiliate_url) && tabelog_affiliate_url.present?
+    score += 10 if updated_at.present? && updated_at >= 30.days.ago
+
+    score -= 25 if respond_to?(:smoking_unverified) && smoking_unverified?
+    score -= 10 if smoking_area.to_s == "unknown"
+    score -= 10 if smoking_type.to_s == "unknown"
+
+    [[score, 0].max, 100].min
+  rescue StandardError => e
+    Rails.logger.warn("[freshness_score] #{e.class}: #{e.message}")
+    0
+  end
+
+  def freshness_label
+    case freshness_score
+    when 80..100
+      "鮮度：高"
+    when 50...80
+      "鮮度：中"
+    when 1...50
+      "鮮度：低"
+    else
+      "鮮度：未確認"
+    end
+  end
+
+  def freshness_level
+    case freshness_score
+    when 80..100
+      "high"
+    when 50...80
+      "middle"
+    when 1...50
+      "low"
+    else
+      "unknown"
+    end
+  end
+
   private
 
   def assign_area_from_location_if_blank
