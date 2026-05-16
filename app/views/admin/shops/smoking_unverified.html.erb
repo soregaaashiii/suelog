@@ -38,13 +38,31 @@
 
   .smoking-check-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(130px, auto) minmax(120px, auto);
+    grid-template-columns: minmax(0, 1fr) minmax(130px, auto) minmax(390px, auto);
     gap: 10px;
     align-items: center;
     padding: 12px;
     background: #fff;
     border: 1px solid #e5e5e5;
     border-radius: 10px;
+  }
+
+  .smoking-check-form {
+    display: grid;
+    grid-template-columns: 120px 120px 140px;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .smoking-check-select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 700;
   }
 
   .smoking-check-shop {
@@ -143,10 +161,19 @@
     }
 
     .smoking-check-row {
-      grid-template-columns: minmax(0, 1fr) 112px 96px;
-      gap: 6px;
+      grid-template-columns: 1fr;
+      gap: 8px;
       padding: 10px;
       border-radius: 8px;
+    }
+
+    .smoking-check-form {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .smoking-check-form .smoking-check-confirm {
+      grid-column: 1 / -1;
     }
 
     .smoking-check-name {
@@ -217,11 +244,32 @@
           </div>
 
           <div>
-            <%= button_to "確認済み",
-                          confirm_smoking_info_admin_shop_path(shop, per: @per, page: @page),
+            <%= form_with model: [:admin, shop],
+                          url: update_smoking_info_admin_shop_path(shop, per: @per, page: @page),
                           method: :patch,
-                          class: "smoking-check-confirm",
-                          form: { data: { turbo_confirm: "喫煙情報を確認済みにしますか？" } } %>
+                          local: true,
+                          class: "smoking-check-form" do |f| %>
+              <%= f.select :smoking_area,
+                           [
+                             ["席で喫煙可", "all_smoking"],
+                             ["喫煙所あり", "separated"],
+                             ["不明", "unknown"]
+                           ],
+                           {},
+                           class: "smoking-check-select" %>
+
+              <%= f.select :smoking_type,
+                           [
+                             ["紙・加熱式OK", "both_ok"],
+                             ["加熱式のみ", "electronic_only"],
+                             ["紙タバコのみ", "paper_only"],
+                             ["不明", "unknown"]
+                           ],
+                           {},
+                           class: "smoking-check-select" %>
+
+              <%= f.submit "保存して確認済み", class: "smoking-check-confirm" %>
+            <% end %>
           </div>
         </div>
       <% end %>
