@@ -365,32 +365,30 @@
       </div>
     </div>
   </div>
-
+  
   <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
     <%= f.submit "更新する",
     name: "commit_action",
     value: "update",
     style: "padding:10px 14px; border:1px solid #111; border-radius:10px; background:#111; color:#fff;" %>
 
-    <% if !@shop.approved? && !rejected %>
-      <%= f.submit "更新して承認する",
-      name: "commit_action",
-      value: "approve",
-      data: { turbo_confirm: "更新して承認しますか？" },
-      style: "padding:10px 14px; border:1px solid #137333; border-radius:10px; background:#e6f4ea; color:#137333; font-weight:700;" %>
+    <%= f.submit "更新して承認する",
+    name: "commit_action",
+    value: "approve",
+    data: { turbo_confirm: "更新して承認しますか？" },
+    style: "padding:10px 14px; border:1px solid #137333; border-radius:10px; background:#e6f4ea; color:#137333; font-weight:700;" %>
 
-      <%= f.submit "更新して保留に移動",
-      name: "commit_action",
-      value: "hold",
-      data: { turbo_confirm: "更新して保留に移動しますか？" },
-      style: "padding:10px 14px; border:1px solid #9a6700; border-radius:10px; background:#fff8e1; color:#9a6700; font-weight:700;" %>
+    <%= f.submit "更新して保留に移動",
+    name: "commit_action",
+    value: "hold",
+    data: { turbo_confirm: "更新して保留に移動しますか？" },
+    style: "padding:10px 14px; border:1px solid #9a6700; border-radius:10px; background:#fff8e1; color:#9a6700; font-weight:700;" %>
 
-      <%= f.submit "更新して却下する",
-      name: "commit_action",
-      value: "reject",
-      data: { turbo_confirm: "更新して却下します。よろしいですか？" },
-      style: "padding:10px 14px; border:1px solid #b00020; border-radius:10px; background:#fdecea; color:#b00020; font-weight:700;" %>
-    <% end %>
+    <%= f.submit "更新して却下する",
+    name: "commit_action",
+    value: "reject",
+    data: { turbo_confirm: "更新して却下します。よろしいですか？" },
+    style: "padding:10px 14px; border:1px solid #b00020; border-radius:10px; background:#fdecea; color:#b00020; font-weight:700;" %>
 
     <%= link_to "キャンセル",
     admin_shops_path(status: @status, source: @source, per: @per, page: @page),
