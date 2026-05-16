@@ -126,6 +126,7 @@ Rails.application.routes.draw do
         patch :approve_tabelog_candidate
         patch :mark_tabelog_not_found
         patch :confirm_smoking_info
+        patch :update_smoking_info
       end
 
       collection do

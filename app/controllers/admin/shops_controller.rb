@@ -470,6 +470,26 @@ class Admin::ShopsController < Admin::BaseController
                 flash: { admin_alert: "確認済みへの更新に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   end
 
+  def update_smoking_info
+    shop = Shop.find(params[:id])
+
+    attrs = params.require(:shop).permit(:smoking_area, :smoking_type).to_h
+    attrs[:smoking_unverified] = false
+    attrs[:updated_at] = Time.current
+    attrs[:last_confirmed_on] = Date.current if Shop.column_names.include?("last_confirmed_on")
+
+    shop.update!(attrs)
+
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+                flash: { admin_notice: "喫煙情報を更新して確認済みにしました：#{shop.name}" }
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+                flash: { admin_alert: "喫煙情報の更新に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
+  rescue ActionController::ParameterMissing
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+                flash: { admin_alert: "喫煙情報の入力がありません" }
+  end
+
   def mark_tabelog_not_found
     status = params[:status].presence || "tabelog_suspect"
     shop = Shop.find(params[:id])
