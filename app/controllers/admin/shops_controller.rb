@@ -191,6 +191,28 @@ class Admin::ShopsController < Admin::BaseController
       .order(held_at: :desc, updated_at: :desc)
   end
 
+  def smoking_unverified
+    @per = (params[:per].presence || 100).to_i
+    @per = 100 if @per <= 0
+    @per = 500 if @per > 500
+
+    @page = params[:page].to_i
+    @page = 1 if @page <= 0
+
+    scope = Shop
+      .where(smoking_unverified: true)
+      .joins("LEFT JOIN shop_clicks ON shop_clicks.shop_id = shops.id")
+      .select("shops.*, COUNT(shop_clicks.id) AS click_count")
+      .group("shops.id")
+      .order(Arel.sql("COUNT(shop_clicks.id) DESC, shops.updated_at DESC"))
+
+    @total_count = scope.except(:select, :group, :order).distinct.count(:id)
+    @total_pages = (@total_count.to_f / @per).ceil
+    @total_pages = 1 if @total_pages <= 0
+
+    @shops = scope.offset((@page - 1) * @per).limit(@per)
+  end
+
   def show
     @shop = Shop.find(params[:id])
     @status = params[:status].presence || "pending"
@@ -428,6 +450,24 @@ class Admin::ShopsController < Admin::BaseController
   rescue ActiveRecord::RecordInvalid => e
     redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                 flash: { admin_alert: "食べログ候補の承認に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
+  end
+
+  def confirm_smoking_info
+    shop = Shop.find(params[:id])
+
+    attrs = {
+      smoking_unverified: false,
+      updated_at: Time.current
+    }
+    attrs[:last_confirmed_on] = Date.current if Shop.column_names.include?("last_confirmed_on")
+
+    shop.update!(attrs)
+
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+                flash: { admin_notice: "喫煙情報を確認済みにしました：#{shop.name}" }
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+                flash: { admin_alert: "確認済みへの更新に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   end
 
   def mark_tabelog_not_found

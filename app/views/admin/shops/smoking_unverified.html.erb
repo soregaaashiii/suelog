@@ -1,0 +1,248 @@
+<% content_for :title, "喫煙情報未確認店舗" %>
+
+<style>
+  .smoking-check-page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .smoking-check-head {
+    margin-bottom: 16px;
+  }
+
+  .smoking-check-title {
+    margin: 0 0 8px;
+    font-size: 24px;
+    font-weight: 900;
+  }
+
+  .smoking-check-lead {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .smoking-check-meta {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #666;
+  }
+
+  .smoking-check-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .smoking-check-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(130px, auto) minmax(120px, auto);
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+  }
+
+  .smoking-check-shop {
+    min-width: 0;
+  }
+
+  .smoking-check-name {
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .smoking-check-sub {
+    margin-top: 4px;
+    color: #777;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .smoking-check-clicks {
+    margin-top: 4px;
+    color: #7a5a12;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .smoking-check-phone,
+  .smoking-check-confirm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 900;
+    text-decoration: none;
+    border: 1px solid #111;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .smoking-check-phone {
+    background: #fff;
+    color: #111;
+  }
+
+  .smoking-check-phone--disabled {
+    border-color: #ddd;
+    color: #999;
+    background: #f7f7f7;
+    cursor: default;
+  }
+
+  .smoking-check-confirm {
+    background: #111;
+    color: #fff;
+  }
+
+  .smoking-check-empty {
+    padding: 24px;
+    background: #fff;
+    border: 1px dashed #ccc;
+    border-radius: 10px;
+    color: #666;
+    text-align: center;
+  }
+
+  .smoking-check-pager {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .smoking-check-pager a,
+  .smoking-check-pager span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  @media (max-width: 640px) {
+    .smoking-check-page {
+      padding: 12px;
+    }
+
+    .smoking-check-row {
+      grid-template-columns: minmax(0, 1fr) 112px 96px;
+      gap: 6px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .smoking-check-name {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .smoking-check-sub {
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .smoking-check-clicks {
+      font-size: 11px;
+    }
+
+    .smoking-check-phone,
+    .smoking-check-confirm {
+      min-height: 46px;
+      padding: 0 8px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+  }
+</style>
+
+<div class="smoking-check-page">
+  <div class="smoking-check-head">
+    <h1 class="smoking-check-title">喫煙情報未確認店舗</h1>
+
+    <p class="smoking-check-lead">
+      アクセスが多い順に、喫煙情報が未確認の店舗を表示しています。スマホで電話確認して、そのまま確認ボタンを押せます。
+    </p>
+
+    <div class="smoking-check-meta">
+      未確認：<strong><%= @total_count %></strong>件 /
+      表示：<strong><%= @shops.size %></strong>件 /
+      <%= @page %> / <%= @total_pages %>ページ
+    </div>
+  </div>
+
+  <% if @shops.present? %>
+    <div class="smoking-check-list">
+      <% @shops.each do |shop| %>
+        <% click_count = shop.respond_to?(:click_count) ? shop.click_count.to_i : 0 %>
+
+        <div class="smoking-check-row">
+          <div class="smoking-check-shop">
+            <div class="smoking-check-name">
+              <%= link_to shop.name, admin_shop_path(shop), target: "_blank", rel: "noopener" %>
+            </div>
+
+            <div class="smoking-check-sub">
+              <%= [shop.area, shop.nearest_station].compact_blank.join(" / ") %>
+            </div>
+
+            <div class="smoking-check-clicks">
+              アクセス：<%= click_count %>
+            </div>
+          </div>
+
+          <div>
+            <% if shop.phone.present? %>
+              <%= link_to "電話する", "tel:#{shop.phone.to_s.gsub(/[^\d+]/, '')}", class: "smoking-check-phone" %>
+            <% else %>
+              <span class="smoking-check-phone smoking-check-phone--disabled">電話なし</span>
+            <% end %>
+          </div>
+
+          <div>
+            <%= button_to "確認済み",
+                          confirm_smoking_info_admin_shop_path(shop, per: @per, page: @page),
+                          method: :patch,
+                          class: "smoking-check-confirm",
+                          form: { data: { turbo_confirm: "喫煙情報を確認済みにしますか？" } } %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="smoking-check-pager">
+      <% if @page > 1 %>
+        <%= link_to "前へ", smoking_unverified_admin_shops_path(page: @page - 1, per: @per) %>
+      <% else %>
+        <span>前へ</span>
+      <% end %>
+
+      <% if @page < @total_pages %>
+        <%= link_to "次へ", smoking_unverified_admin_shops_path(page: @page + 1, per: @per) %>
+      <% else %>
+        <span>次へ</span>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="smoking-check-empty">
+      喫煙情報未確認の店舗はありません。
+    </div>
+  <% end %>
+</div>

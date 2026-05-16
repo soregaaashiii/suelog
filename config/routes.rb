@@ -125,10 +125,12 @@ Rails.application.routes.draw do
         patch :hold
         patch :approve_tabelog_candidate
         patch :mark_tabelog_not_found
+        patch :confirm_smoking_info
       end
 
       collection do
         get :holds
+        get :smoking_unverified
         patch :bulk_update
         post :import
       end
