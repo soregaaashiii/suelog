@@ -19,10 +19,20 @@ GENRE_KEYWORDS = {
   "デート" => %w[デート 雰囲気 横並び]
 }.freeze
 
+
 AREA_KEYWORDS = {
   "梅田" => %w[梅田 大阪駅 東通り お初天神 北新地 堂山 茶屋町],
   "難波" => %w[難波 なんば 心斎橋 道頓堀 日本橋]
 }.freeze
+
+NOISE_KEYWORDS = %w[
+  クチコミ
+  review
+  reviews
+  レビュー
+  instagram
+  インスタ
+].freeze
 
 REVENUE_FIT = {
   "焼肉" => 1.6,
@@ -71,6 +81,34 @@ def detect_genre(query)
   end
 
   nil
+end
+
+def looks_like_specific_shop_query?(query)
+  normalized = query.to_s.downcase
+
+  return false if normalized.include?("喫煙")
+  return false if normalized.include?("タバコ")
+  return false if normalized.include?("吸える")
+  return false if normalized.include?("喫煙可")
+
+  shop_like_words = %w[
+    cafe
+    bar
+    dining
+    lounge
+    shisha
+    coffee
+    bistro
+    restaurant
+    口コミ
+    クチコミ
+    レビュー
+  ]
+
+  return true if shop_like_words.any? { |word| normalized.include?(word) }
+
+  words = normalized.split(/[ 　]/)
+  words.size <= 3
 end
 
 def position_multiplier(position)
@@ -161,6 +199,12 @@ items = rows.filter_map do |row|
 
   next if impressions <= 0
 
+  query_downcase = query.downcase
+
+  next if NOISE_KEYWORDS.any? { |keyword| query_downcase.include?(keyword.downcase) }
+
+  specific_shop_query = looks_like_specific_shop_query?(query)
+
   demand_score = impressions + (clicks * 5)
   growth_score = position_multiplier(position) * ctr_multiplier(ctr_percent)
   revenue_fit = REVENUE_FIT.fetch(genre, 1.0)
@@ -181,6 +225,7 @@ items = rows.filter_map do |row|
     query: query,
     area: area,
     genre: genre,
+    specific_shop_query: specific_shop_query,
     clicks: clicks.to_i,
     impressions: impressions.to_i,
     ctr_percent: ctr_percent.round(2),
@@ -195,13 +240,72 @@ items = rows.filter_map do |row|
   }
 end
 
-def print_section(title, items, score_key, limit: 10)
+def recommendations_for(item)
+  recommendations = []
+
+  if item[:shops_count].to_i < 20 && item[:area].present? && item[:genre].present?
+    recommendations << "#{item[:area]}の#{item[:genre]}店舗を追加収集する"
+  end
+
+  if item[:confirmed_count].to_i < 10 && item[:shops_count].to_i.positive?
+    recommendations << "既存店舗の電話確認・喫煙情報確認を増やす"
+  end
+
+  if item[:articles_count].to_i.zero? && item[:area].present? && item[:genre].present?
+    recommendations << "「#{item[:area]}で喫煙できる#{item[:genre]}まとめ」記事を作る"
+  end
+
+  if item[:ctr_percent].to_f < 2.0 && item[:impressions].to_i >= 30
+    recommendations << "SEOタイトル・meta descriptionを改善する"
+  end
+
+  if item[:position].to_f >= 8 && item[:position].to_f <= 30
+    recommendations << "関連ページから内部リンクを追加する"
+  end
+
+  recommendations << "該当クエリに合う既存ページを確認して導線を強化する" if recommendations.empty?
+
+  recommendations
+end
+
+def print_recommendations(title, items, score_key, limit: 10)
   puts
   puts "=============================="
   puts title
   puts "=============================="
 
-  items.sort_by { |item| -item[score_key] }.first(limit).each_with_index do |item, index|
+  items
+    .reject { |item| item[:specific_shop_query] }
+    .sort_by { |item| -item[score_key] }
+    .first(limit)
+    .each_with_index do |item, index|
+      puts
+      puts "#{index + 1}. #{item[:query]}"
+      puts "   優先スコア: #{item[score_key]}"
+      puts "   状況: 表示#{item[:impressions]} / CTR#{item[:ctr_percent]}% / 順位#{item[:position]}"
+      puts "   対象: #{item[:area] || '未判定'} / #{item[:genre] || '未判定'}"
+      puts "   供給: DB店舗#{item[:shops_count]} / 確認済み#{item[:confirmed_count]} / 記事#{item[:articles_count]}"
+      puts "   推奨施策:"
+      recommendations_for(item).each do |recommendation|
+        puts "   - #{recommendation}"
+      end
+    end
+end
+
+def print_section(title, items, score_key, limit: 10, general_only: true)
+  puts
+  puts "=============================="
+  puts title
+  puts "=============================="
+
+  target_items =
+    if general_only
+      items.reject { |item| item[:specific_shop_query] }
+    else
+      items
+    end
+
+  target_items.sort_by { |item| -item[score_key] }.first(limit).each_with_index do |item, index|
     puts
     puts "#{index + 1}. #{item[:query]}"
     puts "   score: #{item[score_key]}"
@@ -220,6 +324,9 @@ print_section("PV最大化：流入を増やすなら優先", items, :pv_score)
 print_section("収益最大化：送客・予約につなげるなら優先", items, :revenue_score)
 print_section("DB強化：検索需要に対して店舗DBが弱い候補", items, :db_gap_score)
 print_section("CTR改善：表示はあるのにクリックを取り切れていない候補", items, :ctr_score)
+print_section("店舗名系：個別店舗ページ・記事で拾えている検索", items.select { |item| item[:specific_shop_query] }, :pv_score, general_only: false)
+
+print_recommendations("自動施策提案：今すぐやる候補", items, :revenue_score)
 
 puts
 puts "次の見方"
