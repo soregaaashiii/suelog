@@ -22,8 +22,31 @@ def freshness_bucket(score)
   end
 end
 
+def featured_shop_ids_from_articles
+  ids = []
+
+  Article.find_each do |article|
+    body_text =
+      if article.respond_to?(:body) && article.body.present?
+        article.body.to_s
+      else
+        ""
+      end
+
+    body_text.scan(/\[shop\s+id=["']?(\d+)["']?\]/i).each do |match|
+      ids << match.first.to_i
+    end
+  end
+
+  ids.uniq
+rescue StandardError => e
+  Rails.logger.warn("[featured_shop_ids_from_articles] #{e.class}: #{e.message}")
+  []
+end
+
 shops = Shop.approved.to_a
 shop_ids = shops.map(&:id)
+featured_shop_ids = featured_shop_ids_from_articles
 
 click_counts =
   ShopClick
@@ -39,6 +62,8 @@ recent_click_counts =
     .count
 
 rows = shops.map do |shop|
+  featured_in_article = featured_shop_ids.include?(shop.id)
+
   phone_clicks = click_counts[[shop.id, "phone_click"]].to_i
   map_clicks = click_counts[[shop.id, "map_click"]].to_i
   affiliate_clicks = click_counts[[shop.id, "affiliate_click"]].to_i
@@ -52,6 +77,7 @@ rows = shops.map do |shop|
 
   {
     id: shop.id,
+    featured_in_article: featured_in_article,
     name: shop.name,
     area: shop.area,
     genre: shop.display_genre,
@@ -79,8 +105,8 @@ end
 
 summary_rows =
   rows
-    .group_by { |row| row[:freshness_bucket] }
-    .map do |bucket, bucket_rows|
+    .group_by { |row| [row[:freshness_bucket], row[:featured_in_article]] }
+    .map do |(bucket, featured), bucket_rows|
       shop_count = bucket_rows.size
       total_clicks = bucket_rows.sum { |row| row[:total_clicks].to_i }
       recent_total_clicks = bucket_rows.sum { |row| row[:recent_total_clicks].to_i }
@@ -89,6 +115,7 @@ summary_rows =
 
       {
         freshness_bucket: bucket,
+        featured_in_article: featured,
         shop_count: shop_count,
         avg_freshness_score: (bucket_rows.sum { |row| row[:freshness_score].to_i }.to_f / shop_count).round(1),
         total_clicks: total_clicks,
@@ -101,7 +128,12 @@ summary_rows =
         recent_affiliate_clicks_per_shop: (recent_affiliate_clicks.to_f / shop_count).round(2)
       }
     end
-    .sort_by { |row| { "high" => 0, "middle" => 1, "low" => 2, "unknown" => 3 }[row[:freshness_bucket]] || 9 }
+    .sort_by do |row|
+      [
+        { "high" => 0, "middle" => 1, "low" => 2, "unknown" => 3 }[row[:freshness_bucket]] || 9,
+        row[:featured_in_article] ? 0 : 1
+      ]
+    end
 
 CSV.open(summary_path, "w") do |csv|
   csv << summary_rows.first.keys if summary_rows.any?
@@ -114,5 +146,5 @@ puts "created: #{detail_path}"
 puts
 puts "=== Freshness impact summary ==="
 summary_rows.each do |row|
-  puts "#{row[:freshness_bucket]} / shops=#{row[:shop_count]} / clicks_per_shop=#{row[:clicks_per_shop]} / recent_clicks_per_shop=#{row[:recent_clicks_per_shop]} / affiliate_per_shop=#{row[:affiliate_clicks_per_shop]}"
+  puts "#{row[:freshness_bucket]} / featured=#{row[:featured_in_article]} / shops=#{row[:shop_count]} / clicks_per_shop=#{row[:clicks_per_shop]} / recent_clicks_per_shop=#{row[:recent_clicks_per_shop]} / affiliate_per_shop=#{row[:affiliate_clicks_per_shop]}"
 end
