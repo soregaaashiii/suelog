@@ -1,4 +1,3 @@
-# /Users/kawamuratakuya/dev/suelog/app/controllers/admin/shops_controller.rb
 # frozen_string_literal: true
 
 require "csv"
@@ -11,6 +10,7 @@ class Admin::ShopsController < Admin::BaseController
   def index
     @status = params[:status].presence || "pending"
     @source = params[:source].to_s.presence
+    @q = params[:q].to_s.strip
 
     @per = (params[:per].presence || 50).to_i
     @per = 50 if @per <= 0
@@ -46,6 +46,14 @@ class Admin::ShopsController < Admin::BaseController
 
     if @source.present? && Shop.column_names.include?("source")
       scope = scope.where(source: @source)
+    end
+
+    if @q.present?
+      like = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
+      scope = scope.where(
+        "shops.name LIKE :like OR shops.address LIKE :like OR shops.area LIKE :like OR shops.nearest_station LIKE :like OR shops.phone LIKE :like",
+        like: like
+      )
     end
 
     @total_count =

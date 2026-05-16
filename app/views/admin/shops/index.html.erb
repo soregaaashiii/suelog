@@ -37,6 +37,32 @@
 </div>
 
 <div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
+  <div style="margin-bottom:12px;">
+    <form action="<%= admin_shops_path %>" method="get" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <input type="hidden" name="status" value="<%= @status %>">
+      <input type="hidden" name="source" value="<%= @source %>">
+      <input type="hidden" name="per" value="<%= @per %>">
+      <input type="hidden" name="page" value="1">
+
+      <input type="text"
+             name="q"
+             value="<%= @q %>"
+             placeholder="店名・住所・駅名・電話番号で検索"
+             style="width:320px; max-width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:10px;">
+
+      <button type="submit"
+              style="padding:8px 12px; border:1px solid #111; border-radius:10px; background:#111; color:#fff;">
+        検索
+      </button>
+
+      <% if @q.present? %>
+        <%= link_to "クリア",
+            admin_shops_path(status: @status, source: @source, per: @per, page: 1),
+            style: "padding:8px 12px; border:1px solid #ddd; border-radius:10px; text-decoration:none; background:#fff;" %>
+      <% end %>
+    </form>
+  </div>
+
   <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
     <div>
       <strong>表示：</strong>
