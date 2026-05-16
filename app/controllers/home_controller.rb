@@ -3,22 +3,37 @@
 
 class HomeController < ApplicationController
   AREA_GENRE_MAP = {
-    "izakaya" => {
-      label: "居酒屋",
-      terms: ["居酒屋"]
-    },
-    "bar" => {
-      label: "バー・パブ",
-      terms: ["バー", "パブ", "ハブ", "ラウンジ"]
-    },
-    "cafe" => {
-      label: "カフェ",
-      terms: ["カフェ", "喫茶店", "カフェバー"]
-    },
-    "yakiniku" => {
-      label: "焼肉",
-      terms: ["焼肉"]
-    }
+    "izakaya" => { label: "居酒屋", terms: ["居酒屋"] },
+    "bar" => { label: "バー・パブ", terms: ["バー", "パブ", "ハブ", "ラウンジ"] },
+    "cafe" => { label: "カフェ", terms: ["カフェ", "喫茶店"] },
+    "yakiniku" => { label: "焼肉", terms: ["焼肉"] },
+    "yakitori" => { label: "焼鳥", terms: ["焼鳥"] },
+    "seafood" => { label: "海鮮", terms: ["海鮮"] },
+    "sushi" => { label: "寿司", terms: ["寿司"] },
+    "kushikatsu" => { label: "串カツ", terms: ["串カツ"] },
+    "teppanyaki" => { label: "鉄板焼き", terms: ["鉄板焼き"] },
+    "okonomiyaki" => { label: "お好み焼き", terms: ["お好み焼き"] },
+    "ramen" => { label: "ラーメン", terms: ["ラーメン"] },
+    "chinese" => { label: "中華", terms: ["中華"] },
+    "korean" => { label: "韓国料理", terms: ["韓国料理"] },
+    "italian" => { label: "イタリアン", terms: ["イタリアン"] },
+    "french" => { label: "フレンチ", terms: ["フレンチ"] },
+    "spanish" => { label: "スパニッシュ", terms: ["スパニッシュ"] },
+    "dining-bar" => { label: "ダイニングバー", terms: ["ダイニングバー"] },
+    "bal" => { label: "バル", terms: ["バル"] },
+    "bistro" => { label: "ビストロ", terms: ["ビストロ"] },
+    "wine-bar" => { label: "ワインバー", terms: ["ワインバー"] },
+    "sports-bar" => { label: "スポーツバー", terms: ["スポーツバー"] },
+    "oyster-bar" => { label: "オイスターバー", terms: ["オイスターバー"] },
+    "steak" => { label: "ステーキ", terms: ["ステーキ"] },
+    "gyoza" => { label: "餃子", terms: ["餃子"] },
+    "motsunabe" => { label: "もつ鍋", terms: ["もつ鍋"] },
+    "creative" => { label: "創作料理", terms: ["創作料理"] },
+    "washoku" => { label: "和食", terms: ["和食"] },
+    "shisha" => { label: "シーシャ", terms: ["シーシャ"] },
+    "snack" => { label: "スナック", terms: ["スナック"] },
+    "lounge" => { label: "ラウンジ", terms: ["ラウンジ"] },
+    "tachinomi" => { label: "立ち飲み", terms: ["立ち飲み"] }
   }.freeze
 
   STATION_SLUG_MAP = {
@@ -495,10 +510,43 @@ end
     genre_sql_parts = []
     genre_bindings = {}
 
+    normalized_genre_sql = <<~SQL.squish
+      REPLACE(
+        REPLACE(
+          REPLACE(
+            REPLACE(COALESCE(shops.genre, ''), '　', '、'),
+            ' ', '、'
+          ),
+          ',', '、'
+        ),
+        '，', '、'
+      )
+    SQL
+
+    normalized_genre_other_sql = <<~SQL.squish
+      REPLACE(
+        REPLACE(
+          REPLACE(
+            REPLACE(COALESCE(shops.genre_other, ''), '　', '、'),
+            ' ', '、'
+          ),
+          ',', '、'
+        ),
+        '，', '、'
+      )
+    SQL
+
     genre_terms.each_with_index do |term, idx|
-      key = :"genre_like_#{idx}"
-      genre_sql_parts << "(shops.genre LIKE :#{key} OR shops.genre_other LIKE :#{key})"
-      genre_bindings[key] = "%#{ActiveRecord::Base.sanitize_sql_like(term)}%"
+      key = :"genre_token_#{idx}"
+
+      genre_sql_parts << <<~SQL.squish
+        (
+          ('、' || #{normalized_genre_sql} || '、') LIKE :#{key}
+          OR ('、' || #{normalized_genre_other_sql} || '、') LIKE :#{key}
+        )
+      SQL
+
+      genre_bindings[key] = "%、#{ActiveRecord::Base.sanitize_sql_like(term)}、%"
     end
 
     genre_sql = genre_sql_parts.join(" OR ")
@@ -580,14 +628,14 @@ end
       normalized = normalized_genre_param(params[:genre])
 
       if AREA_GENRE_MAP.key?(normalized)
-        Array(AREA_GENRE_MAP[normalized][:terms]).flat_map { |term| Shop.genre_search_terms(term) }.uniq
+        Array(AREA_GENRE_MAP[normalized][:terms]).map(&:to_s).map(&:strip).reject(&:blank?).uniq
       else
-        Shop.genre_search_terms(normalized)
+        [normalized].map(&:to_s).map(&:strip).reject(&:blank?).uniq
       end
     elsif @forced_genre_terms.present?
-      @forced_genre_terms.flat_map { |term| Shop.genre_search_terms(term) }.uniq
+      @forced_genre_terms.map(&:to_s).map(&:strip).reject(&:blank?).uniq
     else
-      Shop.genre_search_terms(effective_genre_param)
+      [effective_genre_param].map(&:to_s).map(&:strip).reject(&:blank?).uniq
     end
   end
 
@@ -686,8 +734,14 @@ end
       { label: "梅田で喫煙所あり", path: umeda_smoking_path("separated") },
       { label: "梅田の居酒屋", path: umeda_genre_path("izakaya") },
       { label: "梅田のバー", path: umeda_genre_path("bar") },
+      { label: "梅田の焼肉", path: umeda_genre_path("yakiniku") },
+      { label: "梅田の焼鳥", path: umeda_genre_path("yakitori") },
+      { label: "梅田の海鮮", path: umeda_genre_path("seafood") },
+      { label: "梅田の寿司", path: umeda_genre_path("sushi") },
       { label: "梅田のカフェ", path: umeda_genre_path("cafe") },
-      { label: "梅田の焼肉", path: umeda_genre_path("yakiniku") }
+      { label: "梅田のバル", path: umeda_genre_path("bal") },
+      { label: "梅田のビストロ", path: umeda_genre_path("bistro") },
+      { label: "梅田のワインバー", path: umeda_genre_path("wine-bar") }
     ]
   end
 
@@ -698,8 +752,14 @@ end
       { label: "難波で喫煙所あり", path: namba_smoking_path("separated") },
       { label: "難波の居酒屋", path: namba_genre_path("izakaya") },
       { label: "難波のバー", path: namba_genre_path("bar") },
+      { label: "難波の焼肉", path: namba_genre_path("yakiniku") },
+      { label: "難波の焼鳥", path: namba_genre_path("yakitori") },
+      { label: "難波の海鮮", path: namba_genre_path("seafood") },
+      { label: "難波の寿司", path: namba_genre_path("sushi") },
       { label: "難波のカフェ", path: namba_genre_path("cafe") },
-      { label: "難波の焼肉", path: namba_genre_path("yakiniku") }
+      { label: "難波のバル", path: namba_genre_path("bal") },
+      { label: "難波のビストロ", path: namba_genre_path("bistro") },
+      { label: "難波のワインバー", path: namba_genre_path("wine-bar") }
     ]
   end
 
