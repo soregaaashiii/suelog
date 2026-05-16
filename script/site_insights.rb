@@ -240,6 +240,21 @@ items = rows.filter_map do |row|
   }
 end
 
+def article_ideas_for(item)
+  area = item[:area]
+  genre = item[:genre]
+
+  return [] if area.blank? || genre.blank?
+
+  [
+    "#{area}で喫煙できる#{genre}まとめ",
+    "#{area}で紙タバコが吸える#{genre}",
+    "#{area}で深夜営業している喫煙#{genre}",
+    "#{area}でデート向けの喫煙可能#{genre}",
+    "#{area}でコスパがいい喫煙#{genre}"
+  ]
+end
+
 def recommendations_for(item)
   recommendations = []
 
@@ -288,6 +303,15 @@ def print_recommendations(title, items, score_key, limit: 10)
       puts "   推奨施策:"
       recommendations_for(item).each do |recommendation|
         puts "   - #{recommendation}"
+      end
+
+      article_ideas = article_ideas_for(item)
+
+      if article_ideas.any?
+        puts "   推奨記事:"
+        article_ideas.first(3).each do |idea|
+          puts "   * #{idea}"
+        end
       end
     end
 end
