@@ -479,17 +479,24 @@ class Admin::ShopsController < Admin::BaseController
     attrs[:updated_at] = Time.current
     attrs[:last_confirmed_on] = Date.current if Shop.column_names.include?("last_confirmed_on")
 
+    current_note = shop.note.to_s
+    note_lines = []
+
     if params[:confirmed_partitioned] == "1"
-      partition_note = "[分煙確認 #{Date.current.strftime('%Y-%m-%d')}]"
+      note_lines << "[分煙確認 #{Date.current.strftime('%Y-%m-%d')}]"
+    end
 
-      current_note = shop.note.to_s
+    if params[:confirmed_all_smoking] == "1"
+      note_lines << "[全席喫煙確認 #{Date.current.strftime('%Y-%m-%d')}]"
+    end
 
-      unless current_note.include?(partition_note)
-        attrs[:note] = [
-          current_note,
-          partition_note
-        ].reject(&:blank?).join("\n")
-      end
+    note_lines = note_lines.reject { |line| current_note.include?(line) }
+
+    if note_lines.present?
+      attrs[:note] = [
+        current_note,
+        *note_lines
+      ].reject(&:blank?).join("\n")
     end
 
     shop.update!(attrs)
