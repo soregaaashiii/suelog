@@ -200,6 +200,7 @@ class Admin::ShopsController < Admin::BaseController
     @page = 1 if @page <= 0
 
     scope = Shop
+      .where(approved: true)
       .where(smoking_unverified: true)
       .joins("LEFT JOIN shop_clicks ON shop_clicks.shop_id = shops.id")
       .select("shops.*, COUNT(shop_clicks.id) AS click_count")
