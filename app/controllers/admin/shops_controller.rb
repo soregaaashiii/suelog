@@ -1124,17 +1124,8 @@ class Admin::ShopsController < Admin::BaseController
     conditions = []
     binds = {}
 
-    normalized_phone =
-      if shop.respond_to?(:normalized_phone) && shop.normalized_phone.present?
-        shop.normalized_phone
-      else
-        shop.phone.to_s.gsub(/\D/, "").presence
-      end
-
-    if normalized_phone.present?
-      conditions << "normalized_phone = :normalized_phone"
-      binds[:normalized_phone] = normalized_phone
-    end
+    # 電話番号だけの一致では承認を止めない。
+    # 系列店・同一受付番号の別店舗があるため、電話番号一致は警告表示に留める。
 
     if shop.name.present? && shop.address.present?
       conditions << "(name = :name AND address = :address)"
