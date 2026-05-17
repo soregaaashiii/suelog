@@ -38,7 +38,7 @@
 
   .smoking-check-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(130px, auto) minmax(390px, auto);
+    grid-template-columns: minmax(0, 1fr) minmax(120px, auto) minmax(390px, auto);
     gap: 10px;
     align-items: center;
     padding: 12px;
@@ -163,8 +163,15 @@
     .smoking-check-row {
       grid-template-columns: 1fr;
       gap: 8px;
-      padding: 10px;
-      border-radius: 8px;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .smoking-check-sub {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .smoking-check-form {
@@ -205,12 +212,12 @@
     <h1 class="smoking-check-title">喫煙情報未確認店舗</h1>
 
     <p class="smoking-check-lead">
-      アクセスが多い順に、喫煙情報が未確認の店舗を表示しています。スマホで電話確認して、そのまま確認ボタンを押せます。
+      アクセスが多い順。電話確認後、その場で喫煙情報を更新できます。
     </p>
 
     <div class="smoking-check-meta">
       未確認：<strong><%= @total_count %></strong>件 /
-      表示：<strong><%= @shops.size %></strong>件 /
+      表示：<strong><%= @shops.to_a.length %></strong>件 /
       <%= @page %> / <%= @total_pages %>ページ
     </div>
   </div>
