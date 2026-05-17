@@ -253,11 +253,8 @@ class Shop < ApplicationRecord
   before_validation :assign_area_from_location_if_blank
   before_validation :set_default_smoking_values
 
-  validates :normalized_phone,
-            uniqueness: true,
-            allow_nil: true,
-            allow_blank: true,
-            if: :will_save_change_to_normalized_phone?
+  # 電話番号重複は系列店・同一受付番号の可能性があるため保存は止めない。
+  # 重複警告は duplicate_flag_present? / duplicate_candidates で表示する。
 
   # ジャンル正規化
   # opening_hours_json は既存データ互換のため残す
@@ -332,13 +329,10 @@ class Shop < ApplicationRecord
 
     scope = exclude_id.present? ? Shop.where.not(id: exclude_id) : Shop.all
 
-    # ① 電話番号がある場合 → 電話だけで判定
-    if phone.present?
-      return true if scope.where(normalized_phone: phone).exists?
-      return false
-    end
+    # ① 電話番号だけの一致では登録不可にしない
+    # 系列店・同一受付番号の別店舗があるため、電話番号一致は警告表示に留める。
 
-    # ② 電話番号がない場合のみ → 名前・住所で判定
+    # ② 名前・住所で判定
     return true if name.present? && scope.where(name: name).exists?
     return true if address.present? && scope.where(address: address).exists?
 
