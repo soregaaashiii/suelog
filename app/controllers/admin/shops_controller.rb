@@ -479,6 +479,19 @@ class Admin::ShopsController < Admin::BaseController
     attrs[:updated_at] = Time.current
     attrs[:last_confirmed_on] = Date.current if Shop.column_names.include?("last_confirmed_on")
 
+    if params[:confirmed_partitioned] == "1"
+      partition_note = "[分煙確認 #{Date.current.strftime('%Y-%m-%d')}]"
+
+      current_note = shop.note.to_s
+
+      unless current_note.include?(partition_note)
+        attrs[:note] = [
+          current_note,
+          partition_note
+        ].reject(&:blank?).join("\n")
+      end
+    end
+
     shop.update!(attrs)
 
     redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),

@@ -299,6 +299,11 @@
                            {},
                            class: "smoking-check-select" %>
 
+              <label class="smoking-check-checkbox">
+                <%= check_box_tag :confirmed_partitioned, "1", false %>
+                分煙確認
+              </label>
+
               <%= f.submit "保存して確認済み", class: "smoking-check-confirm" %>
             <% end %>
 
