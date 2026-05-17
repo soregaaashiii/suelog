@@ -127,6 +127,7 @@ Rails.application.routes.draw do
         patch :mark_tabelog_not_found
         patch :confirm_smoking_info
         patch :update_smoking_info
+        patch :move_to_hold_from_smoking_check
       end
 
       collection do

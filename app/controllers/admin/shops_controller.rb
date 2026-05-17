@@ -490,6 +490,28 @@ class Admin::ShopsController < Admin::BaseController
                 flash: { admin_alert: "喫煙情報の入力がありません" }
   end
 
+  def move_to_hold_from_smoking_check
+    shop = Shop.find(params[:id])
+    reason = params[:reason].presence || "確認結果"
+
+    attrs = {
+      approved: false,
+      rejected: false,
+      on_hold: true,
+      smoking_unverified: false,
+      updated_at: Time.current
+    }
+    attrs[:held_at] = Time.current if Shop.column_names.include?("held_at")
+
+    shop.update!(attrs)
+
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+                flash: { admin_notice: "#{reason}のため保留に移動しました：#{shop.name}" }
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+                flash: { admin_alert: "保留への移動に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
+  end
+
   def mark_tabelog_not_found
     status = params[:status].presence || "tabelog_suspect"
     shop = Shop.find(params[:id])

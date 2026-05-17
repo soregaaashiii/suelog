@@ -124,6 +124,30 @@
     color: #fff;
   }
 
+  .smoking-check-hold-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .smoking-check-hold {
+    width: 100%;
+    min-height: 40px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #333;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .smoking-check-hold--danger {
+    border-color: #b00020;
+    color: #b00020;
+  }
+
   .smoking-check-empty {
     padding: 24px;
     background: #fff;
@@ -277,6 +301,20 @@
 
               <%= f.submit "保存して確認済み", class: "smoking-check-confirm" %>
             <% end %>
+
+            <div class="smoking-check-hold-actions">
+              <%= button_to "喫煙不可で保留",
+                            move_to_hold_from_smoking_check_admin_shop_path(shop, per: @per, page: @page, reason: "喫煙不可"),
+                            method: :patch,
+                            class: "smoking-check-hold",
+                            form: { data: { turbo_confirm: "喫煙不可として保留に移動しますか？" } } %>
+
+              <%= button_to "閉店で保留",
+                            move_to_hold_from_smoking_check_admin_shop_path(shop, per: @per, page: @page, reason: "閉店"),
+                            method: :patch,
+                            class: "smoking-check-hold smoking-check-hold--danger",
+                            form: { data: { turbo_confirm: "閉店として保留に移動しますか？" } } %>
+            </div>
           </div>
         </div>
       <% end %>
