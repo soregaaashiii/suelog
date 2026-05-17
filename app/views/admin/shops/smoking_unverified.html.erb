@@ -324,7 +324,7 @@
 
           <div>
             <%= form_with model: [:admin, shop],
-                          url: update_smoking_info_admin_shop_path(shop, per: @per, page: @page),
+                          url: update_smoking_info_admin_shop_path(shop, per: @per, page: @page, open_now: (@open_now ? 1 : nil)),
                           method: :patch,
                           local: true,
                           class: "smoking-check-form" do |f| %>

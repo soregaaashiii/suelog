@@ -512,13 +512,13 @@ class Admin::ShopsController < Admin::BaseController
 
     shop.update!(attrs)
 
-    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page], open_now: params[:open_now]),
                 flash: { admin_notice: "喫煙情報を更新して確認済みにしました：#{shop.name}" }
   rescue ActiveRecord::RecordInvalid => e
-    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page], open_now: params[:open_now]),
                 flash: { admin_alert: "喫煙情報の更新に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   rescue ActionController::ParameterMissing
-    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page], open_now: params[:open_now]),
                 flash: { admin_alert: "喫煙情報の入力がありません" }
   end
 
