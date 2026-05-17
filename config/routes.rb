@@ -152,7 +152,7 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :shop_reports, only: [:index] do
+    resources :shop_reports, only: [:index, :show] do
       member do
         patch :approve
         patch :reject
