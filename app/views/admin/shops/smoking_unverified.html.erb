@@ -181,6 +181,27 @@
     margin-top: 18px;
   }
 
+  .smoking-check-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #333;
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .smoking-check-filter.is-active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
   .smoking-check-pager a,
   .smoking-check-pager span {
     display: inline-flex;
@@ -260,6 +281,16 @@
       未確認：<strong><%= @total_count %></strong>件 /
       表示：<strong><%= @shops.to_a.length %></strong>件 /
       <%= @page %> / <%= @total_pages %>ページ
+    </div>
+
+    <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+      <%= link_to "すべて表示",
+                  smoking_unverified_admin_shops_path(per: @per),
+                  class: "smoking-check-filter #{'is-active' unless @open_now}" %>
+
+      <%= link_to "営業中のみ",
+                  smoking_unverified_admin_shops_path(per: @per, open_now: 1),
+                  class: "smoking-check-filter #{'is-active' if @open_now}" %>
     </div>
   </div>
 
@@ -351,13 +382,13 @@
 
     <div class="smoking-check-pager">
       <% if @page > 1 %>
-        <%= link_to "前へ", smoking_unverified_admin_shops_path(page: @page - 1, per: @per) %>
+        <%= link_to "前へ", smoking_unverified_admin_shops_path(page: @page - 1, per: @per, open_now: (@open_now ? 1 : nil)) %>
       <% else %>
         <span>前へ</span>
       <% end %>
 
       <% if @page < @total_pages %>
-        <%= link_to "次へ", smoking_unverified_admin_shops_path(page: @page + 1, per: @per) %>
+        <%= link_to "次へ", smoking_unverified_admin_shops_path(page: @page + 1, per: @per, open_now: (@open_now ? 1 : nil)) %>
       <% else %>
         <span>次へ</span>
       <% end %>

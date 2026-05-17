@@ -199,9 +199,20 @@ class Admin::ShopsController < Admin::BaseController
     @page = params[:page].to_i
     @page = 1 if @page <= 0
 
+    @open_now = params[:open_now] == "1"
+
     scope = Shop
       .where(approved: true)
       .where(smoking_unverified: true)
+
+    if @open_now
+      scope = scope.select { |shop| shop.respond_to?(:open_now?) && shop.open_now? }
+      shop_ids = scope.map(&:id)
+
+      scope = Shop.where(id: shop_ids)
+    end
+
+    scope = scope
       .joins("LEFT JOIN shop_clicks ON shop_clicks.shop_id = shops.id")
       .select("shops.*, COUNT(shop_clicks.id) AS click_count")
       .group("shops.id")
