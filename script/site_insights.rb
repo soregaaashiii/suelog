@@ -703,7 +703,14 @@ def cv_intent_multiplier(cv_intent)
   end
 end
 
-def ga4_value_score(ga4_data = nil, views: nil, active_users: nil, engagement_seconds: nil, events: nil)
+def ga4_value_score(
+  ga4_data = nil,
+  views: nil,
+  active_users: nil,
+  engagement_seconds: nil,
+  events: nil,
+  theme: nil
+)
   ga4_data ||= {}
 
   views = (views || ga4_data[:views]).to_i
@@ -732,24 +739,43 @@ def ga4_value_score(ga4_data = nil, views: nil, active_users: nil, engagement_se
       events.to_f
     end
 
-  (
-    views.to_f +
-    (active_users * 3) +
-    (event_score * 5) +
-    (engagement_score * 20)
-  ).round(1)
+  base_score =
+    (
+      views.to_f +
+      (active_users * 3) +
+      (event_score * 5) +
+      (engagement_score * 20)
+    )
+
+  theme_boost =
+    case theme.to_s
+    when "シーシャ"
+      1.6
+    when "デート"
+      1.5
+    when "個室"
+      1.25
+    when "バー"
+      1.2
+    else
+      1.0
+    end
+
+  (base_score * theme_boost).round(1)
 end
 
 def theme_multiplier(theme)
   case theme.to_s
   when "デート"
-    1.35
+    1.7
   when "シーシャ"
-    1.3
+    1.8
   when "個室"
-    1.25
+    1.35
   when "バー"
-    1.15
+    1.3
+  when "深夜"
+    1.25
   when "居酒屋"
     1.1
   when "喫煙所"
@@ -1123,7 +1149,8 @@ def build_ga4_theme_summary(ga4_pages)
         views: data[:views],
         active_users: data[:active_users],
         engagement_seconds: avg_engagement,
-        events: data[:events]
+        events: data[:events],
+        theme: theme
       ),
       top_pages: data[:top_pages].sort_by { |_, views, _| -views }.first(5)
     )
@@ -1294,6 +1321,8 @@ def article_ideas_for(item)
   when "デート"
     base_ideas.unshift(
       "#{area}で横並びデートできる喫煙OK店まとめ",
+      "#{area}で雰囲気重視の喫煙デート店まとめ",
+      "#{area}で静かに飲める喫煙OK店まとめ",
       "付き合う前でも行きやすい#{area}の喫煙OKデート店"
     )
   when "個室"
@@ -1303,8 +1332,10 @@ def article_ideas_for(item)
     )
   when "シーシャ"
     base_ideas.unshift(
+      "#{area}で雰囲気がいいシーシャバーまとめ",
       "#{area}のデート向けシーシャバーまとめ",
-      "#{area}で個室ありのシーシャバーまとめ"
+      "#{area}で個室ありのシーシャバーまとめ",
+      "#{area}で朝までチルできるシーシャバーまとめ"
     )
   when "深夜"
     base_ideas.unshift(
@@ -1469,7 +1500,18 @@ def print_ga4_theme_summary(title, theme_summary, limit: 10)
     .each_with_index do |(theme, data), index|
       puts
       puts "#{index + 1}. #{theme}"
+      theme_type =
+        case theme.to_s
+        when "デート", "シーシャ", "バー"
+          "世界観・回遊型"
+        when "個室", "深夜"
+          "送客導線型"
+        else
+          "SEO流入型"
+        end
+
       puts "   GA4価値: #{data[:ga4_score]} / PV: #{data[:views]} / Active: #{data[:active_users]} / 平均滞在: #{data[:avg_engagement_seconds]}秒 / Events: #{data[:events]} / 対象ページ: #{data[:pages]}"
+      puts "   テーマ種別: #{theme_type}"
 
       if data[:top_pages].any?
         puts "   主要ページ:"
@@ -1884,6 +1926,26 @@ print_section("確認検索っぽいブランド系：優先順位から分離",
 print_section("喫煙所系：飲食送客SEOとは分離", items.select { |item| item[:query_type] == "facility_smoking" }, :pv_score, general_only: false)
 
 print_ga4_theme_summary("GA4テーマ分析：読まれているテーマ", ga4_theme_summary)
+
+puts
+puts "=============================="
+puts "世界観テーマ：SEOより回遊・滞在が強い"
+puts "=============================="
+
+ga4_theme_summary
+  .select do |theme, data|
+    %w[デート シーシャ バー].include?(theme.to_s) &&
+      data[:ga4_score].to_f >= 80
+  end
+  .sort_by { |_, data| -data[:ga4_score].to_f }
+  .each do |theme, data|
+    puts
+    puts "#{theme}"
+    puts "   GA4価値: #{data[:ga4_score]}"
+    puts "   平均滞在: #{data[:avg_engagement_seconds]}秒"
+    puts "   PV: #{data[:views]}"
+    puts "   判断: SEOより『回遊・世界観・SNS』寄り"
+  end
 print_ga4_pages("GA4：よく見られているページ", ga4_pages)
 
 print_recommendations("自動施策提案：今すぐやる候補", items, :revenue_score)
