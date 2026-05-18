@@ -342,6 +342,19 @@ BRAND_LIKE_KEYWORDS = %w[
   リンクス
   ルクア
   マヅラ
+  ドトール
+  勝男
+  餃子のかっちゃん
+  鉄板神社
+  晩杯屋
+  鳥貴族
+  磯丸水産
+  HUB
+  hub
+  サンマルク
+  スターバックス
+  タリーズ
+  コメダ
 ].freeze
 
 REVENUE_FIT = {
@@ -572,6 +585,15 @@ def looks_like_specific_shop_query?(query)
     カンジャン
     ケジャン
     ドトール
+    勝男
+    餃子のかっちゃん
+    鉄板神社
+    鳥貴族
+    磯丸水産
+    サンマルク
+    スターバックス
+    タリーズ
+    コメダ
     えん
     ざ
     晩杯屋
@@ -619,9 +641,9 @@ end
 def detect_query_type(query)
   normalized = query.to_s.downcase
 
+  return "brand_check" if BRAND_LIKE_KEYWORDS.any? { |keyword| normalized.include?(keyword.downcase) }
   return "specific_shop" if unnatural_query?(query)
   return "facility_smoking" if FACILITY_SMOKING_KEYWORDS.any? { |keyword| normalized.include?(keyword.downcase) }
-  return "brand_check" if BRAND_LIKE_KEYWORDS.any? { |keyword| normalized.include?(keyword.downcase) }
   return "specific_shop" if looks_like_specific_shop_query?(query)
 
   "general_seo"
