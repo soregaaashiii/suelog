@@ -190,6 +190,69 @@ AREA_DB_ALIASES = {
   ]
 }.freeze
 
+LOCAL_AREA_KEYWORDS = {
+  "曽根崎" => %w[
+    曽根崎
+    お初天神
+    東梅田
+    太融寺
+  ],
+  "東通り" => %w[
+    東通り
+    堂山
+    小松原
+    阪急東通
+  ],
+  "お初天神" => %w[
+    お初天神
+    曽根崎
+    露天神
+  ],
+  "東梅田" => %w[
+    東梅田
+    曽根崎
+    太融寺
+    堂山
+  ],
+  "北新地" => %w[
+    北新地
+    曽根崎新地
+  ],
+  "堂山" => %w[
+    堂山
+    東通り
+    太融寺
+  ],
+  "茶屋町" => %w[
+    茶屋町
+    芝田
+  ],
+  "太融寺" => %w[
+    太融寺
+    堂山
+    東梅田
+  ],
+  "大阪駅" => %w[
+    大阪駅
+    梅田
+    芝田
+    大深町
+  ],
+  "日本橋" => %w[
+    日本橋
+    千日前
+  ],
+  "心斎橋" => %w[
+    心斎橋
+    東心斎橋
+    西心斎橋
+  ],
+  "道頓堀" => %w[
+    道頓堀
+    宗右衛門町
+  ]
+}.freeze
+
 NOISE_KEYWORDS = %w[
   クチコミ
   review
@@ -294,6 +357,16 @@ def pick(row, keys)
   nil
 end
 
+def detect_local_area(query)
+  normalized = query.to_s.downcase
+
+  LOCAL_AREA_KEYWORDS.each do |local_area, keywords|
+    return local_area if keywords.any? { |keyword| normalized.include?(keyword.downcase) }
+  end
+
+  nil
+end
+
 def detect_area(query)
   normalized = query.to_s.downcase
 
@@ -336,6 +409,19 @@ def detect_genre(query)
   GENRE_KEYWORDS.each do |genre, keywords|
     return genre if keywords.any? { |keyword| normalized.include?(keyword.downcase) }
   end
+
+  nil
+end
+
+def detect_theme(query:, landing_page: nil)
+  text = [query, landing_page].compact.join(" ").downcase
+
+  return "デート" if text.match?(/デート|横並び|記念日|雰囲気|2人|二人|yokonarabi|date/)
+  return "シーシャ" if text.match?(/シーシャ|shisha|hookah/)
+  return "個室" if text.match?(/個室|private-room/)
+  return "バー" if text.match?(/バー|bar/)
+  return "居酒屋" if text.match?(/居酒屋|izakaya/)
+  return "喫煙所" if text.match?(/喫煙所|喫煙スペース|喫煙室/)
 
   nil
 end
@@ -432,6 +518,67 @@ def cv_intent_multiplier(cv_intent)
   else
     1.0
   end
+end
+
+def ga4_value_score(ga4_data)
+  views = ga4_data[:views].to_i
+  active_users = ga4_data[:active_users].to_i
+  engagement_seconds = ga4_data[:engagement_seconds].to_f
+  events = ga4_data[:events].to_i
+
+  return 0 if views <= 0 && active_users <= 0 && events <= 0
+
+  engagement_score =
+    case engagement_seconds
+    when 0...10
+      0.5
+    when 10...30
+      1.0
+    when 30...90
+      1.5
+    else
+      2.0
+    end
+
+  event_score =
+    if active_users.positive?
+      events.to_f / active_users
+    else
+      events.to_f
+    end
+
+  (
+    views.to_f +
+    (active_users * 3) +
+    (event_score * 5) +
+    (engagement_score * 20)
+  ).round(1)
+end
+
+def theme_multiplier(theme)
+  case theme.to_s
+  when "デート"
+    1.35
+  when "シーシャ"
+    1.3
+  when "個室"
+    1.25
+  when "バー"
+    1.15
+  when "居酒屋"
+    1.1
+  when "喫煙所"
+    0.45
+  else
+    1.0
+  end
+end
+
+def total_opportunity_score(expected_score:, ga4_score:, theme:)
+  (
+    expected_score.to_f +
+    (ga4_score.to_f * 1.8)
+  ) * theme_multiplier(theme)
 end
 
 def expected_impact_score(
@@ -547,26 +694,49 @@ def apply_genre_group(scope, genre)
   scope.where(conditions.join(" OR "), binds)
 end
 
-def shop_count_for(area:, genre:)
-  scope = Shop.all
+def apply_local_area_keyword(scope, local_area)
+  return scope if local_area.blank?
+
+  terms = LOCAL_AREA_KEYWORDS[local_area] || [local_area]
+
+  conditions = []
+  binds = {}
+
+  terms.each_with_index do |term, index|
+    key = :"local_area_term_#{index}"
+    conditions << [
+      "name LIKE :#{key}",
+      "address LIKE :#{key}",
+      "nearest_station LIKE :#{key}"
+    ].join(" OR ")
+    binds[key] = "%#{term}%"
+  end
+
+  scope.where(conditions.map { |condition| "(#{condition})" }.join(" OR "), binds)
+end
+
+def shop_count_for(area:, genre:, local_area: nil)
+  scope = Shop.approved
 
   if area.present?
     areas = AREA_DB_ALIASES[area] || [area]
     scope = scope.where(area: areas)
   end
 
+  scope = apply_local_area_keyword(scope, local_area)
   scope = apply_genre_group(scope, genre)
   scope.count
 end
 
-def confirmed_shop_count_for(area:, genre:)
-  scope = Shop.where(smoking_unverified: [false, nil])
+def confirmed_shop_count_for(area:, genre:, local_area: nil)
+  scope = Shop.approved.where(smoking_unverified: [false, nil])
 
   if area.present?
     areas = AREA_DB_ALIASES[area] || [area]
     scope = scope.where(area: areas)
   end
 
+  scope = apply_local_area_keyword(scope, local_area)
   scope = apply_genre_group(scope, genre)
   scope.count
 end
@@ -851,7 +1021,7 @@ def print_recommendations(title, items, score_key, limit: 10)
       puts "#{index + 1}. #{item[:query]}"
       puts "   優先スコア: #{item[score_key]}"
       puts "   状況: 表示#{item[:impressions]} / CTR#{item[:ctr_percent]}% / 順位#{item[:position]}"
-      puts "   対象: #{item[:area] || '未判定'} / #{item[:genre] || '未判定'} / CV意図: #{item[:cv_intent]}"
+      puts "   対象: #{item[:area] || '未判定'} / #{item[:local_area] || '広域'} / #{item[:genre] || '未判定'} / CV意図: #{item[:cv_intent]}"
       puts "   供給: DB店舗#{item[:shops_count]} / 確認済み#{item[:confirmed_count]} / 記事#{item[:articles_count]}"
       puts "   推奨施策:"
       recommendations_for(item).each do |recommendation|
@@ -935,7 +1105,7 @@ def print_section(title, items, score_key, limit: 10, general_only: true)
     puts "#{index + 1}. #{item[:query]}"
     puts "   score: #{item[score_key]}"
     puts "   表示: #{item[:impressions]} / クリック: #{item[:clicks]} / CTR: #{item[:ctr_percent]}% / 順位: #{item[:position]}"
-    puts "   area: #{item[:area] || '未判定'} / genre: #{item[:genre] || '未判定'} / CV意図: #{item[:cv_intent]}"
+    puts "   area: #{item[:area] || '未判定'} / local_area: #{item[:local_area] || '広域'} / genre: #{item[:genre] || '未判定'} / theme: #{item[:theme] || '未判定'} / CV意図: #{item[:cv_intent]}"
     puts "   DB集計ジャンル: #{item[:genre].present? ? (GENRE_DB_GROUPS[item[:genre]] || [item[:genre]]).join(' / ') : '未判定'}"
     puts "   DB店舗: #{item[:shops_count]} / 確認済み: #{item[:confirmed_count]} / 記事数: #{item[:articles_count]}"
 
@@ -945,8 +1115,8 @@ def print_section(title, items, score_key, limit: 10, general_only: true)
       puts "   LP: 未取得"
     end
 
-    puts "   GA4: PV#{item[:ga4_views]} / Active#{item[:ga4_active_users]} / 滞在#{item[:ga4_engagement_seconds]}秒"
-    puts "   期待値: #{item[:expected_score]} / ROI: #{item[:roi_score]} / 推奨施策: #{item[:recommended_action]}"
+    puts "   GA4: PV#{item[:ga4_views]} / Active#{item[:ga4_active_users]} / 滞在#{item[:ga4_engagement_seconds]}秒 / GA4価値#{item[:ga4_score]}"
+    puts "   期待値: #{item[:expected_score]} / 総合: #{item[:total_score]} / ROI: #{item[:roi_score]} / 推奨施策: #{item[:recommended_action]}"
     puts "   作業コスト: #{item[:work_label]}"
   end
 end
@@ -961,11 +1131,15 @@ def write_next_actions_csv(items)
     csv << [
       "query",
       "area",
+      "local_area",
       "genre",
       "cv_intent",
       "query_type",
+      "theme",
       "recommended_action",
       "expected_score",
+      "ga4_score",
+      "total_score",
       "roi_score",
       "work_label",
       "impressions",
@@ -987,11 +1161,15 @@ def write_next_actions_csv(items)
         csv << [
           item[:query],
           item[:area],
+          item[:local_area],
           item[:genre],
           item[:cv_intent],
           item[:query_type],
+          item[:theme],
           item[:recommended_action],
           item[:expected_score],
+          item[:ga4_score],
+          item[:total_score],
           item[:roi_score],
           item[:work_label],
           item[:impressions],
@@ -1041,6 +1219,7 @@ items = rows.filter_map do |row|
     end
 
   area = detect_area(query)
+  local_area = detect_local_area(query)
   genre = detect_genre(query)
   cv_intent = detect_cv_intent(query)
 
@@ -1057,8 +1236,8 @@ items = rows.filter_map do |row|
   growth_score = position_multiplier(position) * ctr_multiplier(ctr_percent)
   revenue_fit = REVENUE_FIT.fetch(genre, 1.0) * cv_intent_multiplier(cv_intent)
 
-  shops_count = shop_count_for(area: area, genre: genre)
-  confirmed_count = confirmed_shop_count_for(area: area, genre: genre)
+  shops_count = shop_count_for(area: area, genre: genre, local_area: local_area)
+  confirmed_count = confirmed_shop_count_for(area: area, genre: genre, local_area: local_area)
   articles_count = article_count_for(area: area, genre: genre)
 
   supply_score = shops_count + (confirmed_count * 2) + (articles_count * 20)
@@ -1083,6 +1262,9 @@ items = rows.filter_map do |row|
   landing_page = lp_data[:page].to_s
   ga4_data = ga4_pages[landing_page] || {}
 
+  theme = detect_theme(query: query, landing_page: landing_page)
+  ga4_score = ga4_value_score(ga4_data)
+
   near_win =
     position >= 8 &&
     position <= 20 &&
@@ -1103,16 +1285,27 @@ items = rows.filter_map do |row|
       "維持・微改善"
     end
 
+  total_score =
+    total_opportunity_score(
+      expected_score: expected_score,
+      ga4_score: ga4_score,
+      theme: theme
+    ).round(1)
+
   work_cost = work_cost_for(recommended_action)
-  roi_score = roi_score_for(expected_score: expected_score, action: recommended_action)
+  roi_score = roi_score_for(expected_score: total_score, action: recommended_action)
   work_label = work_label_for(recommended_action)
 
   {
     query: query,
     area: area,
+    local_area: local_area,
     genre: genre,
     cv_intent: cv_intent,
     query_type: query_type,
+    theme: theme,
+    ga4_score: ga4_score,
+    total_score: total_score,
     specific_shop_query: specific_shop_query,
     clicks: clicks.to_i,
     impressions: impressions.to_i,
@@ -1152,12 +1345,13 @@ puts
 puts "エリア別DB件数"
 
 AREA_DB_ALIASES.each do |area, aliases|
-  count = Shop.where(area: aliases).count
+  count = Shop.approved.where(area: aliases).count
   puts "- #{area}: #{count}件"
 end
 
 general_seo_items = items.select { |item| general_seo_query?(item) }
 
+print_section("総合判断：GA4×GSCで次にやるべき施策", general_seo_items, :total_score)
 print_section("一般検索：本当に伸ばすべきSEO", general_seo_items, :revenue_score)
 print_section("PV最大化：流入を増やすなら優先", items, :pv_score)
 print_section("収益最大化：送客・予約につなげるなら優先", items, :revenue_score)
