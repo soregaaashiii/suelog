@@ -639,11 +639,43 @@ def looks_like_specific_shop_query?(query)
 end
 
 def detect_query_type(query)
-  normalized = query.to_s.downcase
+  normalized = query.to_s.downcase.strip
 
   return "brand_check" if BRAND_LIKE_KEYWORDS.any? { |keyword| normalized.include?(keyword.downcase) }
-  return "specific_shop" if unnatural_query?(query)
+
   return "facility_smoking" if FACILITY_SMOKING_KEYWORDS.any? { |keyword| normalized.include?(keyword.downcase) }
+
+  return "specific_shop" if unnatural_query?(query)
+
+  smoking_intent =
+    normalized.include?("喫煙") ||
+    normalized.include?("吸える") ||
+    normalized.include?("喫煙可") ||
+    normalized.include?("紙タバコ") ||
+    normalized.include?("紙たばこ")
+
+  if defined?(Shop)
+    compact_query =
+      normalized.gsub(/[[:space:]　]/, "")
+
+    matched_shop =
+      Shop
+        .approved
+        .where.not(name: [nil, ""])
+        .find do |shop|
+          shop_name =
+            shop.name.to_s.downcase.gsub(/[[:space:]　]/, "")
+
+          next false if shop_name.blank?
+
+          compact_query.include?(shop_name)
+        end
+
+    if matched_shop.present? && !smoking_intent
+      return "specific_shop"
+    end
+  end
+
   return "specific_shop" if looks_like_specific_shop_query?(query)
 
   "general_seo"
