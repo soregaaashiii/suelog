@@ -690,6 +690,10 @@ def article_strategy_for(item)
   return "不要" if item[:query_type] != "general_seo"
   return "不要" if item[:specific_shop_query]
 
+  article_relevance_score = item[:article_relevance_score].to_i
+  has_strong_article = article_relevance_score >= 70
+  has_weak_article = article_relevance_score.positive? && article_relevance_score < 70
+
   lp_exists =
     item[:landing_page].present?
 
@@ -708,19 +712,19 @@ def article_strategy_for(item)
   theme_present =
     item[:theme].present?
 
-  if lp_exists && high_rank && low_ctr
+  if lp_exists && has_strong_article && high_rank && low_ctr
     return "既存記事改善"
   end
 
-  if local_area_present && low_articles
-    return "地域特化記事を新規作成"
+  if local_area_present && !has_strong_article
+    return has_weak_article ? "地域特化記事を新規作成" : "地域特化記事を新規作成"
   end
 
-  if theme_present && low_articles
+  if theme_present && !has_strong_article && low_articles
     return "テーマ特化記事を新規作成"
   end
 
-  if lp_exists
+  if lp_exists && has_strong_article
     return "既存記事改善"
   end
 
@@ -735,19 +739,19 @@ def strategy_reason_for(item)
     [
       ("順位#{item[:position]}位"),
       ("CTR#{item[:ctr_percent]}%"),
-      ("LPあり")
+      ("記事関連度#{item[:article_relevance_score]}")
     ].join(" / ")
   when "地域特化記事を新規作成"
     [
       (item[:local_area] || "地域"),
-      "記事不足",
-      ("記事数#{item[:articles_count]}")
+      "専用記事不足",
+      ("記事関連度#{item[:article_relevance_score]}")
     ].join(" / ")
   when "テーマ特化記事を新規作成"
     [
       (item[:theme] || "テーマ"),
-      "記事不足",
-      ("記事数#{item[:articles_count]}")
+      "専用記事不足",
+      ("記事関連度#{item[:article_relevance_score]}")
     ].join(" / ")
   else
     "専用LP不足"
@@ -848,6 +852,52 @@ def article_count_for(area:, genre:)
   scope.count
 end
 
+def article_relevance_for(query:, area:, local_area:, genre:, theme:)
+  return { count: 0, best_score: 0, best_path: "", best_title: "" } unless defined?(Article)
+
+  query_words =
+    query.to_s
+         .downcase
+         .split(/[ 　]/)
+         .map(&:strip)
+         .reject(&:blank?)
+
+  candidates = []
+
+  Article.find_each do |article|
+    text = [
+      article.title,
+      article.slug
+    ].compact.join(" ").downcase
+
+    score = 0
+    score += 35 if local_area.present? && text.include?(local_area.to_s.downcase)
+    score += 25 if area.present? && text.include?(area.to_s.downcase)
+    score += 25 if genre.present? && text.include?(genre.to_s.downcase)
+    score += 20 if theme.present? && text.include?(theme.to_s.downcase)
+
+    query_words.each do |word|
+      next if word.length <= 1
+      score += 5 if text.include?(word)
+    end
+
+    candidates << {
+      path: "/articles/#{article.slug}",
+      title: article.title.to_s,
+      score: score
+    } if score.positive?
+  end
+
+  best = candidates.max_by { |candidate| candidate[:score] }
+
+  {
+    count: candidates.count,
+    best_score: best ? best[:score] : 0,
+    best_path: best ? best[:path] : "",
+    best_title: best ? best[:title] : ""
+  }
+end
+
 def read_ga4_pages
   return {} unless File.exist?(GA4_CSV_PATH)
 
@@ -924,26 +974,17 @@ end
 def infer_landing_page(query:, area:, local_area:, genre:, theme:)
   candidates = []
 
-  if defined?(Article)
-    Article.find_each do |article|
-      text = [
-        article.title,
-        article.slug
-      ].compact.join(" ").downcase
+  relevance =
+    article_relevance_for(
+      query: query,
+      area: area,
+      local_area: local_area,
+      genre: genre,
+      theme: theme
+    )
 
-      score = 0
-      score += 5 if theme.present? && text.include?(theme.to_s.downcase)
-      score += 4 if local_area.present? && text.include?(local_area.to_s.downcase)
-      score += 3 if area.present? && text.include?(area.to_s.downcase)
-      score += 3 if genre.present? && text.include?(genre.to_s.downcase)
-
-      query.to_s.split(/[ 　]/).each do |word|
-        next if word.blank?
-        score += 1 if text.include?(word.downcase)
-      end
-
-      candidates << ["/articles/#{article.slug}", score] if score.positive?
-    end
+  if relevance[:best_path].present?
+    candidates << [relevance[:best_path], relevance[:best_score]]
   end
 
   if area == "梅田"
@@ -1322,7 +1363,8 @@ def print_section(title, items, score_key, limit: 10, general_only: true)
     puts "   表示: #{item[:impressions]} / クリック: #{item[:clicks]} / CTR: #{item[:ctr_percent]}% / 順位: #{item[:position]}"
     puts "   area: #{item[:area] || '未判定'} / local_area: #{item[:local_area] || '広域'} / genre: #{item[:genre] || '未判定'} / theme: #{item[:theme] || '未判定'} / CV意図: #{item[:cv_intent]}"
     puts "   DB集計ジャンル: #{item[:genre].present? ? (GENRE_DB_GROUPS[item[:genre]] || [item[:genre]]).join(' / ') : '未判定'}"
-    puts "   DB店舗: #{item[:shops_count]} / 確認済み: #{item[:confirmed_count]} / 記事数: #{item[:articles_count]}"
+    puts "   DB店舗: #{item[:shops_count]} / 確認済み: #{item[:confirmed_count]} / 記事数: #{item[:articles_count]} / 記事関連度: #{item[:article_relevance_score]}"
+    puts "   関連記事候補: #{item[:article_relevance_path].presence || 'なし'}"
 
     if item[:landing_page].present?
       lp_label = item[:inferred_landing_page] ? "推定LP" : "LP"
@@ -1372,6 +1414,10 @@ def write_next_actions_csv(items)
       "shops_count",
       "confirmed_count",
       "articles_count",
+      "article_relevance_count",
+      "article_relevance_score",
+      "article_relevance_path",
+      "article_relevance_title",
       "todo"
     ]
 
@@ -1407,6 +1453,10 @@ def write_next_actions_csv(items)
           item[:shops_count],
           item[:confirmed_count],
           item[:articles_count],
+          item[:article_relevance_count],
+          item[:article_relevance_score],
+          item[:article_relevance_path],
+          item[:article_relevance_title],
           todo_lines_for(item).join(" / ")
         ]
       end
@@ -1467,6 +1517,15 @@ items = rows.filter_map do |row|
   shops_count = shop_count_for(area: area, genre: genre, local_area: local_area)
   confirmed_count = confirmed_shop_count_for(area: area, genre: genre, local_area: local_area)
   articles_count = article_count_for(area: area, genre: genre)
+
+  article_relevance =
+    article_relevance_for(
+      query: query,
+      area: area,
+      local_area: local_area,
+      genre: genre,
+      theme: detect_theme(query: query, landing_page: nil)
+    )
 
   supply_score = shops_count + (confirmed_count * 2) + (articles_count * 20)
   supply_score = 5 if supply_score < 5
@@ -1547,6 +1606,7 @@ items = rows.filter_map do |row|
       position: position,
       ctr_percent: ctr_percent,
       articles_count: articles_count,
+      article_relevance_score: article_relevance[:best_score],
       local_area: local_area,
       theme: theme
     }
@@ -1560,6 +1620,7 @@ items = rows.filter_map do |row|
       position: position,
       ctr_percent: ctr_percent,
       articles_count: articles_count,
+      article_relevance_score: article_relevance[:best_score],
       local_area: local_area,
       theme: theme
     }
@@ -1585,6 +1646,10 @@ items = rows.filter_map do |row|
     shops_count: shops_count,
     confirmed_count: confirmed_count,
     articles_count: articles_count,
+    article_relevance_count: article_relevance[:count],
+    article_relevance_score: article_relevance[:best_score],
+    article_relevance_path: article_relevance[:best_path],
+    article_relevance_title: article_relevance[:best_title],
     pv_score: pv_score.round(1),
     revenue_score: revenue_score.round(1),
     db_gap_score: db_gap_score.round(1),
