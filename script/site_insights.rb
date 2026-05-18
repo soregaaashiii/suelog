@@ -517,8 +517,24 @@ def detect_cv_intent(query)
   "unknown"
 end
 
+def unnatural_query?(query)
+  normalized = query.to_s.downcase.strip
+
+  return true if normalized.include?("とは") && !normalized.include?("喫煙")
+  return true if normalized.match?(/[&×]/) && !normalized.include?("喫煙")
+  return true if normalized.match?(/[ａ-ｚＡ-Ｚ]/)
+
+  words = normalized.split(/[ 　]/).reject(&:blank?)
+
+  return true if words.size >= 4 && !normalized.match?(/喫煙|タバコ|たばこ|吸える|喫煙可|個室|深夜|朝まで|飲み放題/)
+
+  false
+end
+
 def looks_like_specific_shop_query?(query)
   normalized = query.to_s.downcase
+
+  return true if unnatural_query?(query)
 
   explicit_smoking_intent =
     normalized.include?("喫煙") ||
@@ -552,10 +568,19 @@ def looks_like_specific_shop_query?(query)
     jazz
     fooding
     ruelle
+    ミエル
+    カンジャン
+    ケジャン
+    ドトール
+    えん
+    ざ
+    晩杯屋
     本店
+    支店
     号店
     店
     北新地
+    大阪駅前第四ビル
   ]
 
   address_like =
@@ -594,6 +619,7 @@ end
 def detect_query_type(query)
   normalized = query.to_s.downcase
 
+  return "specific_shop" if unnatural_query?(query)
   return "facility_smoking" if FACILITY_SMOKING_KEYWORDS.any? { |keyword| normalized.include?(keyword.downcase) }
   return "brand_check" if BRAND_LIKE_KEYWORDS.any? { |keyword| normalized.include?(keyword.downcase) }
   return "specific_shop" if looks_like_specific_shop_query?(query)
@@ -609,6 +635,7 @@ def article_strategy_target?(item)
   return false unless general_seo_query?(item)
   return false if item[:specific_shop_query]
   return false if item[:query_type].to_s != "general_seo"
+  return false if item[:impressions].to_i < 10 && item[:cv_intent].to_s != "high"
 
   true
 end
