@@ -159,9 +159,11 @@ GENRE_DB_GROUPS = {
 }.freeze
 
 AREA_KEYWORDS = {
-  "梅田" => %w[梅田 大阪駅 東通り お初天神 北新地 堂山 茶屋町],
-  "難波" => %w[難波 なんば 心斎橋 道頓堀 日本橋],
-  "京橋" => %w[京橋]
+  "梅田" => %w[梅田 大阪駅 東通り お初天神 北新地 堂山 茶屋町 中之島 福島 天満 中崎町 中津 南森町 西天満],
+  "難波" => %w[難波 なんば 心斎橋 道頓堀 日本橋 千日前 大国町],
+  "京橋" => %w[京橋],
+  "西中島" => %w[西中島 西中島南方 南方 新大阪],
+  "本町" => %w[本町 淀屋橋 北浜 肥後橋]
 }.freeze
 
 AREA_DB_ALIASES = {
@@ -187,6 +189,17 @@ AREA_DB_ALIASES = {
   "京橋" => %w[
     京橋
     kyobashi_main
+  ],
+
+  "西中島" => %w[
+    西中島
+    nishinakajima
+  ],
+
+  "本町" => %w[
+    本町
+    honmachi
+    umeda_honmachi_yodoyabashi
   ]
 }.freeze
 
@@ -250,6 +263,54 @@ LOCAL_AREA_KEYWORDS = {
   "道頓堀" => %w[
     道頓堀
     宗右衛門町
+  ],
+  "中之島" => %w[
+    中之島
+    堂島
+    渡辺橋
+    肥後橋
+  ],
+  "福島" => %w[
+    福島
+    新福島
+    野田
+    海老江
+  ],
+  "天満" => %w[
+    天満
+    天神橋筋六丁目
+    天六
+    扇町
+  ],
+  "中崎町" => %w[
+    中崎町
+    中崎
+  ],
+  "中津" => %w[
+    中津
+    豊崎
+  ],
+  "南森町" => %w[
+    南森町
+    大阪天満宮
+    西天満
+  ],
+  "西中島" => %w[
+    西中島
+    西中島南方
+    南方
+    新大阪
+  ],
+  "本町" => %w[
+    本町
+    淀屋橋
+    北浜
+    肥後橋
+  ],
+  "大国町" => %w[
+    大国町
+    敷津
+    今宮
   ]
 }.freeze
 
@@ -387,6 +448,12 @@ def detect_area(query)
     福島
     中津
     南森町
+    中之島
+    堂島
+    西天満
+    天満
+    天六
+    扇町
   ].any? { |word| normalized.include?(word.downcase) }
 
   return "難波" if %w[
@@ -398,6 +465,20 @@ def detect_area(query)
 
   return "京橋" if %w[
     京橋
+  ].any? { |word| normalized.include?(word.downcase) }
+
+  return "西中島" if %w[
+    西中島
+    西中島南方
+    南方
+    新大阪
+  ].any? { |word| normalized.include?(word.downcase) }
+
+  return "本町" if %w[
+    本町
+    淀屋橋
+    北浜
+    肥後橋
   ].any? { |word| normalized.include?(word.downcase) }
 
   nil
@@ -993,6 +1074,10 @@ def infer_landing_page(query:, area:, local_area:, genre:, theme:)
     candidates << ["/umeda/genre/izakaya", 4] if genre == "居酒屋"
   elsif area == "難波"
     candidates << ["/namba", 2]
+  elsif area == "西中島"
+    candidates << ["/nishinakajima", 2]
+  elsif area == "本町"
+    candidates << ["/honmachi", 2]
   end
 
   candidates.max_by { |_, score| score }&.first.to_s
