@@ -662,6 +662,73 @@ def roi_score_for(expected_score:, action:)
   (expected_score.to_f / cost).round(1)
 end
 
+def article_strategy_for(item)
+  return "不要" if item[:query_type] != "general_seo"
+
+  lp_exists =
+    item[:landing_page].present?
+
+  high_rank =
+    item[:position].to_f <= 15
+
+  low_ctr =
+    item[:ctr_percent].to_f < 2.0
+
+  low_articles =
+    item[:articles_count].to_i <= 1
+
+  local_area_present =
+    item[:local_area].present?
+
+  theme_present =
+    item[:theme].present?
+
+  if lp_exists && high_rank && low_ctr
+    return "既存記事改善"
+  end
+
+  if local_area_present && low_articles
+    return "地域特化記事を新規作成"
+  end
+
+  if theme_present && low_articles
+    return "テーマ特化記事を新規作成"
+  end
+
+  if lp_exists
+    return "既存記事改善"
+  end
+
+  "新規記事作成"
+end
+
+def strategy_reason_for(item)
+  strategy = article_strategy_for(item)
+
+  case strategy
+  when "既存記事改善"
+    [
+      ("順位#{item[:position]}位"),
+      ("CTR#{item[:ctr_percent]}%"),
+      ("LPあり")
+    ].join(" / ")
+  when "地域特化記事を新規作成"
+    [
+      (item[:local_area] || "地域"),
+      "記事不足",
+      ("記事数#{item[:articles_count]}")
+    ].join(" / ")
+  when "テーマ特化記事を新規作成"
+    [
+      (item[:theme] || "テーマ"),
+      "記事不足",
+      ("記事数#{item[:articles_count]}")
+    ].join(" / ")
+  else
+    "専用LP不足"
+  end
+end
+
 def work_label_for(action)
   case action.to_s
   when "CTR改善優先"
@@ -1055,6 +1122,18 @@ end
 def todo_lines_for(item)
   lines = []
 
+  strategy = item[:strategy]
+
+  if strategy == "既存記事改善"
+    lines << "既存LPを改善する: #{item[:landing_page]}"
+    lines << "title/meta/冒頭を検索意図に寄せる"
+    lines << "関連記事リンクと店舗カード導線を強化する"
+  elsif strategy == "地域特化記事を新規作成"
+    lines << "#{item[:local_area]}特化記事を新規作成する"
+  elsif strategy == "テーマ特化記事を新規作成"
+    lines << "#{item[:theme]}特化記事を新規作成する"
+  end
+
   case item[:recommended_action]
   when "CTR改善優先"
     lines << "SEOタイトルを喫煙意図に寄せて改善する"
@@ -1230,6 +1309,7 @@ def print_section(title, items, score_key, limit: 10, general_only: true)
     puts "   GA4: PV#{item[:ga4_views]} / Active#{item[:ga4_active_users]} / 滞在#{item[:ga4_engagement_seconds]}秒 / ページGA4価値#{item[:page_ga4_score]} / テーマGA4価値#{item[:theme_ga4_score]} / GA4価値#{item[:ga4_score]}"
     puts "   期待値: #{item[:expected_score]} / 総合: #{item[:total_score]} / ROI: #{item[:roi_score]} / 推奨施策: #{item[:recommended_action]}"
     puts "   作業コスト: #{item[:work_label]}"
+    puts "   記事戦略: #{item[:strategy]} (#{item[:strategy_reason]})"
   end
 end
 
@@ -1256,6 +1336,8 @@ def write_next_actions_csv(items)
       "total_score",
       "roi_score",
       "work_label",
+      "strategy",
+      "strategy_reason",
       "impressions",
       "clicks",
       "ctr_percent",
@@ -1289,6 +1371,8 @@ def write_next_actions_csv(items)
           item[:total_score],
           item[:roi_score],
           item[:work_label],
+          item[:strategy],
+          item[:strategy_reason],
           item[:impressions],
           item[:clicks],
           item[:ctr_percent],
@@ -1430,6 +1514,30 @@ items = rows.filter_map do |row|
   roi_score = roi_score_for(expected_score: total_score, action: recommended_action)
   work_label = work_label_for(recommended_action)
 
+  strategy = article_strategy_for(
+    {
+      query_type: query_type,
+      landing_page: landing_page,
+      position: position,
+      ctr_percent: ctr_percent,
+      articles_count: articles_count,
+      local_area: local_area,
+      theme: theme
+    }
+  )
+
+  strategy_reason = strategy_reason_for(
+    {
+      query_type: query_type,
+      landing_page: landing_page,
+      position: position,
+      ctr_percent: ctr_percent,
+      articles_count: articles_count,
+      local_area: local_area,
+      theme: theme
+    }
+  )
+
   {
     query: query,
     area: area,
@@ -1459,6 +1567,8 @@ items = rows.filter_map do |row|
     work_cost: work_cost,
     roi_score: roi_score,
     work_label: work_label,
+    strategy: strategy,
+    strategy_reason: strategy_reason,
     landing_page: landing_page,
     inferred_landing_page: lp_data[:page].to_s.blank? && landing_page.present?,
     lp_clicks: lp_data[:clicks].to_i,
@@ -1499,6 +1609,20 @@ print_section("CTR改善：表示はあるのにクリックを取り切れて�
 print_section("最優先施策：期待値が高い順", items, :expected_score)
 
 print_todo_section("自動TODO：ROIが高い順", items)
+
+print_section(
+  "既存改善優先：順位が見えていてCTR改善余地が高い",
+  items.select { |item| item[:strategy] == "既存記事改善" },
+  :total_score,
+  general_only: false
+)
+
+print_section(
+  "新規記事優先：専用記事不足",
+  items.select { |item| item[:strategy] != "既存記事改善" },
+  :total_score,
+  general_only: false
+)
 
 print_section("店舗名系：個別店舗ページ・記事で拾えている検索", items.select { |item| item[:query_type] == "specific_shop" }, :pv_score, general_only: false)
 print_section("確認検索っぽいブランド系：優先順位から分離", items.select { |item| item[:query_type] == "brand_check" }, :pv_score, general_only: false)
