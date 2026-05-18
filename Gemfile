@@ -88,3 +88,6 @@ gem "selenium-webdriver"
 end
 
 gem "aws-sdk-s3", require: false
+
+gem "google-apis-searchconsole_v1"
+gem "googleauth"
