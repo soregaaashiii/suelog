@@ -829,6 +829,42 @@ def build_ga4_theme_summary(ga4_pages)
   end
 end
 
+def infer_landing_page(query:, area:, local_area:, genre:, theme:)
+  candidates = []
+
+  if defined?(Article)
+    Article.find_each do |article|
+      text = [
+        article.title,
+        article.slug
+      ].compact.join(" ").downcase
+
+      score = 0
+      score += 5 if theme.present? && text.include?(theme.to_s.downcase)
+      score += 4 if local_area.present? && text.include?(local_area.to_s.downcase)
+      score += 3 if area.present? && text.include?(area.to_s.downcase)
+      score += 3 if genre.present? && text.include?(genre.to_s.downcase)
+
+      query.to_s.split(/[ 　]/).each do |word|
+        next if word.blank?
+        score += 1 if text.include?(word.downcase)
+      end
+
+      candidates << ["/articles/#{article.slug}", score] if score.positive?
+    end
+  end
+
+  if area == "梅田"
+    candidates << ["/umeda", 2]
+    candidates << ["/umeda/genre/bar", 4] if genre == "バー"
+    candidates << ["/umeda/genre/izakaya", 4] if genre == "居酒屋"
+  elsif area == "難波"
+    candidates << ["/namba", 2]
+  end
+
+  candidates.max_by { |_, score| score }&.first.to_s
+end
+
 def read_gsc_query_pages
   return {} unless File.exist?(GSC_QUERY_PAGES_CSV_PATH)
 
@@ -1185,7 +1221,8 @@ def print_section(title, items, score_key, limit: 10, general_only: true)
     puts "   DB店舗: #{item[:shops_count]} / 確認済み: #{item[:confirmed_count]} / 記事数: #{item[:articles_count]}"
 
     if item[:landing_page].present?
-      puts "   LP: #{item[:landing_page]} / LP表示: #{item[:lp_impressions]} / LPクリック: #{item[:lp_clicks]} / LP CTR: #{item[:lp_ctr_percent]}% / LP順位: #{item[:lp_position]}"
+      lp_label = item[:inferred_landing_page] ? "推定LP" : "LP"
+      puts "   #{lp_label}: #{item[:landing_page]} / LP表示: #{item[:lp_impressions]} / LPクリック: #{item[:lp_clicks]} / LP CTR: #{item[:lp_ctr_percent]}% / LP順位: #{item[:lp_position]}"
     else
       puts "   LP: 未取得"
     end
@@ -1224,6 +1261,7 @@ def write_next_actions_csv(items)
       "ctr_percent",
       "position",
       "landing_page",
+      "inferred_landing_page",
       "shops_count",
       "confirmed_count",
       "articles_count",
@@ -1256,6 +1294,7 @@ def write_next_actions_csv(items)
           item[:ctr_percent],
           item[:position],
           item[:landing_page],
+          item[:inferred_landing_page],
           item[:shops_count],
           item[:confirmed_count],
           item[:articles_count],
@@ -1340,9 +1379,22 @@ items = rows.filter_map do |row|
 
   lp_data = query_pages[query] || {}
   landing_page = lp_data[:page].to_s
-  ga4_data = ga4_pages[landing_page] || {}
 
   theme = detect_theme(query: query, landing_page: landing_page)
+
+  if landing_page.blank?
+    landing_page =
+      infer_landing_page(
+        query: query,
+        area: area,
+        local_area: local_area,
+        genre: genre,
+        theme: theme
+      )
+  end
+
+  theme = detect_theme(query: query, landing_page: landing_page)
+  ga4_data = ga4_pages[landing_page] || {}
   page_ga4_score = ga4_value_score(ga4_data)
   theme_ga4_score = theme.present? ? ga4_theme_summary.dig(theme, :ga4_score).to_f : 0.0
   ga4_score = [page_ga4_score, theme_ga4_score].max
@@ -1408,6 +1460,7 @@ items = rows.filter_map do |row|
     roi_score: roi_score,
     work_label: work_label,
     landing_page: landing_page,
+    inferred_landing_page: lp_data[:page].to_s.blank? && landing_page.present?,
     lp_clicks: lp_data[:clicks].to_i,
     lp_impressions: lp_data[:impressions].to_i,
     lp_ctr_percent: lp_data[:ctr_percent].to_f,
