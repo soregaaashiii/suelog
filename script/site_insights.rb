@@ -520,11 +520,13 @@ def cv_intent_multiplier(cv_intent)
   end
 end
 
-def ga4_value_score(ga4_data)
-  views = ga4_data[:views].to_i
-  active_users = ga4_data[:active_users].to_i
-  engagement_seconds = ga4_data[:engagement_seconds].to_f
-  events = ga4_data[:events].to_i
+def ga4_value_score(ga4_data = nil, views: nil, active_users: nil, engagement_seconds: nil, events: nil)
+  ga4_data ||= {}
+
+  views = (views || ga4_data[:views]).to_i
+  active_users = (active_users || ga4_data[:active_users]).to_i
+  engagement_seconds = (engagement_seconds || ga4_data[:engagement_seconds]).to_f
+  events = (events || ga4_data[:events]).to_i
 
   return 0 if views <= 0 && active_users <= 0 && events <= 0
 
@@ -774,6 +776,56 @@ def read_ga4_pages
       engagement_seconds: row["アクティブ ユーザーあたりの平均エンゲージメント時間"].to_i,
       events: row["イベント数"].to_i
     }
+  end
+end
+
+def build_ga4_theme_summary(ga4_pages)
+  summary = Hash.new do |hash, key|
+    hash[key] = {
+      pages: 0,
+      views: 0,
+      active_users: 0,
+      engagement_seconds_total: 0.0,
+      events: 0,
+      top_pages: []
+    }
+  end
+
+  ga4_pages.each do |path, data|
+    theme = detect_theme(query: nil, landing_page: path)
+    next if theme.blank?
+
+    views = data[:views].to_i
+    active_users = data[:active_users].to_i
+    engagement_seconds = data[:engagement_seconds].to_f
+    events = data[:events].to_i
+
+    summary[theme][:pages] += 1
+    summary[theme][:views] += views
+    summary[theme][:active_users] += active_users
+    summary[theme][:engagement_seconds_total] += engagement_seconds
+    summary[theme][:events] += events
+    summary[theme][:top_pages] << [path, views, engagement_seconds]
+  end
+
+  summary.transform_values do |data|
+    avg_engagement =
+      if data[:pages].positive?
+        data[:engagement_seconds_total] / data[:pages]
+      else
+        0
+      end
+
+    data.merge(
+      avg_engagement_seconds: avg_engagement.round(1),
+      ga4_score: ga4_value_score(
+        views: data[:views],
+        active_users: data[:active_users],
+        engagement_seconds: avg_engagement,
+        events: data[:events]
+      ),
+      top_pages: data[:top_pages].sort_by { |_, views, _| -views }.first(5)
+    )
   end
 end
 
@@ -1061,6 +1113,29 @@ def print_todo_section(title, items, limit: 10)
     end
 end
 
+def print_ga4_theme_summary(title, theme_summary, limit: 10)
+  puts
+  puts "=============================="
+  puts title
+  puts "=============================="
+
+  theme_summary
+    .sort_by { |theme, data| [-data[:ga4_score].to_f, theme.to_s] }
+    .first(limit)
+    .each_with_index do |(theme, data), index|
+      puts
+      puts "#{index + 1}. #{theme}"
+      puts "   GA4価値: #{data[:ga4_score]} / PV: #{data[:views]} / Active: #{data[:active_users]} / 平均滞在: #{data[:avg_engagement_seconds]}秒 / Events: #{data[:events]} / 対象ページ: #{data[:pages]}"
+
+      if data[:top_pages].any?
+        puts "   主要ページ:"
+        data[:top_pages].each do |path, views, engagement_seconds|
+          puts "   - #{path} / PV#{views} / 滞在#{engagement_seconds.to_f.round(1)}秒"
+        end
+      end
+    end
+end
+
 def print_ga4_pages(title, ga4_pages, limit: 15)
   puts
   puts "=============================="
@@ -1115,7 +1190,7 @@ def print_section(title, items, score_key, limit: 10, general_only: true)
       puts "   LP: 未取得"
     end
 
-    puts "   GA4: PV#{item[:ga4_views]} / Active#{item[:ga4_active_users]} / 滞在#{item[:ga4_engagement_seconds]}秒 / GA4価値#{item[:ga4_score]}"
+    puts "   GA4: PV#{item[:ga4_views]} / Active#{item[:ga4_active_users]} / 滞在#{item[:ga4_engagement_seconds]}秒 / ページGA4価値#{item[:page_ga4_score]} / テーマGA4価値#{item[:theme_ga4_score]} / GA4価値#{item[:ga4_score]}"
     puts "   期待値: #{item[:expected_score]} / 総合: #{item[:total_score]} / ROI: #{item[:roi_score]} / 推奨施策: #{item[:recommended_action]}"
     puts "   作業コスト: #{item[:work_label]}"
   end
@@ -1139,6 +1214,8 @@ def write_next_actions_csv(items)
       "recommended_action",
       "expected_score",
       "ga4_score",
+      "page_ga4_score",
+      "theme_ga4_score",
       "total_score",
       "roi_score",
       "work_label",
@@ -1169,6 +1246,8 @@ def write_next_actions_csv(items)
           item[:recommended_action],
           item[:expected_score],
           item[:ga4_score],
+          item[:page_ga4_score],
+          item[:theme_ga4_score],
           item[:total_score],
           item[:roi_score],
           item[:work_label],
@@ -1198,6 +1277,7 @@ end
 
 rows = CSV.read(GSC_CSV_PATH, headers: true, encoding: "UTF-8")
 ga4_pages = read_ga4_pages
+ga4_theme_summary = build_ga4_theme_summary(ga4_pages)
 query_pages = read_gsc_query_pages
 
 items = rows.filter_map do |row|
@@ -1263,7 +1343,9 @@ items = rows.filter_map do |row|
   ga4_data = ga4_pages[landing_page] || {}
 
   theme = detect_theme(query: query, landing_page: landing_page)
-  ga4_score = ga4_value_score(ga4_data)
+  page_ga4_score = ga4_value_score(ga4_data)
+  theme_ga4_score = theme.present? ? ga4_theme_summary.dig(theme, :ga4_score).to_f : 0.0
+  ga4_score = [page_ga4_score, theme_ga4_score].max
 
   near_win =
     position >= 8 &&
@@ -1305,6 +1387,8 @@ items = rows.filter_map do |row|
     query_type: query_type,
     theme: theme,
     ga4_score: ga4_score,
+    page_ga4_score: page_ga4_score,
+    theme_ga4_score: theme_ga4_score,
     total_score: total_score,
     specific_shop_query: specific_shop_query,
     clicks: clicks.to_i,
@@ -1340,6 +1424,7 @@ puts "CSV: #{GSC_CSV_PATH}"
 puts "対象クエリ数: #{items.size}"
 puts "GSCページ×クエリ数: #{query_pages.size}"
 puts "GA4ページ数: #{ga4_pages.size}"
+puts "GA4テーマ数: #{ga4_theme_summary.size}"
 
 puts
 puts "エリア別DB件数"
@@ -1366,6 +1451,7 @@ print_section("店舗名系：個別店舗ページ・記事で拾えている�
 print_section("確認検索っぽいブランド系：優先順位から分離", items.select { |item| item[:query_type] == "brand_check" }, :pv_score, general_only: false)
 print_section("喫煙所系：飲食送客SEOとは分離", items.select { |item| item[:query_type] == "facility_smoking" }, :pv_score, general_only: false)
 
+print_ga4_theme_summary("GA4テーマ分析：読まれているテーマ", ga4_theme_summary)
 print_ga4_pages("GA4：よく見られているページ", ga4_pages)
 
 print_recommendations("自動施策提案：今すぐやる候補", items, :revenue_score)
