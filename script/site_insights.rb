@@ -529,15 +529,39 @@ def looks_like_specific_shop_query?(query)
 
   brandish_words = %w[
     cafe
+    caffè
+    coffee
     sweets
+    bakery
+    kitchen
+    grill
+    diner
+    dining
+    bistro
+    bal
+    bar
+    lounge
+    salon
+    wine
+    champagne
     listening
     restaurant
-    base
+    style
+    utility
+    okiumiya
+    jazz
+    fooding
+    ruelle
     本店
     号店
     店
+    北新地
   ]
 
+  address_like =
+    normalized.match?(/〒|\d{3}-\d{4}|大阪府|大阪市|北区|中央区|浪速区|ビル|b1|b\d|地下/)
+
+  return true if address_like
   return true if brandish_words.any? { |word| normalized.include?(word) } && !explicit_smoking_intent
 
   return false if explicit_smoking_intent
@@ -557,6 +581,11 @@ def looks_like_specific_shop_query?(query)
   ]
 
   return true if shop_like_words.any? { |word| normalized.include?(word) }
+
+  shop_suffix_like =
+    normalized.match?(/(本店|支店|梅田店|大阪駅前|東通店|北新地|堂山|茶屋町|難波店|なんば店)$/)
+
+  return true if shop_suffix_like
 
   words = normalized.split(/[ 　]/)
   words.size <= 3
