@@ -1135,7 +1135,9 @@ def build_ga4_theme_summary(ga4_pages)
     summary[theme][:top_pages] << [path, views, engagement_seconds]
   end
 
-  summary.transform_values do |data|
+  summary.transform_keys.with_object({}) do |theme, hash|
+    data = summary[theme]
+
     avg_engagement =
       if data[:pages].positive?
         data[:engagement_seconds_total] / data[:pages]
@@ -1143,7 +1145,7 @@ def build_ga4_theme_summary(ga4_pages)
         0
       end
 
-    data.merge(
+    hash[theme] = data.merge(
       avg_engagement_seconds: avg_engagement.round(1),
       ga4_score: ga4_value_score(
         views: data[:views],
