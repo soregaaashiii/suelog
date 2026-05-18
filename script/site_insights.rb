@@ -439,11 +439,27 @@ end
 def looks_like_specific_shop_query?(query)
   normalized = query.to_s.downcase
 
-  return false if normalized.include?("喫煙")
-  return false if normalized.include?("タバコ")
-  return false if normalized.include?("たばこ")
-  return false if normalized.include?("吸える")
-  return false if normalized.include?("喫煙可")
+  explicit_smoking_intent =
+    normalized.include?("喫煙") ||
+    normalized.include?("タバコ") ||
+    normalized.include?("たばこ") ||
+    normalized.include?("吸える") ||
+    normalized.include?("喫煙可")
+
+  brandish_words = %w[
+    cafe
+    sweets
+    listening
+    restaurant
+    base
+    本店
+    号店
+    店
+  ]
+
+  return true if brandish_words.any? { |word| normalized.include?(word) } && !explicit_smoking_intent
+
+  return false if explicit_smoking_intent
 
   shop_like_words = %w[
     cafe
@@ -477,6 +493,14 @@ end
 
 def general_seo_query?(item)
   item[:query_type].to_s == "general_seo"
+end
+
+def article_strategy_target?(item)
+  return false unless general_seo_query?(item)
+  return false if item[:specific_shop_query]
+  return false if item[:query_type].to_s != "general_seo"
+
+  true
 end
 
 def position_multiplier(position)
@@ -664,6 +688,7 @@ end
 
 def article_strategy_for(item)
   return "不要" if item[:query_type] != "general_seo"
+  return "不要" if item[:specific_shop_query]
 
   lp_exists =
     item[:landing_page].present?
@@ -1517,6 +1542,7 @@ items = rows.filter_map do |row|
   strategy = article_strategy_for(
     {
       query_type: query_type,
+      specific_shop_query: specific_shop_query,
       landing_page: landing_page,
       position: position,
       ctr_percent: ctr_percent,
@@ -1529,6 +1555,7 @@ items = rows.filter_map do |row|
   strategy_reason = strategy_reason_for(
     {
       query_type: query_type,
+      specific_shop_query: specific_shop_query,
       landing_page: landing_page,
       position: position,
       ctr_percent: ctr_percent,
@@ -1619,7 +1646,7 @@ print_section(
 
 print_section(
   "新規記事優先：専用記事不足",
-  items.select { |item| item[:strategy] != "既存記事改善" },
+  items.select { |item| article_strategy_target?(item) && item[:strategy] != "既存記事改善" && item[:strategy] != "不要" },
   :total_score,
   general_only: false
 )
