@@ -792,6 +792,40 @@ def total_opportunity_score(expected_score:, ga4_score:, theme:)
   ) * theme_multiplier(theme)
 end
 
+def next_move_score_for(item)
+  seo_score = item[:expected_score].to_f
+  ga4_score = item[:ga4_score].to_f
+  roi_score = item[:roi_score].to_f
+
+  cv_boost =
+    case item[:cv_intent].to_s
+    when "high"
+      1.35
+    when "medium"
+      1.15
+    else
+      1.0
+    end
+
+  strategy_boost =
+    case item[:strategy].to_s
+    when "既存記事改善"
+      1.25
+    when "地域特化記事を新規作成"
+      1.2
+    when "テーマ特化記事を新規作成"
+      1.15
+    else
+      1.0
+    end
+
+  (
+    (seo_score * 0.45) +
+    (ga4_score * 0.35) +
+    (roi_score * 0.2)
+  ) * cv_boost * strategy_boost
+end
+
 def expected_impact_score(
   impressions:,
   position:,
@@ -940,6 +974,22 @@ def strategy_reason_for(item)
     ].join(" / ")
   else
     "専用LP不足"
+  end
+end
+
+def next_move_type_for(item)
+  if item[:strategy].to_s == "既存記事改善" && item[:ctr_percent].to_f < 2.0
+    "既存記事CTR改善"
+  elsif item[:strategy].to_s.include?("新規作成")
+    "新規記事作成"
+  elsif item[:ga4_score].to_f >= 100 && item[:theme].present?
+    "回遊・世界観強化"
+  elsif item[:confirmed_count].to_i < 10 && item[:shops_count].to_i.positive?
+    "確認済み店舗強化"
+  elsif item[:recommended_action].to_s == "内部リンク・導線改善"
+    "内部リンク・CTA改善"
+  else
+    item[:recommended_action].presence || "維持・微改善"
   end
 end
 
@@ -1581,7 +1631,8 @@ def print_section(title, items, score_key, limit: 10, general_only: true)
     end
 
     puts "   GA4: PV#{item[:ga4_views]} / Active#{item[:ga4_active_users]} / 滞在#{item[:ga4_engagement_seconds]}秒 / ページGA4価値#{item[:page_ga4_score]} / テーマGA4価値#{item[:theme_ga4_score]} / GA4価値#{item[:ga4_score]}"
-    puts "   期待値: #{item[:expected_score]} / 総合: #{item[:total_score]} / ROI: #{item[:roi_score]} / 推奨施策: #{item[:recommended_action]}"
+    puts "   期待値: #{item[:expected_score]} / 総合: #{item[:total_score]} / ROI: #{item[:roi_score]} / 次の一手スコア: #{item[:next_move_score]} / 推奨施策: #{item[:recommended_action]}"
+    puts "   次の一手: #{item[:next_move_type]}"
     puts "   作業コスト: #{item[:work_label]}"
     puts "   記事戦略: #{item[:strategy]} (#{item[:strategy_reason]})"
   end
@@ -1603,6 +1654,8 @@ def write_next_actions_csv(items)
       "query_type",
       "theme",
       "recommended_action",
+      "next_move_type",
+      "next_move_score",
       "expected_score",
       "ga4_score",
       "page_ga4_score",
@@ -1642,6 +1695,8 @@ def write_next_actions_csv(items)
           item[:query_type],
           item[:theme],
           item[:recommended_action],
+          item[:next_move_type],
+          item[:next_move_score],
           item[:expected_score],
           item[:ga4_score],
           item[:page_ga4_score],
@@ -1833,7 +1888,7 @@ items = rows.filter_map do |row|
     }
   )
 
-  {
+  item = {
     query: query,
     area: area,
     local_area: local_area,
@@ -1878,6 +1933,11 @@ items = rows.filter_map do |row|
     ga4_active_users: ga4_data[:active_users].to_i,
     ga4_engagement_seconds: ga4_data[:engagement_seconds].to_f.round(1)
   }
+
+  item[:next_move_type] = next_move_type_for(item)
+  item[:next_move_score] = next_move_score_for(item).round(1)
+
+  item
 end
 
 puts
@@ -1898,6 +1958,7 @@ end
 
 general_seo_items = items.select { |item| general_seo_query?(item) }
 
+print_section("統合判断：GA4×GSC×ROIで次にやるべき施策", general_seo_items, :next_move_score)
 print_section("総合判断：GA4×GSCで次にやるべき施策", general_seo_items, :total_score)
 print_section("一般検索：本当に伸ばすべきSEO", general_seo_items, :revenue_score)
 print_section("PV最大化：流入を増やすなら優先", items, :pv_score)
