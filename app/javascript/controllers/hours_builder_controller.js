@@ -93,22 +93,28 @@ export default class extends Controller {
   }
 
   applyHolidayLine(text) {
-    const line = text.trim()
-    if (!line) return
+    const lines = text
+      .split(/\r?\n|\/|、/)
+      .map((line) => line.trim())
+      .filter(Boolean)
 
-    const row = Array.from(this.element.querySelectorAll("[data-hours-row]")).find((candidate) => {
-      return candidate.querySelector("span")?.textContent?.trim() === "祝日"
+    lines.forEach((line) => {
+      const label = line.match(/^(祝日|祝前)\s/)?.[1] || "祝日"
+
+      const row = Array.from(this.element.querySelectorAll("[data-hours-row]")).find((candidate) => {
+        return candidate.querySelector("span")?.textContent?.trim() === label
+      })
+
+      if (!row) return
+      this.applyLineToRow(row, line)
     })
-
-    if (!row) return
-    this.applyLineToRow(row, line)
   }
 
   applyLineToRow(row, line) {
     const checkbox = row.querySelector("[data-hours-open]")
     if (checkbox) checkbox.checked = true
 
-    const cleanLine = line.replace(/^月|^火|^水|^木|^金|^土|^日|^祝前/, "").trim()
+    const cleanLine = line.replace(/^(月|火|水|木|金|土|日|祝前|祝日)\s*/, "").trim()
     const [hoursPart, smokingPart] = cleanLine.split("（喫煙可：")
 
     const ranges = hoursPart.match(/\d{2}:\d{2}-\d{2}:\d{2}/g) || []
@@ -215,8 +221,8 @@ export default class extends Controller {
 
       const line = `${label} ${hours}${smoking}`
 
-      if (label === "祝日") {
-        holidayLines.push(`${hours}${smoking}`)
+      if (label === "祝日" || label === "祝前") {
+        holidayLines.push(line)
       } else {
         openingLines.push(line)
       }

@@ -138,6 +138,11 @@ Rails.application.routes.draw do
       end
     end
 
+    resource :shop_import, only: [:new, :create] do
+      post :preview
+      get "preview", to: redirect("/panel_8m4k/shop_import/new")
+    end
+
     resources :reviews, only: [:index, :destroy] do
       member do
         patch :approve

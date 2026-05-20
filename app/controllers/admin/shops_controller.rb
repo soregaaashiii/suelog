@@ -1255,7 +1255,7 @@ class Admin::ShopsController < Admin::BaseController
     end
   end
 
-  def shop_params
+    def shop_params
     params.require(:shop).permit(
       :name,
       :address,
@@ -1269,11 +1269,19 @@ class Admin::ShopsController < Admin::BaseController
       :smoking_area,
       :smoking_type,
       :smoking_unverified,
+      :smoking_hours_text,
       :last_confirmed_on,
       :opening_hours_text,
       :holiday_hours_text,
       :closed_days_text,
       :special_hours_note,
+      :budget_range,
+      :last_order_text,
+      :private_room_type,
+      :all_you_can_drink_type,
+      :raw_import_text,
+      :import_source,
+      :imported_at,
       :tabelog_url,
       :tabelog_affiliate_url,
       :tabelog_match_method,
@@ -1285,6 +1293,8 @@ class Admin::ShopsController < Admin::BaseController
       :custom_affiliate_label,
       :thumbnail_kind,
       :thumbnail_index,
+      seat_type_tags: [],
+      import_metadata: {},
       opening_hours_json: {}
     )
   end

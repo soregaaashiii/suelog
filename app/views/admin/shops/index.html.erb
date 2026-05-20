@@ -7,6 +7,10 @@
       new_admin_shop_path,
       style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#111; color:#fff; text-decoration:none; font-weight:700;" %>
 
+  <%= link_to "食べログ貼り付けインポート",
+      new_admin_shop_import_path,
+      style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#fff; color:#111; border:1px solid #111; text-decoration:none; font-weight:700;" %>
+
   <%= link_to "怪しい食べログ候補",
       admin_shops_path(status: "tabelog_suspect", source: @source, per: @per, page: 1),
       style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#fff3cd; color:#7a4b00; border:1px solid #e0b84f; text-decoration:none; font-weight:700;" %>

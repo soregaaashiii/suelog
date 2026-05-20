@@ -1489,10 +1489,45 @@
           </div>
         <% end %>
 
+        <% if @shop.respond_to?(:budget_range) && @shop.budget_range.present? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">平均予算</div>
+            <div class="shop-show__infoCell"><%= @shop.budget_range %></div>
+          </div>
+        <% end %>
+
+        <% if @shop.respond_to?(:private_room_label) && @shop.private_room_type.to_s != "unknown" %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">個室</div>
+            <div class="shop-show__infoCell"><%= @shop.private_room_label %></div>
+          </div>
+        <% end %>
+
+        <% if @shop.respond_to?(:seat_type_labels) && @shop.seat_type_labels.present? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">席タイプ</div>
+            <div class="shop-show__infoCell"><%= @shop.seat_type_labels.join(" / ") %></div>
+          </div>
+        <% end %>
+
+        <% if @shop.respond_to?(:all_you_can_drink_label) && @shop.all_you_can_drink_type.to_s != "unknown" %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">飲み放題</div>
+            <div class="shop-show__infoCell"><%= @shop.all_you_can_drink_label %></div>
+          </div>
+        <% end %>
+
         <div class="shop-show__infoRow">
           <div class="shop-show__infoHead">営業時間</div>
           <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
         </div>
+
+        <% if @shop.respond_to?(:last_order_text) && @shop.last_order_text.present? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">LO</div>
+            <div class="shop-show__infoCell"><%= @shop.last_order_text %></div>
+          </div>
+        <% end %>
 
         <% holiday_hours_display = @shop.respond_to?(:display_holiday_hours_text) ? @shop.display_holiday_hours_text.to_s.strip : "" %>
         <% closed_days_display = @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.strip : "" %>
