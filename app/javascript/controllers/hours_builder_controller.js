@@ -40,7 +40,7 @@ export default class extends Controller {
   }
 
   parseRange(text) {
-    const match = text.match(/(\d{2}:\d{2})-(\d{2}:\d{2})/)
+    const match = text.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
     if (!match) return ["", ""]
     return [match[1], match[2]]
   }
@@ -76,11 +76,11 @@ export default class extends Controller {
   }
 
   applyOpeningLines(text) {
-    text.split("/").forEach((rawLine) => {
+    text.split(/\r?\n|\//).forEach((rawLine) => {
       const line = rawLine.trim()
       if (!line) return
 
-      const label = line.match(/^(月|火|水|木|金|土|日|祝前)\s/)?.[1]
+      const label = line.match(/^(月|火|水|木|金|土|日|祝日|祝前)\s/)?.[1]
       if (!label) return
 
       const row = Array.from(this.element.querySelectorAll("[data-hours-row]")).find((candidate) => {
@@ -117,18 +117,27 @@ export default class extends Controller {
     const cleanLine = line.replace(/^(月|火|水|木|金|土|日|祝前|祝日)\s*/, "").trim()
     const [hoursPart, smokingPart] = cleanLine.split("（喫煙可：")
 
-    const ranges = hoursPart.match(/\d{2}:\d{2}-\d{2}:\d{2}/g) || []
+    const ranges = hoursPart.match(/\d{1,2}:\d{2}\s*[-〜~－–—]\s*\d{1,2}:\d{2}(?:（L\.O\. \d{1,2}:\d{2}）)?/g) || []
+
+    row.dataset.lastOrder1 = ""
+    row.dataset.lastOrder2 = ""
 
     if (ranges[0]) {
       const [start, end] = this.parseRange(ranges[0])
       this.setSelect(row, "[data-hours-start1]", start)
       this.setSelect(row, "[data-hours-end1]", end)
+
+      const lo = ranges[0].match(/L\.O\. (\d{1,2}:\d{2})/)
+      if (lo) row.dataset.lastOrder1 = lo[1]
     }
 
     if (ranges[1]) {
       const [start, end] = this.parseRange(ranges[1])
       this.setSelect(row, "[data-hours-start2]", start)
       this.setSelect(row, "[data-hours-end2]", end)
+
+      const lo = ranges[1].match(/L\.O\. (\d{1,2}:\d{2})/)
+      if (lo) row.dataset.lastOrder2 = lo[1]
     }
 
     const smokingSame = row.querySelector("[data-smoking-same]")
@@ -200,9 +209,15 @@ export default class extends Controller {
       const start2 = row.querySelector("[data-hours-start2]")?.value
       const end2 = row.querySelector("[data-hours-end2]")?.value
 
+      const range1 = this.rangeText(start1, end1)
+      const range2 = this.rangeText(start2, end2)
+
+      const lastOrder1 = row.dataset.lastOrder1
+      const lastOrder2 = row.dataset.lastOrder2
+
       let hours = [
-        this.rangeText(start1, end1),
-        this.rangeText(start2, end2)
+        range1 ? `${range1}${lastOrder1 ? `（L.O. ${lastOrder1}）` : ""}` : "",
+        range2 ? `${range2}${lastOrder2 ? `（L.O. ${lastOrder2}）` : ""}` : ""
       ].filter(Boolean).join(", ")
 
       if (!hours) hours = "営業時間未設定"
@@ -213,9 +228,7 @@ export default class extends Controller {
 
       let smoking = ""
 
-      if (smokingSame) {
-        smoking = "（喫煙可：営業時間中）"
-      } else if (smokingStart && smokingEnd) {
+      if (!smokingSame && smokingStart && smokingEnd) {
         smoking = `（喫煙可：${smokingStart}-${smokingEnd}）`
       }
 
@@ -229,11 +242,11 @@ export default class extends Controller {
     })
 
     if (this.openingText) {
-      this.openingText.value = openingLines.join(" / ")
+      this.openingText.value = openingLines.concat(holidayLines).join("\n")
     }
 
     if (this.holidayText) {
-      this.holidayText.value = holidayLines.join(" / ")
+      this.holidayText.value = ""
     }
 
     if (this.closedText) {

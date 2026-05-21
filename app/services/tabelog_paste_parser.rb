@@ -31,6 +31,7 @@ class TabelogPasteParser
       all_you_can_drink_type: metadata[:all_you_can_drink_type],
       smoking_area: metadata[:smoking_area],
       smoking_type: metadata[:smoking_type],
+      public_store_details: metadata[:smoking_note],
       raw_import_text: @raw_text,
       import_metadata: metadata,
       import_source: "tabelog_paste",
@@ -76,6 +77,7 @@ class TabelogPasteParser
       smoking_raw: smoking_raw,
       smoking_area: extract_smoking_area(smoking_raw),
       smoking_type: extract_smoking_type(smoking_raw),
+      smoking_note: extract_smoking_note,
       charter_raw: field_value("貸切"),
       parking_raw: field_value("駐車場"),
       payment_raw: field_value("支払い方法"),
@@ -219,24 +221,66 @@ class TabelogPasteParser
     values = raw.to_s.split(/[、,\/]/).map(&:strip).reject(&:blank?)
     values.reject { |genre| genre == normalize_genre(raw) }.join("、").presence
   end
-
   def extract_opening_hours_text
     raw = field_value("営業時間")
     return nil if raw.blank?
 
-    raw.lines
-       .map(&:strip)
-       .reject(&:blank?)
-       .reject { |line| line.match?(/\AL\.?O\.?\s*\d{1,2}:\d{2}\z/i) }
-       .join("\n")
-       .presence
-  end
+    smoking_hours_by_day = extract_smoking_hours_by_day
+    rows_by_day = {}
+    current_day_keys = []
+    current_hours = []
 
+    flush_hours = lambda do
+      if current_day_keys.present? && current_hours.present?
+        current_day_keys.each do |day_key|
+          smoking_suffix = smoking_hours_suffix_for_day(day_key, current_hours, smoking_hours_by_day)
+          rows_by_day[day_key] = "#{day_label(day_key)} #{current_hours.join(', ')}#{smoking_suffix}"
+        end
+      end
+
+      current_hours = []
+    end
+
+    raw.lines.map(&:strip).reject(&:blank?).each do |line|
+      lo_match = line.match(/\AL\.?O\.?\s*(\d{1,2}:\d{2})\z/i)
+
+      if lo_match && current_hours.last.present?
+        current_hours[-1] = "#{current_hours.last}（L.O. #{lo_match[1]}）"
+        next
+      end
+
+      if line.match?(/[月火水木金土日祝]/) && !line.match?(/\d{1,2}:\d{2}/)
+        flush_hours.call
+        current_day_keys = expand_days(line)
+        next
+      end
+
+      if line.match?(/定休日|休み|休業/)
+        flush_hours.call
+
+        current_day_keys.each do |day_key|
+          rows_by_day[day_key] = "#{day_label(day_key)} #{line}"
+        end
+
+        current_day_keys = []
+        next
+      end
+
+      time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
+      if time_match
+        current_hours << "#{time_match[1]}-#{time_match[2]}"
+      end
+    end
+
+    flush_hours.call
+
+    ordered_day_keys.filter_map { |day_key| rows_by_day[day_key] }.join("\n").presence
+  end
   def extract_opening_hours_json
     raw = field_value("営業時間")
     return {} if raw.blank?
 
-    result = {}
+    periods_by_day = {}
     current_days = []
 
     raw.lines.map(&:strip).reject(&:blank?).each do |line|
@@ -252,62 +296,117 @@ class TabelogPasteParser
       next if current_days.blank?
 
       current_days.each do |day_key|
+        periods_by_day[day_key] ||= []
+        periods_by_day[day_key] << [time_match[1], time_match[2]]
+      end
+    end
+
+    periods_by_day.each_with_object({}) do |(day_key, periods), result|
+      periods = periods.uniq
+
+      if periods.size >= 2
+        first_open, first_close = periods[0]
+        second_open, second_close = periods[1]
+
         result[day_key] = {
           "closed" => false,
-          "open" => time_match[1],
-          "close" => time_match[2],
+          "open" => first_open,
+          "close" => second_close,
+          "break_enabled" => true,
+          "break_start" => first_close,
+          "break_end" => second_open
+        }
+      else
+        open_time, close_time = periods[0]
+
+        result[day_key] = {
+          "closed" => false,
+          "open" => open_time,
+          "close" => close_time,
           "break_enabled" => false,
           "break_start" => "",
           "break_end" => ""
         }
       end
     end
-
-    result
   end
 
   def expand_days(line)
+    text = line.to_s
     days = []
 
-    days << "monday" if line.include?("月")
-    days << "tuesday" if line.include?("火")
-    days << "wednesday" if line.include?("水")
-    days << "thursday" if line.include?("木")
-    days << "friday" if line.include?("金")
-    days << "saturday" if line.include?("土")
-    days << "sunday" if line.include?("日")
+    days << "monday" if text.include?("月")
+    days << "tuesday" if text.include?("火")
+    days << "wednesday" if text.include?("水")
+    days << "thursday" if text.include?("木")
+    days << "friday" if text.include?("金")
+    days << "saturday" if text.include?("土")
+    days << "sunday" if text.include?("日")
+    days << "holiday" if text.include?("祝日") || (text.include?("祝") && !text.match?(/祝前|祝後/))
+    days << "pre_holiday" if text.include?("祝前")
 
     days.uniq
   end
 
   def extract_holiday_hours_text
-    raw = field_value("営業時間")
-    return nil if raw.blank?
+    nil
+  end
 
-    current_label = nil
-    rows = []
+  def extract_smoking_hours_by_day
+    raw = field_value("禁煙・喫煙").to_s
+    return {} if raw.blank?
+
+    result = {}
 
     raw.lines.map(&:strip).reject(&:blank?).each do |line|
-      next if line.match?(/\AL\.?O\.?\s*\d{1,2}:\d{2}\z/i)
-
-      if line.match?(/[月火水木金土日祝]/) && !line.match?(/\d{1,2}:\d{2}/)
-        current_label = line
-        next
-      end
+      next unless line.include?("喫煙")
+      next if line.match?(/営業時間中|終日/)
 
       time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
       next unless time_match
 
-      if current_label.to_s.match?(/祝前日|祝前/)
-        rows << "祝前 #{time_match[1]}-#{time_match[2]}"
-      end
+      range = "#{time_match[1]}-#{time_match[2]}"
+      days = expand_days(line)
 
-      if current_label.to_s.match?(/祝日/)
-        rows << "祝日 #{time_match[1]}-#{time_match[2]}"
+      days = %w[monday tuesday wednesday thursday friday saturday sunday holiday pre_holiday] if days.blank?
+
+      days.each do |day|
+        result[day] = range
       end
     end
 
-    rows.uniq.join("\n").presence
+    result
+  end
+
+  def ordered_day_keys
+    %w[monday tuesday wednesday thursday friday saturday sunday holiday pre_holiday]
+  end
+
+  def day_label(day_key)
+    {
+      "monday" => "月",
+      "tuesday" => "火",
+      "wednesday" => "水",
+      "thursday" => "木",
+      "friday" => "金",
+      "saturday" => "土",
+      "sunday" => "日",
+      "holiday" => "祝日",
+      "pre_holiday" => "祝前"
+    }[day_key]
+  end
+
+  def smoking_hours_suffix_for_day(day_key, current_hours, smoking_hours_by_day)
+    return "" if smoking_hours_by_day.blank?
+
+    smoking_range = smoking_hours_by_day[day_key]
+    return "" if smoking_range.blank?
+
+    opening_ranges = current_hours.map { |hour| hour.to_s.sub(/（L\.O\. [^)]+）/, "") }
+
+    return "" if opening_ranges.include?(smoking_range)
+
+    "（喫煙可：#{smoking_range}）"
   end
 
   def extract_closed_days_text
@@ -328,9 +427,6 @@ class TabelogPasteParser
   end
 
   def extract_last_order_text
-    matched = @text.scan(/(?:L\.?O\.?|ラストオーダー|LO)[:：\s]*\d{1,2}:\d{2}/i)
-    return matched.uniq.join(" / ") if matched.present?
-
     nil
   end
 
@@ -368,23 +464,45 @@ class TabelogPasteParser
   end
 
   def extract_smoking_area(raw)
-    text = raw.to_s
+    text = [raw, @text].compact.join("\n")
 
+    return "all_smoking" if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)
+    return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|分煙/)
     return "all_smoking" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
-    return "separated" if text.match?(/分煙|喫煙所/)
-    return "unknown" if text.match?(/禁煙|不明/)
+    return "unknown" if text.match?(/全席禁煙|禁煙|不明/)
 
     nil
   end
 
   def extract_smoking_type(raw)
-    text = raw.to_s
+    text = [raw, @text].compact.join("\n")
 
     return "electronic_only" if text.match?(/加熱式/)
-    return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "both_ok" if text.match?(/紙.*加熱|加熱.*紙/)
     return "paper_only" if text.match?(/紙タバコ|紙たばこ/)
+    return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|分煙/)
+    return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
 
     "unknown"
+  end
+
+  def extract_smoking_note
+    text = @text.to_s
+
+    notes = []
+
+    if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)
+      notes << "テラス席は喫煙可"
+    end
+
+    if text.match?(/入口横.*喫煙可|ベンチ.*喫煙/)
+      notes << "店外ベンチで喫煙可"
+    end
+
+    if text.match?(/店内.*喫煙スペース|喫煙スペース.*店内/)
+      notes << "店内に喫煙スペースあり"
+    end
+
+    notes.uniq.join("\n").presence
   end
 end
