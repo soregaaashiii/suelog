@@ -238,11 +238,18 @@ class Admin::ShopsController < Admin::BaseController
     @page = 1 if @page <= 0
 
     @open_now = params[:open_now] == "1"
+    @phone_check_hold = params[:phone_check_hold] == "1"
 
     scope = Shop
       .where(approved: true)
       .where(smoking_unverified: true)
-      .where(phone_check_on_hold: false)
+
+    scope =
+      if @phone_check_hold
+        scope.where(phone_check_on_hold: true)
+      else
+        scope.where(phone_check_on_hold: [false, nil])
+      end
 
     if @open_now
       scope = scope.select { |shop| shop.respond_to?(:open_now?) && shop.open_now? }
@@ -551,7 +558,7 @@ class Admin::ShopsController < Admin::BaseController
 
     shop.update!(attrs)
 
-    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page], open_now: params[:open_now]),
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page], open_now: params[:open_now], phone_check_hold: params[:phone_check_hold]),
                 flash: { admin_notice: "喫煙情報を更新して確認済みにしました：#{shop.name}" }
   rescue ActiveRecord::RecordInvalid => e
     redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page], open_now: params[:open_now]),

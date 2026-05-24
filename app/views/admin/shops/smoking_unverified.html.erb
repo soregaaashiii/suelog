@@ -291,6 +291,10 @@
       <%= link_to "営業中のみ",
                   smoking_unverified_admin_shops_path(per: @per, open_now: 1),
                   class: "smoking-check-filter #{'is-active' if @open_now}" %>
+
+      <%= link_to "電話確認保留",
+                  smoking_unverified_admin_shops_path(per: @per, phone_check_hold: 1, open_now: (@open_now ? 1 : nil)),
+                  class: "smoking-check-filter #{'is-active' if @phone_check_hold}" %>
     </div>
   </div>
 
