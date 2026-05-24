@@ -1,0 +1,51 @@
+cat > app/views/admin/shops/phone_check_holds.html.erb <<'EOF'
+<% content_for :title, "電話確認保留店舗" %>
+
+<div style="max-width:980px; margin:0 auto; padding:16px;">
+  <h1>電話確認保留店舗</h1>
+
+  <p style="color:#666;">
+    電話番号なし・不通などで、一旦電話確認から外している店舗です。
+  </p>
+
+  <% if @shops.present? %>
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left; border-bottom:1px solid #ddd; padding:8px;">店舗名</th>
+          <th style="text-align:left; border-bottom:1px solid #ddd; padding:8px;">電話番号</th>
+          <th style="text-align:left; border-bottom:1px solid #ddd; padding:8px;">エリア</th>
+          <th style="text-align:left; border-bottom:1px solid #ddd; padding:8px;">操作</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @shops.each do |shop| %>
+          <tr>
+            <td style="border-bottom:1px solid #eee; padding:8px;">
+              <%= link_to shop.name, edit_admin_shop_path(shop), target: "_blank", rel: "noopener" %>
+            </td>
+
+            <td style="border-bottom:1px solid #eee; padding:8px;">
+              <%= shop.phone.presence || "電話番号なし" %>
+            </td>
+
+            <td style="border-bottom:1px solid #eee; padding:8px;">
+              <%= [shop.area, shop.nearest_station].compact_blank.join(" / ") %>
+            </td>
+
+            <td style="border-bottom:1px solid #eee; padding:8px;">
+              <%= button_to "電話確認に戻す",
+                            resume_phone_check_admin_shop_path(shop),
+                            method: :patch,
+                            form: { data: { turbo_confirm: "電話確認ページに戻しますか？" } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p>電話確認保留の店舗はありません。</p>
+  <% end %>
+</div>
+EOF

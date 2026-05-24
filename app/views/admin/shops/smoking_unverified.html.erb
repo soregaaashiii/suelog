@@ -126,7 +126,7 @@
 
   .smoking-check-hold-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 8px;
     margin-top: 8px;
   }
@@ -374,6 +374,12 @@
                             method: :patch,
                             class: "smoking-check-hold smoking-check-hold--danger",
                             form: { data: { turbo_confirm: "閉店として保留に移動しますか？" } } %>
+
+              <%= button_to "電話確認保留",
+                            hold_phone_check_admin_shop_path(shop, per: @per, page: @page, open_now: (@open_now ? 1 : nil)),
+                            method: :patch,
+                            class: "smoking-check-hold",
+                            form: { data: { turbo_confirm: "電話番号なし・不通などで電話確認保留に移動しますか？" } } %>
             </div>
           </div>
         </div>

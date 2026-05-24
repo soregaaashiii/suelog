@@ -128,11 +128,14 @@ Rails.application.routes.draw do
         patch :confirm_smoking_info
         patch :update_smoking_info
         patch :move_to_hold_from_smoking_check
+        patch :hold_phone_check
+        patch :resume_phone_check
       end
 
       collection do
         get :holds
         get :smoking_unverified
+        get :phone_check_holds
         patch :bulk_update
         post :import
       end

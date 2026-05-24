@@ -191,6 +191,44 @@ class Admin::ShopsController < Admin::BaseController
       .order(held_at: :desc, updated_at: :desc)
   end
 
+  def phone_check_holds
+    @shops = Shop
+      .where(approved: true)
+      .where(smoking_unverified: true)
+      .where(phone_check_on_hold: true)
+      .order(updated_at: :desc)
+  end
+
+  def hold_phone_check
+    shop = Shop.find(params[:id])
+
+    shop.update!(
+      phone_check_on_hold: true,
+      updated_at: Time.current
+    )
+
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page], open_now: params[:open_now]),
+                flash: { admin_notice: "電話確認保留に移動しました：#{shop.name}" }
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page], open_now: params[:open_now]),
+                flash: { admin_alert: "電話確認保留への移動に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
+  end
+
+  def resume_phone_check
+    shop = Shop.find(params[:id])
+
+    shop.update!(
+      phone_check_on_hold: false,
+      updated_at: Time.current
+    )
+
+    redirect_to phone_check_holds_admin_shops_path,
+                flash: { admin_notice: "電話確認ページに戻しました：#{shop.name}" }
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to phone_check_holds_admin_shops_path,
+                flash: { admin_alert: "電話確認ページへの復帰に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
+  end
+
   def smoking_unverified
     @per = (params[:per].presence || 100).to_i
     @per = 100 if @per <= 0
@@ -204,6 +242,7 @@ class Admin::ShopsController < Admin::BaseController
     scope = Shop
       .where(approved: true)
       .where(smoking_unverified: true)
+      .where(phone_check_on_hold: false)
 
     if @open_now
       scope = scope.select { |shop| shop.respond_to?(:open_now?) && shop.open_now? }
@@ -734,7 +773,10 @@ class Admin::ShopsController < Admin::BaseController
       end
     end
 
-    if params[:from] == "clicks"
+    if params[:from] == "shop_import"
+      redirect_to new_admin_shop_import_path,
+                  flash: { admin_notice: notice }
+    elsif params[:from] == "clicks"
       redirect_to admin_shop_clicks_path(
         status: params[:status],
         source: params[:source],

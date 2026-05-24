@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_13_061034) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_20_180511) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -184,9 +184,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_061034) do
 
   create_table "shops", force: :cascade do |t|
     t.string "address"
+    t.integer "all_you_can_drink_type", default: 0, null: false
     t.boolean "approved", default: false, null: false
     t.string "area"
     t.integer "atmosphere"
+    t.string "budget_range"
     t.string "closed_days_text"
     t.datetime "created_at", null: false
     t.string "custom_affiliate_label"
@@ -198,7 +200,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_061034) do
     t.string "hold_reason"
     t.text "holiday_hours_text"
     t.string "hotpepper_url"
+    t.json "import_metadata", default: {}, null: false
+    t.string "import_source"
+    t.datetime "imported_at"
     t.date "last_confirmed_on"
+    t.string "last_order_text"
     t.float "latitude"
     t.float "longitude"
     t.string "name"
@@ -211,14 +217,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_061034) do
     t.text "opening_hours_text"
     t.string "phone"
     t.string "place_id"
+    t.integer "private_room_type", default: 0, null: false
     t.text "public_store_details"
+    t.text "raw_import_text"
     t.boolean "rejected"
+    t.json "seat_type_tags", default: [], null: false
     t.integer "smoking_area"
+    t.string "smoking_hours_text"
     t.integer "smoking_type"
     t.boolean "smoking_unverified", default: false, null: false
     t.string "source"
     t.text "special_hours_note"
     t.string "tabelog_affiliate_url"
+    t.string "tabelog_candidate_affiliate_url"
+    t.datetime "tabelog_candidate_matched_at"
+    t.string "tabelog_candidate_method"
+    t.string "tabelog_candidate_url"
     t.string "tabelog_match_method"
     t.datetime "tabelog_matched_at"
     t.string "tabelog_url"
