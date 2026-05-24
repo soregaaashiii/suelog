@@ -26,6 +26,13 @@ ip_hash = Digest::SHA256.hexdigest("#{raw_ip}|#{ua}|#{salt}")
 
 ref = request.referer.to_s
 
+return if PageView.where(
+shop: shop,
+path: request.path,
+ip_hash: ip_hash,
+created_at: Time.current.beginning_of_day..Time.current.end_of_day
+).exists?
+
 PageView.create!(
 shop: shop,
 path: request.path,
