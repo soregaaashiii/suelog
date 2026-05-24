@@ -1324,7 +1324,6 @@ class Admin::ShopsController < Admin::BaseController
       :holiday_hours_text,
       :closed_days_text,
       :special_hours_note,
-      :budget_range,
       :last_order_text,
       :private_room_type,
       :all_you_can_drink_type,

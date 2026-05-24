@@ -48,7 +48,33 @@ class Admin::ShopImportsController < Admin::BaseController
     end
 
     parsed_attrs = TabelogPasteParser.call(raw_text)
-    shop = Shop.new(parsed_attrs)
+    duplicate_candidates = duplicate_candidates_for(parsed_attrs)
+    target_shop_id = params[:target_shop_id].to_i
+    force_new = params[:force_new] == "1"
+
+    if target_shop_id.positive?
+      target_shop = duplicate_candidates.find { |shop| shop.id == target_shop_id } || Shop.find_by(id: target_shop_id)
+
+      if target_shop.present?
+        merge_blank_fields_from_import!(target_shop, filter_shop_attrs(parsed_attrs))
+
+        redirect_to edit_admin_shop_path(target_shop, from: "shop_import"),
+                    flash: { admin_notice: "選択した既存店舗に未入力項目だけを追加しました。入力済み項目は変更していません。" }
+        return
+      end
+    end
+
+    if duplicate_candidates.present? && !force_new
+      @raw_text = raw_text
+      @parsed_attrs = parsed_attrs
+      @duplicate_candidates = duplicate_candidates
+
+      flash.now[:admin_alert] = "重複候補があります。既存店舗に追加するか、新規登録するか選択してください。"
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    shop = Shop.new(filter_shop_attrs(parsed_attrs))
 
     shop.last_confirmed_on ||= Date.current if shop.respond_to?(:last_confirmed_on)
     shop.smoking_unverified = true if shop.respond_to?(:smoking_unverified=)
@@ -58,7 +84,7 @@ class Admin::ShopImportsController < Admin::BaseController
 
     shop.save!
 
-    redirect_to edit_admin_shop_path(shop),
+    redirect_to edit_admin_shop_path(shop, from: "shop_import"),
                 flash: { admin_notice: "食べログ貼り付けから店舗を仮登録しました。内容を確認して保存してください。" }
   rescue ActiveRecord::RecordInvalid => e
     @raw_text = raw_text
@@ -77,6 +103,65 @@ class Admin::ShopImportsController < Admin::BaseController
   end
 
   private
+
+  def filter_shop_attrs(attrs)
+    attrs.to_h.select { |key, _| Shop.column_names.include?(key.to_s) }
+  end
+
+  def merge_blank_fields_from_import!(shop, parsed_attrs)
+    attrs = {}
+
+    fill_if_blank = lambda do |key|
+      next unless shop.respond_to?(key) && shop.respond_to?("#{key}=")
+
+      current_value = shop.public_send(key)
+      new_value = parsed_attrs[key]
+
+      next if new_value.blank?
+      next unless import_blank_value?(current_value)
+
+      attrs[key] = new_value
+    end
+
+    [
+      :phone,
+      :nearest_station,
+      :genre,
+      :genre_other,
+      :opening_hours_text,
+      :opening_hours_json,
+      :holiday_hours_text,
+      :closed_days_text,
+      :special_hours_note,
+      :budget_range,
+      :last_order_text,
+      :private_room_type,
+      :seat_type_tags,
+      :all_you_can_drink_type,
+      :smoking_area,
+      :smoking_type,
+      :public_store_details
+    ].each do |key|
+      fill_if_blank.call(key)
+    end
+
+    # コピペ本文と解析結果は、重複時でも必ず保存する。
+    attrs[:raw_import_text] = parsed_attrs[:raw_import_text] if shop.respond_to?(:raw_import_text=)
+    attrs[:import_metadata] = parsed_attrs[:import_metadata] if shop.respond_to?(:import_metadata=)
+    attrs[:import_source] = parsed_attrs[:import_source] if shop.respond_to?(:import_source=)
+    attrs[:imported_at] = parsed_attrs[:imported_at] if shop.respond_to?(:imported_at=)
+
+    shop.update!(attrs) if attrs.present?
+  end
+
+  def import_blank_value?(value)
+    return true if value.blank?
+    return true if value == {}
+    return true if value == []
+    return true if value.to_s == "unknown"
+
+    false
+  end
 
   def duplicate_candidates_for(attrs)
     name = attrs[:name].to_s.strip
