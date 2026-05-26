@@ -1349,6 +1349,10 @@
         </span>
       <% end %>
 
+      <% if @shop.respond_to?(:smoking_unverified?) && !@shop.smoking_unverified? %>
+        <span class="ss-badge ss-badge--green">喫煙情報確認済み</span>
+      <% end %>
+
       <% if @shop.last_confirmed_on.present? %>
         <span class="ss-badge ss-badge--line">最終確認：<%= @shop.last_confirmed_on %></span>
       <% end %>
