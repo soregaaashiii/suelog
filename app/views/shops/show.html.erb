@@ -1321,19 +1321,7 @@
       ジャンル：<%= @shop.display_genre.presence || "未設定" %>
     </p>
 
-   <div class="shop-show__badges">
-  <% shop_smoking_status_badges(@shop).each do |badge| %>
-    <span class="<%= badge[:class_name] %>">
-      <%= badge[:label] %>
-    </span>
-  <% end %>
-</div>
-
-<% if shop_smoking_status_note(@shop).present? %>
-  <p class="shop-show__sub" style="margin-top:8px;">
-    <%= shop_smoking_status_note(@shop) %>
-  </p>
-<% end %>
+    <div class="shop-show__badges">
       <% if @shop.smoking_area == "all_smoking" %>
         <span class="ss-badge ss-badge--dark">席で喫煙可</span>
       <% elsif @shop.smoking_area == "separated" %>
@@ -1350,10 +1338,6 @@
         <span class="ss-badge ss-badge--gold">紙のみ</span>
       <% elsif @shop.smoking_type == "unknown" %>
         <span class="ss-badge ss-badge--muted">喫煙タイプ不明</span>
-      <% end %>
-
-      <% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
-        <span class="ss-badge ss-badge--warn">喫煙情報未確認</span>
       <% end %>
 
       <% if @shop.respond_to?(:open_now?) && @shop.open_now? %>
