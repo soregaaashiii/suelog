@@ -39,11 +39,27 @@
       nil
     end
 
+  seo_area_title =
+    if shop_location_text.include?("東通り") || shop_location_text.include?("堂山")
+      "#{area_label}・東通り"
+    else
+      area_label
+    end
+
   seo_smoking_title =
     if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
       "喫煙情報確認中"
     elsif @shop.smoking_area.to_s == "all_smoking"
-      @shop.smoking_type.to_s == "electronic_only" ? "加熱式たばこOK" : "喫煙可・紙タバコOK"
+      case @shop.smoking_type.to_s
+      when "both_ok"
+        "席で喫煙可・紙加熱式OK"
+      when "paper_only"
+        "席で喫煙可・紙タバコOK"
+      when "electronic_only"
+        "席で喫煙可・加熱式たばこOK"
+      else
+        "席で喫煙可"
+      end
     elsif @shop.smoking_area.to_s == "separated"
       "喫煙所あり"
     else
@@ -51,20 +67,41 @@
     end
 
   page_title_parts = [
-    "#{@shop.name.presence}｜#{area_label}の#{genre_label_text}【#{seo_smoking_title}】",
+    "#{@shop.name.presence}｜#{seo_area_title}の#{genre_label_text}【#{seo_smoking_title}】",
     "吸えログ"
   ].compact
 
+  seo_station_text =
+    if @shop.nearest_station.present?
+      "#{@shop.nearest_station}近く"
+    else
+      "#{seo_area_title}"
+    end
+
   page_description_parts = []
-  page_description_parts << "#{@shop.name}は#{area_label}の#{genre_label_text}です。" if @shop.name.present?
+
+  if @shop.name.present?
+    page_description_parts << "#{@shop.name}は#{seo_station_text}の#{genre_label_text}です。"
+  end
+
   page_description_parts << seo_smoking_title
-  page_description_parts << "最新情報は店舗へご確認ください。" if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
-  page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_station.present?
-  page_description_parts << "住所：#{@shop.address}" if @shop.address.present?
-  if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定"
+
+  if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
+    page_description_parts << "喫煙情報は確認中のため、最新情報は店舗へご確認ください。"
+  elsif @shop.respond_to?(:smoking_unverified?) && !@shop.smoking_unverified?
+    page_description_parts << "喫煙情報確認済み。"
+  end
+
+  if @shop.respond_to?(:display_opening_hours_text) &&
+     @shop.display_opening_hours_text.present? &&
+     @shop.display_opening_hours_text != "未設定"
+
     page_description_parts << "営業時間：#{@shop.display_opening_hours_text}"
   end
-  page_description_parts << "#{area_label}で喫煙可能な飲食店を探すなら吸えログ。"
+
+  page_description_parts << "住所：#{@shop.address}" if @shop.address.present?
+
+  page_description_parts << "#{seo_area_title}で喫煙できる#{genre_label_text}を探すなら吸えログ。"
 
   referrer_path = nil
 
