@@ -39,16 +39,26 @@
       nil
     end
 
+  seo_smoking_title =
+    if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
+      "喫煙情報確認中"
+    elsif @shop.smoking_area.to_s == "all_smoking"
+      @shop.smoking_type.to_s == "electronic_only" ? "加熱式たばこOK" : "喫煙可・紙タバコOK"
+    elsif @shop.smoking_area.to_s == "separated"
+      "喫煙所あり"
+    else
+      "喫煙情報確認中"
+    end
+
   page_title_parts = [
-    @shop.name.presence,
-    "#{area_label}で喫煙できる#{genre_label_text}",
+    "#{@shop.name.presence}｜#{area_label}の#{genre_label_text}【#{seo_smoking_title}】",
     "吸えログ"
   ].compact
 
   page_description_parts = []
-  page_description_parts << "#{@shop.name}は#{area_label}で喫煙できる#{genre_label_text}です。" if @shop.name.present?
-  page_description_parts << smoking_area_text if smoking_area_text.present?
-  page_description_parts << smoking_type_text if smoking_type_text.present?
+  page_description_parts << "#{@shop.name}は#{area_label}の#{genre_label_text}です。" if @shop.name.present?
+  page_description_parts << seo_smoking_title
+  page_description_parts << "最新情報は店舗へご確認ください。" if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
   page_description_parts << "最寄駅：#{@shop.nearest_station}" if @shop.nearest_station.present?
   page_description_parts << "住所：#{@shop.address}" if @shop.address.present?
   if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? && @shop.display_opening_hours_text != "未設定"
@@ -1311,7 +1321,19 @@
       ジャンル：<%= @shop.display_genre.presence || "未設定" %>
     </p>
 
-    <div class="shop-show__badges">
+   <div class="shop-show__badges">
+  <% shop_smoking_status_badges(@shop).each do |badge| %>
+    <span class="<%= badge[:class_name] %>">
+      <%= badge[:label] %>
+    </span>
+  <% end %>
+</div>
+
+<% if shop_smoking_status_note(@shop).present? %>
+  <p class="shop-show__sub" style="margin-top:8px;">
+    <%= shop_smoking_status_note(@shop) %>
+  </p>
+<% end %>
       <% if @shop.smoking_area == "all_smoking" %>
         <span class="ss-badge ss-badge--dark">席で喫煙可</span>
       <% elsif @shop.smoking_area == "separated" %>
@@ -1519,7 +1541,10 @@
 
         <div class="shop-show__infoRow">
           <div class="shop-show__infoHead">営業時間</div>
-          <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.gsub(" / ", "\n") : "未設定" %></div>
+          <div class="shop-show__infoCell shop-show__infoCell--multiline"><% opening_hours_display = @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.strip : "未設定" %><%= safe_join(opening_hours_display.lines.map { |line|
+            escaped_line = h(line.chomp)
+            escaped_line.gsub(/（L\.O\. [^)]+）/) { |lo| %(<span style="color:#888888; font-size:0.92em;">#{lo}</span>) }.html_safe
+          }, tag.br) %></div>
         </div>
 
         <% if @shop.respond_to?(:last_order_text) && @shop.last_order_text.present? %>
@@ -1533,7 +1558,9 @@
         <% closed_days_display = @shop.respond_to?(:display_closed_days_text) ? @shop.display_closed_days_text.to_s.strip : "" %>
         <% holiday_closed = closed_days_display.split(/[・、,\s\/]+/).any? { |day| ["祝日", "祝", "祝日休み", "祝日休業"].include?(day) } %>
 
-        <% unless holiday_closed %>
+        <% opening_hours_includes_holiday = opening_hours_display.to_s.match?(/祝日|祝前|祝後/) %>
+
+        <% unless holiday_closed || opening_hours_includes_holiday %>
           <div class="shop-show__infoRow">
             <div class="shop-show__infoHead">祝日営業時間</div>
             <div class="shop-show__infoCell shop-show__infoCell--multiline"><%= holiday_hours_display.present? ? holiday_hours_display.gsub(" / ", "\n") : "未設定" %></div>
