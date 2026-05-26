@@ -29,19 +29,17 @@ end
 <% genre_label["yakiniku"] = "焼肉" %>
 
 <% genre_select_options = [["ジャンル", ""]] %>
-<% canonical_genres = [
-  ["居酒屋", "izakaya"],
-  ["バー・パブ", "bar"],
-  ["カフェ", "cafe"],
-  ["焼肉", "yakiniku"]
-] %>
-<% genre_select_options.concat(canonical_genres) %>
+<% genre_select_options.concat(Shop.genre_options.map { |g| [genre_label[g] || g, g] }) %>
 
-<% Shop.genre_options.each do |g| %>
-  <% next if %w[izakaya bar cafe yakiniku].include?(g.to_s) %>
-  <% label = genre_label[g] || g %>
-  <% next if genre_select_options.any? { |existing_label, existing_value| existing_label == label || existing_value == g } %>
-  <% genre_select_options << [label, g] %>
+<% legacy_genre_labels = {
+  "izakaya" => "居酒屋",
+  "bar" => "バー・パブ",
+  "cafe" => "カフェ",
+  "yakiniku" => "焼肉"
+} %>
+
+<% if params[:genre].present? && genre_select_options.none? { |_label, value| value.to_s == params[:genre].to_s } %>
+  <% genre_select_options << [legacy_genre_labels[params[:genre].to_s] || params[:genre].to_s, params[:genre].to_s] %>
 <% end %>
 
 <% current_genre_value =

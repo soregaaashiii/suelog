@@ -46,7 +46,7 @@
   <div style="margin:12px 0;">
     <div style="font-weight:700;">ジャンル <%= req %></div>
     <%= f.select :genre,
-      ["居酒屋", "バー / パブ", "喫茶店 / カフェ", "焼肉", "ラーメン", "中華", "和食", "洋食", "立ち飲み", "スナック", "その他"],
+      Shop.genre_options.map { |genre| [genre, genre] },
       { include_blank: "選択してください" },
       { required: true, style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border-radius:12px;" } %>
   </div>
@@ -93,7 +93,8 @@
 
   <p style="margin:0 0 12px; color:#666; font-size:13px; line-height:1.7;">
     営業日にチェックを入れて、営業時間を選択してください。チェックなしの曜日は定休日として表示されます。<br>
-    喫煙時間は未指定なら「営業時間中は喫煙可」として扱います。
+    喫煙時間は未指定なら「営業時間中は喫煙可」として扱います。<br>
+    <span style="color:#888;">L.O. は食べログ貼り付けインポート時に営業時間の横へ「（L.O. 22:30）」形式で反映されます。</span>
   </p>
 
   <% days = [

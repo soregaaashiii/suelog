@@ -413,7 +413,7 @@ method: :patch, local: true, data: { turbo: false } do %>
 <div>
 <div style="font-weight:700;">ジャンル</div>
 <select name="shop[genre]" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;">
-<% [["未設定", ""], ["居酒屋", "居酒屋"], ["焼肉", "焼肉"], ["焼鳥", "焼鳥"], ["ラーメン", "ラーメン"], ["中華", "中華"], ["韓国料理", "韓国料理"], ["イタリアン", "イタリアン"], ["フレンチ", "フレンチ"], ["和食", "和食"], ["寿司", "寿司"], ["バー", "バー"], ["カフェ", "カフェ"], ["喫茶店", "喫茶店"], ["スナック", "スナック"], ["ダイニングバー", "ダイニングバー"], ["その他", "その他"]].each do |label, value| %>
+<% ([["未設定", ""]] + Shop.genre_options.map { |genre| [genre, genre] }).each do |label, value| %>
 <option value="<%= value %>" <%= "selected" if final_genre.to_s == value.to_s %>><%= label %></option>
 <% end %>
 </select>

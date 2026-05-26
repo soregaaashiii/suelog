@@ -19,6 +19,10 @@
       <div><strong>喫煙エリア:</strong> <%= (@shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : @shop.smoking_area).presence || "なし" %></div>
       <div><strong>喫煙タイプ:</strong> <%= (@shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : @shop.smoking_type).presence || "なし" %></div>
       <div><strong>最終確認日:</strong> <%= @shop.last_confirmed_on.presence || "なし" %></div>
+      <div>
+        <strong>営業時間:</strong>
+        <div style="margin-top:4px; white-space:pre-wrap;"><%= @shop.respond_to?(:display_opening_hours_text) ? @shop.display_opening_hours_text.to_s.strip : "なし" %></div>
+      </div>
       <div><strong>店舗詳細（ユーザー向け）:</strong> <%= @shop.respond_to?(:public_store_details) ? (@shop.public_store_details.presence || "なし") : "なし" %></div>
       <div><strong>補足情報（管理用）:</strong> <%= @shop.note.presence || "未設定" %></div>
       <div><strong>保留状態:</strong> <%= on_hold ? "保留中" : "通常" %></div>

@@ -169,6 +169,28 @@ class Shop < ApplicationRecord
     unknown: 3
   }, prefix: true
 
+  enum :private_room_type, {
+    unknown: 0,
+    no_private_room: 1,
+    semi_private_room: 2,
+    full_private_room: 3
+  }, prefix: true
+
+  enum :all_you_can_drink_type, {
+    unknown: 0,
+    no_all_you_can_drink: 1,
+    has_all_you_can_drink: 2
+  }, prefix: true
+
+  SEAT_TYPE_LABELS = {
+    "counter" => "カウンター席あり",
+    "table" => "テーブル席あり",
+    "sofa" => "ソファ席あり",
+    "standing" => "立ち飲みあり",
+    "horigotatsu" => "掘りごたつ席あり",
+    "terrace" => "テラス席あり"
+  }.freeze
+
   # ===== Scopes =====
   scope :approved, -> { where(approved: true, on_hold: false) }
   scope :on_hold_only, -> { where(on_hold: true) }
@@ -252,6 +274,7 @@ class Shop < ApplicationRecord
   before_validation :normalize_opening_hours_json
   before_validation :assign_area_from_location_if_blank
   before_validation :set_default_smoking_values
+  before_validation :normalize_seat_type_tags
 
   # 電話番号重複は系列店・同一受付番号の可能性があるため保存は止めない。
   # 重複警告は duplicate_flag_present? / duplicate_candidates で表示する。
@@ -394,6 +417,34 @@ class Shop < ApplicationRecord
     else
       "未設定"
     end
+  end
+
+  def private_room_label
+    case private_room_type
+    when "full_private_room"
+      "完全個室あり"
+    when "semi_private_room"
+      "半個室あり"
+    when "no_private_room"
+      "個室なし"
+    else
+      "不明"
+    end
+  end
+
+  def all_you_can_drink_label
+    case all_you_can_drink_type
+    when "has_all_you_can_drink"
+      "飲み放題あり"
+    when "no_all_you_can_drink"
+      "飲み放題なし"
+    else
+      "不明"
+    end
+  end
+
+  def seat_type_labels
+    Array(seat_type_tags).map { |tag| SEAT_TYPE_LABELS[tag.to_s] }.compact
   end
 
   def hold_reason_label
@@ -556,11 +607,17 @@ class Shop < ApplicationRecord
         [label, "休み"]
       else
         base = "#{d["open"]}-#{d["close"]}"
+
         if truthy?(d["break_enabled"]) && d["break_start"].present? && d["break_end"].present?
-          [label, "#{base}（休憩 #{d["break_start"]}-#{d["break_end"]}）"]
-        else
-          [label, base]
+          base = "#{base}（休憩 #{d["break_start"]}-#{d["break_end"]}）"
         end
+
+        lo_text =
+          if d["last_order"].present?
+            " <span style=\"color:#777; font-size:12px;\">L.O. #{ERB::Util.html_escape(d["last_order"])}</span>"
+          end
+
+        [label, "#{base}#{lo_text}".html_safe]
       end
     end
   end
@@ -879,6 +936,16 @@ class Shop < ApplicationRecord
   end
 
   private
+
+  def normalize_seat_type_tags
+    self.seat_type_tags =
+      Array(seat_type_tags)
+        .map(&:to_s)
+        .map(&:strip)
+        .reject(&:blank?)
+        .select { |tag| SEAT_TYPE_LABELS.key?(tag) }
+        .uniq
+  end
 
   def assign_area_from_location_if_blank
     return if area.present?

@@ -41,7 +41,7 @@ style: "width:100%; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
 <div style="margin:12px 0;">
 <div style="font-weight:700;">ジャンル</div>
 <%= f.select :genre,
-["居酒屋", "バー / パブ", "喫茶店 / カフェ", "焼肉", "ラーメン", "中華", "和食", "洋食", "立ち飲み", "スナック", "その他"],
+Shop.genre_options.map { |genre| [genre, genre] },
 { include_blank: "（変更しない）" },
 style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border-radius:12px;" %>
 </div>

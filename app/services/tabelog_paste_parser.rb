@@ -24,6 +24,7 @@ class TabelogPasteParser
       opening_hours_json: metadata[:opening_hours_json],
       holiday_hours_text: metadata[:holiday_hours_text],
       closed_days_text: metadata[:closed_days_text],
+      special_hours_note: metadata[:special_hours_note],
       budget_range: metadata[:budget_range],
       last_order_text: metadata[:last_order_text],
       private_room_type: metadata[:private_room_type],
@@ -65,6 +66,7 @@ class TabelogPasteParser
       opening_hours_json: extract_opening_hours_json,
       holiday_hours_text: extract_holiday_hours_text,
       closed_days_text: extract_closed_days_text,
+      special_hours_note: extract_special_hours_note,
       budget_raw: field_value("予算"),
       budget_review_raw: field_value("予算（口コミ集計）"),
       budget_range: extract_budget_range,
@@ -242,14 +244,14 @@ class TabelogPasteParser
     end
 
     raw.lines.map(&:strip).reject(&:blank?).each do |line|
-      lo_match = line.match(/\AL\.?O\.?\s*(\d{1,2}:\d{2})\z/i)
+      lo_match = line.match(/\AL\.?O\.?\s*(?:料理|ドリンク|フード)?\s*(\d{1,2}:\d{2})\z/i)
 
       if lo_match && current_hours.last.present?
-        current_hours[-1] = "#{current_hours.last}（L.O. #{lo_match[1]}）"
+        current_hours[-1] = "#{current_hours.last.sub(/（L\.O\. [^)]+）/, "")}（L.O. #{lo_match[1]}）"
         next
       end
 
-      if line.match?(/[月火水木金土日祝]/) && !line.match?(/\d{1,2}:\d{2}/)
+      if day_label_line?(line)
         flush_hours.call
         current_day_keys = expand_days(line)
         next
@@ -257,17 +259,13 @@ class TabelogPasteParser
 
       if line.match?(/定休日|休み|休業/)
         flush_hours.call
-
-        current_day_keys.each do |day_key|
-          rows_by_day[day_key] = "#{day_label(day_key)} #{line}"
-        end
-
         current_day_keys = []
         next
       end
 
       time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
       if time_match
+        current_day_keys = standard_day_keys if current_day_keys.blank?
         current_hours << "#{time_match[1]}-#{time_match[2]}"
       end
     end
@@ -286,14 +284,14 @@ class TabelogPasteParser
     raw.lines.map(&:strip).reject(&:blank?).each do |line|
       next if line.match?(/\AL\.?O\.?\s*\d{1,2}:\d{2}\z/i)
 
-      if line.match?(/[月火水木金土日祝]/) && !line.match?(/\d{1,2}:\d{2}/)
+      if day_label_line?(line)
         current_days = expand_days(line)
         next
       end
 
       time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
       next unless time_match
-      next if current_days.blank?
+      current_days = standard_day_keys if current_days.blank?
 
       current_days.each do |day_key|
         periods_by_day[day_key] ||= []
@@ -350,6 +348,21 @@ class TabelogPasteParser
 
   def extract_holiday_hours_text
     nil
+  end
+
+  def day_label_line?(line)
+    text = line.to_s.strip
+    return false if text.blank?
+    return false if text.match?(/\d{1,2}:\d{2}/)
+    return false if text.start_with?("■")
+    return false if text.match?(/営業時間|定休日|休業|年末年始|変更|通常営業|ランチ|ディナー|最終入店/)
+
+    text.match?(/\A[月火水木金土日祝・、\/\s]+(?:曜日|曜)?\z/) ||
+      text.match?(/\A(?:祝日|祝前日|祝後日|土日祝|平日)\z/)
+  end
+
+  def standard_day_keys
+    %w[monday tuesday wednesday thursday friday saturday sunday holiday pre_holiday]
   end
 
   def extract_smoking_hours_by_day
@@ -411,11 +424,35 @@ class TabelogPasteParser
 
   def extract_closed_days_text
     raw = field_value("営業時間").to_s
-    line = raw.lines.map(&:strip).find { |v| v.match?(/定休日|不定休|無休|休み/) }
     return "不定休" if raw.include?("不定休")
-    return "無休" if raw.include?("無休")
+    return "無休" if raw.include?("無休") || raw.include?("年中無休")
 
-    line.to_s.sub(/定休日[:：]?/, "").strip.presence
+    line = raw.lines.map(&:strip).find { |v| v.match?(/定休日/) }
+    line.to_s.sub(/■\s*/, "").sub(/定休日[:：]?/, "").strip.presence
+  end
+
+  def extract_special_hours_note
+    raw = field_value("営業時間").to_s
+    return nil if raw.blank?
+
+    notes = []
+    capture = false
+
+    raw.lines.map(&:strip).reject(&:blank?).each do |line|
+      if line.match?(/年末年始|臨時休業|休業|営業時間変更|通常営業/)
+        capture = true
+        notes << line.sub(/\A■\s*/, "")
+        next
+      end
+
+      if capture
+        break if line.match?(/\A■\s*(営業時間|定休日)\z/)
+
+        notes << line
+      end
+    end
+
+    notes.join("\n").strip.presence
   end
 
   def extract_budget_range
