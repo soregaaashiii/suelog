@@ -1,0 +1,37 @@
+<h1>電話確認 承認待ち</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>店舗</th>
+      <th>担当者</th>
+      <th>確認結果</th>
+      <th>メモ</th>
+      <th>送信日時</th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @submissions.each do |submission| %>
+      <tr>
+        <td>
+          <%= submission.shop.name %><br>
+          <small><%= submission.shop.address %></small>
+        </td>
+        <td><%= submission.sub_admin_user.name %></td>
+        <td>
+  <%= submission.smoking_location_label %><br>
+  <small><%= submission.tobacco_type_label %></small>
+</td>
+        <td><%= simple_format(submission.memo) %></td>
+        <td><%= submission.created_at %></td>
+        <td>
+          <%= button_to "承認", approve_admin_shop_verification_submission_path(submission), method: :patch %>
+          <%= button_to "却下", reject_admin_shop_verification_submission_path(submission), method: :patch %>
+          <%= button_to "差し戻し", request_changes_admin_shop_verification_submission_path(submission), method: :patch %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

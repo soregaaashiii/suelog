@@ -1,0 +1,41 @@
+<h1>送信済み確認結果</h1>
+
+<p>
+  <%= link_to "電話確認に戻る", sub_admin_root_path %>
+</p>
+
+<% @submissions.each do |submission| %>
+  <div style="border: 1px solid #ddd; padding: 16px; margin-bottom: 16px;">
+    <h2><%= submission.shop.name %></h2>
+
+    <p><strong>住所:</strong> <%= submission.shop.address %></p>
+
+    <p>
+      <strong>喫煙場所:</strong>
+      <%= submission.smoking_location_label %>
+    </p>
+
+    <p>
+      <strong>タバコ種別:</strong>
+      <%= submission.tobacco_type_label %>
+    </p>
+
+    <p>
+      <strong>メモ:</strong><br>
+      <%= simple_format(submission.memo) %>
+    </p>
+
+    <p>
+      <strong>状態:</strong>
+      <%= submission.status %>
+    </p>
+
+    <% if submission.status.in?(%w[pending returned]) %>
+      <p>
+        <%= link_to "編集する", edit_sub_admin_smoking_check_path(submission) %>
+      </p>
+    <% else %>
+      <p style="color: #777;">承認済み・却下済みのため編集できません</p>
+    <% end %>
+  </div>
+<% end %>

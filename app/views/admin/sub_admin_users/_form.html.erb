@@ -1,0 +1,54 @@
+<%= form_with model: [:admin, sub_admin_user], local: true do |f| %>
+  <% if sub_admin_user.errors.any? %>
+    <div style="color: red;">
+      <ul>
+        <% sub_admin_user.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, "名前" %><br>
+    <%= f.text_field :name %>
+  </div>
+
+  <div>
+    <%= f.label :login_id, "ログインID" %><br>
+    <%= f.text_field :login_id %>
+  </div>
+
+  <div>
+    <%= f.label :password, "パスワード" %><br>
+    <%= f.password_field :password %>
+  </div>
+
+  <div>
+    <%= f.label :password_confirmation, "パスワード確認" %><br>
+    <%= f.password_field :password_confirmation %>
+  </div>
+
+  <div>
+    <%= f.label :active, "有効" %>
+    <%= f.check_box :active %>
+  </div>
+
+  <h2>権限</h2>
+
+  <% SubAdminUser::PERMISSIONS.each do |key, label| %>
+    <div>
+      <%= check_box_tag "sub_admin_user[permissions][]", key, sub_admin_user.permissions.include?(key), id: "permission_#{key}" %>
+      <%= label_tag "permission_#{key}", label %>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :memo, "メモ" %><br>
+    <%= f.text_area :memo, rows: 4 %>
+  </div>
+
+  <div style="margin-top: 16px;">
+    <%= f.submit "保存" %>
+  </div>
+<% end %>

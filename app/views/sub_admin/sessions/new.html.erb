@@ -1,0 +1,17 @@
+<h1>サブ管理ログイン</h1>
+
+<%= form_with url: sub_admin_login_path, method: :post, local: true do %>
+  <div>
+    <label>ログインID</label><br>
+    <%= text_field_tag :login_id, params[:login_id], autocomplete: "username" %>
+  </div>
+
+  <div>
+    <label>パスワード</label><br>
+    <%= password_field_tag :password, nil, autocomplete: "current-password" %>
+  </div>
+
+  <div style="margin-top: 16px;">
+    <%= submit_tag "ログイン" %>
+  </div>
+<% end %>

@@ -1,0 +1,49 @@
+<h1>確認結果の編集</h1>
+
+<p>
+  <%= link_to "送信済みに戻る", sub_admin_smoking_check_submissions_path %>
+</p>
+
+<div style="border: 1px solid #ddd; padding: 16px; margin-bottom: 16px;">
+  <h2><%= @submission.shop.name %></h2>
+
+  <p><strong>住所:</strong> <%= @submission.shop.address %></p>
+
+  <p>
+    <strong>現在の登録情報:</strong>
+    <%= @submission.shop.smoking_area_label %>
+    /
+    <%= @submission.shop.smoking_type_label %>
+  </p>
+
+  <%= form_with url: sub_admin_smoking_check_path(@submission), method: :patch, local: true do %>
+    <div>
+      <label>喫煙場所</label><br>
+      <%= select_tag :smoking_location,
+            options_for_select(
+              ShopVerificationSubmission::SMOKING_LOCATIONS.map { |key, label| [label, key] },
+              @submission.smoking_location
+            ),
+            required: true %>
+    </div>
+
+    <div>
+      <label>タバコ種別</label><br>
+      <%= select_tag :tobacco_type,
+            options_for_select(
+              ShopVerificationSubmission::TOBACCO_TYPES.map { |key, label| [label, key] },
+              @submission.tobacco_type
+            ),
+            required: true %>
+    </div>
+
+    <div>
+      <label>メモ</label><br>
+      <%= text_area_tag :memo, @submission.memo, rows: 3 %>
+    </div>
+
+    <div style="margin-top: 8px;">
+      <%= submit_tag "更新する" %>
+    </div>
+  <% end %>
+</div>

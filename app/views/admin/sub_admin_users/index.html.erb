@@ -1,0 +1,34 @@
+<h1>サブ管理者</h1>
+
+<p>
+  <%= link_to "新規作成", new_admin_sub_admin_user_path %>
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>名前</th>
+      <th>ログインID</th>
+      <th>有効</th>
+      <th>権限</th>
+      <th>最終ログイン</th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @sub_admin_users.each do |user| %>
+      <tr>
+        <td><%= user.name %></td>
+        <td><%= user.login_id %></td>
+        <td><%= user.active? ? "有効" : "停止中" %></td>
+        <td><%= user.permissions.map { |key| SubAdminUser::PERMISSIONS[key] || key }.join(" / ") %></td>
+        <td><%= user.last_login_at %></td>
+        <td>
+          <%= link_to "編集", edit_admin_sub_admin_user_path(user) %>
+          <%= button_to "停止", admin_sub_admin_user_path(user), method: :delete, data: { turbo_confirm: "停止しますか？" } %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

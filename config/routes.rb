@@ -175,5 +175,28 @@ Rails.application.routes.draw do
 
     # 記事管理
     resources :articles
+
+    resources :sub_admin_users
+    resources :shop_verification_submissions, only: [:index] do
+      member do
+        patch :approve
+        patch :reject
+        patch :request_changes
+      end
+    end
+  end
+
+  namespace :sub_admin do
+    root "smoking_checks#index"
+
+    get "login", to: "sessions#new", as: :login
+    post "login", to: "sessions#create"
+    delete "logout", to: "sessions#destroy", as: :logout
+
+    get "smoking_checks/submissions",
+        to: "smoking_checks#submissions",
+        as: :smoking_check_submissions
+
+    resources :smoking_checks, only: [:index, :create, :edit, :update]
   end
 end
