@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_20_180511) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_31_173641) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -182,6 +182,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_180511) do
     t.index ["shop_id"], name: "index_shop_reports_on_shop_id"
   end
 
+  create_table "shop_verification_submissions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "memo"
+    t.string "result", null: false
+    t.datetime "reviewed_at"
+    t.bigint "reviewed_by_id"
+    t.integer "shop_id", null: false
+    t.string "smoking_location"
+    t.string "status", default: "pending", null: false
+    t.integer "sub_admin_user_id", null: false
+    t.string "tobacco_type"
+    t.datetime "updated_at", null: false
+    t.index ["reviewed_by_id"], name: "index_shop_verification_submissions_on_reviewed_by_id"
+    t.index ["shop_id"], name: "index_shop_verification_submissions_on_shop_id"
+    t.index ["smoking_location"], name: "index_shop_verification_submissions_on_smoking_location"
+    t.index ["status"], name: "index_shop_verification_submissions_on_status"
+    t.index ["sub_admin_user_id"], name: "index_shop_verification_submissions_on_sub_admin_user_id"
+    t.index ["tobacco_type"], name: "index_shop_verification_submissions_on_tobacco_type"
+  end
+
   create_table "shops", force: :cascade do |t|
     t.string "address"
     t.integer "all_you_can_drink_type", default: 0, null: false
@@ -216,6 +236,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_180511) do
     t.json "opening_hours_json"
     t.text "opening_hours_text"
     t.string "phone"
+    t.boolean "phone_check_on_hold", default: false, null: false
     t.string "place_id"
     t.integer "private_room_type", default: 0, null: false
     t.text "public_store_details"
@@ -242,8 +263,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_180511) do
     t.datetime "updated_at", null: false
     t.index ["hold_reason"], name: "index_shops_on_hold_reason"
     t.index ["on_hold"], name: "index_shops_on_on_hold"
+    t.index ["phone_check_on_hold"], name: "index_shops_on_phone_check_on_hold"
     t.index ["place_id"], name: "index_shops_on_place_id", unique: true
     t.index ["source"], name: "index_shops_on_source"
+  end
+
+  create_table "sub_admin_users", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "last_login_at"
+    t.string "login_id", null: false
+    t.text "memo"
+    t.string "name", null: false
+    t.string "password_digest", null: false
+    t.json "permissions", default: [], null: false
+    t.datetime "updated_at", null: false
+    t.index ["login_id"], name: "index_sub_admin_users_on_login_id", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -255,4 +290,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_180511) do
   add_foreign_key "shop_clicks", "shops"
   add_foreign_key "shop_edit_requests", "shops"
   add_foreign_key "shop_reports", "shops"
+  add_foreign_key "shop_verification_submissions", "shops"
+  add_foreign_key "shop_verification_submissions", "sub_admin_users"
 end

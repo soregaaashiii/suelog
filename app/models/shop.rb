@@ -419,6 +419,34 @@ class Shop < ApplicationRecord
     end
   end
 
+  def suggested_smoking_location_for_verification
+    case smoking_area.to_s
+    when "all_smoking"
+      "seat_smoking"
+    when "separated"
+      "smoking_area_only"
+    when "unknown"
+      "unknown"
+    else
+      "unknown"
+    end
+  end
+
+  def suggested_tobacco_type_for_verification
+    case smoking_type.to_s
+    when "both_ok"
+      "both"
+    when "electronic_only"
+      "heated_only"
+    when "paper_only"
+      "paper_only"
+    when "unknown"
+      "unknown"
+    else
+      "unknown"
+    end
+  end
+
   def private_room_label
     case private_room_type
     when "full_private_room"
