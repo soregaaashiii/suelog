@@ -1,0 +1,234 @@
+<h1>電話確認</h1>
+
+<style>
+  .smoking-check-page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 12px;
+  }
+
+  .smoking-check-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+  }
+
+  .smoking-check-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #333;
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .smoking-check-filter.is-active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
+  .smoking-check-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .smoking-check-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(120px, auto) minmax(390px, auto);
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+  }
+
+  .smoking-check-name {
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .smoking-check-sub {
+    margin-top: 4px;
+    color: #777;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .smoking-check-phone,
+  .smoking-check-confirm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 900;
+    text-decoration: none;
+    border: 1px solid #111;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .smoking-check-phone {
+    background: #fff;
+    color: #111;
+  }
+
+  .smoking-check-phone--disabled {
+    border-color: #ddd;
+    color: #999;
+    background: #f7f7f7;
+    cursor: default;
+  }
+
+  .smoking-check-confirm {
+    background: #111;
+    color: #fff;
+  }
+
+  .smoking-check-form {
+    display: grid;
+    grid-template-columns: 120px 120px 140px;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .smoking-check-select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .smoking-check-empty {
+    padding: 24px;
+    background: #fff;
+    border: 1px dashed #ccc;
+    border-radius: 10px;
+    color: #666;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .smoking-check-page {
+      padding: 12px;
+    }
+
+    .smoking-check-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .smoking-check-form {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .smoking-check-form .smoking-check-confirm {
+      grid-column: 1 / -1;
+    }
+
+    .smoking-check-name {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .smoking-check-sub {
+      font-size: 11px;
+      line-height: 1.4;
+    }
+  }
+</style>
+
+<div class="smoking-check-page">
+  <div class="smoking-check-actions">
+    <%= link_to "送信済み", sub_admin_smoking_check_submissions_path, class: "smoking-check-filter" %>
+
+    <% if @open_now %>
+      <%= link_to "営業中のみ解除", sub_admin_root_path, class: "smoking-check-filter is-active" %>
+    <% else %>
+      <%= link_to "営業中のみ", sub_admin_root_path(open_now: 1), class: "smoking-check-filter" %>
+    <% end %>
+  </div>
+
+  <% if @shops.blank? %>
+    <div class="smoking-check-empty">
+      電話確認できる店舗がありません。
+    </div>
+  <% else %>
+    <div class="smoking-check-list">
+      <% @shops.each do |shop| %>
+        <div class="smoking-check-row">
+          <div>
+            <div class="smoking-check-name"><%= shop.name %></div>
+
+            <div class="smoking-check-sub">
+              <% if shop.respond_to?(:opening_hours_text) && shop.opening_hours_text.present? %>
+                営業時間: <%= truncate(shop.opening_hours_text.to_s.gsub(/\s+/, " "), length: 80) %>
+              <% else %>
+                営業時間: 未設定
+              <% end %>
+              <br>
+              現在: <%= shop.smoking_area_label %> / <%= shop.smoking_type_label %>
+            </div>
+
+          </div>
+
+          <div>
+            <% if shop.phone.present? %>
+              <a class="smoking-check-phone" href="tel:<%= shop.phone.to_s.gsub(/[^0-9+]/, '') %>">
+                電話する
+              </a>
+            <% else %>
+              <span class="smoking-check-phone smoking-check-phone--disabled">
+                電話なし
+              </span>
+            <% end %>
+          </div>
+
+          <%= form_with url: sub_admin_smoking_checks_path, method: :post, local: true, class: "smoking-check-form" do %>
+            <%= hidden_field_tag :shop_id, shop.id %>
+
+            <%= select_tag :smoking_location,
+                  options_for_select(
+                    ShopVerificationSubmission::SMOKING_LOCATIONS.map { |key, label| [label, key] },
+                    shop.suggested_smoking_location_for_verification
+                  ),
+                  class: "smoking-check-select",
+                  required: true %>
+
+            <%= select_tag :tobacco_type,
+                  options_for_select(
+                    ShopVerificationSubmission::TOBACCO_TYPES.map { |key, label| [label, key] },
+                    shop.suggested_tobacco_type_for_verification
+                  ),
+                  class: "smoking-check-select",
+                  required: true %>
+
+            <%= submit_tag "保存", class: "smoking-check-confirm" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
