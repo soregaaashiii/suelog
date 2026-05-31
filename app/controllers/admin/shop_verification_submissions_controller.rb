@@ -5,9 +5,77 @@ class Admin::ShopVerificationSubmissionsController < Admin::BaseController
         .includes(:shop, :sub_admin_user)
         .pending
   end
-
   def approve
     submission = ShopVerificationSubmission.find(params[:id])
+    approve_submission!(submission)
+
+    redirect_to admin_shop_verification_submissions_path, notice: "承認しました"
+  end
+
+  def bulk_approve
+    submissions = selected_pending_submissions
+
+    if submissions.blank?
+      redirect_to admin_shop_verification_submissions_path, alert: "対象が選択されていません"
+      return
+    end
+
+    total = submissions.count
+
+    submissions.find_each do |submission|
+      approve_submission!(submission)
+    end
+
+    redirect_to admin_shop_verification_submissions_path, notice: "#{total}件を一括承認しました"
+  end
+
+  def reject
+    submission = ShopVerificationSubmission.find(params[:id])
+    reject_submission!(submission)
+
+    redirect_to admin_shop_verification_submissions_path, notice: "却下しました"
+  end
+
+  def bulk_reject
+    submissions = selected_pending_submissions
+
+    if submissions.blank?
+      redirect_to admin_shop_verification_submissions_path, alert: "対象が選択されていません"
+      return
+    end
+
+    total = submissions.count
+
+    submissions.find_each do |submission|
+      reject_submission!(submission)
+    end
+
+    redirect_to admin_shop_verification_submissions_path, notice: "#{total}件を一括却下しました"
+  end
+
+  def request_changes
+    submission = ShopVerificationSubmission.find(params[:id])
+
+    submission.update!(
+      status: "returned",
+      reviewed_by_id: current_admin_user_id,
+      reviewed_at: Time.current
+    )
+
+    redirect_to admin_shop_verification_submissions_path, notice: "差し戻しました"
+  end
+
+  private
+
+  def selected_pending_submissions
+    ids = Array(params[:submission_ids]).reject(&:blank?)
+
+    ShopVerificationSubmission
+      .where(id: ids)
+      .where(status: "pending")
+  end
+
+  def approve_submission!(submission)
     shop = submission.shop
 
     attrs = {}
@@ -47,35 +115,15 @@ class Admin::ShopVerificationSubmissionsController < Admin::BaseController
       reviewed_by_id: current_admin_user_id,
       reviewed_at: Time.current
     )
-
-    redirect_to admin_shop_verification_submissions_path, notice: "承認しました"
   end
 
-  def reject
-    submission = ShopVerificationSubmission.find(params[:id])
-
+  def reject_submission!(submission)
     submission.update!(
       status: "rejected",
       reviewed_by_id: current_admin_user_id,
       reviewed_at: Time.current
     )
-
-    redirect_to admin_shop_verification_submissions_path, notice: "却下しました"
   end
-
-  def request_changes
-    submission = ShopVerificationSubmission.find(params[:id])
-
-    submission.update!(
-      status: "returned",
-      reviewed_by_id: current_admin_user_id,
-      reviewed_at: Time.current
-    )
-
-    redirect_to admin_shop_verification_submissions_path, notice: "差し戻しました"
-  end
-
-  private
 
   def current_admin_user_id
     nil

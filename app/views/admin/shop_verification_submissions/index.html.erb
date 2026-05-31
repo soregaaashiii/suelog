@@ -1,37 +1,67 @@
 <h1>電話確認 承認待ち</h1>
 
-<table>
-  <thead>
-    <tr>
-      <th>店舗</th>
-      <th>担当者</th>
-      <th>確認結果</th>
-      <th>メモ</th>
-      <th>送信日時</th>
-      <th></th>
-    </tr>
-  </thead>
+<%= form_with url: bulk_approve_admin_shop_verification_submissions_path, method: :patch, local: true do %>
+  <div style="display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap;">
+    <button type="button" onclick="document.querySelectorAll('.js-submission-check').forEach((checkbox) => checkbox.checked = true);">
+      全選択
+    </button>
 
-  <tbody>
-    <% @submissions.each do |submission| %>
+    <button type="button" onclick="document.querySelectorAll('.js-submission-check').forEach((checkbox) => checkbox.checked = false);">
+      全解除
+    </button>
+
+    <%= submit_tag "選択した確認データを一括承認", data: { turbo_confirm: "選択した確認データを一括承認しますか？" } %>
+
+    <%= submit_tag "選択した確認データを一括却下",
+          formaction: bulk_reject_admin_shop_verification_submissions_path,
+          data: { turbo_confirm: "選択した確認データを一括却下しますか？" } %>
+  </div>
+
+  <table>
+    <thead>
       <tr>
-        <td>
-          <%= submission.shop.name %><br>
-          <small><%= submission.shop.address %></small>
-        </td>
-        <td><%= submission.sub_admin_user.name %></td>
-        <td>
-  <%= submission.smoking_location_label %><br>
-  <small><%= submission.tobacco_type_label %></small>
-</td>
-        <td><%= simple_format(submission.memo) %></td>
-        <td><%= submission.created_at %></td>
-        <td>
-          <%= button_to "承認", approve_admin_shop_verification_submission_path(submission), method: :patch %>
-          <%= button_to "却下", reject_admin_shop_verification_submission_path(submission), method: :patch %>
-          <%= button_to "差し戻し", request_changes_admin_shop_verification_submission_path(submission), method: :patch %>
-        </td>
+        <th>選択</th>
+        <th>店舗</th>
+        <th>担当者</th>
+        <th>確認結果</th>
+        <th>メモ</th>
+        <th>送信日時</th>
+        <th>個別操作</th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+
+    <tbody>
+      <% @submissions.each do |submission| %>
+        <tr>
+          <td>
+            <%= check_box_tag "submission_ids[]", submission.id, false, class: "js-submission-check" %>
+          </td>
+          <td>
+            <%= submission.shop.name %><br>
+            <small><%= submission.shop.address %></small>
+          </td>
+          <td><%= submission.sub_admin_user.name %></td>
+          <td>
+            <%= submission.smoking_location_label %><br>
+            <small><%= submission.tobacco_type_label %></small>
+          </td>
+          <td><%= simple_format(submission.memo) %></td>
+          <td><%= submission.created_at %></td>
+          <td>
+            <%= link_to "承認",
+                  approve_admin_shop_verification_submission_path(submission),
+                  data: { turbo_method: :patch, turbo_confirm: "承認しますか？" } %>
+            /
+            <%= link_to "却下",
+                  reject_admin_shop_verification_submission_path(submission),
+                  data: { turbo_method: :patch, turbo_confirm: "却下しますか？" } %>
+            /
+            <%= link_to "差し戻し",
+                  request_changes_admin_shop_verification_submission_path(submission),
+                  data: { turbo_method: :patch, turbo_confirm: "差し戻しますか？" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

@@ -178,6 +178,11 @@ Rails.application.routes.draw do
 
     resources :sub_admin_users
     resources :shop_verification_submissions, only: [:index] do
+      collection do
+        patch :bulk_approve
+        patch :bulk_reject
+      end
+
       member do
         patch :approve
         patch :reject
