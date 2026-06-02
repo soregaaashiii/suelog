@@ -47,6 +47,59 @@ end
 
 sidebar_enabled = sidebar_items.present?
 
+toc_items = []
+
+toc_item_regex = /\[toc_item\s+title=(?:"([^"]+)"|'([^']+)')\s*\]/i
+
+article_body_source.gsub!(%r{<(p|div)>\s*#{toc_item_regex.source}\s*</\1>}im) do
+  title = Regexp.last_match(2).presence || Regexp.last_match(3).to_s
+  index = toc_items.length + 1
+  anchor_id = "article-toc-#{index}"
+
+  toc_items << {
+    title: title,
+    anchor_id: anchor_id
+  }
+
+  %(<h2 id="#{ERB::Util.html_escape(anchor_id)}" class="article-section-heading">#{ERB::Util.html_escape(title)}</h2>)
+end
+
+article_body_source.gsub!(toc_item_regex) do
+  title = Regexp.last_match(1).presence || Regexp.last_match(2).to_s
+  index = toc_items.length + 1
+  anchor_id = "article-toc-#{index}"
+
+  toc_items << {
+    title: title,
+    anchor_id: anchor_id
+  }
+
+  %(<h2 id="#{ERB::Util.html_escape(anchor_id)}" class="article-section-heading">#{ERB::Util.html_escape(title)}</h2>)
+end
+
+toc_html =
+  if toc_items.length >= 2
+    tag.nav(class: "article-toc", aria: { label: "この記事の目次" }) do
+      safe_join([
+        tag.div("この記事の目次", class: "article-toc__title"),
+        tag.ol(class: "article-toc__list") do
+          safe_join(
+            toc_items.map do |item|
+              tag.li(class: "article-toc__item") do
+                link_to(item[:title], "##{item[:anchor_id]}", class: "article-toc__link")
+              end
+            end
+          )
+        end
+      ])
+    end
+  else
+    ""
+  end
+
+article_body_source.gsub!(%r{<(p|div)>\s*\[toc\]\s*</\1>}i, toc_html)
+article_body_source.gsub!(/\[toc\]/i, toc_html)
+
 article_body_html =
   begin
     render_article_body(article_body_source)
@@ -243,6 +296,48 @@ article_body_html =
     position: static;
     margin-top: 24px;
   }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.article-toc {
+  margin: 24px 0;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fffdf8;
+}
+
+.article-toc__title {
+  font-weight: 900;
+  margin-bottom: 10px;
+  color: #111;
+}
+
+.article-toc__list {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.article-toc__item {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.article-toc__link {
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.article-toc__link:hover {
+  text-decoration: underline;
+}
+
+.article-section-heading {
+  scroll-margin-top: 16px;
 }
 
 .article-body > .trix-content,
@@ -527,10 +622,12 @@ article_body_html =
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    processArticleBody();
     setupFloatingLastSidebarAd();
   });
 
   document.addEventListener("turbo:load", () => {
+    processArticleBody();
     setupFloatingLastSidebarAd();
   });
 })();
