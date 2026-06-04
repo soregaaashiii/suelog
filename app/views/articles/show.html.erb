@@ -49,47 +49,79 @@ sidebar_enabled = sidebar_items.present?
 
 toc_items = []
 
-toc_item_regex = /\[toc_item\s+title=(?:"([^"]+)"|'([^']+)')\s*\]/i
+toc_marker_regex = /\[toc_(item|sub)\s+title=(?:"([^"]+)"|'([^']+)')\s*\]/i
 
-article_body_source.gsub!(%r{<(p|div)>\s*#{toc_item_regex.source}\s*</\1>}im) do
-  title = Regexp.last_match(2).presence || Regexp.last_match(3).to_s
+build_toc_heading = lambda do |level, title|
   index = toc_items.length + 1
   anchor_id = "article-toc-#{index}"
+  normalized_level = level.to_s.downcase == "sub" ? :sub : :item
 
   toc_items << {
+    level: normalized_level,
     title: title,
     anchor_id: anchor_id
   }
 
-  %(<h2 id="#{ERB::Util.html_escape(anchor_id)}" class="article-section-heading">#{ERB::Util.html_escape(title)}</h2>)
+  tag_name = normalized_level == :sub ? "h3" : "h2"
+  css_class = normalized_level == :sub ? "article-section-subheading" : "article-section-heading"
+
+  %(<#{tag_name} id="#{ERB::Util.html_escape(anchor_id)}" class="#{css_class}">#{ERB::Util.html_escape(title)}</#{tag_name}>)
 end
 
-article_body_source.gsub!(toc_item_regex) do
-  title = Regexp.last_match(1).presence || Regexp.last_match(2).to_s
-  index = toc_items.length + 1
-  anchor_id = "article-toc-#{index}"
+article_body_source.gsub!(%r{<(p|div)>\s*#{toc_marker_regex.source}\s*</\1>}im) do
+  level = Regexp.last_match(2).to_s
+  title = Regexp.last_match(3).presence || Regexp.last_match(4).to_s
 
-  toc_items << {
-    title: title,
-    anchor_id: anchor_id
-  }
+  build_toc_heading.call(level, title)
+end
 
-  %(<h2 id="#{ERB::Util.html_escape(anchor_id)}" class="article-section-heading">#{ERB::Util.html_escape(title)}</h2>)
+article_body_source.gsub!(toc_marker_regex) do
+  level = Regexp.last_match(1).to_s
+  title = Regexp.last_match(2).presence || Regexp.last_match(3).to_s
+
+  build_toc_heading.call(level, title)
 end
 
 toc_html =
   if toc_items.length >= 2
+    toc_nodes = []
+    current_sub_items = []
+
+    flush_sub_items = lambda do
+      next if current_sub_items.blank?
+
+      toc_nodes << tag.ul(class: "article-toc__sublist") do
+        safe_join(
+          current_sub_items.map do |sub_item|
+            tag.li(class: "article-toc__subitem") do
+              link_to(sub_item[:title], "##{sub_item[:anchor_id]}", class: "article-toc__sublink")
+            end
+          end
+        )
+      end
+
+      current_sub_items = []
+    end
+
+    toc_items.each do |item|
+      if item[:level] == :sub
+        current_sub_items << item
+      else
+        flush_sub_items.call
+
+        toc_nodes << tag.li(class: "article-toc__item") do
+          link_to(item[:title], "##{item[:anchor_id]}", class: "article-toc__link")
+        end
+      end
+    end
+
+    flush_sub_items.call
+
     tag.nav(class: "article-toc", aria: { label: "この記事の目次" }) do
       safe_join([
         tag.div("この記事の目次", class: "article-toc__title"),
-        tag.ol(class: "article-toc__list") do
-          safe_join(
-            toc_items.map do |item|
-              tag.li(class: "article-toc__item") do
-                link_to(item[:title], "##{item[:anchor_id]}", class: "article-toc__link")
-              end
-            end
-          )
+        tag.ul(class: "article-toc__list") do
+          safe_join(toc_nodes)
         end
       ])
     end
@@ -303,6 +335,9 @@ html {
 }
 
 .article-toc {
+  display: inline-block;
+  min-width: 320px;
+  max-width: 100%;
   margin: 24px 0;
   padding: 16px;
   border: 1px solid #e5e7eb;
@@ -336,7 +371,34 @@ html {
   text-decoration: underline;
 }
 
-.article-section-heading {
+.article-toc__list,
+.article-toc__sublist {
+  list-style: none;
+  margin: 0;
+}
+
+.article-toc__sublist {
+  padding-left: 18px;
+  margin: 4px 0 10px;
+}
+
+.article-toc__subitem {
+  margin: 5px 0;
+  line-height: 1.6;
+}
+
+.article-toc__sublink {
+  color: #4b5563;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.article-toc__sublink:hover {
+  text-decoration: underline;
+}
+
+.article-section-heading,
+.article-section-subheading {
   scroll-margin-top: 16px;
 }
 
