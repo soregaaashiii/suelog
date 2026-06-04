@@ -113,13 +113,20 @@ Header
 ========================= */
 
 .site-header {
-position: sticky;
-top: 0;
+position: static;
+top: auto;
 z-index: 50;
 background: rgba(17, 17, 17, 0.72);
 backdrop-filter: blur(8px);
 -webkit-backdrop-filter: blur(8px);
 border-bottom: 1px solid rgba(198, 167, 94, 0.24);
+}
+
+@media (min-width: 901px) {
+  .site-header {
+    position: static;
+    top: auto;
+  }
 }
 
 .header-inner {
@@ -3629,4 +3636,19 @@ color: #7a5a12;
   opacity: 1 !important;
   color: #111111 !important;
   text-decoration: none !important;
+}
+
+/* ===== PCではヘッダー追従を解除 ===== */
+@media (min-width: 901px) {
+  .site-header {
+    position: static !important;
+    top: auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-header {
+    position: sticky;
+    top: 0;
+  }
 }

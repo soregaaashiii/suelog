@@ -82,8 +82,10 @@ article_body_source.gsub!(toc_marker_regex) do
   build_toc_heading.call(level, title)
 end
 
-toc_html =
-  if toc_items.length >= 2
+toc_requested = article_body_source.match?(/\[toc\]/i)
+
+build_toc_html = lambda do |extra_class|
+  if toc_items.length >= 2 && toc_requested
     toc_nodes = []
     current_sub_items = []
 
@@ -117,7 +119,7 @@ toc_html =
 
     flush_sub_items.call
 
-    tag.nav(class: "article-toc", aria: { label: "この記事の目次" }) do
+    tag.nav(class: "article-toc #{extra_class}", aria: { label: "この記事の目次" }) do
       safe_join([
         tag.div("この記事の目次", class: "article-toc__title"),
         tag.ul(class: "article-toc__list") do
@@ -128,9 +130,13 @@ toc_html =
   else
     ""
   end
+end
 
-article_body_source.gsub!(%r{<(p|div)>\s*\[toc\]\s*</\1>}i, toc_html)
-article_body_source.gsub!(/\[toc\]/i, toc_html)
+toc_inline_html = build_toc_html.call("article-toc--inline")
+toc_desktop_html = build_toc_html.call("article-toc--desktop")
+
+article_body_source.gsub!(%r{<(p|div)>\s*\[toc\]\s*</\1>}i, toc_inline_html)
+article_body_source.gsub!(/\[toc\]/i, toc_inline_html)
 
 article_body_html =
   begin
@@ -140,7 +146,13 @@ article_body_html =
   end
 %>
 
-<div class="article-layout <%= sidebar_enabled ? 'article-layout--with-sidebar' : 'article-layout--single' %>">
+<div class="article-layout <%= sidebar_enabled ? 'article-layout--with-sidebar' : 'article-layout--single' %> <%= toc_desktop_html.present? ? 'article-layout--with-left-toc' : '' %>">
+  <% if toc_desktop_html.present? %>
+    <aside class="article-left-toc">
+      <%= toc_desktop_html %>
+    </aside>
+  <% end %>
+
   <article class="article-main">
     <header style="margin-bottom:24px;">
       <h1 style="margin:0 0 16px; line-height:1.4;"><%= @article.title %></h1>
@@ -255,6 +267,10 @@ article_body_html =
   min-width: 0;
 }
 
+.article-left-toc {
+  display: none;
+}
+
 .article-sidebar {
   align-self: start;
   display: grid;
@@ -318,6 +334,56 @@ article_body_html =
   text-decoration: underline;
 }
 
+@media (min-width: 1200px) {
+  .article-layout--with-left-toc.article-layout--single {
+    max-width: 1320px;
+    display: grid;
+    grid-template-columns: 220px minmax(0, 860px) 220px;
+  }
+
+  .article-layout--with-left-toc.article-layout--single .article-main {
+    grid-column: 2;
+  }
+
+  .article-layout--with-left-toc.article-layout--with-sidebar {
+    max-width: 1420px;
+    grid-template-columns: 220px minmax(0, 760px) 280px;
+    justify-content: center;
+  }
+
+  .article-layout--with-left-toc.article-layout--with-sidebar .article-main {
+    grid-column: 2;
+  }
+
+  .article-layout--with-left-toc.article-layout--with-sidebar .article-sidebar {
+    grid-column: 3;
+  }
+
+  .article-left-toc {
+    display: block;
+    align-self: start;
+  }
+
+  .article-left-toc.is-floating-left-toc {
+    position: fixed;
+    top: 150px;
+    width: var(--left-toc-floating-width);
+    z-index: 25;
+    max-height: calc(100vh - 166px);
+    overflow-y: auto;
+  }
+
+  .article-left-toc .article-toc {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .article-body .article-toc--inline {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
   .article-layout {
     display: block;
@@ -335,34 +401,37 @@ html {
 }
 
 .article-toc {
-  display: inline-block;
-  min-width: 320px;
+  display: table;
+  width: fit-content;
+  min-width: 240px;
   max-width: 100%;
-  margin: 24px 0;
-  padding: 16px;
+  margin: 16px auto;
+  padding: 12px 14px;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #fffdf8;
 }
 
 .article-toc__title {
+  font-size: 14px;
   font-weight: 900;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   color: #111;
 }
 
 .article-toc__list {
   margin: 0;
-  padding-left: 22px;
+  padding-left: 0;
 }
 
 .article-toc__item {
-  margin: 8px 0;
-  line-height: 1.6;
+  margin: 3px 0;
+  line-height: 1.35;
 }
 
 .article-toc__link {
   color: #2563eb;
+  font-size: 14px;
   font-weight: 700;
   text-decoration: none;
 }
@@ -378,17 +447,18 @@ html {
 }
 
 .article-toc__sublist {
-  padding-left: 18px;
-  margin: 4px 0 10px;
+  padding-left: 12px;
+  margin: 2px 0 6px;
 }
 
 .article-toc__subitem {
-  margin: 5px 0;
-  line-height: 1.6;
+  margin: 2px 0;
+  line-height: 1.3;
 }
 
 .article-toc__sublink {
   color: #4b5563;
+  font-size: 13px;
   font-weight: 700;
   text-decoration: none;
 }
@@ -611,6 +681,50 @@ html {
     });
   }
 
+  function setupFloatingLeftToc() {
+    const leftToc = document.querySelector(".article-left-toc");
+    if (!leftToc) return;
+
+    const tocBox = leftToc.querySelector(".article-toc");
+    if (!tocBox) return;
+
+    function resetFloating() {
+      leftToc.classList.remove("is-floating-left-toc");
+      leftToc.style.removeProperty("left");
+      leftToc.style.removeProperty("--left-toc-floating-width");
+      leftToc.style.removeProperty("position");
+      leftToc.style.removeProperty("top");
+      leftToc.style.removeProperty("width");
+    }
+
+    function updateFloating() {
+      if (window.matchMedia("(max-width: 1199px)").matches) {
+        resetFloating();
+        return;
+      }
+
+      const rect = leftToc.getBoundingClientRect();
+      const footer = document.querySelector(".site-footer");
+      const footerRect = footer ? footer.getBoundingClientRect() : null;
+      const tocHeight = leftToc.offsetHeight;
+      const normalTop = 150;
+
+      const floatingTop =
+        footerRect ? Math.min(normalTop, footerRect.top - tocHeight - 16) : normalTop;
+
+      leftToc.classList.add("is-floating-left-toc");
+      leftToc.style.left = `${rect.left}px`;
+      leftToc.style.setProperty("--left-toc-floating-width", `${rect.width}px`);
+      leftToc.style.position = "fixed";
+      leftToc.style.top = `${floatingTop}px`;
+      leftToc.style.width = `${rect.width}px`;
+    }
+
+    window.addEventListener("scroll", updateFloating, { passive: true });
+    window.addEventListener("resize", updateFloating);
+    updateFloating();
+  }
+
   function setupFloatingLastSidebarAd() {
     const sidebar = document.querySelector(".article-sidebar");
     if (!sidebar) return;
@@ -685,11 +799,13 @@ html {
 
   document.addEventListener("DOMContentLoaded", () => {
     processArticleBody();
+    setupFloatingLeftToc();
     setupFloatingLastSidebarAd();
   });
 
   document.addEventListener("turbo:load", () => {
     processArticleBody();
+    setupFloatingLeftToc();
     setupFloatingLastSidebarAd();
   });
 })();
