@@ -120,6 +120,28 @@
   <% end %>
 <% end %>
 
+<% if @parsed_attrs.present? %>
+  <script>
+    document.addEventListener("keydown", function(event) {
+      if (event.key !== "Enter") return;
+      if (event.isComposing) return;
+
+      const target = event.target;
+      const tagName = target.tagName.toLowerCase();
+
+      if (tagName === "textarea") return;
+      if (tagName === "button") return;
+      if (target.type === "submit") return;
+
+      const createButton = document.querySelector('input[type="submit"][value="この内容で新規仮登録する"]');
+      if (!createButton) return;
+
+      event.preventDefault();
+      createButton.click();
+    });
+  </script>
+<% end %>
+
 <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
   <%= link_to "店舗一覧に戻る", admin_shops_path, class: "nav-btn" %>
   <%= link_to "通常の店舗登録へ", new_admin_shop_path, class: "nav-btn" %>
