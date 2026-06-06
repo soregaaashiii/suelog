@@ -62,7 +62,7 @@ class TabelogPasteParser
       access_raw: field_value("交通手段"),
       nearest_station_raw: extract_nearest_station_raw,
       nearest_station: extract_nearest_station,
-      opening_hours_raw: field_value("営業時間"),
+      opening_hours_raw: opening_hours_field_value,
       opening_hours_text: extract_opening_hours_text,
       opening_hours_json: extract_opening_hours_json,
       holiday_hours_text: extract_holiday_hours_text,
@@ -149,6 +149,38 @@ class TabelogPasteParser
     values.reject(&:blank?).join("\n").strip.presence
   end
 
+  def opening_hours_field_value
+    raw = field_value("営業時間").to_s
+    return nil if raw.blank?
+
+    lines = raw.lines.map(&:strip).reject(&:blank?)
+    kept = []
+
+    lines.each do |line|
+      break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|勤務時間|ホールスタッフ|調理師|料理長候補/)
+
+      kept << line
+    end
+
+    kept.join("\n").presence
+  end
+
+  def opening_hours_field_value
+    raw = field_value("営業時間").to_s
+    return nil if raw.blank?
+
+    lines = raw.lines.map(&:strip).reject(&:blank?)
+    kept = []
+
+    lines.each do |line|
+      break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|勤務時間|ホールスタッフ|調理師|料理長候補/)
+
+      kept << line
+    end
+
+    kept.join("\n").presence
+  end
+
   def section_text(label)
     idx = compact_lines.index { |line| line == label }
     return nil if idx.nil?
@@ -184,6 +216,10 @@ class TabelogPasteParser
       "住所",
       "交通手段",
       "営業時間",
+      "■ 定休日",
+      "■ 年末年始",
+      "■ご予約に関しまして",
+      "■ ご予約に関しまして",
       "予算",
       "予算（口コミ集計）",
       "支払い方法",
@@ -255,7 +291,7 @@ class TabelogPasteParser
   end
 
   def extract_opening_hours_text
-    raw = field_value("営業時間")
+    raw = opening_hours_field_value
     return nil if raw.blank?
 
     smoking_hours_by_day = extract_smoking_hours_by_day
@@ -298,7 +334,7 @@ class TabelogPasteParser
         next
       end
 
-      time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
+      time_match = line.match(/\A(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})\z/)
       if time_match
         current_day_keys = standard_day_keys if current_day_keys.blank?
         current_hours << "#{time_match[1]}-#{time_match[2]}"
@@ -314,7 +350,7 @@ class TabelogPasteParser
   end
 
   def extract_opening_hours_json
-    raw = field_value("営業時間")
+    raw = opening_hours_field_value
     return {} if raw.blank?
 
     periods_by_day = {}
@@ -335,6 +371,8 @@ class TabelogPasteParser
         current_days = []
         next
       end
+
+      next if line.match?(/\d{1,2}月\d{1,2}日|\d{4}年\d{1,2}月\d{1,2}日/)
 
       time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
       next unless time_match
@@ -387,17 +425,19 @@ class TabelogPasteParser
 
   def expand_days(line)
     text = line.to_s
+    normalized = text.gsub("祝前日", "祝前").gsub("祝後日", "祝後")
+    day_tokens = normalized.split(/[・、\/\s]+/).reject(&:blank?)
     days = []
 
-    days << "monday" if text.include?("月")
-    days << "tuesday" if text.include?("火")
-    days << "wednesday" if text.include?("水")
-    days << "thursday" if text.include?("木")
-    days << "friday" if text.include?("金")
-    days << "saturday" if text.include?("土")
-    days << "sunday" if text.include?("日")
-    days << "holiday" if text.include?("祝日") || (text.include?("祝") && !text.match?(/祝前|祝後/))
-    days << "pre_holiday" if text.include?("祝前")
+    days << "monday" if day_tokens.include?("月")
+    days << "tuesday" if day_tokens.include?("火")
+    days << "wednesday" if day_tokens.include?("水")
+    days << "thursday" if day_tokens.include?("木")
+    days << "friday" if day_tokens.include?("金")
+    days << "saturday" if day_tokens.include?("土")
+    days << "sunday" if day_tokens.include?("日")
+    days << "holiday" if day_tokens.include?("祝日") || day_tokens.include?("祝") || day_tokens.include?("祝後")
+    days << "pre_holiday" if day_tokens.include?("祝前")
 
     days.uniq
   end
@@ -413,7 +453,7 @@ class TabelogPasteParser
     return false if text.start_with?("■")
     return false if text.match?(/営業時間|定休日|休業|年末年始|変更|通常営業|ランチ|ディナー|最終入店/)
 
-    text.match?(/\A[月火水木金土日祝・、\/\s]+(?:曜日|曜)?\z/) ||
+    text.match?(/\A[月火水木金土日祝前後・、\/\s]+(?:曜日|曜)?\z/) ||
       text.match?(/\A(?:祝日|祝前日|祝後日|土日祝|平日)\z/)
   end
 
@@ -550,7 +590,22 @@ class TabelogPasteParser
   end
 
   def extract_last_order_text
-    nil
+    raw = opening_hours_field_value.to_s
+    return nil if raw.blank?
+
+    last_orders = raw.lines.map(&:strip).filter_map do |line|
+      normalized = line.tr("：", ":")
+
+      if normalized.match?(/\AL\.?O\.?\s*(.+)\z/i)
+        normalized.sub(/\AL\.?O\.?\s*/i, "").strip
+      elsif normalized.match?(/L\.?O\.?\s*(料理|ドリンク)?\s*(\d{1,2}:\d{2})/i)
+        label = Regexp.last_match(1).to_s
+        time = Regexp.last_match(2).to_s
+        label.present? ? "#{label}#{time}" : time
+      end
+    end
+
+    last_orders.reject(&:blank?).uniq.join(" / ").presence
   end
 
   def extract_private_room_type(raw)
