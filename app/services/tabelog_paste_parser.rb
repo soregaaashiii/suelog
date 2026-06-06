@@ -157,23 +157,8 @@ class TabelogPasteParser
     kept = []
 
     lines.each do |line|
-      break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|勤務時間|ホールスタッフ|調理師|料理長候補/)
-
-      kept << line
-    end
-
-    kept.join("\n").presence
-  end
-
-  def opening_hours_field_value
-    raw = field_value("営業時間").to_s
-    return nil if raw.blank?
-
-    lines = raw.lines.map(&:strip).reject(&:blank?)
-    kept = []
-
-    lines.each do |line|
-      break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|勤務時間|ホールスタッフ|調理師|料理長候補/)
+      break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|ホールスタッフ|調理師|料理長候補/)
+      break if line.match?(/\A勤務時間/)
 
       kept << line
     end
@@ -324,15 +309,23 @@ class TabelogPasteParser
         next
       end
 
-      if line.match?(/定休日|休み|休業/)
-        current_day_keys.each do |day_key|
-          rows_by_day[day_key] = "#{day_label(day_key)} 定休日"
+      cleaned = line.sub(/\A■\s*/, "").strip
+
+      if cleaned.match?(/\A定休日[:：]?\z/)
+        if current_hours.present?
+          flush_hours.call
+        elsif current_day_keys.present?
+          current_day_keys.each do |day_key|
+            rows_by_day[day_key] = "#{day_label(day_key)} 定休日"
+          end
         end
 
         current_day_keys = []
         current_hours = []
         next
       end
+
+      next if cleaned.match?(/年中無休|無休/)
 
       time_match = line.match(/\A(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})\z/)
       if time_match
@@ -364,13 +357,20 @@ class TabelogPasteParser
         next
       end
 
-      if line.match?(/定休日|休み|休業/)
-        current_days.each do |day_key|
-          periods_by_day[day_key] = []
+      cleaned = line.sub(/\A■\s*/, "").strip
+
+      if cleaned.match?(/\A定休日[:：]?\z/)
+        if current_days.present? && current_days.none? { |day_key| periods_by_day[day_key].present? }
+          current_days.each do |day_key|
+            periods_by_day[day_key] = []
+          end
         end
+
         current_days = []
         next
       end
+
+      next if cleaned.match?(/年中無休|無休/)
 
       next if line.match?(/\d{1,2}月\d{1,2}日|\d{4}年\d{1,2}月\d{1,2}日/)
 
