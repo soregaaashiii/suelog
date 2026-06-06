@@ -21,7 +21,9 @@
     boxShadow: "0 2px 8px rgba(0,0,0,0.25)"
   });
 
-  button.addEventListener("click", () => {
+  const sendToSuelog = () => {
+    if (button.disabled) return;
+
     button.disabled = true;
     button.textContent = "送信中...";
 
@@ -53,6 +55,20 @@
       button.disabled = false;
       button.textContent = "吸えログへ送る";
     }, 1000);
+  };
+
+  button.addEventListener("click", sendToSuelog);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    if (event.isComposing) return;
+    if (event.repeat) return;
+
+    const tagName = event.target?.tagName?.toLowerCase();
+    if (["input", "textarea", "select", "button"].includes(tagName)) return;
+
+    event.preventDefault();
+    sendToSuelog();
   });
 
   document.body.appendChild(button);
