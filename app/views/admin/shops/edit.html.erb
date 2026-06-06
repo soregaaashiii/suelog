@@ -449,3 +449,25 @@
   </div>
 <% end %>
 
+<% if params[:from] == "shop_import" %>
+  <script>
+    document.addEventListener("keydown", function(event) {
+      if (event.key !== "Enter") return;
+      if (event.isComposing) return;
+
+      const target = event.target;
+      const tagName = target.tagName.toLowerCase();
+
+      if (tagName === "textarea") return;
+      if (tagName === "button") return;
+      if (target.type === "submit") return;
+
+      const approveButton = document.querySelector('input[type="submit"][name="commit_action"][value="approve"]');
+      if (!approveButton) return;
+
+      event.preventDefault();
+      approveButton.click();
+    });
+  </script>
+<% end %>
+
