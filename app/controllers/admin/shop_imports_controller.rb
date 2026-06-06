@@ -209,7 +209,11 @@ class Admin::ShopImportsController < Admin::BaseController
       end
     end
 
-    Shop.where(id: ids.compact.uniq.first(10)).order(created_at: :desc)
+    Shop.where(id: ids.compact.uniq.first(10))
+        .where(approved: true)
+        .where(rejected: false)
+        .where(on_hold: false)
+        .order(created_at: :desc)
   rescue StandardError => e
     Rails.logger.warn("[shop_import duplicate_candidates_for] #{e.class}: #{e.message}")
     []
