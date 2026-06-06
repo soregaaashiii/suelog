@@ -529,7 +529,8 @@ class TabelogPasteParser
     text = [raw, @text].compact.join("\n")
 
     return "all_smoking" if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)
-    return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|分煙/)
+    return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース/)
+    return "unknown" if text.match?(/分煙/)
     return "all_smoking" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "unknown" if text.match?(/全席禁煙|禁煙|不明/)
 
