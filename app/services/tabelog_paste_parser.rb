@@ -321,6 +321,14 @@ class TabelogPasteParser
         next
       end
 
+      if line.match?(/定休日|休み|休業/)
+        current_days.each do |day_key|
+          periods_by_day[day_key] = []
+        end
+        current_days = []
+        next
+      end
+
       time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
       next unless time_match
       current_days = standard_day_keys if current_days.blank?
@@ -334,7 +342,16 @@ class TabelogPasteParser
     periods_by_day.each_with_object({}) do |(day_key, periods), result|
       periods = periods.uniq
 
-      if periods.size >= 2
+      if periods.blank?
+        result[day_key] = {
+          "closed" => true,
+          "open" => "",
+          "close" => "",
+          "break_enabled" => false,
+          "break_start" => "",
+          "break_end" => ""
+        }
+      elsif periods.size >= 2
         first_open, first_close = periods[0]
         second_open, second_close = periods[1]
 
