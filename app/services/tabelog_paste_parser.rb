@@ -45,7 +45,7 @@ class TabelogPasteParser
 
   def build_metadata
     genre_raw = field_value("ジャンル")
-    smoking_raw = field_value("禁煙・喫煙")
+    smoking_raw = field_value_with_continuation("禁煙・喫煙")
     private_room_raw = field_value("個室")
     space_raw = field_value("空間・設備")
     drink_raw = field_value("ドリンク")
@@ -127,6 +127,26 @@ class TabelogPasteParser
     end
 
     values.join("\n").strip.presence
+  end
+
+  def field_value_with_continuation(label)
+    idx = compact_lines.index { |line| line == label || line.start_with?("#{label}\t") }
+    return nil if idx.nil?
+
+    values = []
+    current = compact_lines[idx]
+
+    if current.include?("\t")
+      values << current.split("\t", 2).last.to_s.strip
+    end
+
+    compact_lines[(idx + 1)..].to_a.each do |line|
+      break if known_label?(line)
+
+      values << line
+    end
+
+    values.reject(&:blank?).join("\n").strip.presence
   end
 
   def section_text(label)
@@ -233,6 +253,7 @@ class TabelogPasteParser
     values = raw.to_s.split(/[、,\/]/).map(&:strip).reject(&:blank?)
     values.reject { |genre| genre == normalize_genre(raw) }.join("、").presence
   end
+
   def extract_opening_hours_text
     raw = field_value("営業時間")
     return nil if raw.blank?
@@ -284,6 +305,7 @@ class TabelogPasteParser
 
     ordered_day_keys.filter_map { |day_key| rows_by_day[day_key] }.join("\n").presence
   end
+
   def extract_opening_hours_json
     raw = field_value("営業時間")
     return {} if raw.blank?
@@ -376,7 +398,7 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
-    smoking_raw = field_value("禁煙・喫煙").to_s
+    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
     opening_raw = field_value("営業時間").to_s
     return {} if smoking_raw.blank?
 
@@ -439,29 +461,37 @@ class TabelogPasteParser
     }[day_key]
   end
 
-  def apply_smoking_suffix_to_hours(day_key, current_hours, smoking_hours_by_day)
-    smoking_range = smoking_hours_by_day[day_key]
+  def apply_smoking_suffix_to_hours(_day_key, current_hours, smoking_hours_by_day)
+    return current_hours if smoking_hours_by_day.blank?
 
-    return current_hours if smoking_range.blank?
-
-    current_hours.map do |hour|
-      plain_hour = hour.to_s.sub(/（L\.O\. [^)]+）/, "")
-
-      if plain_hour == smoking_range
-        hour
-      else
-        hour
-      end
-    end
+    current_hours
   end
 
   def extract_closed_days_text
+    top_closed_day =
+      @text.match(/定休日[：:]\s*(.+)/)&.captures&.first&.strip
+
+    return top_closed_day if top_closed_day.present?
+
     raw = field_value("営業時間").to_s
     return "不定休" if raw.include?("不定休")
     return "無休" if raw.include?("無休") || raw.include?("年中無休")
 
-    line = raw.lines.map(&:strip).find { |v| v.match?(/定休日/) }
-    line.to_s.sub(/■\s*/, "").sub(/定休日[:：]?/, "").strip.presence
+    lines = raw.lines.map(&:strip).reject(&:blank?)
+
+    lines.each_with_index do |line, index|
+      cleaned = line.sub(/\A■\s*/, "").strip
+
+      if cleaned.match?(/\A定休日[:：]?\z/)
+        return lines[(index + 1)..].to_a.find { |v| v.present? && !v.start_with?("■") }.to_s.strip.presence
+      end
+
+      if cleaned.match?(/\A定休日[:：]/)
+        return cleaned.sub(/\A定休日[:：]?/, "").strip.presence
+      end
+    end
+
+    nil
   end
 
   def extract_special_hours_note
@@ -558,18 +588,33 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
-    smoking_raw = field_value("禁煙・喫煙").to_s
+    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
     opening_raw = field_value("営業時間").to_s
+    scoped_text = [smoking_raw, opening_raw].join("\n")
 
-    start_hour = smoking_raw[/(\d{1,2})[:：]00までは全席禁煙/, 1]
-    return nil if start_hour.blank?
+    start_time =
+      scoped_text[/(\d{1,2}[:：]\d{2})\s*までは全席禁煙/, 1] ||
+      scoped_text[/(\d{1,2}[:：]\d{2})\s*[〜~～-]?\s*喫煙可/, 1]
 
-    start_time = format("%02d:00", start_hour.to_i)
+    if start_time.blank? &&
+       scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙/) &&
+       opening_time_ranges(opening_raw).size >= 2
+      second_open, second_close = opening_time_ranges(opening_raw)[1]
+      return "#{second_open} - #{second_close}"
+    end
+
+    return nil if start_time.blank?
+
+    start_time = start_time.tr("：", ":")
     end_time = latest_closing_time_from_opening_hours(opening_raw)
 
     return start_time if end_time.blank?
 
     "#{start_time} - #{end_time}"
+  end
+
+  def opening_time_ranges(raw)
+    raw.to_s.scan(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
   end
 
   def latest_closing_time_from_opening_hours(raw)
