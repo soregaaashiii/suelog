@@ -289,8 +289,12 @@ class TabelogPasteParser
       end
 
       if line.match?(/定休日|休み|休業/)
-        flush_hours.call
+        current_day_keys.each do |day_key|
+          rows_by_day[day_key] = "#{day_label(day_key)} 定休日"
+        end
+
         current_day_keys = []
+        current_hours = []
         next
       end
 
@@ -303,7 +307,10 @@ class TabelogPasteParser
 
     flush_hours.call
 
-    ordered_day_keys.filter_map { |day_key| rows_by_day[day_key] }.join("\n").presence
+    ordered_day_keys.filter_map { |day_key| rows_by_day[day_key] }
+                    .reject { |row| row.to_s.include?("定休日") }
+                    .join("\n")
+                    .presence
   end
 
   def extract_opening_hours_json
