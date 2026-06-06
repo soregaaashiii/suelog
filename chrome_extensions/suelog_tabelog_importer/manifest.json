@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Suelog Tabelog Importer",
+  "version": "0.1.0",
+  "description": "食べログ店舗ページを吸えログの貼り付けインポートへ送信する",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://tabelog.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": [
+    "https://tabelog.com/*",
+    "https://suelog.jp/*"
+  ]
+}

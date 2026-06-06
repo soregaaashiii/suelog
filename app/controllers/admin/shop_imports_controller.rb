@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 class Admin::ShopImportsController < Admin::BaseController
+  skip_forgery_protection only: :preview
   def new
-    @raw_text = params[:raw_text].to_s
+    @raw_text = import_raw_text_param
     @parsed_attrs = {}
     @duplicate_candidates = []
 
@@ -17,7 +18,7 @@ class Admin::ShopImportsController < Admin::BaseController
   end
 
   def preview
-    @raw_text = params[:raw_text].to_s
+    @raw_text = import_raw_text_param
     @parsed_attrs = {}
     @duplicate_candidates = []
 
@@ -39,7 +40,7 @@ class Admin::ShopImportsController < Admin::BaseController
   end
 
   def create
-    raw_text = params[:raw_text].to_s
+    raw_text = import_raw_text_param
 
     if raw_text.blank?
       redirect_to new_admin_shop_import_path,
@@ -103,6 +104,16 @@ class Admin::ShopImportsController < Admin::BaseController
   end
 
   private
+
+  def import_raw_text_param
+    raw_text = params[:raw_text].to_s
+    source_url = params[:source_url].to_s.strip
+
+    return raw_text if source_url.blank?
+    return raw_text if raw_text.include?(source_url)
+
+    [raw_text, "", "食べログURL", source_url].join("\n")
+  end
 
   def filter_shop_attrs(attrs)
     attrs.to_h.select { |key, _| Shop.column_names.include?(key.to_s) }
