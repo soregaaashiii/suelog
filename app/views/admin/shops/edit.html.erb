@@ -147,6 +147,11 @@
   <% existing_hours_data = @shop.respond_to?(:opening_hours_data) ? @shop.opening_hours_data : {} %>
   <% time_options = [["未設定", ""]] + (0..96).map { |i| t = "%02d:%02d" % [i / 4, (i % 4) * 15]; [t, t] } %>
 
+  <% imported_smoking_hours = @shop.smoking_hours_text.to_s.strip %>
+  <% imported_smoking_match = imported_smoking_hours.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/) %>
+  <% imported_smoking_start = imported_smoking_match.present? ? imported_smoking_match[1] : "" %>
+  <% imported_smoking_end = imported_smoking_match.present? ? imported_smoking_match[2] : "" %>
+
   <div style="display:grid; gap:10px;">
     <% days.each do |key, label| %>
       <% existing_day_key = day_key_map[key] %>
@@ -197,16 +202,20 @@
           <%= select_tag nil, options_for_select(time_options, existing_break_enabled ? existing_close : ""), data: { hours_end2: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
         </div>
 
+        <% existing_smoking_start = imported_smoking_start.presence || existing_open %>
+        <% existing_smoking_end = imported_smoking_end.presence || existing_close %>
+        <% smoking_same_checked = imported_smoking_start.blank? && imported_smoking_end.blank? %>
+
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700;">
-            <input type="checkbox" data-smoking-same checked>
+            <input type="checkbox" data-smoking-same <%= "checked" if smoking_same_checked %>>
             喫煙時間は営業時間と同じ
           </label>
 
           <span style="font-size:12px; font-weight:700; color:#555;">喫煙可</span>
-          <%= select_tag nil, options_for_select(time_options, existing_open), data: { smoking_start: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+          <%= select_tag nil, options_for_select(time_options, existing_smoking_start), data: { smoking_start: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
           <span>〜</span>
-          <%= select_tag nil, options_for_select(time_options, existing_close), data: { smoking_end: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+          <%= select_tag nil, options_for_select(time_options, existing_smoking_end), data: { smoking_end: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
         </div>
       </div>
     <% end %>
