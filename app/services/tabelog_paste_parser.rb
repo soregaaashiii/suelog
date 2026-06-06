@@ -626,12 +626,16 @@ class TabelogPasteParser
   end
 
   def extract_smoking_note
+    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
     text = @text.to_s
 
     notes = []
 
-    if text.match?(/分煙/)
-      notes << "分煙"
+    smoking_raw.lines.map(&:strip).reject(&:blank?).each do |line|
+      next if line.match?(/2020年4月1日|受動喫煙対策|改正健康増進法|最新の情報|ご来店前|店舗にご確認/)
+      next if line.match?(/\A\d{1,2}[:：]\d{2}\s*[〜~～-]?\s*喫煙可\z/)
+
+      notes << line if line.match?(/分煙|喫煙できるスペース|喫煙スペース|喫煙ブース|喫煙所|喫煙可|禁煙/)
     end
 
     if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)
