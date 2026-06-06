@@ -630,6 +630,10 @@ class TabelogPasteParser
 
     notes = []
 
+    if text.match?(/分煙/)
+      notes << "分煙"
+    end
+
     if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)
       notes << "テラス席は喫煙可"
     end
