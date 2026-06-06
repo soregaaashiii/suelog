@@ -151,6 +151,7 @@ class Admin::ShopImportsController < Admin::BaseController
       :all_you_can_drink_type,
       :smoking_area,
       :smoking_type,
+      :smoking_hours_text,
       :public_store_details
     ].each do |key|
       fill_if_blank.call(key)

@@ -32,6 +32,7 @@ class TabelogPasteParser
       all_you_can_drink_type: metadata[:all_you_can_drink_type],
       smoking_area: metadata[:smoking_area],
       smoking_type: metadata[:smoking_type],
+      smoking_hours_text: metadata[:smoking_hours_text],
       public_store_details: metadata[:smoking_note],
       raw_import_text: @raw_text,
       import_metadata: metadata,
@@ -79,6 +80,7 @@ class TabelogPasteParser
       smoking_raw: smoking_raw,
       smoking_area: extract_smoking_area(smoking_raw),
       smoking_type: extract_smoking_type(smoking_raw),
+      smoking_hours_text: extract_smoking_hours_text,
       smoking_note: extract_smoking_note,
       charter_raw: field_value("貸切"),
       parking_raw: field_value("駐車場"),
@@ -460,23 +462,22 @@ class TabelogPasteParser
     return nil if raw.blank?
 
     notes = []
-    capture = false
 
     raw.lines.map(&:strip).reject(&:blank?).each do |line|
-      if line.match?(/年末年始|臨時休業|休業|営業時間変更|通常営業/)
-        capture = true
-        notes << line.sub(/\A■\s*/, "")
-        next
-      end
+      cleaned = line.sub(/\A■\s*/, "").strip
 
-      if capture
-        break if line.match?(/\A■\s*(営業時間|定休日)\z/)
+      next if cleaned.blank?
+      next if day_label_line?(cleaned)
+      next if cleaned.match?(/\A\d{1,2}:\d{2}\s*[-〜~－–—]\s*\d{1,2}:\d{2}\z/)
+      next if cleaned.match?(/\AL\.?O\.?\s*(?:料理|ドリンク|フード)?\s*\d{1,2}:\d{2}\z/i)
+      next if cleaned.match?(/\A定休日\z/)
 
-        notes << line
+      if cleaned.match?(/定休日|不定休|無休|年末年始|臨時休業|休業|営業時間変更|通常営業|準ずる|日曜、祝日やってます/)
+        notes << cleaned
       end
     end
 
-    notes.join("\n").strip.presence
+    notes.uniq.join("\n").strip.presence
   end
 
   def extract_budget_range
@@ -546,6 +547,29 @@ class TabelogPasteParser
     return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
 
     "unknown"
+  end
+
+  def extract_smoking_hours_text
+    smoking_raw = field_value("禁煙・喫煙").to_s
+    opening_raw = field_value("営業時間").to_s
+
+    start_hour = smoking_raw[/(\d{1,2})[:：]00までは全席禁煙/, 1]
+    return nil if start_hour.blank?
+
+    start_time = format("%02d:00", start_hour.to_i)
+    end_time = latest_closing_time_from_opening_hours(opening_raw)
+
+    return start_time if end_time.blank?
+
+    "#{start_time} - #{end_time}"
+  end
+
+  def latest_closing_time_from_opening_hours(raw)
+    times = raw.to_s.scan(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/).map do |_open_time, close_time|
+      close_time
+    end
+
+    times.last
   end
 
   def extract_smoking_note
