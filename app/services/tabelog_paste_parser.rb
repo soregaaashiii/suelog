@@ -153,6 +153,7 @@ class TabelogPasteParser
   def known_labels
     @known_labels ||= [
       "店名",
+      "受賞・選出歴",
       "ジャンル",
       "予約・",
       "お問い合わせ",
@@ -235,8 +236,8 @@ class TabelogPasteParser
     flush_hours = lambda do
       if current_day_keys.present? && current_hours.present?
         current_day_keys.each do |day_key|
-          smoking_suffix = smoking_hours_suffix_for_day(day_key, current_hours, smoking_hours_by_day)
-          rows_by_day[day_key] = "#{day_label(day_key)} #{current_hours.join(', ')}#{smoking_suffix}"
+          display_hours = apply_smoking_suffix_to_hours(day_key, current_hours, smoking_hours_by_day)
+          rows_by_day[day_key] = "#{day_label(day_key)} #{display_hours.join(', ')}"
         end
       end
 
@@ -366,12 +367,13 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
-    raw = field_value("禁煙・喫煙").to_s
-    return {} if raw.blank?
+    smoking_raw = field_value("禁煙・喫煙").to_s
+    opening_raw = field_value("営業時間").to_s
+    return {} if smoking_raw.blank?
 
     result = {}
 
-    raw.lines.map(&:strip).reject(&:blank?).each do |line|
+    smoking_raw.lines.map(&:strip).reject(&:blank?).each do |line|
       next unless line.include?("喫煙")
       next if line.match?(/営業時間中|終日/)
 
@@ -380,15 +382,34 @@ class TabelogPasteParser
 
       range = "#{time_match[1]}-#{time_match[2]}"
       days = expand_days(line)
-
-      days = %w[monday tuesday wednesday thursday friday saturday sunday holiday pre_holiday] if days.blank?
+      days = standard_day_keys if days.blank?
 
       days.each do |day|
         result[day] = range
       end
     end
 
+    if result.blank? &&
+       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙/) &&
+       smoking_raw.match?(/分煙|喫煙可|加熱式/)
+      dinner_range = dinner_range_from_opening_hours(opening_raw)
+
+      if dinner_range.present?
+        standard_day_keys.each do |day|
+          result[day] = dinner_range
+        end
+      end
+    end
+
     result
+  end
+
+  def dinner_range_from_opening_hours(raw)
+    ranges = raw.to_s.scan(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/).map do |open_text, close_text|
+      "#{open_text}-#{close_text}"
+    end
+
+    ranges.uniq[1]
   end
 
   def ordered_day_keys
@@ -409,17 +430,20 @@ class TabelogPasteParser
     }[day_key]
   end
 
-  def smoking_hours_suffix_for_day(day_key, current_hours, smoking_hours_by_day)
-    return "" if smoking_hours_by_day.blank?
-
+  def apply_smoking_suffix_to_hours(day_key, current_hours, smoking_hours_by_day)
     smoking_range = smoking_hours_by_day[day_key]
-    return "" if smoking_range.blank?
 
-    opening_ranges = current_hours.map { |hour| hour.to_s.sub(/（L\.O\. [^)]+）/, "") }
+    return current_hours if smoking_range.blank?
 
-    return "" if opening_ranges.include?(smoking_range)
+    current_hours.map do |hour|
+      plain_hour = hour.to_s.sub(/（L\.O\. [^)]+）/, "")
 
-    "（喫煙可：#{smoking_range}）"
+      if plain_hour == smoking_range
+        hour
+      else
+        hour
+      end
+    end
   end
 
   def extract_closed_days_text
