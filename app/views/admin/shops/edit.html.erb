@@ -148,7 +148,30 @@
   <% time_options = [["未設定", ""]] + (0..96).map { |i| t = "%02d:%02d" % [i / 4, (i % 4) * 15]; [t, t] } %>
 
   <% imported_smoking_hours = @shop.smoking_hours_text.to_s.strip %>
-  <% imported_smoking_match = imported_smoking_hours.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/) %>
+  <% imported_smoking_hours_by_day = {} %>
+
+  <% smoking_day_key_map = {
+    "月" => "mon",
+    "火" => "tue",
+    "水" => "wed",
+    "木" => "thu",
+    "金" => "fri",
+    "土" => "sat",
+    "日" => "sun",
+    "祝日" => "holiday",
+    "祝前" => "before_holiday"
+  } %>
+
+  <% imported_smoking_hours.lines.map(&:strip).each do |line| %>
+    <% smoking_line_match = line.match(/\A(\S+)\s+(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/) %>
+
+    <% if smoking_line_match.present? %>
+      <% smoking_day_key = smoking_day_key_map[smoking_line_match[1]] %>
+      <% imported_smoking_hours_by_day[smoking_day_key] = [smoking_line_match[2], smoking_line_match[3]] if smoking_day_key.present? %>
+    <% end %>
+  <% end %>
+
+  <% imported_smoking_match = imported_smoking_hours_by_day.blank? ? imported_smoking_hours.match(/\A(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})\z/) : nil %>
   <% imported_smoking_start = imported_smoking_match.present? ? imported_smoking_match[1] : "" %>
   <% imported_smoking_end = imported_smoking_match.present? ? imported_smoking_match[2] : "" %>
 
@@ -202,9 +225,10 @@
           <%= select_tag nil, options_for_select(time_options, existing_break_enabled ? existing_close : ""), data: { hours_end2: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
         </div>
 
-        <% existing_smoking_start = imported_smoking_start.presence || existing_open %>
-        <% existing_smoking_end = imported_smoking_end.presence || existing_close %>
-        <% smoking_same_checked = imported_smoking_start.blank? && imported_smoking_end.blank? %>
+        <% imported_day_smoking_hours = imported_smoking_hours_by_day[key] %>
+        <% existing_smoking_start = imported_day_smoking_hours.present? ? imported_day_smoking_hours[0] : (imported_smoking_start.presence || existing_open) %>
+        <% existing_smoking_end = imported_day_smoking_hours.present? ? imported_day_smoking_hours[1] : (imported_smoking_end.presence || existing_close) %>
+        <% smoking_same_checked = imported_day_smoking_hours.blank? && imported_smoking_start.blank? && imported_smoking_end.blank? %>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700;">
