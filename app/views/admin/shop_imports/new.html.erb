@@ -52,7 +52,8 @@
       "席タイプ" => Array(@parsed_attrs[:seat_type_tags]).join(" / "),
       "飲み放題" => @parsed_attrs[:all_you_can_drink_type],
       "喫煙エリア" => @parsed_attrs[:smoking_area],
-      "喫煙タイプ" => @parsed_attrs[:smoking_type]
+      "喫煙タイプ" => @parsed_attrs[:smoking_type],
+      "喫煙可能時間帯" => @parsed_attrs[:smoking_hours_text]
     }.each do |label, value| %>
       <tr>
         <th style="border:1px solid #ddd; background:#f8f8f8; padding:8px; width:160px; text-align:left;"><%= label %></th>
