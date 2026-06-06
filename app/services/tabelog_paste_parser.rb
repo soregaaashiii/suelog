@@ -296,10 +296,13 @@ class TabelogPasteParser
     end
 
     raw.lines.map(&:strip).reject(&:blank?).each do |line|
-      lo_match = line.match(/\AL\.?O\.?\s*(?:料理|ドリンク|フード)?\s*(\d{1,2}:\d{2})\z/i)
+      lo_text =
+        if line.match?(/\AL\.?O\.?/i)
+          line.sub(/\AL\.?O\.?\s*/i, "").strip
+        end
 
-      if lo_match && current_hours.last.present?
-        current_hours[-1] = "#{current_hours.last.sub(/（L\.O\. [^)]+）/, "")}（L.O. #{lo_match[1]}）"
+      if lo_text.present? && current_hours.last.present?
+        current_hours[-1] = "#{current_hours.last.sub(/（L\.O\. [^)]+）/, "")}（L.O. #{lo_text}）"
         next
       end
 
@@ -463,7 +466,7 @@ class TabelogPasteParser
 
   def extract_smoking_hours_by_day
     smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
-    opening_raw = field_value("営業時間").to_s
+    opening_raw = opening_hours_field_value.to_s
     return {} if smoking_raw.blank?
 
     result = {}
@@ -668,19 +671,28 @@ class TabelogPasteParser
 
   def extract_smoking_hours_text
     smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
-    opening_raw = field_value("営業時間").to_s
+    opening_text = extract_opening_hours_text.to_s
+    opening_raw = opening_hours_field_value.to_s
     scoped_text = [smoking_raw, opening_raw].join("\n")
+
+    if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙/) &&
+       scoped_text.match?(/ディナー.*分煙|ディナー.*喫煙|分煙|喫煙可/)
+      rows = opening_text.lines.map(&:strip).filter_map do |line|
+        day = line[/\A(\S+)\s+/, 1]
+        ranges = line.scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
+
+        next if day.blank? || ranges.size < 2
+
+        dinner_open, dinner_close = ranges[1]
+        "#{day} #{dinner_open} - #{dinner_close}"
+      end
+
+      return rows.join("\n").presence if rows.present?
+    end
 
     start_time =
       scoped_text[/(\d{1,2}[:：]\d{2})\s*までは全席禁煙/, 1] ||
       scoped_text[/(\d{1,2}[:：]\d{2})\s*[〜~～-]?\s*喫煙可/, 1]
-
-    if start_time.blank? &&
-       scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙/) &&
-       opening_time_ranges(opening_raw).size >= 2
-      second_open, second_close = opening_time_ranges(opening_raw)[1]
-      return "#{second_open} - #{second_close}"
-    end
 
     return nil if start_time.blank?
 
