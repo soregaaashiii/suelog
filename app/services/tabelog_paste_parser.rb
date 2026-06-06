@@ -186,7 +186,14 @@ class TabelogPasteParser
   end
 
   def extract_phone
-    @text.match(/0\d{1,4}[-ー−]?\d{1,4}[-ー−]?\d{3,4}/)&.[](0)&.tr("ー−", "-")
+    raw = field_value("予約・お問い合わせ").presence ||
+          field_value("お問い合わせ").presence ||
+          field_value("電話番号").presence
+
+    return nil if raw.blank?
+    return nil if raw.match?(/非公開|未公開|不明/)
+
+    raw.match(/0\d{1,4}[-ー−]?\d{1,4}[-ー−]?\d{3,4}/)&.[](0)&.tr("ー−", "-")
   end
 
   def extract_address
