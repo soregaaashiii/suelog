@@ -673,6 +673,30 @@ class TabelogPasteParser
     opening_raw = opening_hours_field_value.to_s
     scoped_text = [smoking_raw, opening_raw].join("\n")
 
+    weekday_lunch_non_smoking_match =
+      scoped_text.match(/平日ランチタイム（?月[～〜\-−ー]金）?\s*(\d{1,2}:\d{2})[～〜\-−ー](\d{1,2}:\d{2}).*全席禁煙/)
+
+    if weekday_lunch_non_smoking_match
+      smoking_start = weekday_lunch_non_smoking_match[2]
+
+      rows = opening_text.lines.map(&:strip).filter_map do |line|
+        day = line[/\A(\S+)\s+/, 1]
+        ranges = line.scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
+
+        next if day.blank? || ranges.blank?
+
+        open_time, close_time = ranges.last
+
+        if %w[月 火 水 木 金].include?(day)
+          "#{day} #{smoking_start} - #{close_time}"
+        else
+          "#{day} #{open_time} - #{close_time}"
+        end
+      end
+
+      return rows.join("\n").presence if rows.present?
+    end
+
     if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙/) &&
        scoped_text.match?(/ディナー.*分煙|ディナー.*喫煙|分煙|喫煙可/)
       rows = opening_text.lines.map(&:strip).filter_map do |line|
