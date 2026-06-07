@@ -648,7 +648,7 @@ class TabelogPasteParser
     text = [raw, @text].compact.join("\n")
 
     return "all_smoking" if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)
-    return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース/)
+    return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|喫煙専用室/)
     return "unknown" if text.match?(/分煙/)
     return "all_smoking" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "unknown" if text.match?(/全席禁煙|禁煙|不明/)
@@ -726,7 +726,7 @@ class TabelogPasteParser
       next if line.match?(/2020年4月1日|受動喫煙対策|改正健康増進法|最新の情報|ご来店前|店舗にご確認/)
       next if line.match?(/\A\d{1,2}[:：]\d{2}\s*[〜~～-]?\s*喫煙可\z/)
 
-      notes << line if line.match?(/分煙|喫煙できるスペース|喫煙スペース|喫煙ブース|喫煙所|喫煙可|禁煙/)
+      notes << line if line.match?(/分煙|喫煙できるスペース|喫煙スペース|喫煙ブース|喫煙所|喫煙専用室|喫煙可|禁煙/)
     end
 
     if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)
