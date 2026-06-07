@@ -77,7 +77,7 @@ class Admin::ShopImportsController < Admin::BaseController
 
     shop = Shop.new(filter_shop_attrs(parsed_attrs))
 
-    shop.last_confirmed_on ||= Date.current if shop.respond_to?(:last_confirmed_on)
+    shop.last_confirmed_on ||= Date.current if shop.respond_to?(:last_confirmed_on=)
     shop.smoking_unverified = true if shop.respond_to?(:smoking_unverified=)
     shop.approved = false if shop.respond_to?(:approved=)
     shop.rejected = false if shop.respond_to?(:rejected=)

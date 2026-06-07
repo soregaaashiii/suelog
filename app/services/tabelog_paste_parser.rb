@@ -535,16 +535,7 @@ class TabelogPasteParser
   end
 
   def extract_closed_days_text
-    top_closed_day =
-      @text.match(/定休日[：:]\s*(.+)/)&.captures&.first&.strip
-
-    return top_closed_day if top_closed_day.present?
-
-    raw = field_value("営業時間").to_s
-    return "不定休" if raw.include?("不定休")
-    return "無休" if raw.include?("無休") || raw.include?("年中無休")
-
-    lines = raw.lines.map(&:strip).reject(&:blank?)
+    lines = @text.lines.map(&:strip).reject(&:blank?)
 
     lines.each_with_index do |line, index|
       cleaned = line.sub(/\A■\s*/, "").strip
@@ -557,6 +548,10 @@ class TabelogPasteParser
         return cleaned.sub(/\A定休日[:：]?/, "").strip.presence
       end
     end
+
+    raw = opening_hours_field_value.to_s
+    return "不定休" if raw.include?("不定休")
+    return "無休" if raw.include?("無休") || raw.include?("年中無休")
 
     nil
   end
@@ -588,8 +583,11 @@ class TabelogPasteParser
     raw = field_value("予算").presence || field_value("予算（口コミ集計）")
     return nil if raw.blank?
 
-    raw.match(/￥?\s*[\d,]+[〜～\-−ー]\s*￥?\s*[\d,]+円?/)&.[](0)&.gsub("￥", "").strip.presence ||
-      raw.lines.map(&:strip).find { |line| line.match?(/[\d,]+[〜～\-−ー][\d,]+/) }.presence
+    matched_range = raw.match(/￥?\s*[\d,]+[〜～\-−ー]\s*￥?\s*[\d,]+円?/)&.[](0)
+
+    matched_range.to_s.gsub("￥", "").strip.presence ||
+      raw.lines.map(&:strip).find { |line| line.match?(/[\d,]+[〜～\-−ー][\d,]+/) }.presence ||
+      raw.lines.map(&:strip).find { |line| line.match?(/～?￥?\s*[\d,]+/) }&.gsub("￥", "")&.strip.presence
   end
 
   def extract_last_order_text
