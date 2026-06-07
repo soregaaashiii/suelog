@@ -227,9 +227,9 @@ class TabelogPasteParser
   end
 
   def extract_phone
-    raw = field_value("予約・お問い合わせ").presence ||
-          field_value("お問い合わせ").presence ||
-          field_value("電話番号").presence
+    raw = field_value("電話番号").presence ||
+          field_value("予約・お問い合わせ").presence ||
+          field_value("お問い合わせ").presence
 
     return nil if raw.blank?
     return nil if raw.match?(/非公開|未公開|不明/)
