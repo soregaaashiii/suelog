@@ -471,6 +471,21 @@ class TabelogPasteParser
 
     result = {}
 
+    until_hour_match = smoking_raw.match(/(\d{1,2})時まで.*(?:加熱式たばこ限定|加熱式タバコ限定|加熱式限定|喫煙可)/)
+
+    if until_hour_match
+      smoking_end = format_hour_text(until_hour_match[1])
+
+      opening_ranges_by_day.each do |day_key, ranges|
+        first_open = ranges.first&.first
+        next if first_open.blank?
+
+        result[day_key] = "#{first_open}-#{smoking_end}"
+      end
+
+      return result if result.present?
+    end
+
     smoking_raw.lines.map(&:strip).reject(&:blank?).each do |line|
       next unless line.include?("喫煙")
       next if line.match?(/営業時間中|終日/)
@@ -496,6 +511,40 @@ class TabelogPasteParser
         standard_day_keys.each do |day|
           result[day] = dinner_range
         end
+      end
+    end
+
+    result
+  end
+
+  def format_hour_text(hour)
+    format("%02d:00", hour.to_i)
+  end
+
+  def opening_ranges_by_day
+    raw = opening_hours_field_value.to_s
+    result = {}
+    current_days = []
+
+    raw.lines.map(&:strip).reject(&:blank?).each do |line|
+      if day_label_line?(line)
+        current_days = expand_days(line)
+        next
+      end
+
+      cleaned = line.sub(/\A■\s*/, "").strip
+      next if cleaned.match?(/\A定休日[:：]?\z/)
+      next if cleaned.match?(/年中無休|無休/)
+      next if line.match?(/\d{1,2}月\d{1,2}日|\d{4}年\d{1,2}月\d{1,2}日/)
+
+      time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
+      next unless time_match
+
+      current_days = standard_day_keys if current_days.blank?
+
+      current_days.each do |day_key|
+        result[day_key] ||= []
+        result[day_key] << [time_match[1], time_match[2]]
       end
     end
 
@@ -528,10 +577,17 @@ class TabelogPasteParser
     }[day_key]
   end
 
-  def apply_smoking_suffix_to_hours(_day_key, current_hours, smoking_hours_by_day)
+  def apply_smoking_suffix_to_hours(day_key, current_hours, smoking_hours_by_day)
     return current_hours if smoking_hours_by_day.blank?
 
-    current_hours
+    smoking_range = smoking_hours_by_day[day_key]
+    return current_hours if smoking_range.blank?
+
+    current_hours.map do |hours|
+      next hours if hours.include?("（喫煙可：")
+
+      "#{hours}（喫煙可：#{smoking_range}）"
+    end
   end
 
   def extract_closed_days_text
@@ -658,6 +714,7 @@ class TabelogPasteParser
     text = [raw, @text].compact.join("\n")
 
     return "electronic_only" if text.match?(/電子タバコのみ|電子たばこのみ|加熱式たばこのみ|加熱式のみ/)
+    return "electronic_only" if text.match?(/加熱式たばこ限定|加熱式タバコ限定|加熱式限定/)
     return "electronic_only" if text.match?(/加熱式/)
     return "both_ok" if text.match?(/紙.*加熱|加熱.*紙/)
     return "paper_only" if text.match?(/紙タバコ|紙たばこ/)
@@ -711,6 +768,10 @@ class TabelogPasteParser
 
       return rows.join("\n").presence if rows.present?
     end
+
+    until_hour_match = scoped_text.match(/(\d{1,2})時まで.*(?:加熱式たばこ限定|加熱式タバコ限定|加熱式限定|喫煙可)/)
+
+    return "#{until_hour_match[1]}:00まで" if until_hour_match
 
     start_time =
       scoped_text[/(\d{1,2}[:：]\d{2})\s*までは全席禁煙/, 1] ||
