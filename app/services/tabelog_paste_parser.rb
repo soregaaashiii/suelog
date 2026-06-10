@@ -62,8 +62,8 @@ class TabelogPasteParser
       phone: extract_phone,
       address: extract_address,
       access_raw: field_value("交通手段"),
-      nearest_station_raw: extract_nearest_station_raw,
-      nearest_station: extract_nearest_station,
+      nearest_station_raw: field_value("交通手段"),
+      nearest_station: extract_nearest_station_text,
       opening_hours_raw: opening_hours_field_value,
       opening_hours_text: extract_opening_hours_text,
       opening_hours_json: extract_opening_hours_json,
@@ -249,21 +249,11 @@ class TabelogPasteParser
   end
 
   def extract_nearest_station_raw
-    access = field_value("交通手段").to_s
-    station_line = access.lines.map(&:strip).find { |line| line.match?(/駅から\d+m|駅からは|駅きた|駅/) }
-    station_line.presence
+    field_value("交通手段")
   end
 
-  def extract_nearest_station
-    access = field_value("交通手段").to_s
-
-    distance_line = access.lines.map(&:strip).find { |line| line.match?(/(.+?駅)から\d+m/) }
-    return distance_line.match(/(.+?駅)から\d+m/)[1].strip if distance_line.present?
-
-    station_line = access.lines.map(&:strip).find { |line| line.match?(/(.+?駅)/) }
-    return station_line.match(/(.+?駅)/)[1].strip if station_line.present?
-
-    nil
+  def extract_nearest_station_text
+    field_value("交通手段").to_s.strip.presence
   end
 
   def normalize_genre(raw)
