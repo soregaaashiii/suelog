@@ -161,6 +161,8 @@ class TabelogPasteParser
     lines.each do |line|
       break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|ホールスタッフ|調理師|料理長候補/)
       break if line.match?(/\A勤務時間/)
+      break if line.match?(/\A■\s*営業時間/)
+      break if line.match?(/\A【月/)
 
       kept << line
     end
