@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class TabelogPasteParser
+  TIME_RANGE_PATTERN = /(\d{1,2}:\d{2})\s*[-〜～~－–—]\s*(\d{1,2}:\d{2})/
+
   def self.call(raw_text)
     new(raw_text).call
   end
@@ -288,7 +290,10 @@ class TabelogPasteParser
       if current_day_keys.present? && current_hours.present?
         current_day_keys.each do |day_key|
           display_hours = apply_smoking_suffix_to_hours(day_key, current_hours, smoking_hours_by_day)
-          rows_by_day[day_key] = "#{day_label(day_key)} #{display_hours.join(', ')}"
+          label = day_label(day_key)
+          existing_hours = rows_by_day[day_key].to_s.sub(/\A#{Regexp.escape(label)}\s*/, "").split(/\s*,\s*/).reject(&:blank?)
+          merged_hours = (existing_hours + display_hours).uniq.sort_by { |hours| hours[/\d{1,2}:\d{2}/].to_s }
+          rows_by_day[day_key] = "#{label} #{merged_hours.join(', ')}"
         end
       end
 
@@ -297,8 +302,8 @@ class TabelogPasteParser
 
     raw.lines.map(&:strip).reject(&:blank?).each do |line|
       lo_text =
-        if line.match?(/\AL\.?O\.?/i)
-          line.sub(/\AL\.?O\.?\s*/i, "").strip
+        if line.match?(/\A[（(]?\s*L\.?O\.?/i)
+          line.sub(/\A[（(]?\s*L\.?O\.?\s*/i, "").sub(/[）)]\z/, "").strip
         end
 
       if lo_text.present? && current_hours.last.present?
@@ -330,7 +335,7 @@ class TabelogPasteParser
 
       next if cleaned.match?(/年中無休|無休/)
 
-      time_match = line.match(/\A(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})\z/)
+      time_match = line.match(TIME_RANGE_PATTERN)
       if time_match
         current_day_keys = standard_day_keys if current_day_keys.blank?
         current_hours << "#{time_match[1]}-#{time_match[2]}"
@@ -353,7 +358,7 @@ class TabelogPasteParser
     current_days = []
 
     raw.lines.map(&:strip).reject(&:blank?).each do |line|
-      next if line.match?(/\AL\.?O\.?\s*\d{1,2}:\d{2}\z/i)
+      next if line.match?(/\A[（(]?\s*L\.?O\.?\s*\d{1,2}:\d{2}[）)]?\z/i)
 
       if day_label_line?(line)
         current_days = expand_days(line)
@@ -374,11 +379,11 @@ class TabelogPasteParser
       end
 
       next if cleaned.match?(/年中無休|無休/)
-
       next if line.match?(/\d{1,2}月\d{1,2}日|\d{4}年\d{1,2}月\d{1,2}日/)
 
-      time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
+      time_match = line.match(TIME_RANGE_PATTERN)
       next unless time_match
+
       current_days = standard_day_keys if current_days.blank?
 
       current_days.each do |day_key|
@@ -432,6 +437,27 @@ class TabelogPasteParser
     day_tokens = normalized.split(/[・、\/\s]+/).reject(&:blank?)
     days = []
 
+    day_order = {
+      "月" => "monday",
+      "火" => "tuesday",
+      "水" => "wednesday",
+      "木" => "thursday",
+      "金" => "friday",
+      "土" => "saturday",
+      "日" => "sunday"
+    }
+
+    normalized.scan(/([月火水木金土日])[～〜\-−ー]([月火水木金土日])/).each do |start_day, end_day|
+      keys = day_order.keys
+      start_index = keys.index(start_day)
+      end_index = keys.index(end_day)
+      next if start_index.nil? || end_index.nil?
+
+      keys[start_index..end_index].each do |day|
+        days << day_order[day]
+      end
+    end
+
     days << "monday" if day_tokens.include?("月")
     days << "tuesday" if day_tokens.include?("火")
     days << "wednesday" if day_tokens.include?("水")
@@ -456,7 +482,7 @@ class TabelogPasteParser
     return false if text.start_with?("■")
     return false if text.match?(/営業時間|定休日|休業|年末年始|変更|通常営業|ランチ|ディナー|最終入店/)
 
-    text.match?(/\A[月火水木金土日祝前後・、\/\s]+(?:曜日|曜)?\z/) ||
+    text.match?(/\A[月火水木金土日祝前後・、\/\s～〜\-−ー]+(?:曜日|曜)?\z/) ||
       text.match?(/\A(?:祝日|祝前日|祝後日|土日祝|平日)\z/)
   end
 
@@ -490,7 +516,7 @@ class TabelogPasteParser
       next unless line.include?("喫煙")
       next if line.match?(/営業時間中|終日/)
 
-      time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
+      time_match = line.match(TIME_RANGE_PATTERN)
       next unless time_match
 
       range = "#{time_match[1]}-#{time_match[2]}"
@@ -503,14 +529,11 @@ class TabelogPasteParser
     end
 
     if result.blank? &&
-       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙/) &&
-       smoking_raw.match?(/分煙|喫煙可|加熱式/)
-      dinner_range = dinner_range_from_opening_hours(opening_raw)
-
-      if dinner_range.present?
-        standard_day_keys.each do |day|
-          result[day] = dinner_range
-        end
+       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチタイムのみ禁煙/) &&
+       smoking_raw.match?(/分煙|喫煙可|加熱式|全席喫煙/)
+      opening_ranges_by_day.each do |day_key, ranges|
+        dinner_range = latest_daily_time_range(ranges)
+        result[day_key] = dinner_range if dinner_range.present?
       end
     end
 
@@ -537,7 +560,7 @@ class TabelogPasteParser
       next if cleaned.match?(/年中無休|無休/)
       next if line.match?(/\d{1,2}月\d{1,2}日|\d{4}年\d{1,2}月\d{1,2}日/)
 
-      time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
+      time_match = line.match(TIME_RANGE_PATTERN)
       next unless time_match
 
       current_days = standard_day_keys if current_days.blank?
@@ -551,8 +574,25 @@ class TabelogPasteParser
     result
   end
 
+  def time_to_minutes(time_text)
+    hour, minute = time_text.to_s.split(":").map(&:to_i)
+    (hour * 60) + minute
+  end
+
+  def latest_daily_time_range(ranges)
+    ranges.to_a
+          .uniq
+          .max_by do |open_text, close_text|
+            open_minutes = time_to_minutes(open_text)
+            close_minutes = time_to_minutes(close_text)
+            close_minutes += 24 * 60 if close_minutes <= open_minutes
+            close_minutes
+          end
+          &.then { |open_text, close_text| "#{open_text}-#{close_text}" }
+  end
+
   def dinner_range_from_opening_hours(raw)
-    ranges = raw.to_s.scan(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/).map do |open_text, close_text|
+    ranges = raw.to_s.scan(TIME_RANGE_PATTERN).map do |open_text, close_text|
       "#{open_text}-#{close_text}"
     end
 
@@ -585,6 +625,7 @@ class TabelogPasteParser
 
     current_hours.map do |hours|
       next hours if hours.include?("（喫煙可：")
+      next hours unless hours.start_with?(smoking_range)
 
       "#{hours}（喫煙可：#{smoking_range}）"
     end
@@ -623,8 +664,8 @@ class TabelogPasteParser
 
       next if cleaned.blank?
       next if day_label_line?(cleaned)
-      next if cleaned.match?(/\A\d{1,2}:\d{2}\s*[-〜~－–—]\s*\d{1,2}:\d{2}\z/)
-      next if cleaned.match?(/\AL\.?O\.?\s*(?:料理|ドリンク|フード)?\s*\d{1,2}:\d{2}\z/i)
+      next if cleaned.match?(/\A\d{1,2}:\d{2}\s*[-〜～~－–—]\s*\d{1,2}:\d{2}\z/)
+      next if cleaned.match?(/\A[（(]?\s*L\.?O\.?\s*(?:料理|ドリンク|フード)?\s*\d{1,2}:\d{2}[）)]?\z/i)
       next if cleaned.match?(/\A定休日\z/)
 
       if cleaned.match?(/定休日|不定休|無休|年末年始|臨時休業|休業|営業時間変更|通常営業|準ずる|日曜、祝日やってます/)
@@ -653,8 +694,8 @@ class TabelogPasteParser
     last_orders = raw.lines.map(&:strip).filter_map do |line|
       normalized = line.tr("：", ":")
 
-      if normalized.match?(/\AL\.?O\.?\s*(.+)\z/i)
-        normalized.sub(/\AL\.?O\.?\s*/i, "").strip
+      if normalized.match?(/\A[（(]?\s*L\.?O\.?\s*(.+?)[）)]?\z/i)
+        normalized.sub(/\A[（(]?\s*L\.?O\.?\s*/i, "").sub(/[）)]\z/, "").strip
       elsif normalized.match?(/L\.?O\.?\s*(料理|ドリンク)?\s*(\d{1,2}:\d{2})/i)
         label = Regexp.last_match(1).to_s
         time = Regexp.last_match(2).to_s
@@ -775,7 +816,7 @@ class TabelogPasteParser
 
     start_time =
       scoped_text[/(\d{1,2}[:：]\d{2})\s*までは全席禁煙/, 1] ||
-      scoped_text[/(\d{1,2}[:：]\d{2})\s*[〜~～-]?\s*喫煙可/, 1]
+      scoped_text[/(\d{1,2}[:：]\d{2})\s*[〜～~\-－–—]?\s*喫煙可/, 1]
 
     return nil if start_time.blank?
 
@@ -788,11 +829,11 @@ class TabelogPasteParser
   end
 
   def opening_time_ranges(raw)
-    raw.to_s.scan(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/)
+    raw.to_s.scan(TIME_RANGE_PATTERN)
   end
 
   def latest_closing_time_from_opening_hours(raw)
-    times = raw.to_s.scan(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/).map do |_open_time, close_time|
+    times = raw.to_s.scan(TIME_RANGE_PATTERN).map do |_open_time, close_time|
       close_time
     end
 
@@ -807,7 +848,7 @@ class TabelogPasteParser
 
     smoking_raw.lines.map(&:strip).reject(&:blank?).each do |line|
       next if line.match?(/2020年4月1日|受動喫煙対策|改正健康増進法|最新の情報|ご来店前|店舗にご確認/)
-      next if line.match?(/\A\d{1,2}[:：]\d{2}\s*[〜~～-]?\s*喫煙可\z/)
+      next if line.match?(/\A\d{1,2}[:：]\d{2}\s*[〜～~\-－–—]?\s*喫煙可\z/)
 
       notes << line if line.match?(/分煙|喫煙できるスペース|喫煙スペース|喫煙ブース|喫煙所|喫煙専用室|喫煙可|禁煙/)
     end
