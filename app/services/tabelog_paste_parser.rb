@@ -754,13 +754,13 @@ class TabelogPasteParser
   def extract_smoking_type(raw)
     text = [raw, @text].compact.join("\n")
 
-    return "electronic_only" if text.match?(/電子タバコのみ|電子たばこのみ|加熱式たばこのみ|加熱式のみ/)
+    return "electronic_only" if text.match?(/電子タバコのみ|電子たばこのみ|加熱式たばこのみ|加熱式タバコのみ|加熱式のみ/)
     return "electronic_only" if text.match?(/加熱式たばこ限定|加熱式タバコ限定|加熱式限定/)
-    return "electronic_only" if text.match?(/加熱式/)
     return "both_ok" if text.match?(/紙.*加熱|加熱.*紙/)
-    return "paper_only" if text.match?(/紙タバコ|紙たばこ/)
+    return "paper_only" if text.match?(/紙タバコのみ|紙たばこのみ|紙巻きのみ|紙巻たばこのみ/)
     return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|分煙/)
     return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
+    return "both_ok" if text.match?(/紙タバコ|紙たばこ/)
 
     "unknown"
   end
