@@ -521,7 +521,7 @@ class TabelogPasteParser
     end
 
     if result.blank? &&
-       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチタイムのみ禁煙/) &&
+       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチタイムのみ禁煙|ディナーのみ喫煙可/) &&
        smoking_raw.match?(/分煙|喫煙可|加熱式|全席喫煙/)
       opening_ranges_by_day.each do |day_key, ranges|
         dinner_range = latest_daily_time_range(ranges)
@@ -787,7 +787,7 @@ class TabelogPasteParser
       return rows.join("\n").presence if rows.present?
     end
 
-    if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙/) &&
+    if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙|ディナーのみ喫煙可/) &&
        scoped_text.match?(/ディナー.*分煙|ディナー.*喫煙|分煙|喫煙可/)
       rows = opening_text.lines.map(&:strip).filter_map do |line|
         day = line[/\A(\S+)\s+/, 1]
