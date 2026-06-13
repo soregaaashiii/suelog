@@ -763,13 +763,23 @@ class TabelogPasteParser
     opening_raw = opening_hours_field_value.to_s
     scoped_text = [smoking_raw, opening_raw].join("\n")
 
-weekday_lunch_non_smoking_match =
-      scoped_text.match(/平日ランチタイム（?月[～〜\-−ー]金）?\s*(\d{1,2}:\d{2})[～〜\-−ー](\d{1,2}:\d{2}).*全席禁煙/) ||
-      scoped_text.match(/(\d{1,2})時\s*[～〜~\-－–—]\s*(\d{1,2})時まで.*全席禁煙/)
+normalized_scoped_text =
+  scoped_text.tr(
+    "０１２３４５６７８９：",
+    "0123456789:"
+  )
 
-    if weekday_lunch_non_smoking_match
-smoking_start = weekday_lunch_non_smoking_match[2]
-      smoking_start = format_hour_text(smoking_start) unless smoking_start.include?(":")
+weekday_lunch_non_smoking_match =
+  normalized_scoped_text.match(/平日ランチタイム（?月[～〜\-−ー]金）?\s*(\d{1,2}:\d{2})[～〜\-−ー](\d{1,2}:\d{2}).*全席禁煙/) ||
+  normalized_scoped_text.match(/(\d{1,2}:\d{2})\s*[～〜~\-－–—]\s*(\d{1,2}:\d{2})まで.*(?:全席|全面)禁煙/) ||
+  normalized_scoped_text.match(/(\d{1,2})時\s*[～〜~\-－–—]\s*(\d{1,2})時まで.*(?:全席|全面)禁煙/)
+
+if weekday_lunch_non_smoking_match
+  smoking_start = weekday_lunch_non_smoking_match[2]
+  smoking_start = format_hour_text(smoking_start) unless smoking_start.include?(":")
+
+      explicit_weekday_lunch_rule =
+        normalized_scoped_text.match?(/平日ランチタイム|月[～〜\-−ー]金/)
 
       rows = opening_text.lines.map(&:strip).filter_map do |line|
         day = line[/\A(\S+)\s+/, 1]
@@ -777,13 +787,25 @@ smoking_start = weekday_lunch_non_smoking_match[2]
 
         next if day.blank? || ranges.blank?
 
-        open_time, close_time = ranges.last
+        smoking_ranges =
+          ranges.filter_map do |open_time, close_time|
+            if explicit_weekday_lunch_rule && !%w[月 火 水 木 金].include?(day)
+              "#{open_time} - #{close_time}"
+            elsif time_to_minutes(close_time) > time_to_minutes(smoking_start)
+              start_time =
+                if time_to_minutes(open_time) < time_to_minutes(smoking_start)
+                  smoking_start
+                else
+                  open_time
+                end
 
-        if %w[月 火 水 木 金].include?(day)
-          "#{day} #{smoking_start} - #{close_time}"
-        else
-          "#{day} #{open_time} - #{close_time}"
-        end
+              "#{start_time} - #{close_time}"
+            end
+          end
+
+        next if smoking_ranges.blank?
+
+        "#{day} #{smoking_ranges.join(', ')}"
       end
 
       return rows.join("\n").presence if rows.present?
