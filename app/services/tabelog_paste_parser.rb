@@ -504,6 +504,24 @@ class TabelogPasteParser
       return result if result.present?
     end
 
+    after_hour_match = smoking_raw.match(/(\d{1,2})時以降.*喫煙可|(\d{1,2})時から.*喫煙可/)
+
+    if after_hour_match
+      smoking_start = format_hour_text(after_hour_match.captures.compact.first)
+
+      opening_ranges_by_day.each do |day_key, ranges|
+        dinner_range = latest_daily_time_range(ranges)
+        next if dinner_range.blank?
+
+        open_text, close_text = dinner_range.split("-", 2)
+        next unless time_inside_range?(open_text, close_text, smoking_start)
+
+        result[day_key] = "#{smoking_start}-#{close_text}"
+      end
+
+      return result if result.present?
+    end
+
     smoking_raw.lines.map(&:strip).reject(&:blank?).each do |line|
       next unless line.include?("喫煙")
       next if line.match?(/営業時間中|終日/)
@@ -571,6 +589,41 @@ class TabelogPasteParser
     (hour * 60) + minute
   end
 
+  def normalized_time_range(open_text, close_text)
+    open_minutes = time_to_minutes(open_text)
+    close_minutes = time_to_minutes(close_text)
+    close_minutes += 24 * 60 if close_minutes <= open_minutes
+    [open_minutes, close_minutes]
+  end
+
+  def time_inside_range?(open_text, close_text, target_time)
+    open_minutes, close_minutes = normalized_time_range(open_text, close_text)
+    target_minutes = time_to_minutes(target_time)
+    target_minutes += 24 * 60 if target_minutes < open_minutes
+
+    target_minutes >= open_minutes && target_minutes < close_minutes
+  end
+
+  def smoking_range_applies_to_hours?(smoking_range, hours)
+    smoking_match = smoking_range.to_s.match(/\A#{TIME_RANGE_PATTERN}\z/)
+    hours_match = hours.to_s.match(TIME_RANGE_PATTERN)
+
+    return false if smoking_match.blank? || hours_match.blank?
+
+    smoking_start = smoking_match[1]
+    smoking_end = smoking_match[2]
+    hours_start = hours_match[1]
+    hours_end = hours_match[2]
+
+    hours_open_minutes, hours_close_minutes = normalized_time_range(hours_start, hours_end)
+    smoking_open_minutes, smoking_close_minutes = normalized_time_range(smoking_start, smoking_end)
+
+    smoking_open_minutes += 24 * 60 if smoking_open_minutes < hours_open_minutes
+    smoking_close_minutes += 24 * 60 if smoking_close_minutes <= smoking_open_minutes
+
+    smoking_open_minutes >= hours_open_minutes && smoking_close_minutes <= hours_close_minutes
+  end
+
   def latest_daily_time_range(ranges)
     ranges.to_a
           .uniq
@@ -617,7 +670,7 @@ class TabelogPasteParser
 
     current_hours.map do |hours|
       next hours if hours.include?("（喫煙可：")
-      next hours unless hours.start_with?(smoking_range)
+      next hours unless smoking_range_applies_to_hours?(smoking_range, hours)
 
       "#{hours}（喫煙可：#{smoking_range}）"
     end
