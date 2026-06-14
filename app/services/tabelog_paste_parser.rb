@@ -545,8 +545,8 @@ class TabelogPasteParser
     end
 
     if result.blank? &&
-       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチ：禁煙|ランチタイムのみ禁煙|ディナーのみ喫煙可/) &&
-       smoking_raw.match?(/ディナー.*喫煙|ディナー：喫煙可|分煙|喫煙可|加熱式|全席喫煙/)
+       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチ：禁煙|ランチタイムのみ禁煙|ランチタイム除く|ディナーのみ喫煙可/) &&
+       smoking_raw.match?(/ディナー.*喫煙|ディナー：喫煙可|分煙|喫煙可|加熱式|全席喫煙|喫煙スペース/)
       opening_ranges_by_day.each do |day_key, ranges|
         ranges = ranges.to_a.uniq
         next if ranges.blank?
@@ -557,10 +557,10 @@ class TabelogPasteParser
             "#{open_text}-#{close_text}"
           else
             open_text, close_text = ranges[0]
-            dinner_start = "17:00"
+            lunch_end_time = inferred_lunch_end_time
 
-            if time_inside_range?(open_text, close_text, dinner_start)
-              "#{dinner_start}-#{close_text}"
+            if lunch_end_time.present? && time_inside_range?(open_text, close_text, lunch_end_time)
+              "#{lunch_end_time}-#{close_text}"
             end
           end
 
@@ -623,6 +623,15 @@ class TabelogPasteParser
     target_minutes += 24 * 60 if target_minutes < open_minutes
 
     target_minutes >= open_minutes && target_minutes < close_minutes
+  end
+
+  def inferred_lunch_end_time
+    opening_ranges_by_day.values.filter_map do |ranges|
+      ranges = ranges.to_a.uniq
+      next unless ranges.size >= 2
+
+      ranges.first&.last
+    end.min_by { |time| time_to_minutes(time) }
   end
 
   def smoking_range_applies_to_hours?(smoking_range, hours)
@@ -885,8 +894,8 @@ if weekday_lunch_non_smoking_match
       return rows.join("\n").presence if rows.present?
     end
 
-    if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙|ランチ：禁煙|ディナーのみ喫煙可/) &&
-       scoped_text.match?(/ディナー.*分煙|ディナー.*喫煙|ディナー：喫煙可|分煙|喫煙可/)
+    if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙|ランチ：禁煙|ランチタイム除く|ディナーのみ喫煙可/) &&
+       scoped_text.match?(/ディナー.*分煙|ディナー.*喫煙|ディナー：喫煙可|分煙|喫煙可|喫煙スペース/)
       rows = opening_text.lines.map(&:strip).filter_map do |line|
         day = line[/\A(\S+)\s+/, 1]
         ranges = line.scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
@@ -899,15 +908,14 @@ if weekday_lunch_non_smoking_match
             ["#{dinner_open} - #{dinner_close}"]
           else
             open_time, close_time = ranges[0]
-            dinner_start = "17:00"
+            lunch_end_time = inferred_lunch_end_time
 
-            if time_inside_range?(open_time, close_time, dinner_start)
-              ["#{dinner_start} - #{close_time}"]
+            if lunch_end_time.present? && time_inside_range?(open_time, close_time, lunch_end_time)
+              ["#{lunch_end_time} - #{close_time}"]
             else
               []
             end
           end
-
         next if smoking_ranges.blank?
 
         "#{day} #{smoking_ranges.join(', ')}"
