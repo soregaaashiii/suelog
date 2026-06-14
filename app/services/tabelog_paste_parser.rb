@@ -161,8 +161,12 @@ class TabelogPasteParser
     lines.each do |line|
       break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|ホールスタッフ|調理師|料理長候補/)
       break if line.match?(/\A勤務時間/)
-      break if line.match?(/\A■\s*営業時間/)
-      break if line.match?(/\A【月/)
+      if line.match?(/\A■\s*営業時間\z/)
+        break if kept.present?
+        next
+      end
+
+      break if kept.present? && line.match?(/\A【月/)
 
       kept << line
     end
@@ -424,7 +428,7 @@ class TabelogPasteParser
   end
 
   def expand_days(line)
-    text = line.to_s
+    text = line.to_s.strip.gsub(/\A[\[【]/, "").gsub(/[\]】]\z/, "")
     normalized = text.gsub("祝前日", "祝前").gsub("祝後日", "祝後")
     day_tokens = normalized.split(/[・、\/\s]+/).reject(&:blank?)
     days = []
@@ -469,6 +473,8 @@ class TabelogPasteParser
 
   def day_label_line?(line)
     text = line.to_s.strip
+    text = text.gsub(/\A[\[【]/, "").gsub(/[\]】]\z/, "")
+
     return false if text.blank?
     return false if text.match?(/\d{1,2}:\d{2}/)
     return false if text.start_with?("■")
@@ -539,11 +545,26 @@ class TabelogPasteParser
     end
 
     if result.blank? &&
-       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチタイムのみ禁煙|ディナーのみ喫煙可/) &&
-       smoking_raw.match?(/分煙|喫煙可|加熱式|全席喫煙/)
+       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチ：禁煙|ランチタイムのみ禁煙|ディナーのみ喫煙可/) &&
+       smoking_raw.match?(/ディナー.*喫煙|ディナー：喫煙可|分煙|喫煙可|加熱式|全席喫煙/)
       opening_ranges_by_day.each do |day_key, ranges|
-        dinner_range = latest_daily_time_range(ranges)
-        result[day_key] = dinner_range if dinner_range.present?
+        ranges = ranges.to_a.uniq
+        next if ranges.blank?
+
+        smoking_range =
+          if ranges.size >= 2
+            open_text, close_text = ranges[1]
+            "#{open_text}-#{close_text}"
+          else
+            open_text, close_text = ranges[0]
+            dinner_start = "17:00"
+
+            if time_inside_range?(open_text, close_text, dinner_start)
+              "#{dinner_start}-#{close_text}"
+            end
+          end
+
+        result[day_key] = smoking_range if smoking_range.present?
       end
     end
 
@@ -864,16 +885,32 @@ if weekday_lunch_non_smoking_match
       return rows.join("\n").presence if rows.present?
     end
 
-    if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙|ディナーのみ喫煙可/) &&
-       scoped_text.match?(/ディナー.*分煙|ディナー.*喫煙|分煙|喫煙可/)
+    if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙|ランチ：禁煙|ディナーのみ喫煙可/) &&
+       scoped_text.match?(/ディナー.*分煙|ディナー.*喫煙|ディナー：喫煙可|分煙|喫煙可/)
       rows = opening_text.lines.map(&:strip).filter_map do |line|
         day = line[/\A(\S+)\s+/, 1]
         ranges = line.scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
 
-        next if day.blank? || ranges.size < 2
+        next if day.blank? || ranges.blank?
 
-        dinner_open, dinner_close = ranges[1]
-        "#{day} #{dinner_open} - #{dinner_close}"
+        smoking_ranges =
+          if ranges.size >= 2
+            dinner_open, dinner_close = ranges[1]
+            ["#{dinner_open} - #{dinner_close}"]
+          else
+            open_time, close_time = ranges[0]
+            dinner_start = "17:00"
+
+            if time_inside_range?(open_time, close_time, dinner_start)
+              ["#{dinner_start} - #{close_time}"]
+            else
+              []
+            end
+          end
+
+        next if smoking_ranges.blank?
+
+        "#{day} #{smoking_ranges.join(', ')}"
       end
 
       return rows.join("\n").presence if rows.present?
