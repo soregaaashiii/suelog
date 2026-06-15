@@ -545,7 +545,7 @@ class TabelogPasteParser
     end
 
     if result.blank? &&
-       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチ：禁煙|ランチタイムのみ禁煙|ランチタイム除く|ディナーのみ喫煙可/) &&
+       smoking_raw.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチ：禁煙|ランチタイムのみ禁煙|ランチタイム除く|お昼.*禁煙|昼.*禁煙|ディナーのみ喫煙可/) &&
        smoking_raw.match?(/ディナー.*喫煙|ディナー：喫煙可|分煙|喫煙可|加熱式|全席喫煙|喫煙スペース/)
       opening_ranges_by_day.each do |day_key, ranges|
         ranges = ranges.to_a.uniq
@@ -558,10 +558,9 @@ class TabelogPasteParser
           else
             open_text, close_text = ranges[0]
             lunch_end_time = inferred_lunch_end_time
+            smoking_start = smoking_start_after_lunch(open_text, close_text, lunch_end_time)
 
-            if lunch_end_time.present? && time_inside_range?(open_text, close_text, lunch_end_time)
-              "#{lunch_end_time}-#{close_text}"
-            end
+            "#{smoking_start}-#{close_text}" if smoking_start.present?
           end
 
         result[day_key] = smoking_range if smoking_range.present?
@@ -626,12 +625,27 @@ class TabelogPasteParser
   end
 
   def inferred_lunch_end_time
+    full_opening_raw = field_value("営業時間").to_s.tr("：", ":")
+
+    lunch_end =
+      full_opening_raw[/ランチ.*?[～〜~\-－–—]\s*(\d{1,2}:\d{2})/, 1]
+
+    return lunch_end if lunch_end.present?
+
     opening_ranges_by_day.values.filter_map do |ranges|
       ranges = ranges.to_a.uniq
       next unless ranges.size >= 2
 
       ranges.first&.last
     end.min_by { |time| time_to_minutes(time) }
+  end
+
+  def smoking_start_after_lunch(open_text, close_text, lunch_end_time)
+    return nil if lunch_end_time.blank?
+    return open_text if time_to_minutes(open_text) >= time_to_minutes(lunch_end_time)
+    return lunch_end_time if time_inside_range?(open_text, close_text, lunch_end_time)
+
+    nil
   end
 
   def smoking_range_applies_to_hours?(smoking_range, hours)
@@ -894,7 +908,7 @@ if weekday_lunch_non_smoking_match
       return rows.join("\n").presence if rows.present?
     end
 
-    if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙|ランチ：禁煙|ランチタイム除く|ディナーのみ喫煙可/) &&
+    if scoped_text.match?(/ランチタイム.*禁煙|ランチ.*禁煙|ランチは禁煙|ランチ：禁煙|ランチタイム除く|お昼.*禁煙|昼.*禁煙|ディナーのみ喫煙可/) &&
        scoped_text.match?(/ディナー.*分煙|ディナー.*喫煙|ディナー：喫煙可|分煙|喫煙可|喫煙スペース/)
       rows = opening_text.lines.map(&:strip).filter_map do |line|
         day = line[/\A(\S+)\s+/, 1]
@@ -909,9 +923,10 @@ if weekday_lunch_non_smoking_match
           else
             open_time, close_time = ranges[0]
             lunch_end_time = inferred_lunch_end_time
+            smoking_start = smoking_start_after_lunch(open_time, close_time, lunch_end_time)
 
-            if lunch_end_time.present? && time_inside_range?(open_time, close_time, lunch_end_time)
-              ["#{lunch_end_time} - #{close_time}"]
+            if smoking_start.present?
+              ["#{smoking_start} - #{close_time}"]
             else
               []
             end
