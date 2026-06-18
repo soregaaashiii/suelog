@@ -869,10 +869,11 @@ normalized_scoped_text =
 weekday_lunch_non_smoking_match =
   normalized_scoped_text.match(/平日ランチタイム（?月[～〜\-−ー]金）?\s*(\d{1,2}:\d{2})[～〜\-−ー](\d{1,2}:\d{2}).*全席禁煙/) ||
   normalized_scoped_text.match(/(\d{1,2}:\d{2})\s*[～〜~\-－–—]\s*(\d{1,2}:\d{2})まで.*(?:全席|全面)禁煙/) ||
-  normalized_scoped_text.match(/(\d{1,2})時\s*[～〜~\-－–—]\s*(\d{1,2})時まで.*(?:全席|全面)禁煙/)
+  normalized_scoped_text.match(/(\d{1,2})時\s*[～〜~\-－–—]\s*(\d{1,2})時まで.*(?:全席|全面)禁煙/) ||
+  normalized_scoped_text.match(/open\s*[～〜~\-－–—]\s*(\d{1,2})時まで禁煙/i)
 
 if weekday_lunch_non_smoking_match
-  smoking_start = weekday_lunch_non_smoking_match[2]
+  smoking_start = weekday_lunch_non_smoking_match.captures.compact.last
   smoking_start = format_hour_text(smoking_start) unless smoking_start.include?(":")
 
       explicit_weekday_lunch_rule =
