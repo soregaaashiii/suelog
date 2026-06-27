@@ -68,7 +68,8 @@
       <button type="button" class="article-snippet-btn" data-snippet="[ad image=ads/bresmile.jpg url=https://px.a8.net/svt/ejp?a8mat=ここにA8リンク]">自前画像広告</button>
       <button type="button" class="article-snippet-btn" data-snippet="[related-articles slugs=ここに関連記事のスラッグ,ここに関連記事のスラッグ]">関連記事</button>
       <button type="button" class="article-snippet-btn" data-snippet="[toc]">目次</button>
-      <button type="button" class="article-snippet-btn" data-snippet='[toc_item title="ここに目次タイトル"]'>目次項目</button>
+      <button type="button" class="article-snippet-btn" data-snippet='[toc_item title="ここに大見出し"]'>目次：大見出し</button>
+      <button type="button" class="article-snippet-btn" data-snippet='[toc_sub title="ここに小見出し"]'>目次：小見出し</button>
     </div>
   </div>
 
@@ -88,7 +89,6 @@
 
   <div style="margin-bottom:12px;">
     <label style="display:inline-flex; align-items:center; gap:8px;">
-      <%= f.check_box :toc_enabled %>
       <span>目次を表示する</span>
     </label>
     <div style="font-size:12px; color:#666; margin-top:6px;">
