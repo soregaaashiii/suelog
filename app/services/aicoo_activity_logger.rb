@@ -14,13 +14,17 @@ class AicooActivityLogger
     return { ok: true, skipped: true, reason: "disabled" } if disabled?
 
     payload = build_payload(attributes)
+    log_start(payload)
     response = post_payload(payload)
+    Rails.logger.info(
+      "[AicooActivityLogger] HTTP status=#{response.code} response body=#{response.body.to_s.truncate(500)}"
+    )
     return { ok: true, status: response.code.to_i } if response.is_a?(Net::HTTPSuccess)
 
     Rails.logger.warn("[AicooActivityLogger] failed HTTP #{response.code}: #{response.body}")
     { ok: false, error: "HTTP #{response.code}" }
   rescue StandardError => e
-    Rails.logger.warn("[AicooActivityLogger] failed #{e.class}: #{e.message}")
+    Rails.logger.warn("[AicooActivityLogger] error class=#{e.class} message=#{e.message}")
     { ok: false, error: "#{e.class}: #{e.message}" }
   end
 
@@ -46,6 +50,7 @@ class AicooActivityLogger
 
   def post_payload(payload)
     uri = URI.join(ENV.fetch("AICOO_API_URL"), "/api/aicoo/activity_logs")
+    Rails.logger.info("[AicooActivityLogger] POST先URL=#{uri}")
     request = Net::HTTP::Post.new(uri)
     request["Content-Type"] = "application/json"
     request["Authorization"] = "Bearer #{ENV.fetch("AICOO_ACTIVITY_API_TOKEN")}"
@@ -54,5 +59,15 @@ class AicooActivityLogger
     Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 5, read_timeout: 10) do |http|
       http.request(request)
     end
+  end
+
+  def log_start(payload)
+    Rails.logger.info(
+      "[AicooActivityLogger] start " \
+      "AICOO_API_URL=#{ENV['AICOO_API_URL'].presence || '(blank)'} " \
+      "business_key=#{payload[:business_key].presence || '(blank)'} " \
+      "source_type=#{payload[:source_type].presence || '(blank)'} " \
+      "source_id=#{payload[:source_id].presence || '(blank)'}"
+    )
   end
 end

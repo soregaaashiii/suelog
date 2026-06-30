@@ -1228,11 +1228,15 @@ class Shop < ApplicationRecord
   end
 
   def log_aicoo_shop_created
+    Rails.logger.info("[AICOO Activity] Shop after_commit fired action=create shop_id=#{id}")
     log_aicoo_shop_activity("data_added", "店舗を追加")
   end
 
   def log_aicoo_shop_updated
     changed_fields = previous_changes.except("updated_at")
+    Rails.logger.info(
+      "[AICOO Activity] Shop after_commit fired action=update shop_id=#{id} changed_fields=#{changed_fields.keys.join(',')}"
+    )
     return if changed_fields.blank?
 
     activity_type = if changed_fields.key?("on_hold") && on_hold?
@@ -1245,6 +1249,7 @@ class Shop < ApplicationRecord
   end
 
   def log_aicoo_shop_destroyed
+    Rails.logger.info("[AICOO Activity] Shop after_commit fired action=destroy shop_id=#{id}")
     log_aicoo_shop_activity("data_deleted", "店舗を削除")
   end
 
