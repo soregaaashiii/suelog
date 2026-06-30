@@ -294,6 +294,9 @@ class Shop < ApplicationRecord
 
   geocoded_by :geocode_address, latitude: :latitude, longitude: :longitude
   after_validation :safe_geocode, if: :should_geocode?
+  after_commit :log_aicoo_shop_created, on: :create
+  after_commit :log_aicoo_shop_updated, on: :update
+  after_commit :log_aicoo_shop_destroyed, on: :destroy
 
   def safe_geocode
     geocode
@@ -1222,5 +1225,47 @@ class Shop < ApplicationRecord
     end
   rescue StandardError
     "状態不明"
+  end
+
+  def log_aicoo_shop_created
+    log_aicoo_shop_activity("data_added", "店舗を追加")
+  end
+
+  def log_aicoo_shop_updated
+    changed_fields = previous_changes.except("updated_at")
+    return if changed_fields.blank?
+
+    activity_type = if changed_fields.key?("on_hold") && on_hold?
+      "data_unpublished"
+    else
+      "data_updated"
+    end
+    title = activity_type == "data_unpublished" ? "店舗を非公開" : "店舗を更新"
+    log_aicoo_shop_activity(activity_type, title)
+  end
+
+  def log_aicoo_shop_destroyed
+    log_aicoo_shop_activity("data_deleted", "店舗を削除")
+  end
+
+  def log_aicoo_shop_activity(activity_type, title)
+    AicooActivityLogger.log(
+      business_key: "suelog",
+      activity_type:,
+      source_type: "shop",
+      source_id: id,
+      title: "#{title}: #{name}",
+      summary: "#{name} の店舗情報を変更しました",
+      occurred_at: Time.current.iso8601,
+      metadata: {
+        area: area,
+        smoking_area: smoking_area,
+        smoking_type: smoking_type,
+        nearest_station: nearest_station,
+        source: source,
+        tabelog_url: tabelog_url,
+        changed_fields: previous_changes.except("updated_at").keys
+      }.compact
+    )
   end
 end
