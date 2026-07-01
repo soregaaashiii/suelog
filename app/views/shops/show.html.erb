@@ -617,6 +617,28 @@
   min-height: 44px;
 }
 
+.shop-show__visitCheck {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #eee6d6;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.shop-show__visitCheckTitle {
+  margin: 0 0 4px;
+  color: #111111;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.shop-show__visitCheckText {
+  margin: 0;
+  color: #666666;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 .shop-show__heroActions {
   display: flex;
   gap: 10px;
@@ -639,6 +661,13 @@
   min-height: 48px;
   padding: 0 18px;
   font-size: 14px;
+}
+
+.shop-show__heroCtaNote {
+  margin: 10px 0 0;
+  color: #666666;
+  font-size: 12px;
+  line-height: 1.7;
 }
 
 @media (max-width: 640px) {
@@ -1436,7 +1465,9 @@
           <%= link_to "電話する",
                       track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
                       class: "ss-btn ss-btn--ghost shop-show__cvSub shop-show__fvSub" %>
-        <% elsif @shop.address.present? %>
+        <% end %>
+
+        <% if @shop.address.present? %>
           <%= link_to "地図を見る",
                       track_click_shop_path(@shop, kind: "map_click", target_url: map_target_url),
                       target: "_blank",
@@ -1444,6 +1475,10 @@
                       class: "ss-btn ss-btn--ghost shop-show__cvSub shop-show__fvSub" %>
         <% end %>
       </div>
+
+      <p class="shop-show__heroCtaNote">
+        来店前に、喫煙可否・営業時間・場所を確認しておくと安心です。
+      </p>
     <% end %>
   </section>
 
@@ -1641,12 +1676,12 @@
         </div>
       </section>
     <% else %>
-      <% if booking_links.present? || @shop.latitude.present? || @shop.longitude.present? %>
+      <% if booking_links.present? || @shop.phone.present? || @shop.address.present? || @shop.latitude.present? || @shop.longitude.present? %>
         <section class="shop-show__section shop-show__bookingSection">
           <div class="shop-show__bookingHead">
-            <h2 class="shop-show__sectionTitle">予約・来店前に確認</h2>
+            <h2 class="shop-show__sectionTitle">この店に行く前に確認</h2>
             <p class="shop-show__bookingLead">
-              空席や予約可否を確認してから向かうと安心です。
+              空席・電話・地図を確認してから向かうと安心です。
             </p>
           </div>
 
@@ -1673,6 +1708,20 @@
           <% end %>
 
           <div class="shop-show__bookingSubActions">
+            <% if @shop.phone.present? && tel_target_url.present? %>
+              <%= link_to "電話で確認する",
+                          track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
+                          class: "ss-btn ss-btn--ghost shop-show__bookingSub" %>
+            <% end %>
+
+            <% if @shop.address.present? %>
+              <%= link_to "地図で場所を見る",
+                          track_click_shop_path(@shop, kind: "map_click", target_url: map_target_url),
+                          target: "_blank",
+                          rel: "noopener",
+                          class: "ss-btn ss-btn--ghost shop-show__bookingSub" %>
+            <% end %>
+
             <button type="button"
                     class="ss-btn ss-btn--ghost shop-show__bookingSub"
                     data-current-location-search
@@ -1683,6 +1732,13 @@
             <%= link_to "今営業中の店を見る",
                         root_path(smoking_area: "all_smoking", open_now: 1),
                         class: "ss-btn ss-btn--ghost shop-show__bookingSub" %>
+          </div>
+
+          <div class="shop-show__visitCheck">
+            <p class="shop-show__visitCheckTitle">確認ポイント</p>
+            <p class="shop-show__visitCheckText">
+              喫煙条件・営業時間は変更されることがあります。来店前に電話や公式情報で確認してください。
+            </p>
           </div>
         </section>
       <% end %>
