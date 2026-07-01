@@ -161,6 +161,11 @@
 
   tel_digits = @shop.phone.to_s.gsub(/[^0-9]/, "")
   tel_target_url = tel_digits.present? ? "tel:#{tel_digits}" : nil
+  map_query = ERB::Util.url_encode([@shop.name, @shop.address].compact.join(" "))
+  address_query = ERB::Util.url_encode(@shop.address.to_s)
+  google_map_query_url = "https://www.google.com/maps?q=#{map_query}"
+  google_map_search_url = "https://www.google.com/maps/search/?api=1&query=#{address_query}"
+  map_target_url = @shop.address.present? ? google_map_search_url : google_map_query_url
 
   custom_affiliate_track_url =
     if @shop.respond_to?(:custom_affiliate_url) && @shop.custom_affiliate_url.present?
@@ -799,6 +804,10 @@
     width: 100%;
     min-height: 48px;
   }
+
+  .shop-show__stickyCta .ss-btn:only-child {
+    grid-column: 1 / -1;
+  }
 }
 
 .shop-show__map {
@@ -1403,7 +1412,7 @@
       <% end %>
     </div>
 
-    <% if booking_links.present? || (@shop.phone.present? && tel_target_url.present?) %>
+    <% if booking_links.present? || (@shop.phone.present? && tel_target_url.present?) || @shop.address.present? %>
       <div class="shop-show__heroActions shop-show__heroActions--fv">
         <% booking_links.each do |booking_link| %>
           <%= link_to booking_link[:url],
@@ -1426,6 +1435,12 @@
         <% if @shop.phone.present? && tel_target_url.present? %>
           <%= link_to "電話する",
                       track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
+                      class: "ss-btn ss-btn--ghost shop-show__cvSub shop-show__fvSub" %>
+        <% elsif @shop.address.present? %>
+          <%= link_to "地図を見る",
+                      track_click_shop_path(@shop, kind: "map_click", target_url: map_target_url),
+                      target: "_blank",
+                      rel: "noopener",
                       class: "ss-btn ss-btn--ghost shop-show__cvSub shop-show__fvSub" %>
         <% end %>
       </div>
@@ -1674,11 +1689,6 @@
 
       <section class="shop-show__section">
         <h2 class="shop-show__sectionTitle">地図</h2>
-
-        <% map_query = ERB::Util.url_encode([@shop.name, @shop.address].compact.join(" ")) %>
-        <% address_query = ERB::Util.url_encode(@shop.address.to_s) %>
-        <% google_map_query_url = "https://www.google.com/maps?q=#{map_query}" %>
-        <% google_map_search_url = "https://www.google.com/maps/search/?api=1&query=#{address_query}" %>
 
         <% if @shop.latitude.present? && @shop.longitude.present? %>
           <div id="shop-map" class="shop-show__map"></div>
@@ -2361,24 +2371,44 @@
     </section>
   </div>
 
-  <% if @shop.approved? && booking_links.present? %>
+  <% if @shop.approved? && (booking_links.present? || (@shop.phone.present? && tel_target_url.present?) || @shop.address.present?) %>
     <div class="shop-show__stickyCta">
       <% booking_link = booking_links.first %>
 
-      <%= link_to booking_link[:url],
-                  target: "_blank",
-                  rel: "nofollow noopener",
-                 class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--#{booking_link[:provider]}" do %>
-  <span class="shop-show__cvPrimaryLabel">
-    <span><%= booking_link[:label] %></span>
+      <% if booking_link.present? %>
+        <%= link_to booking_link[:url],
+                    target: "_blank",
+                    rel: "nofollow noopener",
+                    class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--#{booking_link[:provider]}" do %>
+          <span class="shop-show__cvPrimaryLabel">
+            <span><%= booking_link[:label] %></span>
 
-    <% if booking_link[:provider_label].present? %>
-      <span class="shop-show__cvPrimaryProvider">
-        <%= booking_link[:provider_label] %>
-      </span>
-    <% end %>
-  </span>
-<% end %>
+            <% if booking_link[:provider_label].present? %>
+              <span class="shop-show__cvPrimaryProvider">
+                <%= booking_link[:provider_label] %>
+              </span>
+            <% end %>
+          </span>
+        <% end %>
+      <% elsif @shop.phone.present? && tel_target_url.present? %>
+        <%= link_to "電話する",
+                    track_click_shop_path(@shop, kind: "phone_click", target_url: tel_target_url),
+                    class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--custom" %>
+      <% elsif @shop.address.present? %>
+        <%= link_to "地図を見る",
+                    track_click_shop_path(@shop, kind: "map_click", target_url: map_target_url),
+                    target: "_blank",
+                    rel: "noopener",
+                    class: "ss-btn shop-show__cvPrimary shop-show__cvPrimary--custom" %>
+      <% end %>
+
+      <% if @shop.address.present? && (booking_link.present? || (@shop.phone.present? && tel_target_url.present?)) %>
+        <%= link_to "地図を見る",
+                    track_click_shop_path(@shop, kind: "map_click", target_url: map_target_url),
+                    target: "_blank",
+                    rel: "noopener",
+                    class: "ss-btn ss-btn--ghost shop-show__cvSub" %>
+      <% end %>
     </div>
   <% end %>
 </div>
