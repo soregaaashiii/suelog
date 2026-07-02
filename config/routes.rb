@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   root "home#index"
 
   get "map", to: "maps#index"
+  get "map/affiliate_clicks", to: "maps#index", as: :map_affiliate_clicks
 
   # 固定ページ
   get "terms", to: "static_pages#terms", as: :terms

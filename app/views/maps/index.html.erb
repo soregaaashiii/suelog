@@ -4,12 +4,15 @@
 map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 %>
 
-<h1>近くの店舗（地図）</h1>
+<% content_for :title, "大阪で喫煙できる店を地図検索｜電話・ルート・空席確認【吸えログ】" %>
+<% content_for :meta_description, "大阪で喫煙できる飲食店を地図から探せます。梅田・難波周辺で席で喫煙可、喫煙所あり、営業中の店舗を絞り込み、電話・ルート・食べログなどの行動導線へ進めます。" %>
+<% content_for :canonical_url, map_url %>
+
+<h1>大阪で喫煙できる店を地図から探す</h1>
 
 <p style="color:#666; font-size:12px; line-height:1.7;">
-  ※ 登録済みの緯度経度を使って、地図上に全店舗を表示します。<br>
-  ※ 現在地が許可されていれば、現在地マーカーも表示します。<br>
-  ※ 検索・絞り込みで地図上のピンを減らせます。
+  梅田・難波を中心に、大阪で喫煙できる飲食店を地図で探せます。席で喫煙可・喫煙所あり・営業中などで絞り込み、気になる店舗は地図上の吹き出しから電話、ルート確認、空席確認へ進めます。<br>
+  ※ 現在地が許可されていれば、現在地マーカーも表示します。
 </p>
 
 <p id="shops-summary" style="margin:6px 0; color:#666; font-size:12px;">
@@ -212,18 +215,32 @@ function buildInfoHtml(shop) {
       ${shop.genre_label ? `<div style="font-size:12px; color:#444;">ジャンル：${escapeHtml(shop.genre_label)}</div>` : ""}
       ${shop.smoking_area_label ? `<div style="font-size:12px; color:#444;">喫煙エリア：${escapeHtml(shop.smoking_area_label)}</div>` : ""}
       ${shop.smoking_type_label ? `<div style="font-size:12px; color:#444;">喫煙タイプ：${escapeHtml(shop.smoking_type_label)}</div>` : ""}
-      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+      <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        ${shop.booking_url ? `
+          <a href="${escapeHtml(shop.booking_url)}"
+             data-map-link
+             style="grid-column:1 / -1; display:block; padding:10px 12px; background:#b42318; color:#fff; border-radius:8px; text-align:center; text-decoration:none; font-weight:800; font-size:13px;">
+            ${escapeHtml(shop.booking_label || "空席を確認")}
+          </a>
+        ` : ""}
+        ${shop.phone_url ? `
+          <a href="${escapeHtml(shop.phone_url)}"
+             data-map-link
+             style="display:block; padding:9px 10px; background:#111; color:#fff; border-radius:8px; text-align:center; text-decoration:none; font-weight:800; font-size:12px;">
+            電話する
+          </a>
+        ` : ""}
+        ${shop.map_url ? `
+          <a href="${escapeHtml(shop.map_url)}"
+             data-map-link
+             style="display:block; padding:9px 10px; background:#fff; color:#111; border:1px solid #d7d2c8; border-radius:8px; text-align:center; text-decoration:none; font-weight:800; font-size:12px;">
+            ルートを見る
+          </a>
+        ` : ""}
         <a href="${escapeHtml(shop.url)}"
    data-map-link
-   style="display:inline-block; padding:8px 12px; background:#111; color:#fff; border-radius:999px; text-decoration:none; font-weight:700; font-size:12px;">
+   style="grid-column:1 / -1; display:block; padding:9px 12px; background:#f7f4ee; color:#111; border:1px solid #e8e3d7; border-radius:8px; text-align:center; text-decoration:none; font-weight:800; font-size:12px;">
   詳細を見る
-</a>
-
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(shop.lat + ',' + shop.lng)}"
-   target="_blank"
-   rel="noopener noreferrer"
-   style="display:inline-block; padding:8px 12px; background:#fff; color:#111; border:1px solid #e8e3d7; border-radius:999px; text-decoration:none; font-weight:700; font-size:12px;">
-  ルートを見る
 </a>
       </div>
     </div>
