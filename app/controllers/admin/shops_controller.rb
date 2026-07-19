@@ -668,12 +668,16 @@ class Admin::ShopsController < Admin::BaseController
       }
       attrs[:held_at] = nil if Shop.column_names.include?("held_at")
 
-      scope.update_all(attrs)
+      scope.find_each do |shop|
+        shop.update!(attrs.except(:updated_at))
+      end
 
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                   flash: { admin_alert: "一括却下しました（#{ids.size}件）" }
     when "unverify"
-      scope.update_all(smoking_unverified: false, updated_at: Time.current)
+      scope.find_each do |shop|
+        shop.update!(smoking_unverified: false)
+      end
       redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
                   flash: { admin_notice: "未確認を解除しました（#{ids.size}件）" }
     else

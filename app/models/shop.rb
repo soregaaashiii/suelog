@@ -1254,14 +1254,22 @@ class Shop < ApplicationRecord
   end
 
   def log_aicoo_shop_activity(activity_type, title)
-    AicooActivityLogger.log(
+    result = AicooActivityLogger.log(
       business_key: "suelog",
+      source_app: "suelog",
       activity_type:,
       source_type: "shop",
       source_id: id,
+      resource_type: "Shop",
+      resource_id: id,
       title: "#{title}: #{name}",
       summary: "#{name} の店舗情報を変更しました",
       occurred_at: Time.current.iso8601,
+      changed_fields: previous_changes.except("updated_at"),
+      callback_model: self.class.name,
+      callback_registered: true,
+      callback_called: true,
+      record_saved: persisted?,
       metadata: {
         area: area,
         smoking_area: smoking_area,
@@ -1271,6 +1279,18 @@ class Shop < ApplicationRecord
         tabelog_url: tabelog_url,
         changed_fields: previous_changes.except("updated_at").keys
       }.compact
+    )
+    log_aicoo_delivery_result(activity_type, result)
+    result
+  end
+
+  def log_aicoo_delivery_result(activity_type, result)
+    level = result[:ok] ? :info : :warn
+    Rails.logger.public_send(
+      level,
+      "[AICOO Activity] Shop delivery action=#{activity_type} shop_id=#{id} " \
+      "ok=#{result[:ok]} status=#{result[:status].presence || '(none)'} " \
+      "retry_count=#{result[:retry_count].to_i} reason=#{result[:reason].presence || '(none)'}"
     )
   end
 end

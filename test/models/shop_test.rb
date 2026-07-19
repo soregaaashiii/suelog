@@ -10,6 +10,9 @@ class ShopTest < ActiveSupport::TestCase
       assert_equal "data_added", payload[:activity_type]
       assert_equal "shop", payload[:source_type]
       assert_equal shop.id, payload[:source_id]
+      assert_equal "Shop", payload[:resource_type]
+      assert payload[:callback_registered]
+      assert payload[:callback_called]
       assert_includes payload[:title], "店舗を追加"
       assert_equal "梅田", payload[:metadata][:area]
     end
@@ -24,6 +27,7 @@ class ShopTest < ActiveSupport::TestCase
       payload = calls.last
       assert_equal "data_updated", payload[:activity_type]
       assert_equal "shop", payload[:source_type]
+      assert_equal "Shop", payload[:resource_type]
       assert_includes payload[:metadata][:changed_fields], "phone"
     end
   end

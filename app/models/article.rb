@@ -53,12 +53,12 @@ class Article < ApplicationRecord
   end
 
   def log_aicoo_article_updated
-    changed_fields = previous_changes.except("updated_at")
+    changed_fields = article_activity_changed_fields
     return if changed_fields.blank?
 
-    activity_type = if changed_fields.key?("published") && published?
+    activity_type = if changed_fields.include?("published") && published?
       "article_published"
-    elsif (changed_fields.keys & %w[seo_title meta_description slug]).any?
+    elsif (changed_fields & %w[seo_title meta_description slug]).any?
       "article_seo_updated"
     else
       "article_updated"
@@ -67,30 +67,57 @@ class Article < ApplicationRecord
       "article_published" => "記事を公開",
       "article_seo_updated" => "記事SEOを更新"
     }.fetch(activity_type, "記事を更新")
-    log_aicoo_article_activity(activity_type, title_prefix)
+    log_aicoo_article_activity(activity_type, title_prefix, changed_fields:)
   end
 
   def log_aicoo_article_destroyed
     log_aicoo_article_activity("article_deleted", "記事を削除")
   end
 
-  def log_aicoo_article_activity(activity_type, title_prefix)
-    AicooActivityLogger.log(
+  def log_aicoo_article_activity(activity_type, title_prefix, changed_fields: article_activity_changed_fields)
+    result = AicooActivityLogger.log(
       business_key: "suelog",
+      source_app: "suelog",
       activity_type:,
       source_type: "article",
       source_id: id,
+      resource_type: "Article",
+      resource_id: id,
       title: "#{title_prefix}: #{title}",
       summary: "#{title} の記事情報を変更しました",
       occurred_at: Time.current.iso8601,
+      changed_fields: changed_fields.index_with { true },
+      callback_model: self.class.name,
+      callback_registered: true,
+      callback_called: true,
+      record_saved: persisted?,
       metadata: {
         slug: slug,
         area: recommended_area_list.first,
         recommended_areas: recommended_area_list,
         target_keyword: seo_title.presence || title,
         published: published,
-        changed_fields: previous_changes.except("updated_at").keys
+        changed_fields:
       }.compact
+    )
+    log_aicoo_delivery_result(activity_type, result)
+    result
+  end
+
+  def article_activity_changed_fields
+    fields = previous_changes.except("updated_at").keys
+    rich_text_changes = rich_text_body&.previous_changes.to_h.except("updated_at", "created_at")
+    fields << "body" if rich_text_changes.present?
+    fields.uniq
+  end
+
+  def log_aicoo_delivery_result(activity_type, result)
+    level = result[:ok] ? :info : :warn
+    Rails.logger.public_send(
+      level,
+      "[AICOO Activity] Article delivery action=#{activity_type} article_id=#{id} " \
+      "ok=#{result[:ok]} status=#{result[:status].presence || '(none)'} " \
+      "retry_count=#{result[:retry_count].to_i} reason=#{result[:reason].presence || '(none)'}"
     )
   end
 end
