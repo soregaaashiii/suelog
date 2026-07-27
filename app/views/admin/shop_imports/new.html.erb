@@ -33,6 +33,11 @@
 <% end %>
 
 <% if @parsed_attrs.present? %>
+  <div
+    data-controller="single-submit"
+    data-single-submit-submit-selector-value='input[type="submit"][value="この内容で新規仮登録する"]'
+    data-action="keydown@document->single-submit#submitOnEnter submit->single-submit#guardSubmit"
+  >
   <hr>
 
   <h2>解析結果</h2>
@@ -118,28 +123,7 @@
                 text-decoration:none;" %>
     </div>
   <% end %>
-<% end %>
-
-<% if @parsed_attrs.present? %>
-  <script>
-    document.addEventListener("keydown", function(event) {
-      if (event.key !== "Enter") return;
-      if (event.isComposing) return;
-
-      const target = event.target;
-      const tagName = target.tagName.toLowerCase();
-
-      if (tagName === "textarea") return;
-      if (tagName === "button") return;
-      if (target.type === "submit") return;
-
-      const createButton = document.querySelector('input[type="submit"][value="この内容で新規仮登録する"]');
-      if (!createButton) return;
-
-      event.preventDefault();
-      createButton.click();
-    });
-  </script>
+  </div>
 <% end %>
 
 <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">

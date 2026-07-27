@@ -696,6 +696,9 @@ class Admin::ShopsController < Admin::BaseController
 
   def update
     @shop = Shop.find(params[:id])
+    if params[:from] == "shop_import" && @shop.import_source == "tabelog_paste"
+      @shop.defer_aicoo_activity_delivery = true
+    end
     Rails.logger.warn("SHOP_PARAMS_RAW=#{params[:shop].inspect}")
 
     action = params[:commit_action].to_s

@@ -57,6 +57,7 @@ class Admin::ShopImportsController < Admin::BaseController
       target_shop = duplicate_candidates.find { |shop| shop.id == target_shop_id } || Shop.find_by(id: target_shop_id)
 
       if target_shop.present?
+        target_shop.defer_aicoo_activity_delivery = true
         merge_blank_fields_from_import!(target_shop, filter_shop_attrs(parsed_attrs))
 
         redirect_to edit_admin_shop_path(target_shop, from: "shop_import"),
@@ -76,6 +77,7 @@ class Admin::ShopImportsController < Admin::BaseController
     end
 
     shop = Shop.new(filter_shop_attrs(parsed_attrs))
+    shop.defer_aicoo_activity_delivery = true
 
     shop.last_confirmed_on ||= Date.current if shop.respond_to?(:last_confirmed_on=)
     shop.smoking_unverified = true if shop.respond_to?(:smoking_unverified=)

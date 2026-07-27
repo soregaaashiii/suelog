@@ -20,7 +20,18 @@
 
 <% rejected = (@shop.respond_to?(:rejected?) && @shop.rejected?) %>
 
-<%= form_with model: [:admin, @shop], method: :patch, local: true, html: { multipart: true } do |f| %>
+<% import_form_data =
+  if params[:from] == "shop_import"
+    {
+      controller: "single-submit",
+      action: "keydown@document->single-submit#submitOnEnter submit->single-submit#guardSubmit",
+      single_submit_submit_selector_value: 'input[type="submit"][name="commit_action"][value="approve"]'
+    }
+  else
+    {}
+  end %>
+
+<%= form_with model: [:admin, @shop], method: :patch, local: true, html: { multipart: true }, data: import_form_data do |f| %>
   <%= hidden_field_tag :status, @status %>
   <%= hidden_field_tag :source, @source %>
   <%= hidden_field_tag :per, @per %>
@@ -447,27 +458,5 @@
     admin_shops_path(status: @status, source: @source, per: @per, page: @page),
     style: "padding:10px 14px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
   </div>
-<% end %>
-
-<% if params[:from] == "shop_import" %>
-  <script>
-    document.addEventListener("keydown", function(event) {
-      if (event.key !== "Enter") return;
-      if (event.isComposing) return;
-
-      const target = event.target;
-      const tagName = target.tagName.toLowerCase();
-
-      if (tagName === "textarea") return;
-      if (tagName === "button") return;
-      if (target.type === "submit") return;
-
-      const approveButton = document.querySelector('input[type="submit"][name="commit_action"][value="approve"]');
-      if (!approveButton) return;
-
-      event.preventDefault();
-      approveButton.click();
-    });
-  </script>
 <% end %>
 

@@ -2,6 +2,8 @@
 # frozen_string_literal: true
 
 class Shop < ApplicationRecord
+  attr_accessor :defer_aicoo_activity_delivery
+
   # ===== Associations =====
   has_many :reviews, dependent: :destroy
   has_many :shop_edit_requests, dependent: :destroy
@@ -1254,7 +1256,7 @@ class Shop < ApplicationRecord
   end
 
   def log_aicoo_shop_activity(activity_type, title)
-    result = AicooActivityLogger.log(
+    attributes = {
       business_key: "suelog",
       source_app: "suelog",
       activity_type:,
@@ -1279,7 +1281,25 @@ class Shop < ApplicationRecord
         tabelog_url: tabelog_url,
         changed_fields: previous_changes.except("updated_at").keys
       }.compact
-    )
+    }
+
+    if defer_aicoo_activity_delivery
+      begin
+        AicooActivityDeliveryJob.perform_later(attributes)
+        Rails.logger.info(
+          "[AICOO Activity] deferred delivery queued action=#{activity_type} shop_id=#{id}"
+        )
+        return { ok: true, queued: true }
+      rescue StandardError => e
+        Rails.logger.warn(
+          "[AICOO Activity] delivery enqueue failed action=#{activity_type} shop_id=#{id} " \
+          "error=#{e.class}: #{e.message}"
+        )
+        return { ok: false, reason: "delivery_enqueue_exception", exception: "#{e.class}: #{e.message}" }
+      end
+    end
+
+    result = AicooActivityLogger.log(**attributes)
     log_aicoo_delivery_result(activity_type, result)
     result
   end
