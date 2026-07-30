@@ -479,22 +479,7 @@ end
   smoking_type = params[:smoking_type].to_s.strip
   keyword_q = normalized_keyword_query(params[:q])
 
-  base = Shop
-    .approved
-    .left_joins(:reviews)
-    .includes(
-  :food_photos_attachments,
-  :interior_photos_attachments,
-  :exterior_photos_attachments,
-  :menu_photos_attachments
-)
-    .select(
-      "shops.*",
-      "COALESCE(AVG(CASE WHEN reviews.approved THEN reviews.rating END), 0) AS avg_rating",
-      "COALESCE(SUM(CASE WHEN reviews.approved THEN 1 ELSE 0 END), 0) AS reviews_count",
-      "MAX(CASE WHEN reviews.approved THEN reviews.created_at END) AS latest_review_at"
-    )
-    .group("shops.id")
+  base = Shop.approved
 
   if @forced_area_keyword.present?
     like = "%#{@forced_area_keyword}%"
@@ -580,7 +565,22 @@ end
     base = base.where("shops.last_confirmed_on IS NULL OR shops.last_confirmed_on < ?", cutoff)
   end
 
-  records = base.to_a
+  records = base
+    .left_joins(:reviews)
+    .select(
+      "shops.id",
+      "shops.last_confirmed_on",
+      "shops.opening_hours_json",
+      "shops.opening_hours_text",
+      "shops.holiday_hours_text",
+      "COALESCE(CAST(REPLACE(CAST(shops.last_confirmed_on AS VARCHAR), '-', '') AS INTEGER), 0) AS confirmed_on_sort",
+      "COALESCE(CAST(REPLACE(REPLACE(REPLACE(SUBSTR(CAST(shops.created_at AS VARCHAR), 1, 19), '-', ''), ' ', ''), ':', '') AS BIGINT), 0) AS created_at_sort",
+      "COALESCE(AVG(CASE WHEN reviews.approved THEN reviews.rating END), 0) AS avg_rating",
+      "COALESCE(SUM(CASE WHEN reviews.approved THEN 1 ELSE 0 END), 0) AS reviews_count",
+      "MAX(CASE WHEN reviews.approved THEN reviews.created_at END) AS latest_review_at"
+    )
+    .group("shops.id")
+    .to_a
 
   open_now_map = {}
   records.each do |shop|
@@ -602,8 +602,27 @@ end
     paginated = Kaminari.paginate_array(records).page(1).per(@per)
   end
 
-  @open_now_map = open_now_map.slice(*paginated.map(&:id))
-  @shops = paginated
+  page_ids = paginated.map(&:id)
+  page_records = Shop
+    .where(id: page_ids)
+    .left_joins(:reviews)
+    .preload(
+      food_photos_attachments: :blob,
+      interior_photos_attachments: :blob,
+      exterior_photos_attachments: :blob,
+      menu_photos_attachments: :blob
+    )
+    .select(
+      "shops.*",
+      "COALESCE(AVG(CASE WHEN reviews.approved THEN reviews.rating END), 0) AS avg_rating",
+      "COALESCE(SUM(CASE WHEN reviews.approved THEN 1 ELSE 0 END), 0) AS reviews_count",
+      "MAX(CASE WHEN reviews.approved THEN reviews.created_at END) AS latest_review_at"
+    )
+    .group("shops.id")
+    .index_by(&:id)
+
+  @open_now_map = open_now_map.slice(*page_ids)
+  @shops = paginated.replace(page_ids.filter_map { |id| page_records[id] })
 end
 
   def set_recommended_articles!
@@ -707,12 +726,12 @@ end
 
   def sort_shop_records(records, sort_key, open_now_map = {})
   records.sort_by do |shop|
-    avg_rating = shop.try(:avg_rating).to_f
-    reviews_count = shop.try(:reviews_count).to_i
-    created_at_i = shop.created_at&.to_i || 0
+    avg_rating = shop[:avg_rating].to_f
+    reviews_count = shop[:reviews_count].to_i
+    created_at_i = shop[:created_at_sort].to_i
     open_penalty = open_now_map[shop.id] ? 0 : 1
-    confirmed_penalty = shop.last_confirmed_on.present? ? 0 : 1
-    confirmed_on_i = shop.last_confirmed_on&.to_time&.to_i || 0
+    confirmed_on_i = shop[:confirmed_on_sort].to_i
+    confirmed_penalty = confirmed_on_i.zero? ? 1 : 0
 
     case sort_key
     when "rating"

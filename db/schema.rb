@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_30_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_30_010000) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -97,6 +97,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_000000) do
     t.string "utm_campaign"
     t.string "utm_medium"
     t.string "utm_source"
+    t.index ["path", "ip_hash", "created_at"], name: "index_page_views_on_daily_identity_without_shop", where: "shop_id IS NULL"
     t.index ["shop_id"], name: "index_page_views_on_shop_id"
   end
 
