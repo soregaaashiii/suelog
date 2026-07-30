@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_31_173641) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_30_000000) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -72,6 +72,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_173641) do
     t.string "slug"
     t.text "summary"
     t.string "title"
+    t.boolean "toc_enabled", default: false, null: false
     t.datetime "updated_at", null: false
   end
 
@@ -213,6 +214,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_173641) do
     t.datetime "created_at", null: false
     t.string "custom_affiliate_label"
     t.string "custom_affiliate_url"
+    t.string "duplicate_normalized_address"
+    t.string "duplicate_normalized_name"
     t.string "genre"
     t.string "genre_other"
     t.datetime "held_at"
@@ -261,6 +264,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_173641) do
     t.integer "thumbnail_index"
     t.string "thumbnail_kind"
     t.datetime "updated_at", null: false
+    t.index ["duplicate_normalized_address"], name: "index_shops_on_duplicate_normalized_address"
+    t.index ["duplicate_normalized_name"], name: "index_shops_on_duplicate_normalized_name"
     t.index ["hold_reason"], name: "index_shops_on_hold_reason"
     t.index ["on_hold"], name: "index_shops_on_on_hold"
     t.index ["phone_check_on_hold"], name: "index_shops_on_phone_check_on_hold"

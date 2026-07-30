@@ -272,6 +272,7 @@ class Shop < ApplicationRecord
 
   # 電話番号の重複防止（digitsのみ）
   before_validation :set_normalized_phone
+  before_validation :set_duplicate_normalized_fields
   before_validation :normalize_genre_value
   before_validation :normalize_opening_hours_json
   before_validation :assign_area_from_location_if_blank
@@ -350,8 +351,40 @@ class Shop < ApplicationRecord
         .strip
   end
 
+  def self.normalized_duplicate_matches(scope:, name:, address:)
+    normalized_name = normalize_duplicate_text(name)
+    normalized_address = normalize_duplicate_text(address)
+    return none if normalized_name.blank? && normalized_address.blank?
+
+    candidates = where(id: scope.select(:id))
+    conditions = []
+    binds = {}
+
+    if normalized_name.present?
+      conditions << "shops.duplicate_normalized_name = :normalized_name"
+      binds[:normalized_name] = normalized_name
+    end
+
+    if normalized_address.present?
+      contains_function = connection.adapter_name.match?(/postgres/i) ? "STRPOS" : "INSTR"
+      conditions << <<~SQL.squish
+        (
+          shops.duplicate_normalized_address = :normalized_address
+          OR #{contains_function}(shops.duplicate_normalized_address, :normalized_address) > 0
+          OR (
+            shops.duplicate_normalized_address IS NOT NULL
+            AND shops.duplicate_normalized_address <> ''
+            AND #{contains_function}(:normalized_address, shops.duplicate_normalized_address) > 0
+          )
+        )
+      SQL
+      binds[:normalized_address] = normalized_address
+    end
+
+    candidates.where(conditions.join(" OR "), binds)
+  end
+
   def self.duplicate_exists_for_import?(attrs, exclude_id: nil)
-    phone = attrs[:phone].to_s.gsub(/[^0-9]/, "")
     name = attrs[:name].to_s.strip
     address = attrs[:address].to_s.strip
 
@@ -364,29 +397,11 @@ class Shop < ApplicationRecord
     return true if name.present? && scope.where(name: name).exists?
     return true if address.present? && scope.where(address: address).exists?
 
-    normalized_name = normalize_duplicate_text(name)
-    normalized_address = normalize_duplicate_text(address)
-
-    scope.limit(5000).pluck(:name, :address).any? do |n, a|
-      cn = normalize_duplicate_text(n)
-      ca = normalize_duplicate_text(a)
-
-      name_match =
-        normalized_name.present? &&
-        cn.present? &&
-        normalized_name == cn
-
-      address_match =
-        normalized_address.present? &&
-        ca.present? &&
-        (
-          normalized_address == ca ||
-          normalized_address.include?(ca) ||
-          ca.include?(normalized_address)
-        )
-
-      name_match || address_match
-    end
+    normalized_duplicate_matches(
+      scope: scope.limit(5000),
+      name:,
+      address:
+    ).exists?
   end
 
   # ===== Display helpers =====
@@ -1152,6 +1167,11 @@ class Shop < ApplicationRecord
   def set_normalized_phone
     digits = phone.to_s.gsub(/[^0-9]/, "")
     self.normalized_phone = digits.presence
+  end
+
+  def set_duplicate_normalized_fields
+    self.duplicate_normalized_name = self.class.normalize_duplicate_text(name).presence
+    self.duplicate_normalized_address = self.class.normalize_duplicate_text(address).presence
   end
 
   def set_default_smoking_values

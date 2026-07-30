@@ -46,6 +46,42 @@ class ShopTest < ActiveSupport::TestCase
     ENV["AICOO_ACTIVITY_API_TOKEN"] = previous_token
   end
 
+  test "stores normalized duplicate fields and preserves fuzzy import matching" do
+    shop = Shop.create!(
+      shop_attributes(name: "正 規 化（店舗）").merge(
+        address: "大阪府大阪市北区梅田 1-2-3"
+      )
+    )
+
+    assert_equal "正規化店舗", shop.duplicate_normalized_name
+    assert_equal "大阪府大阪市北区梅田123", shop.duplicate_normalized_address
+    assert Shop.duplicate_exists_for_import?({
+      name: "正規化店舗",
+      address: "大阪府大阪市北区梅田123"
+    })
+    assert Shop.duplicate_exists_for_import?({
+      name: "別名店舗",
+      address: "大阪府大阪市北区梅田"
+    })
+    assert Shop.duplicate_exists_for_import?({
+      name: "別名店舗",
+      address: "大阪府大阪市北区梅田1-2-3 ビル2階"
+    })
+  end
+
+  test "normalized duplicate matching keeps different shops separate" do
+    Shop.create!(
+      shop_attributes(name: "正規化比較店舗").merge(
+        address: "大阪府大阪市北区梅田1-2-3"
+      )
+    )
+
+    assert_not Shop.duplicate_exists_for_import?({
+      name: "別の店舗",
+      address: "大阪府大阪市中央区難波9-9-9"
+    })
+  end
+
   private
 
   def shop_attributes(name:)

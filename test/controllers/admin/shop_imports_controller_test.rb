@@ -136,6 +136,39 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_admin_shop_import_path
   end
 
+  test "normalized duplicate warning does not load all shop names and addresses" do
+    existing = Shop.create!(
+      name: "重 複（正規化）店舗",
+      address: "大阪府大阪市中央区難波 7-7-7",
+      area: "難波",
+      genre: "居酒屋",
+      last_confirmed_on: Date.current,
+      approved: true,
+      rejected: false,
+      on_hold: false
+    )
+    sql = []
+    subscriber = lambda do |_name, _started, _finished, _id, payload|
+      sql << payload[:sql].to_s unless payload[:name] == "SCHEMA"
+    end
+
+    ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+      post preview_admin_shop_import_path,
+           params: {
+             raw_text: tabelog_text(
+               "重複正規化店舗",
+               address: "大阪府大阪市中央区難波777"
+             )
+           },
+           headers: @auth_headers
+    end
+
+    assert_response :success
+    assert_select "a[href='#{edit_admin_shop_path(existing)}']"
+    assert sql.any? { |statement| statement.include?("duplicate_normalized_name") }
+    assert_not sql.any? { |statement| statement.match?(/SELECT.+shops.+name.+shops.+address.+LIMIT/im) }
+  end
+
   private
 
   def tabelog_text(name, address: "大阪府大阪市北区梅田1-2-3")

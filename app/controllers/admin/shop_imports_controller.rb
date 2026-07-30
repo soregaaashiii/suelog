@@ -189,27 +189,13 @@ class Admin::ShopImportsController < Admin::BaseController
     ids.concat(scope.where(name: name).limit(5).pluck(:id)) if name.present?
     ids.concat(scope.where(address: address).limit(5).pluck(:id)) if address.present?
 
-    normalized_name = Shop.normalize_duplicate_text(name)
-    normalized_address = Shop.normalize_duplicate_text(address)
-
-    if normalized_name.present? || normalized_address.present?
-      scope.order(created_at: :desc).limit(3000).pluck(:id, :name, :address).each do |id, candidate_name, candidate_address|
-        c_name = Shop.normalize_duplicate_text(candidate_name)
-        c_address = Shop.normalize_duplicate_text(candidate_address)
-
-        name_match = normalized_name.present? && c_name.present? && normalized_name == c_name
-        address_match =
-          normalized_address.present? &&
-          c_address.present? &&
-          (
-            normalized_address == c_address ||
-            normalized_address.include?(c_address) ||
-            c_address.include?(normalized_address)
-          )
-
-        ids << id if name_match || address_match
-      end
-    end
+    ids.concat(
+      Shop.normalized_duplicate_matches(
+        scope: scope.order(created_at: :desc).limit(3000),
+        name:,
+        address:
+      ).order(created_at: :desc).pluck(:id)
+    )
 
     Shop.where(id: ids.compact.uniq.first(10))
         .where(approved: true)
