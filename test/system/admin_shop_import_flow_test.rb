@@ -17,7 +17,9 @@ class AdminShopImportFlowTest < ApplicationSystemTestCase
     shop = Shop.find_by!(name: "Enter連打テスト店舗")
     assert_not shop.approved?
 
-    dispatch_repeated_enter("#shop_name")
+    accept_confirm("更新して承認しますか？") do
+      dispatch_repeated_enter("#shop_name")
+    end
 
     assert_text "食べログ貼り付けインポート"
     assert shop.reload.approved?

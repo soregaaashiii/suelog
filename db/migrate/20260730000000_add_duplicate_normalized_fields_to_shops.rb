@@ -13,11 +13,13 @@ class AddDuplicateNormalizedFieldsToShops < ActiveRecord::Migration[7.1]
 
     MigrationShop.reset_column_information
     MigrationShop.in_batches(of: 500) do |relation|
-      rows = relation.pluck(:id, :name, :address).map do |id, name, address|
+      rows = relation.pluck(:id, :name, :address, :created_at, :updated_at).map do |id, name, address, created_at, updated_at|
         {
           id:,
           duplicate_normalized_name: normalize_duplicate_text(name).presence,
-          duplicate_normalized_address: normalize_duplicate_text(address).presence
+          duplicate_normalized_address: normalize_duplicate_text(address).presence,
+          created_at:,
+          updated_at:
         }
       end
 
