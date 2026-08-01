@@ -119,7 +119,7 @@ class ShopsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "optimized popular ranking groups only narrow columns before loading six shops" do
+  test "optimized popular ranking counts clicks by indexed shop id before loading six shops" do
     current = insert_shop(name: "SQL current")
     7.times do |index|
       shop = insert_shop(name: "SQL candidate #{index}")
@@ -136,7 +136,8 @@ class ShopsControllerTest < ActionDispatch::IntegrationTest
     end
 
     ranking_sql = sql_statements.find do |sql|
-      sql.include?("COUNT(shop_clicks.id)") && sql.include?("GROUP BY")
+      sql.include?("SELECT COUNT(*) FROM shop_clicks") &&
+        sql.include?("AS clicks_count")
     end
     display_sql = sql_statements.find do |sql|
       sql.include?("CASE shops.id") && sql.include?("AS clicks_count")
@@ -144,9 +145,10 @@ class ShopsControllerTest < ActionDispatch::IntegrationTest
 
     assert ranking_sql
     assert display_sql
-    assert_match(/SELECT\s+"?shops"?\."?id"?,\s*COUNT\(shop_clicks\.id\)/i, ranking_sql)
+    assert_match(/SELECT\s+"?shops"?\."?id"?,\s*\(SELECT COUNT\(\*\) FROM shop_clicks/i, ranking_sql)
     assert_not_includes ranking_sql.split(/\sFROM\s/i, 2).first, "shops.*"
     assert_not_includes ranking_sql, "active_storage"
+    assert_not_includes ranking_sql, "GROUP BY"
     assert_not_includes display_sql, "shop_clicks"
     assert_match(/WHERE .*shops.*id.* IN/i, display_sql)
   end

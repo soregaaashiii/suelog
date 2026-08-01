@@ -267,9 +267,12 @@ class ShopsController < ApplicationController
   end
 
   def optimized_popular_shops_for(shop)
+    clicks_count_sql = <<~SQL.squish
+      (SELECT COUNT(*) FROM shop_clicks WHERE shop_clicks.shop_id = shops.id)
+    SQL
+
     ranking_scope = Shop.approved
                         .where.not(id: shop.id)
-                        .left_joins(:shop_clicks)
 
     if shop.latitude.present? && shop.longitude.present?
       ranking_scope = ranking_scope
@@ -278,20 +281,19 @@ class ShopsController < ApplicationController
                           [ shop.latitude, shop.longitude ],
                           5.0,
                           units: :km,
-                          select: "shops.id, COUNT(shop_clicks.id) AS clicks_count",
+                          select: "shops.id, #{clicks_count_sql} AS clicks_count",
                           select_bearing: false
                         )
     else
       ranking_scope = ranking_scope.select(
         "shops.id",
-        "COUNT(shop_clicks.id) AS clicks_count"
+        "#{clicks_count_sql} AS clicks_count"
       )
     end
 
     ranked_shops = ranking_scope
-      .group("shops.id")
       .order(Arel.sql("
-        COUNT(shop_clicks.id) DESC,
+        #{clicks_count_sql} DESC,
         CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
         shops.last_confirmed_on DESC,
         shops.created_at DESC
