@@ -82,6 +82,50 @@ class ShopTest < ActiveSupport::TestCase
     })
   end
 
+  test "normalized duplicate matching filters one bounded candidate relation" do
+    matching = Shop.create!(
+      shop_attributes(name: "派生表確認店舗").merge(
+        address: "大阪府大阪市北区梅田4-5-6"
+      )
+    )
+
+    scope = Shop.order(created_at: :desc).limit(3000)
+    name = "派 生 表 確 認 店 舗"
+    address = "大阪府大阪市北区梅田456"
+    relation = Shop.normalized_duplicate_matches(scope:, name:, address:)
+    contains_function = Shop.connection.adapter_name.match?(/postgres/i) ? "STRPOS" : "INSTR"
+    legacy_relation = Shop.where(id: scope.select(:id)).where(
+      <<~SQL.squish,
+        shops.duplicate_normalized_name = :normalized_name
+        OR shops.duplicate_normalized_address = :normalized_address
+        OR #{contains_function}(shops.duplicate_normalized_address, :normalized_address) > 0
+        OR (
+          shops.duplicate_normalized_address IS NOT NULL
+          AND shops.duplicate_normalized_address <> ''
+          AND #{contains_function}(:normalized_address, shops.duplicate_normalized_address) > 0
+        )
+      SQL
+      normalized_name: Shop.normalize_duplicate_text(name),
+      normalized_address: Shop.normalize_duplicate_text(address)
+    )
+
+    assert_equal [matching.id], relation.order(created_at: :desc).pluck(:id)
+    assert_equal legacy_relation.order(created_at: :desc).pluck(:id), relation.order(created_at: :desc).pluck(:id)
+    assert_includes relation.to_sql, "FROM (SELECT"
+    assert_includes relation.to_sql, "AS duplicate_candidates WHERE"
+    assert_includes relation.to_sql, "duplicate_candidates.duplicate_normalized_address"
+  end
+
+  test "shop registration lookup indexes exist" do
+    indexes = ActiveRecord::Base.connection.indexes(:shops).index_by(&:name)
+
+    assert_equal ["normalized_phone"], indexes.fetch("index_shops_on_normalized_phone").columns
+    assert_equal %w[name address approved], indexes.fetch("index_shops_on_name_address_approved").columns
+    assert_equal ["address"], indexes.fetch("index_shops_on_address").columns
+    assert_equal ["created_at"], indexes.fetch("index_shops_on_created_at").columns
+    assert_equal %w[approved rejected], indexes.fetch("index_shops_on_approved_and_rejected").columns
+  end
+
   private
 
   def shop_attributes(name:)

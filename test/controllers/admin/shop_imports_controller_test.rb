@@ -166,7 +166,10 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a[href='#{edit_admin_shop_path(existing)}']"
     assert sql.any? { |statement| statement.include?("duplicate_normalized_name") }
-    assert_not sql.any? { |statement| statement.match?(/SELECT.+shops.+name.+shops.+address.+LIMIT/im) }
+    raw_column_query = sql.find do |statement|
+      statement.include?('"shops"."name"') && statement.include?('"shops"."address"')
+    end
+    assert_nil raw_column_query, "unexpected raw name/address query: #{raw_column_query}"
   end
 
   private

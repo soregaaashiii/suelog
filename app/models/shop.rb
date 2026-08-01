@@ -356,12 +356,19 @@ class Shop < ApplicationRecord
     normalized_address = normalize_duplicate_text(address)
     return none if normalized_name.blank? && normalized_address.blank?
 
-    candidates = where(id: scope.select(:id))
+    candidate_source = scope.reselect(
+      :id,
+      :created_at,
+      :duplicate_normalized_name,
+      :duplicate_normalized_address
+    )
+    candidate_alias = "duplicate_candidates"
+    candidates = unscoped.from("(#{candidate_source.to_sql}) AS #{candidate_alias}")
     conditions = []
     binds = {}
 
     if normalized_name.present?
-      conditions << "shops.duplicate_normalized_name = :normalized_name"
+      conditions << "#{candidate_alias}.duplicate_normalized_name = :normalized_name"
       binds[:normalized_name] = normalized_name
     end
 
@@ -369,19 +376,20 @@ class Shop < ApplicationRecord
       contains_function = connection.adapter_name.match?(/postgres/i) ? "STRPOS" : "INSTR"
       conditions << <<~SQL.squish
         (
-          shops.duplicate_normalized_address = :normalized_address
-          OR #{contains_function}(shops.duplicate_normalized_address, :normalized_address) > 0
+          #{candidate_alias}.duplicate_normalized_address = :normalized_address
+          OR #{contains_function}(#{candidate_alias}.duplicate_normalized_address, :normalized_address) > 0
           OR (
-            shops.duplicate_normalized_address IS NOT NULL
-            AND shops.duplicate_normalized_address <> ''
-            AND #{contains_function}(:normalized_address, shops.duplicate_normalized_address) > 0
+            #{candidate_alias}.duplicate_normalized_address IS NOT NULL
+            AND #{candidate_alias}.duplicate_normalized_address <> ''
+            AND #{contains_function}(:normalized_address, #{candidate_alias}.duplicate_normalized_address) > 0
           )
         )
       SQL
       binds[:normalized_address] = normalized_address
     end
 
-    candidates.where(conditions.join(" OR "), binds)
+    matching_ids = candidates.where(conditions.join(" OR "), binds).select("#{candidate_alias}.id")
+    where(id: matching_ids)
   end
 
   def self.duplicate_exists_for_import?(attrs, exclude_id: nil)
