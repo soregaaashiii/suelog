@@ -267,18 +267,12 @@ class ShopsController < ApplicationController
   end
 
   def optimized_popular_shops_for(shop)
-    click_counts_subquery = ShopClick
-      .select("shop_clicks.shop_id, COUNT(*) AS clicks_count")
-      .group("shop_clicks.shop_id")
-      .to_sql
-    clicks_count_sql = "COALESCE(popular_click_counts.clicks_count, 0)"
+    clicks_count_sql = <<~SQL.squish
+      (SELECT COUNT(*) FROM shop_clicks WHERE shop_clicks.shop_id = shops.id)
+    SQL
 
     ranking_scope = Shop.approved
                         .where.not(id: shop.id)
-                        .joins(<<~SQL.squish)
-                          LEFT JOIN (#{click_counts_subquery}) popular_click_counts
-                            ON popular_click_counts.shop_id = shops.id
-                        SQL
 
     if shop.latitude.present? && shop.longitude.present?
       ranking_scope = ranking_scope
@@ -299,7 +293,7 @@ class ShopsController < ApplicationController
 
     ranked_shops = ranking_scope
       .order(Arel.sql("
-        #{clicks_count_sql} DESC,
+        clicks_count DESC,
         CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
         shops.last_confirmed_on DESC,
         shops.created_at DESC
