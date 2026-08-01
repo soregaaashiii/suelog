@@ -20,6 +20,41 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
     assert_select 'input[type="submit"][value="この内容で新規仮登録する"]', count: 1
   end
 
+  test "new and preview do not write to the database" do
+    writes = []
+    subscriber = lambda do |_name, _started, _finished, _id, payload|
+      sql = payload[:sql].to_s
+      writes << sql if sql.match?(/\A\s*(?:INSERT|UPDATE|DELETE)\b/i)
+    end
+
+    ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+      get new_admin_shop_import_path, headers: @auth_headers
+      assert_response :success
+
+      post preview_admin_shop_import_path,
+           params: { raw_text: tabelog_text("書き込みなし確認店舗") },
+           headers: @auth_headers
+      assert_response :success
+    end
+
+    assert_empty writes
+  end
+
+  test "sensitive shop import fields are filtered from request logs" do
+    filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+    filtered = filter.filter(
+      raw_text: "raw import",
+      source_url: "https://example.test/shop",
+      name: "shop name",
+      address: "shop address",
+      phone: "09012345678"
+    )
+
+    %i[raw_text source_url name address phone].each do |key|
+      assert_equal "[FILTERED]", filtered.fetch(key)
+    end
+  end
+
   test "create saves one provisional shop and queues activity delivery" do
     deliveries = []
 

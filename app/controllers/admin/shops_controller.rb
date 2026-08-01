@@ -699,91 +699,91 @@ class Admin::ShopsController < Admin::BaseController
     if params[:from] == "shop_import" && @shop.import_source == "tabelog_paste"
       @shop.defer_aicoo_activity_delivery = true
     end
-    Rails.logger.warn("SHOP_PARAMS_RAW=#{params[:shop].inspect}")
-
     action = params[:commit_action].to_s
     notice = "更新しました"
 
-    ActiveRecord::Base.transaction do
-      permitted_shop_params = shop_params
+    ShopRegistrationSlowRequestDiagnostics.measure("final_registration_transaction") do
+      ActiveRecord::Base.transaction do
+        permitted_shop_params = shop_params
 
-      if permitted_shop_params.key?(:tabelog_candidate_url) &&
-         permitted_shop_params[:tabelog_candidate_url].blank?
-        permitted_shop_params = permitted_shop_params.except(
-          :tabelog_candidate_url,
-          :tabelog_candidate_affiliate_url,
-          :tabelog_candidate_method
-        )
-      end
-
-      if permitted_shop_params.key?(:tabelog_url) &&
-         permitted_shop_params[:tabelog_url].blank?
-        permitted_shop_params = permitted_shop_params.except(
-          :tabelog_url,
-          :tabelog_affiliate_url,
-          :tabelog_match_method
-        )
-      end
-
-      if permitted_shop_params[:tabelog_url].present?
-        permitted_shop_params[:tabelog_affiliate_url] =
-          build_tabelog_affiliate_url(permitted_shop_params[:tabelog_url])
-        permitted_shop_params[:tabelog_match_method] =
-          permitted_shop_params[:tabelog_match_method].presence || "admin_manual"
-      end
-
-      if permitted_shop_params[:tabelog_candidate_url].present?
-        permitted_shop_params[:tabelog_candidate_affiliate_url] =
-          build_tabelog_affiliate_url(permitted_shop_params[:tabelog_candidate_url])
-        permitted_shop_params[:tabelog_candidate_method] =
-          permitted_shop_params[:tabelog_candidate_method].presence || "admin_manual_candidate"
-      end
-
-      @shop.update!(permitted_shop_params)
-      purge_removed_photos!(@shop)
-      attach_uploaded_photos!(@shop)
-      populate_derived_hours_fields!(@shop)
-      @shop.save! if @shop.changed?
-
-      case action
-      when "approve"
-        if duplicate_exists_against_approved_shops?(@shop)
-          raise ActiveRecord::RecordInvalid.new(
-            @shop.tap do |s|
-              s.errors.add(:base, "承認済み店舗との重複の可能性があるため承認できません。詳細から重複候補を確認してください。")
-            end
+        if permitted_shop_params.key?(:tabelog_candidate_url) &&
+           permitted_shop_params[:tabelog_candidate_url].blank?
+          permitted_shop_params = permitted_shop_params.except(
+            :tabelog_candidate_url,
+            :tabelog_candidate_affiliate_url,
+            :tabelog_candidate_method
           )
         end
 
-        attrs = {
-          approved: true,
-          rejected: false,
-          on_hold: false
-        }
-        attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+        if permitted_shop_params.key?(:tabelog_url) &&
+           permitted_shop_params[:tabelog_url].blank?
+          permitted_shop_params = permitted_shop_params.except(
+            :tabelog_url,
+            :tabelog_affiliate_url,
+            :tabelog_match_method
+          )
+        end
 
-        @shop.update!(attrs)
-        notice = "更新して承認しました"
-      when "reject"
-        attrs = {
-          approved: false,
-          rejected: true,
-          on_hold: false
-        }
-        attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+        if permitted_shop_params[:tabelog_url].present?
+          permitted_shop_params[:tabelog_affiliate_url] =
+            build_tabelog_affiliate_url(permitted_shop_params[:tabelog_url])
+          permitted_shop_params[:tabelog_match_method] =
+            permitted_shop_params[:tabelog_match_method].presence || "admin_manual"
+        end
 
-        @shop.update!(attrs)
-        notice = "更新して却下しました"
-      when "hold"
-        attrs = {
-          approved: false,
-          rejected: false,
-          on_hold: true
-        }
-        attrs[:held_at] = Time.current if Shop.column_names.include?("held_at")
+        if permitted_shop_params[:tabelog_candidate_url].present?
+          permitted_shop_params[:tabelog_candidate_affiliate_url] =
+            build_tabelog_affiliate_url(permitted_shop_params[:tabelog_candidate_url])
+          permitted_shop_params[:tabelog_candidate_method] =
+            permitted_shop_params[:tabelog_candidate_method].presence || "admin_manual_candidate"
+        end
 
-        @shop.update!(attrs)
-        notice = "更新して保留に移動しました"
+        @shop.update!(permitted_shop_params)
+        purge_removed_photos!(@shop)
+        attach_uploaded_photos!(@shop)
+        populate_derived_hours_fields!(@shop)
+        @shop.save! if @shop.changed?
+
+        case action
+        when "approve"
+          if duplicate_exists_against_approved_shops?(@shop)
+            raise ActiveRecord::RecordInvalid.new(
+              @shop.tap do |s|
+                s.errors.add(:base, "承認済み店舗との重複の可能性があるため承認できません。詳細から重複候補を確認してください。")
+              end
+            )
+          end
+
+          attrs = {
+            approved: true,
+            rejected: false,
+            on_hold: false
+          }
+          attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+          @shop.update!(attrs)
+          notice = "更新して承認しました"
+        when "reject"
+          attrs = {
+            approved: false,
+            rejected: true,
+            on_hold: false
+          }
+          attrs[:held_at] = nil if Shop.column_names.include?("held_at")
+
+          @shop.update!(attrs)
+          notice = "更新して却下しました"
+        when "hold"
+          attrs = {
+            approved: false,
+            rejected: false,
+            on_hold: true
+          }
+          attrs[:held_at] = Time.current if Shop.column_names.include?("held_at")
+
+          @shop.update!(attrs)
+          notice = "更新して保留に移動しました"
+        end
       end
     end
 
