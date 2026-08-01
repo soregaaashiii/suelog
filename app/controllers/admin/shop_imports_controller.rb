@@ -183,11 +183,7 @@ class Admin::ShopImportsController < Admin::BaseController
     phone = attrs[:phone].to_s.gsub(/[^0-9]/, "")
 
     scope = Shop.all
-    ids = []
-
-    ids.concat(scope.where(normalized_phone: phone).limit(5).pluck(:id)) if phone.present?
-    ids.concat(scope.where(name: name).limit(5).pluck(:id)) if name.present?
-    ids.concat(scope.where(address: address).limit(5).pluck(:id)) if address.present?
+    ids = exact_duplicate_candidate_ids(scope:, phone:, name:, address:)
 
     ids.concat(
       Shop.normalized_duplicate_matches(
@@ -205,5 +201,26 @@ class Admin::ShopImportsController < Admin::BaseController
   rescue StandardError => e
     Rails.logger.warn("[shop_import duplicate_candidates_for] #{e.class}: #{e.message}")
     []
+  end
+
+  def exact_duplicate_candidate_ids(scope:, phone:, name:, address:)
+    relations = []
+    relations << scope.where(normalized_phone: phone).limit(5) if phone.present?
+    relations << scope.where(name: name).limit(5) if name.present?
+    relations << scope.where(address: address).limit(5) if address.present?
+    return [] if relations.empty?
+
+    branches = relations.each_with_index.map do |relation, priority|
+      <<~SQL.squish
+        SELECT id, #{priority} AS match_priority, ROW_NUMBER() OVER () AS match_position
+        FROM (#{relation.reselect(:id).to_sql}) AS exact_match_#{priority}
+      SQL
+    end
+
+    Shop.connection.select_values(<<~SQL.squish)
+      SELECT id
+      FROM (#{branches.join(" UNION ALL ")}) AS exact_matches
+      ORDER BY match_priority, match_position
+    SQL
   end
 end

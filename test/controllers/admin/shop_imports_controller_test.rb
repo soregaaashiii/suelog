@@ -166,10 +166,12 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a[href='#{edit_admin_shop_path(existing)}']"
     assert sql.any? { |statement| statement.include?("duplicate_normalized_name") }
+    assert_equal 1, sql.count { |statement| statement.include?("UNION ALL") }
+    assert_equal 1, sql.count { |statement| statement.include?("AS pending_reviews") }
     raw_column_query = sql.find do |statement|
-      statement.include?('"shops"."name"') && statement.include?('"shops"."address"')
+      statement.include?('SELECT "shops"."name", "shops"."address"')
     end
-    assert_nil raw_column_query, "unexpected raw name/address query: #{raw_column_query}"
+    assert_nil raw_column_query, "unexpected raw name/address load: #{raw_column_query}"
   end
 
   private
