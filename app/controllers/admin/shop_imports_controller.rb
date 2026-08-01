@@ -9,7 +9,9 @@ class Admin::ShopImportsController < Admin::BaseController
 
     return if @raw_text.blank?
 
-    @parsed_attrs = TabelogPasteParser.call(@raw_text)
+    @parsed_attrs = ShopRegistrationSlowRequestDiagnostics.measure("tabelog_parse") do
+      TabelogPasteParser.call(@raw_text)
+    end
     @duplicate_candidates = duplicate_candidates_for(@parsed_attrs)
   rescue StandardError => e
     flash.now[:admin_alert] = "解析に失敗しました：#{e.class} - #{e.message}"
@@ -28,7 +30,9 @@ class Admin::ShopImportsController < Admin::BaseController
       return
     end
 
-    @parsed_attrs = TabelogPasteParser.call(@raw_text)
+    @parsed_attrs = ShopRegistrationSlowRequestDiagnostics.measure("tabelog_parse") do
+      TabelogPasteParser.call(@raw_text)
+    end
     @duplicate_candidates = duplicate_candidates_for(@parsed_attrs)
 
     render :new
@@ -48,7 +52,9 @@ class Admin::ShopImportsController < Admin::BaseController
       return
     end
 
-    parsed_attrs = TabelogPasteParser.call(raw_text)
+    parsed_attrs = ShopRegistrationSlowRequestDiagnostics.measure("tabelog_parse") do
+      TabelogPasteParser.call(raw_text)
+    end
     duplicate_candidates = duplicate_candidates_for(parsed_attrs)
     target_shop_id = params[:target_shop_id].to_i
     force_new = params[:force_new] == "1"
@@ -85,7 +91,7 @@ class Admin::ShopImportsController < Admin::BaseController
     shop.rejected = false if shop.respond_to?(:rejected=)
     shop.on_hold = false if shop.respond_to?(:on_hold=)
 
-    shop.save!
+    ShopRegistrationSlowRequestDiagnostics.measure("provisional_shop_save") { shop.save! }
 
     redirect_to edit_admin_shop_path(shop, from: "shop_import"),
                 flash: { admin_notice: "食べログ貼り付けから店舗を仮登録しました。内容を確認して保存してください。" }
@@ -165,7 +171,9 @@ class Admin::ShopImportsController < Admin::BaseController
     attrs[:import_source] = parsed_attrs[:import_source] if shop.respond_to?(:import_source=)
     attrs[:imported_at] = parsed_attrs[:imported_at] if shop.respond_to?(:imported_at=)
 
-    shop.update!(attrs) if attrs.present?
+    if attrs.present?
+      ShopRegistrationSlowRequestDiagnostics.measure("existing_shop_merge") { shop.update!(attrs) }
+    end
   end
 
   def import_blank_value?(value)
@@ -178,26 +186,28 @@ class Admin::ShopImportsController < Admin::BaseController
   end
 
   def duplicate_candidates_for(attrs)
-    name = attrs[:name].to_s.strip
-    address = attrs[:address].to_s.strip
-    phone = attrs[:phone].to_s.gsub(/[^0-9]/, "")
+    ShopRegistrationSlowRequestDiagnostics.measure("duplicate_lookup") do
+      name = attrs[:name].to_s.strip
+      address = attrs[:address].to_s.strip
+      phone = attrs[:phone].to_s.gsub(/[^0-9]/, "")
 
-    scope = Shop.all
-    ids = exact_duplicate_candidate_ids(scope:, phone:, name:, address:)
+      scope = Shop.all
+      ids = exact_duplicate_candidate_ids(scope:, phone:, name:, address:)
 
-    ids.concat(
-      Shop.normalized_duplicate_matches(
-        scope: scope.order(created_at: :desc).limit(3000),
-        name:,
-        address:
-      ).order(created_at: :desc).pluck(:id)
-    )
+      ids.concat(
+        Shop.normalized_duplicate_matches(
+          scope: scope.order(created_at: :desc).limit(3000),
+          name:,
+          address:
+        ).order(created_at: :desc).pluck(:id)
+      )
 
-    Shop.where(id: ids.compact.uniq.first(10))
-        .where(approved: true)
-        .where(rejected: false)
-        .where(on_hold: false)
-        .order(created_at: :desc)
+      Shop.where(id: ids.compact.uniq.first(10))
+          .where(approved: true)
+          .where(rejected: false)
+          .where(on_hold: false)
+          .order(created_at: :desc)
+    end
   rescue StandardError => e
     Rails.logger.warn("[shop_import duplicate_candidates_for] #{e.class}: #{e.message}")
     []
