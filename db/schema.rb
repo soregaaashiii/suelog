@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_01_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_01_010000) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -267,7 +267,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_01_000000) do
     t.datetime "updated_at", null: false
     t.index ["address"], name: "index_shops_on_address"
     t.index ["approved", "rejected"], name: "index_shops_on_approved_and_rejected"
-    t.index ["created_at"], name: "index_shops_on_created_at"
+    t.index ["created_at", "id", "duplicate_normalized_name", "duplicate_normalized_address"], name: "index_shops_on_registration_duplicate_candidates"
     t.index ["duplicate_normalized_address"], name: "index_shops_on_duplicate_normalized_address"
     t.index ["duplicate_normalized_name"], name: "index_shops_on_duplicate_normalized_name"
     t.index ["hold_reason"], name: "index_shops_on_hold_reason"

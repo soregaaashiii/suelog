@@ -122,7 +122,8 @@ class ShopTest < ActiveSupport::TestCase
     assert_equal ["normalized_phone"], indexes.fetch("index_shops_on_normalized_phone").columns
     assert_equal %w[name address approved], indexes.fetch("index_shops_on_name_address_approved").columns
     assert_equal ["address"], indexes.fetch("index_shops_on_address").columns
-    assert_equal ["created_at"], indexes.fetch("index_shops_on_created_at").columns
+    assert_equal %w[created_at id duplicate_normalized_name duplicate_normalized_address],
+                 indexes.fetch("index_shops_on_registration_duplicate_candidates").columns
     assert_equal %w[approved rejected], indexes.fetch("index_shops_on_approved_and_rejected").columns
   end
 
