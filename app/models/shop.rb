@@ -302,7 +302,7 @@ class Shop < ApplicationRecord
   after_commit :log_aicoo_shop_destroyed, on: :destroy
 
   def safe_geocode
-    geocode
+    ShopRegistrationSlowRequestDiagnostics.measure("geocode_callback") { geocode }
   rescue Geocoder::Error => e
     Rails.logger.warn("[geocode skipped] #{e.class}: #{e.message}")
     self.latitude = nil if latitude_changed?
@@ -1313,7 +1313,9 @@ class Shop < ApplicationRecord
 
     if defer_aicoo_activity_delivery
       begin
-        AicooActivityDeliveryJob.perform_later(attributes)
+        ShopRegistrationSlowRequestDiagnostics.measure("activity_job_enqueue") do
+          AicooActivityDeliveryJob.perform_later(attributes)
+        end
         Rails.logger.info(
           "[AICOO Activity] deferred delivery queued action=#{activity_type} shop_id=#{id}"
         )
