@@ -231,42 +231,6 @@ class ShopsController < ApplicationController
   end
 
   def popular_shops_for(shop)
-    legacy_popular_shops_for(shop)
-  end
-
-  def legacy_popular_shops_for(shop)
-    scope = Shop.approved
-                .where.not(id: shop.id)
-                .left_joins(:shop_clicks)
-                .includes(
-                  food_photos_attachments: :blob,
-                  interior_photos_attachments: :blob,
-                  exterior_photos_attachments: :blob,
-                  menu_photos_attachments: :blob
-                )
-                .select(
-                  "shops.*",
-                  "COUNT(shop_clicks.id) AS clicks_count"
-                )
-                .group("shops.id")
-
-    if shop.latitude.present? && shop.longitude.present?
-      scope = scope.where.not(latitude: nil, longitude: nil)
-                   .near([shop.latitude, shop.longitude], 5.0, units: :km)
-    end
-
-    scope
-      .order(Arel.sql("
-        COUNT(shop_clicks.id) DESC,
-        CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
-        shops.last_confirmed_on DESC,
-        shops.created_at DESC
-      "))
-      .limit(6)
-      .to_a
-  end
-
-  def optimized_popular_shops_for(shop)
     clicks_count_sql = <<~SQL.squish
       (SELECT COUNT(*) FROM shop_clicks WHERE shop_clicks.shop_id = shops.id)
     SQL
