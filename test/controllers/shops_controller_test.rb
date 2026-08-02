@@ -158,7 +158,7 @@ class ShopsControllerTest < ActionDispatch::IntegrationTest
   private
 
   def popular_shops_for(shop)
-    ShopsController.new.send(:popular_shops_for, shop)
+    ShopsController.new.send(:optimized_popular_shops_for, shop)
   end
 
   def legacy_popular_shops_for(shop)
