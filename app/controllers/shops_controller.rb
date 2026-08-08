@@ -231,6 +231,10 @@ class ShopsController < ApplicationController
   end
 
   def popular_shops_for(shop)
+    legacy_popular_shops_for(shop)
+  end
+
+  def legacy_popular_shops_for(shop)
     scope = Shop.approved
                 .where.not(id: shop.id)
                 .left_joins(:shop_clicks)
@@ -260,6 +264,70 @@ class ShopsController < ApplicationController
       "))
       .limit(6)
       .to_a
+  end
+
+  def optimized_popular_shops_for(shop)
+    ranking_scope = Shop.approved
+                        .where.not(id: shop.id)
+                        .left_joins(:shop_clicks)
+
+    if shop.latitude.present? && shop.longitude.present?
+      ranking_scope = ranking_scope
+                        .where.not(latitude: nil, longitude: nil)
+                        .near(
+                          [ shop.latitude, shop.longitude ],
+                          5.0,
+                          units: :km,
+                          select: "shops.id, COUNT(shop_clicks.id) AS clicks_count",
+                          select_bearing: false
+                        )
+    else
+      ranking_scope = ranking_scope.select(
+        "shops.id",
+        "COUNT(shop_clicks.id) AS clicks_count"
+      )
+    end
+
+    ranked_shops = ranking_scope
+      .group("shops.id")
+      .order(Arel.sql("
+        COUNT(shop_clicks.id) DESC,
+        CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
+        shops.last_confirmed_on DESC,
+        shops.created_at DESC
+      "))
+      .limit(6)
+      .to_a
+
+    return [] if ranked_shops.empty?
+
+    ranked_ids = ranked_shops.map(&:id)
+    clicks_count_sql = ranked_shops.map do |ranked_shop|
+      "WHEN #{ranked_shop.id.to_i} THEN #{ranked_shop.clicks_count.to_i}"
+    end.join(" ")
+
+    display_scope = Shop.where(id: ranked_ids)
+    if shop.latitude.present? && shop.longitude.present?
+      display_scope = display_scope.near(
+        [ shop.latitude, shop.longitude ],
+        5.0,
+        units: :km
+      )
+    else
+      display_scope = display_scope.select("shops.*")
+    end
+
+    display_scope = display_scope
+      .select("CASE shops.id #{clicks_count_sql} ELSE 0 END AS clicks_count")
+      .includes(
+        food_photos_attachments: :blob,
+        interior_photos_attachments: :blob,
+        exterior_photos_attachments: :blob,
+        menu_photos_attachments: :blob
+      )
+
+    shops_by_id = display_scope.index_by(&:id)
+    ranked_ids.filter_map { |shop_id| shops_by_id[shop_id] }
   end
 
   def related_articles_for(shop)
