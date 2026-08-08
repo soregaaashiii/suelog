@@ -82,13 +82,13 @@ class ShopBusinessHoursProjection
     end
 
     def interval_segments(opens_at, closes_at)
-      return [ [ 0, 1440 ] ] if opens_at.zero? && closes_at == 1440
-      return opens_at < 1440 ? [ [ opens_at, 1440 ] ] : [] if closes_at == 1440
-      return [ [ opens_at, closes_at ] ] if closes_at > opens_at
+      return [[0, 1440]] if opens_at.zero? && closes_at == 1440
+      return opens_at < 1440 ? [[opens_at, 1440]] : [] if closes_at == 1440
+      return [[opens_at, closes_at]] if closes_at > opens_at
 
       segments = []
-      segments << [ opens_at, 1440 ] if opens_at < 1440
-      segments << [ 0, closes_at ] if closes_at.positive?
+      segments << [opens_at, 1440] if opens_at < 1440
+      segments << [0, closes_at] if closes_at.positive?
       merge_intervals(segments)
     end
 
@@ -96,11 +96,11 @@ class ShopBusinessHoursProjection
       exclusions.reduce(intervals) do |remaining, (excluded_start, excluded_end)|
         remaining.flat_map do |start_minute, end_minute|
           if excluded_end <= start_minute || excluded_start >= end_minute
-            [ [ start_minute, end_minute ] ]
+            [[start_minute, end_minute]]
           else
             parts = []
-            parts << [ start_minute, excluded_start ] if excluded_start > start_minute
-            parts << [ excluded_end, end_minute ] if excluded_end < end_minute
+            parts << [start_minute, excluded_start] if excluded_start > start_minute
+            parts << [excluded_end, end_minute] if excluded_end < end_minute
             parts
           end
         end
@@ -113,9 +113,9 @@ class ShopBusinessHoursProjection
         .sort_by(&:first)
         .each_with_object([]) do |(start_minute, end_minute), merged|
           if merged.empty? || start_minute > merged.last.last
-            merged << [ start_minute, end_minute ]
+            merged << [start_minute, end_minute]
           else
-            merged.last[1] = [ merged.last.last, end_minute ].max
+            merged.last[1] = [merged.last.last, end_minute].max
           end
         end
     end
