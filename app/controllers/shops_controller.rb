@@ -28,8 +28,6 @@ class ShopsController < ApplicationController
     shops.created_at
   ].join(", ").freeze
 
-  RecommendationRankedShop = Struct.new(:id, keyword_init: true)
-
   def index
     redirect_to root_path, status: :moved_permanently
   end
@@ -178,17 +176,13 @@ class ShopsController < ApplicationController
           [ shop.latitude, shop.longitude ],
           3.0,
           units: :km,
-          select: "shops.id"
+          select: RECOMMENDATION_RANKING_COLUMNS
         )
       else
         scope.select(RECOMMENDATION_RANKING_COLUMNS)
       end
 
-    ranked_shops = if shop.latitude.present? && shop.longitude.present?
-      rank_geocoded_recommendation_shops(nearby)
-    else
-      rank_recommendation_shops(nearby)
-    end
+    ranked_shops = rank_recommendation_shops(nearby)
     load_recommendation_shops(
       ranked_shops,
       origin_shop: shop,
@@ -230,17 +224,13 @@ class ShopsController < ApplicationController
                      [ shop.latitude, shop.longitude ],
                      5.0,
                      units: :km,
-                     select: "shops.id"
+                     select: RECOMMENDATION_RANKING_COLUMNS
                    )
     else
       scope = scope.select(RECOMMENDATION_RANKING_COLUMNS)
     end
 
-    ranked_shops = if shop.latitude.present? && shop.longitude.present?
-      rank_geocoded_recommendation_shops(scope)
-    else
-      rank_recommendation_shops(scope)
-    end
+    ranked_shops = rank_recommendation_shops(scope)
     load_recommendation_shops(
       ranked_shops,
       origin_shop: shop,
@@ -304,46 +294,6 @@ class ShopsController < ApplicationController
         - candidate.created_at.to_i
       ]
     end.first(6)
-  end
-
-  def rank_geocoded_recommendation_shops(scope)
-    now = Time.zone.now
-    connection = Shop.connection
-    weekday = connection.quote(now.wday)
-    minute = connection.quote(now.hour * 60 + now.min)
-    created_at_second_sql = if connection.adapter_name.match?(/postgres/i)
-      "FLOOR(EXTRACT(EPOCH FROM shops.created_at))"
-    else
-      "CAST(strftime('%s', shops.created_at) AS INTEGER)"
-    end
-    open_now_sql = <<~SQL.squish
-      EXISTS (
-        SELECT 1
-        FROM shop_business_hour_windows
-        WHERE shop_business_hour_windows.shop_id = shops.id
-          AND shop_business_hour_windows.weekday = #{weekday}
-          AND shop_business_hour_windows.opens_at_minute <= #{minute}
-          AND shop_business_hour_windows.closes_at_minute > #{minute}
-      )
-    SQL
-
-    ranking_scope = scope.select(Arel.sql(<<~SQL.squish))
-      CASE WHEN #{open_now_sql} THEN 0 ELSE 1 END AS open_now_rank,
-      CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END AS last_confirmed_present_rank,
-      #{created_at_second_sql} AS created_at_second
-    SQL
-
-    connection.select_all(ranking_scope.to_sql)
-              .sort_by do |row|
-                [
-                  row.fetch("open_now_rank").to_i,
-                  row.fetch("last_confirmed_present_rank").to_i,
-                  0,
-                  -row.fetch("created_at_second").to_i
-                ]
-              end
-              .first(6)
-              .map { |row| RecommendationRankedShop.new(id: row.fetch("id").to_i) }
   end
 
   def load_recommendation_shops(ranked_shops, origin_shop:, radius_km:, clicks_count_by_id: nil)

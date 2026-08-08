@@ -145,28 +145,8 @@ class ShopsControllerRecommendationsTest < ActiveSupport::TestCase
 
     assert_operator shop_queries.size, :>=, 2
     refute_match(/SELECT [\"`]?shops[\"`]?\.\*/i, shop_queries.first)
-    assert_match(/shop_business_hour_windows/i, shop_queries.first)
-    refute_match(/opening_hours_json/i, shop_queries.first)
+    assert_match(/opening_hours_json/i, shop_queries.first)
     assert_match(/WHERE .*[\"`]?id[\"`]? IN \(/i, shop_queries.last)
-  end
-
-  test "five hundred geocoded candidates preserve nearby and same genre results" do
-    origin = insert_shop(latitude: 34.6937, longitude: 135.5023, genre: "バー", genre_other: "パブ")
-
-    500.times do |index|
-      insert_shop(
-        latitude: origin.latitude + ((index % 200) * 0.00005),
-        longitude: origin.longitude + ((index % 11) * 0.00003),
-        genre: index.even? ? "バー" : "その他",
-        genre_other: index.even? ? nil : "パブ",
-        open: (index % 3).nonzero?,
-        confirmed: (index % 5).zero? ? nil : (index % 30).days.ago.to_date,
-        created_at: Time.current - index.seconds
-      )
-    end
-
-    assert_shop_results_equal legacy_nearby(origin), optimized(:nearby_shops_for, origin)
-    assert_shop_results_equal legacy_same_genre(origin), optimized(:same_genre_shops_for, origin)
   end
 
   test "popular ranking counts clicks once without grouping wide shop rows" do
@@ -355,9 +335,7 @@ class ShopsControllerRecommendationsTest < ActiveSupport::TestCase
     }
 
     result = Shop.insert_all!([ attributes ], returning: %w[id])
-    shop = Shop.find(result.rows.first.first)
-    ShopBusinessHoursProjection.sync!(shop)
-    shop
+    Shop.find(result.rows.first.first)
   end
 
   def insert_clicks(shop, count)
