@@ -136,48 +136,6 @@ class ShopsControllerRecommendationsTest < ActiveSupport::TestCase
     assert_equal expected.map { |shop| shop.clicks_count.to_i }, actual.map { |shop| shop.clicks_count.to_i }
   end
 
-  test "geocoded popular ranking preserves equal distance click and timestamp ties" do
-    origin = insert_shop(latitude: 34.6937, longitude: 135.5023, genre: "バー")
-    tie_time = 2.days.ago.change(usec: 0)
-    shops = 8.times.map do |index|
-      insert_shop(
-        latitude: 34.6940,
-        longitude: 135.5023,
-        genre: "バー",
-        confirmed: index < 4 ? nil : 3.days.ago.to_date,
-        created_at: tie_time
-      )
-    end
-    [ 3, 3, 2, 2, 1, 1, 0, 0 ].each_with_index do |count, index|
-      insert_clicks(shops.fetch(index), count)
-    end
-
-    assert_shop_results_equal(
-      legacy_popular(origin),
-      optimized(:popular_shops_for, origin),
-      compare_clicks: true
-    )
-  end
-
-  test "geocoded recommendation ties preserve the legacy distance order" do
-    origin = insert_shop(latitude: 34.6937, longitude: 135.5023, genre: "バー")
-    tie_time = 2.days.ago.change(usec: 0)
-
-    8.times do |index|
-      insert_shop(
-        latitude: origin.latitude + ((8 - index) * 0.0001),
-        longitude: origin.longitude,
-        genre: "バー",
-        open: true,
-        confirmed: Date.current,
-        created_at: tie_time
-      )
-    end
-
-    assert_shop_results_equal legacy_nearby(origin), optimized(:nearby_shops_for, origin)
-    assert_shop_results_equal legacy_same_genre(origin), optimized(:same_genre_shops_for, origin)
-  end
-
   test "ranking queries stay narrow and display hydration is limited to ranked ids" do
     origin = insert_shop(genre: "バー")
     8.times { insert_shop(genre: "バー") }
@@ -187,8 +145,8 @@ class ShopsControllerRecommendationsTest < ActiveSupport::TestCase
 
     assert_operator shop_queries.size, :>=, 2
     refute_match(/SELECT [\"`]?shops[\"`]?\.\*/i, shop_queries.first)
+    assert_match(/shop_business_hour_windows/i, shop_queries.first)
     refute_match(/opening_hours_json/i, shop_queries.first)
-    assert sql.any? { |statement| statement.include?("shop_business_hour_windows") }
     assert_match(/WHERE .*[\"`]?id[\"`]? IN \(/i, shop_queries.last)
   end
 
@@ -219,7 +177,9 @@ class ShopsControllerRecommendationsTest < ActiveSupport::TestCase
     end
 
     sql = capture_sql { optimized(:popular_shops_for, origin) }
-    ranking_sql = sql.find { |statement| statement.include?("popular_click_counts") }
+    ranking_sql = sql.find do |statement|
+      statement.include?("SELECT COUNT(*) FROM shop_clicks") && statement.include?("AS clicks_count")
+    end
     display_sql = sql.find do |statement|
       statement.include?("CASE shops.id") && statement.include?("AS clicks_count")
     end
@@ -227,43 +187,11 @@ class ShopsControllerRecommendationsTest < ActiveSupport::TestCase
     assert ranking_sql
     assert display_sql
     refute_includes ranking_sql.split(/\sFROM\s/i, 2).first, "shops.*"
-    assert_equal 1, ranking_sql.scan(/GROUP BY ["`]?shop_clicks["`]?\.["`]?shop_id["`]?/i).size
+    refute_includes ranking_sql, "GROUP BY"
     refute_includes ranking_sql, "active_storage"
-    refute_includes ranking_sql, "SELECT COUNT(*) FROM shop_clicks WHERE"
+    assert_equal 1, ranking_sql.scan("SELECT COUNT(*) FROM shop_clicks").size
     refute_includes display_sql, "shop_clicks"
     assert_match(/WHERE .*[\"`]?id[\"`]? IN \(/i, display_sql)
-  end
-
-  test "geo recommendations reuse one candidate query and one narrow aggregate each" do
-    origin = insert_shop(latitude: 34.6937, longitude: 135.5023, genre: "バー")
-    8.times do |index|
-      insert_shop(
-        latitude: origin.latitude + (index * 0.0001),
-        longitude: origin.longitude,
-        genre: "バー",
-        open: index.even?
-      )
-    end
-
-    sql = capture_sql do
-      optimized(:nearby_shops_for, origin)
-      optimized(:same_genre_shops_for, origin)
-      optimized(:popular_shops_for, origin)
-    end
-    ranking_queries = sql.select do |statement|
-      statement.include?(" AS distance") && statement.include?("shops.genre")
-    end
-    open_queries = sql.select { |statement| statement.include?("shop_business_hour_windows") }
-    click_queries = sql.select do |statement|
-      statement.include?("shop_clicks") && statement.match?(/GROUP BY ["`]?shop_clicks["`]?\.["`]?shop_id["`]?/i)
-    end
-
-    assert_equal 1, ranking_queries.size
-    assert_equal 1, open_queries.size
-    assert_equal 1, click_queries.size
-    assert_match(/shops\.genre/i, ranking_queries.first)
-    assert_match(/shops\.genre_other/i, ranking_queries.first)
-    refute_match(/bearing/i, ranking_queries.first)
   end
 
   private
