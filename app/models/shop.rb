@@ -9,6 +9,10 @@ class Shop < ApplicationRecord
   has_many :shop_edit_requests, dependent: :destroy
   has_many :shop_reports, dependent: :destroy
   has_many :shop_clicks, dependent: :destroy
+  has_many :business_hour_windows,
+           class_name: "ShopBusinessHourWindow",
+           dependent: :delete_all,
+           inverse_of: :shop
 
   # ===== ActiveStorage =====
   has_many_attached :food_photos
@@ -297,6 +301,7 @@ class Shop < ApplicationRecord
 
   geocoded_by :geocode_address, latitude: :latitude, longitude: :longitude
   after_validation :safe_geocode, if: :should_geocode?
+  after_save :sync_business_hour_windows, if: :business_hours_projection_changed?
   after_commit :log_aicoo_shop_created, on: :create
   after_commit :log_aicoo_shop_updated, on: :update
   after_commit :log_aicoo_shop_destroyed, on: :destroy
@@ -1052,6 +1057,16 @@ class Shop < ApplicationRecord
     return unless respond_to?(:opening_hours_json)
 
     self.opening_hours_json = OpeningHoursParser.normalize_json(opening_hours_json)
+  end
+
+  def business_hours_projection_changed?
+    saved_change_to_opening_hours_json? ||
+      saved_change_to_opening_hours_text? ||
+      saved_change_to_holiday_hours_text?
+  end
+
+  def sync_business_hour_windows
+    ShopBusinessHoursProjection.sync!(self)
   end
 
   def derived_opening_hours_text
