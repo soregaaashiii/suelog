@@ -12,24 +12,6 @@ class ShopsController < ApplicationController
     affiliate_click
   ].freeze
 
-  RECOMMENDATION_IMAGE_PRELOADS = {
-    food_photos_attachments: :blob,
-    interior_photos_attachments: :blob,
-    exterior_photos_attachments: :blob,
-    menu_photos_attachments: :blob
-  }.freeze
-
-  RECOMMENDATION_RANKING_COLUMNS = %w[
-    shops.id
-    shops.opening_hours_json
-    shops.holiday_hours_text
-    shops.opening_hours_text
-    shops.last_confirmed_on
-    shops.created_at
-  ].join(", ").freeze
-
-  RecommendationRankedShop = Struct.new(:id, keyword_init: true)
-
   def index
     redirect_to root_path, status: :moved_permanently
   end
@@ -166,6 +148,12 @@ class ShopsController < ApplicationController
   def nearby_shops_for(shop)
     scope = Shop.approved
                 .where.not(id: shop.id)
+                .includes(
+                  food_photos_attachments: :blob,
+                  interior_photos_attachments: :blob,
+                  exterior_photos_attachments: :blob,
+                  menu_photos_attachments: :blob
+                )
 
     if shop.smoking_area.present? && shop.smoking_area != "unknown"
       scope = scope.where(smoking_area: shop.smoking_area)
@@ -174,26 +162,21 @@ class ShopsController < ApplicationController
     nearby =
       if shop.latitude.present? && shop.longitude.present?
         geo_scope = scope.where.not(latitude: nil, longitude: nil)
-        geo_scope.near(
-          [ shop.latitude, shop.longitude ],
-          3.0,
-          units: :km,
-          select: "shops.id"
-        )
+        geo_scope.near([shop.latitude, shop.longitude], 3.0, units: :km)
       else
-        scope.select(RECOMMENDATION_RANKING_COLUMNS)
+        scope
       end
 
-    ranked_shops = if shop.latitude.present? && shop.longitude.present?
-      rank_geocoded_recommendation_shops(nearby)
-    else
-      rank_recommendation_shops(nearby)
+    sorted = nearby.to_a.sort_by do |s|
+      [
+        (s.respond_to?(:open_now?) && s.open_now?) ? 0 : 1,
+        s.last_confirmed_on.present? ? 0 : 1,
+        - (s.last_confirmed_on.to_i rescue 0),
+        - s.created_at.to_i
+      ]
     end
-    load_recommendation_shops(
-      ranked_shops,
-      origin_shop: shop,
-      radius_km: shop.latitude.present? && shop.longitude.present? ? 3.0 : nil
-    )
+
+    sorted.first(6)
   end
 
   def same_genre_shops_for(shop)
@@ -204,6 +187,12 @@ class ShopsController < ApplicationController
 
     scope = Shop.approved
                 .where.not(id: shop.id)
+                .includes(
+                  food_photos_attachments: :blob,
+                  interior_photos_attachments: :blob,
+                  exterior_photos_attachments: :blob,
+                  menu_photos_attachments: :blob
+                )
 
     if shop.smoking_area.present? && shop.smoking_area != "unknown"
       scope = scope.where(smoking_area: shop.smoking_area)
@@ -226,155 +215,51 @@ class ShopsController < ApplicationController
 
     if shop.latitude.present? && shop.longitude.present?
       scope = scope.where.not(latitude: nil, longitude: nil)
-                   .near(
-                     [ shop.latitude, shop.longitude ],
-                     5.0,
-                     units: :km,
-                     select: "shops.id"
-                   )
-    else
-      scope = scope.select(RECOMMENDATION_RANKING_COLUMNS)
+                   .near([shop.latitude, shop.longitude], 5.0, units: :km)
     end
 
-    ranked_shops = if shop.latitude.present? && shop.longitude.present?
-      rank_geocoded_recommendation_shops(scope)
-    else
-      rank_recommendation_shops(scope)
+    sorted = scope.to_a.sort_by do |s|
+      [
+        (s.respond_to?(:open_now?) && s.open_now?) ? 0 : 1,
+        s.last_confirmed_on.present? ? 0 : 1,
+        - (s.last_confirmed_on.to_i rescue 0),
+        - s.created_at.to_i
+      ]
     end
-    load_recommendation_shops(
-      ranked_shops,
-      origin_shop: shop,
-      radius_km: shop.latitude.present? && shop.longitude.present? ? 5.0 : nil
-    )
+
+    sorted.first(6)
   end
 
   def popular_shops_for(shop)
-    clicks_count_expression = <<~SQL.squish
-      (SELECT COUNT(*) FROM shop_clicks WHERE shop_clicks.shop_id = shops.id)
-    SQL
-
-    ranking_scope = Shop.approved
-                        .where.not(id: shop.id)
+    scope = Shop.approved
+                .where.not(id: shop.id)
+                .left_joins(:shop_clicks)
+                .includes(
+                  food_photos_attachments: :blob,
+                  interior_photos_attachments: :blob,
+                  exterior_photos_attachments: :blob,
+                  menu_photos_attachments: :blob
+                )
+                .select(
+                  "shops.*",
+                  "COUNT(shop_clicks.id) AS clicks_count"
+                )
+                .group("shops.id")
 
     if shop.latitude.present? && shop.longitude.present?
-      ranking_scope = ranking_scope
-        .where.not(latitude: nil, longitude: nil)
-        .near(
-          [ shop.latitude, shop.longitude ],
-          5.0,
-          units: :km,
-          select: "shops.id, #{clicks_count_expression} AS clicks_count",
-          select_bearing: false
-        )
-    else
-      ranking_scope = ranking_scope.select(
-        "shops.id",
-        "#{clicks_count_expression} AS clicks_count"
-      )
+      scope = scope.where.not(latitude: nil, longitude: nil)
+                   .near([shop.latitude, shop.longitude], 5.0, units: :km)
     end
 
-    ranked_shops = ranking_scope
+    scope
       .order(Arel.sql("
-        clicks_count DESC,
+        COUNT(shop_clicks.id) DESC,
         CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
         shops.last_confirmed_on DESC,
         shops.created_at DESC
       "))
       .limit(6)
       .to_a
-
-    clicks_count_by_id = ranked_shops.to_h do |ranked_shop|
-      [ ranked_shop.id, ranked_shop.clicks_count.to_i ]
-    end
-
-    load_recommendation_shops(
-      ranked_shops,
-      origin_shop: shop,
-      radius_km: shop.latitude.present? && shop.longitude.present? ? 5.0 : nil,
-      clicks_count_by_id: clicks_count_by_id
-    )
-  end
-
-  def rank_recommendation_shops(scope)
-    scope.to_a.sort_by do |candidate|
-      [
-        (candidate.respond_to?(:open_now?) && candidate.open_now?) ? 0 : 1,
-        candidate.last_confirmed_on.present? ? 0 : 1,
-        - (candidate.last_confirmed_on.to_i rescue 0),
-        - candidate.created_at.to_i
-      ]
-    end.first(6)
-  end
-
-  def rank_geocoded_recommendation_shops(scope)
-    now = Time.zone.now
-    connection = Shop.connection
-    weekday = connection.quote(now.wday)
-    minute = connection.quote(now.hour * 60 + now.min)
-    created_at_second_sql = if connection.adapter_name.match?(/postgres/i)
-      "FLOOR(EXTRACT(EPOCH FROM shops.created_at))"
-    else
-      "CAST(strftime('%s', shops.created_at) AS INTEGER)"
-    end
-    open_now_sql = <<~SQL.squish
-      EXISTS (
-        SELECT 1
-        FROM shop_business_hour_windows
-        WHERE shop_business_hour_windows.shop_id = shops.id
-          AND shop_business_hour_windows.weekday = #{weekday}
-          AND shop_business_hour_windows.opens_at_minute <= #{minute}
-          AND shop_business_hour_windows.closes_at_minute > #{minute}
-      )
-    SQL
-
-    ranking_scope = scope.select(Arel.sql(<<~SQL.squish))
-      CASE WHEN #{open_now_sql} THEN 0 ELSE 1 END AS open_now_rank,
-      CASE WHEN shops.last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END AS last_confirmed_present_rank,
-      #{created_at_second_sql} AS created_at_second
-    SQL
-
-    connection.select_all(ranking_scope.to_sql)
-              .sort_by do |row|
-                [
-                  row.fetch("open_now_rank").to_i,
-                  row.fetch("last_confirmed_present_rank").to_i,
-                  0,
-                  -row.fetch("created_at_second").to_i
-                ]
-              end
-              .first(6)
-              .map { |row| RecommendationRankedShop.new(id: row.fetch("id").to_i) }
-  end
-
-  def load_recommendation_shops(ranked_shops, origin_shop:, radius_km:, clicks_count_by_id: nil)
-    ranked_ids = ranked_shops.map(&:id)
-    return [] if ranked_ids.empty?
-
-    display_scope = Shop.where(id: ranked_ids)
-    if radius_km
-      display_scope = display_scope.near(
-        [ origin_shop.latitude, origin_shop.longitude ],
-        radius_km,
-        units: :km
-      )
-    else
-      display_scope = display_scope.select("shops.*")
-    end
-
-    if clicks_count_by_id.present?
-      cases = clicks_count_by_id.map do |shop_id, count|
-        "WHEN #{shop_id.to_i} THEN #{count.to_i}"
-      end.join(" ")
-      display_scope = display_scope.select(
-        "CASE shops.id #{cases} ELSE 0 END AS clicks_count"
-      )
-    end
-
-    shops_by_id = display_scope
-      .preload(RECOMMENDATION_IMAGE_PRELOADS)
-      .index_by(&:id)
-
-    ranked_ids.filter_map { |shop_id| shops_by_id[shop_id] }
   end
 
   def related_articles_for(shop)
