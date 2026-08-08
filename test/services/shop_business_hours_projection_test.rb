@@ -28,9 +28,9 @@ class ShopBusinessHoursProjectionTest < ActiveSupport::TestCase
     end_of_day = shop_with_json("monday" => day(open: "24:00", close: "24:00"))
 
     %w[00:00 05:00 12:00 23:59].each do |clock|
-      assert_matches_legacy all_day, MONDAY, [clock]
-      assert_matches_legacy equal, MONDAY, [clock]
-      assert_matches_legacy end_of_day, MONDAY, [clock]
+      assert_matches_legacy all_day, MONDAY, [ clock ]
+      assert_matches_legacy equal, MONDAY, [ clock ]
+      assert_matches_legacy end_of_day, MONDAY, [ clock ]
     end
   end
 
@@ -105,14 +105,14 @@ class ShopBusinessHoursProjectionTest < ActiveSupport::TestCase
     )
 
     persisted_original_hours = shop.reload.opening_hours_json.deep_dup
-    assert_equal [[9 * 60, 18 * 60]], windows_for(shop, 1)
+    assert_equal [ [ 9 * 60, 18 * 60 ] ], windows_for(shop, 1)
     assert_equal persisted_original_hours, shop.reload.opening_hours_json
 
     updated_hours = { "monday" => day(open: "10:00", close: "20:00") }
     shop.update!(opening_hours_json: updated_hours)
 
     persisted_updated_hours = shop.reload.opening_hours_json.deep_dup
-    assert_equal [[10 * 60, 20 * 60]], windows_for(shop, 1)
+    assert_equal [ [ 10 * 60, 20 * 60 ] ], windows_for(shop, 1)
     assert_equal persisted_updated_hours, shop.reload.opening_hours_json
   ensure
     AicooActivityLogger.define_singleton_method(:log, original_logger) if original_logger
