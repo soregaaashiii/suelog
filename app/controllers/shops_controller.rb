@@ -36,6 +36,15 @@ class ShopsController < ApplicationController
     :clicks_count_by_id,
     keyword_init: true
   )
+  RecommendationDisplayShop = Struct.new(:shop, :clicks_count, keyword_init: true) do
+    delegate_missing_to :shop
+
+    delegate :to_key, :to_param, :persisted?, to: :shop
+
+    def to_model
+      shop
+    end
+  end
 
   def index
     redirect_to root_path, status: :moved_permanently
@@ -455,7 +464,10 @@ class ShopsController < ApplicationController
       display_scope = display_scope.select("shops.*")
     end
 
-    if clicks_count_by_id.present?
+    mixed_clicks_count_shape = clicks_count_by_id.present? &&
+      selections.values.any? { |selection| selection.clicks_count_by_id.blank? }
+
+    if clicks_count_by_id.present? && !mixed_clicks_count_shape
       cases = clicks_count_by_id.map do |shop_id, count|
         "WHEN #{shop_id.to_i} THEN #{count.to_i}"
       end.join(" ")
@@ -469,7 +481,16 @@ class ShopsController < ApplicationController
       .index_by(&:id)
 
     selections.transform_values do |selection|
-      selection.ranked_shops.filter_map { |ranked_shop| shops_by_id[ranked_shop.id] }
+      selection.ranked_shops.filter_map do |ranked_shop|
+        hydrated_shop = shops_by_id[ranked_shop.id]
+        next unless hydrated_shop
+        next hydrated_shop unless mixed_clicks_count_shape && selection.clicks_count_by_id.present?
+
+        RecommendationDisplayShop.new(
+          shop: hydrated_shop,
+          clicks_count: selection.clicks_count_by_id.fetch(ranked_shop.id, 0)
+        )
+      end
     end
   end
 

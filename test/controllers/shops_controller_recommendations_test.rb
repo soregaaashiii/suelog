@@ -294,6 +294,8 @@ class ShopsControllerRecommendationsTest < ActiveSupport::TestCase
     assert_equal groups.transform_values { |selection| selection.ranked_shops.map(&:id) },
       @hydrated_groups.transform_values { |group| group.map(&:id) }
     assert_equal 18, @hydrated_groups.values.flatten.map(&:id).uniq.size
+    assert_not @hydrated_groups.fetch(:nearby).first.respond_to?(:clicks_count)
+    assert_not @hydrated_groups.fetch(:same_genre).first.respond_to?(:clicks_count)
     assert_equal 7, @hydrated_groups.fetch(:popular).first.clicks_count.to_i
     assert_operator @hydrated_groups.fetch(:nearby).first.distance.to_f, :>, 0
     assert_equal 1, recommendation_display_queries(sql).size
@@ -324,9 +326,30 @@ class ShopsControllerRecommendationsTest < ActiveSupport::TestCase
     assert_equal [ shared_by_two.id, nearby_only.id, shared_by_three.id ], hydrated.fetch(:nearby).map(&:id)
     assert_equal [ shared_by_three.id, same_only.id, shared_by_two.id ], hydrated.fetch(:same_genre).map(&:id)
     assert_equal [ popular_only.id, shared_by_three.id ], hydrated.fetch(:popular).map(&:id)
-    assert_equal 1, hydrated.values.flatten.select { |shop| shop.id == shared_by_two.id }.map(&:object_id).uniq.size
-    assert_equal 1, hydrated.values.flatten.select { |shop| shop.id == shared_by_three.id }.map(&:object_id).uniq.size
+    assert_equal 1, [ hydrated.fetch(:nearby).first, hydrated.fetch(:same_genre).last ].map(&:object_id).uniq.size
+    assert_equal 1, [ hydrated.fetch(:nearby).last, hydrated.fetch(:same_genre).first ].map(&:object_id).uniq.size
+    assert_same hydrated.fetch(:nearby).last, hydrated.fetch(:popular).last.shop
+    assert_not hydrated.fetch(:nearby).last.respond_to?(:clicks_count)
+    assert hydrated.fetch(:popular).last.respond_to?(:clicks_count)
     assert_equal 4, hydrated.fetch(:popular).last.clicks_count.to_i
+  end
+
+  test "single popular hydration keeps the existing shop virtual attribute" do
+    origin = insert_shop(latitude: nil, longitude: nil, genre: "バー")
+    popular = insert_shop(latitude: nil, longitude: nil, genre: "バー")
+    selection = recommendation_selection(
+      [ popular ],
+      clicks_count_by_id: { popular.id => 5 }
+    )
+
+    hydrated = @controller.send(
+      :load_recommendation_shop_groups,
+      { result: selection },
+      origin_shop: origin
+    ).fetch(:result)
+
+    assert_instance_of Shop, hydrated.first
+    assert_equal 5, hydrated.first.clicks_count.to_i
   end
 
   test "shared hydration preserves attached image selection and rendered html" do
