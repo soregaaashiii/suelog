@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_01_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_08_000000) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -125,6 +125,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_01_010000) do
     t.datetime "updated_at", null: false
     t.index ["edit_token"], name: "index_reviews_on_edit_token", unique: true
     t.index ["shop_id"], name: "index_reviews_on_shop_id"
+  end
+
+  create_table "shop_business_hour_windows", force: :cascade do |t|
+    t.integer "closes_at_minute", null: false
+    t.integer "opens_at_minute", null: false
+    t.integer "shop_id", null: false
+    t.integer "weekday", null: false
+    t.index ["shop_id", "weekday", "opens_at_minute", "closes_at_minute"], name: "index_shop_hours_on_shop_day_and_range", unique: true
+    t.index ["shop_id"], name: "index_shop_business_hour_windows_on_shop_id"
+    t.check_constraint "opens_at_minute >= 0 AND closes_at_minute <= 1440 AND opens_at_minute < closes_at_minute", name: "shop_hours_minute_range"
+    t.check_constraint "weekday BETWEEN 0 AND 6", name: "shop_hours_weekday_range"
   end
 
   create_table "shop_clicks", force: :cascade do |t|
@@ -297,6 +308,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_01_010000) do
   add_foreign_key "page_views", "shops"
   add_foreign_key "review_reports", "reviews"
   add_foreign_key "reviews", "shops"
+  add_foreign_key "shop_business_hour_windows", "shops"
   add_foreign_key "shop_clicks", "articles"
   add_foreign_key "shop_clicks", "shops"
   add_foreign_key "shop_edit_requests", "shops"
