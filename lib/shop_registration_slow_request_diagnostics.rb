@@ -412,6 +412,8 @@ module ShopRegistrationSlowRequestDiagnostics
     end
 
     def sql_category(sql)
+      return "recommendation_base_candidates" if sql.include?("shop_recommendations_base_candidates")
+      return "recommendation_display_shops" if sql.include?("shop_recommendations_display_shops")
       return "popular_shops" if sql.match?(/shop_clicks/i) && sql.match?(/COUNT\s*\(/i)
       return "shop_registration_duplicates" if sql.match?(/duplicate_normalized_(?:name|address)/i)
       return "shops" if sql.match?(/\bshops\b/i)
@@ -590,6 +592,8 @@ module ShopRegistrationSlowRequestDiagnostics
                  ROUND(EXTRACT(EPOCH FROM (clock_timestamp() - query_start))::numeric, 3) AS query_seconds,
                  ROUND(EXTRACT(EPOCH FROM (clock_timestamp() - xact_start))::numeric, 3) AS transaction_seconds,
                  CASE
+                   WHEN query ILIKE '%shop_recommendations_base_candidates%' THEN 'recommendation_base_candidates'
+                   WHEN query ILIKE '%shop_recommendations_display_shops%' THEN 'recommendation_display_shops'
                    WHEN query ILIKE '%shop_clicks%' AND query ILIKE '%COUNT(%' THEN 'popular_shops_group_count'
                    WHEN query ILIKE '%duplicate_normalized_name%' OR query ILIKE '%duplicate_normalized_address%' THEN 'shop_registration_duplicates'
                    WHEN query ILIKE '%shops%' THEN 'shops_other'

@@ -146,6 +146,8 @@ class ShopsController < ApplicationController
   private
 
   def nearby_shops_for(shop)
+    return recommendation_context_for(shop).nearby if geocoded_recommendations?(shop)
+
     scope = Shop.approved
                 .where.not(id: shop.id)
                 .includes(
@@ -180,6 +182,8 @@ class ShopsController < ApplicationController
   end
 
   def same_genre_shops_for(shop)
+    return recommendation_context_for(shop).same_genre if geocoded_recommendations?(shop)
+
     genre_value = shop.genre.to_s.strip
     genre_other_value = shop.genre_other.to_s.strip
 
@@ -231,6 +235,8 @@ class ShopsController < ApplicationController
   end
 
   def popular_shops_for(shop)
+    return recommendation_context_for(shop).popular if geocoded_recommendations?(shop)
+
     scope = Shop.approved
                 .where.not(id: shop.id)
                 .left_joins(:shop_clicks)
@@ -260,6 +266,16 @@ class ShopsController < ApplicationController
       "))
       .limit(6)
       .to_a
+  end
+
+  def recommendation_context_for(shop)
+    @shop_recommendation_contexts ||= {}
+    key = [ shop.id, shop.latitude, shop.longitude ]
+    @shop_recommendation_contexts[key] ||= ShopRecommendationContext.new(shop)
+  end
+
+  def geocoded_recommendations?(shop)
+    shop.latitude.present? && shop.longitude.present?
   end
 
   def related_articles_for(shop)

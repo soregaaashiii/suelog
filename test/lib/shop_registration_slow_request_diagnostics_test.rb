@@ -99,6 +99,26 @@ class ShopRegistrationSlowRequestDiagnosticsTest < ActiveSupport::TestCase
     assert_equal "after_queue", payload.dig("postgres", "trigger")
   end
 
+  test "labels recommendation candidate SQL separately from shops other" do
+    ENV["SHOP_REGISTRATION_SLOW_REQUEST_MS"] = "0"
+    app = lambda do |_env|
+      ActiveSupport::Notifications.instrument(
+        "sql.active_record",
+        name: "Shop Load",
+        sql: "SELECT shops.id FROM shops /* shop_recommendations_base_candidates */",
+        cached: false
+      )
+      [ 200, { "content-type" => "text/plain" }, [ "ok" ] ]
+    end
+
+    ShopRegistrationSlowRequestDiagnostics::Middleware.new(app).call(
+      rack_env("GET", "/panel_8m4k/shop_import/new")
+    )
+
+    payload = JSON.parse(@logger.info_lines.first.delete_prefix("#{ShopRegistrationSlowRequestDiagnostics::PREFIX} "))
+    assert_equal "recommendation_base_candidates", payload.fetch("sql_top").first.fetch("category")
+  end
+
   private
 
   def middleware
