@@ -461,8 +461,9 @@ class TabelogPasteParser
     days << "friday" if day_tokens.include?("金")
     days << "saturday" if day_tokens.include?("土")
     days << "sunday" if day_tokens.include?("日")
-    days << "holiday" if day_tokens.include?("祝日") || day_tokens.include?("祝") || day_tokens.include?("祝後")
+    days << "holiday" if day_tokens.include?("祝日") || day_tokens.include?("祝")
     days << "pre_holiday" if day_tokens.include?("祝前")
+    days << "post_holiday" if day_tokens.include?("祝後")
 
     days.uniq
   end
@@ -485,7 +486,9 @@ class TabelogPasteParser
   end
 
   def standard_day_keys
-    %w[monday tuesday wednesday thursday friday saturday sunday holiday pre_holiday]
+    # 曜日の記載がない通常営業時間は、祝前・祝後の特別営業時間を
+    # 明示したものではない。両日は個別行を作らず通常曜日へフォールバックさせる。
+    %w[monday tuesday wednesday thursday friday saturday sunday holiday]
   end
 
   def extract_smoking_hours_by_day
@@ -689,7 +692,7 @@ class TabelogPasteParser
   end
 
   def ordered_day_keys
-    %w[monday tuesday wednesday thursday friday saturday sunday holiday pre_holiday]
+    %w[monday tuesday wednesday thursday friday saturday sunday holiday pre_holiday post_holiday]
   end
 
   def day_label(day_key)
@@ -702,7 +705,8 @@ class TabelogPasteParser
       "saturday" => "土",
       "sunday" => "日",
       "holiday" => "祝日",
-      "pre_holiday" => "祝前"
+      "pre_holiday" => "祝前",
+      "post_holiday" => "祝後"
     }[day_key]
   end
 

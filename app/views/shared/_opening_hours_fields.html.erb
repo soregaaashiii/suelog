@@ -16,8 +16,14 @@
 "thursday" => "木",
 "friday" => "金",
 "saturday" => "土",
-"sunday" => "日"
+"sunday" => "日",
+"pre_holiday" => "祝前",
+"post_holiday" => "祝後"
 } %>
+
+<p style="color:#666; font-size:13px;">
+祝前・祝後は未設定なら通常の曜日営業時間として扱います。特別営業時間がある場合だけ入力してください。
+</p>
 
 <% days.each do |key, label| %>
 <% d = data[key] || {} %>
@@ -26,7 +32,7 @@
 <div style="margin-bottom:14px; padding:10px; border:1px solid #eee; border-radius:10px;">
 
 <label style="font-weight:700;">
-<%= label %>曜営業
+<%= %w[pre_holiday post_holiday].include?(key) ? "#{label}の特別営業時間" : "#{label}曜営業" %>
 </label>
 
 <div style="margin-top:6px;">

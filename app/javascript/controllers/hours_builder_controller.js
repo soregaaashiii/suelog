@@ -47,7 +47,16 @@ export default class extends Controller {
 
   setSelect(row, selector, value) {
     const select = row.querySelector(selector)
-    if (select && value) select.value = value
+    if (!select || !value) return
+
+    // 通常の手入力は15分刻みの選択肢を維持する。
+    // 食べログから22:10など刻み外の時刻が来た場合は、その値だけを
+    // 選択肢へ追加して空欄にせず、そのまま保存できるようにする。
+    if (!Array.from(select.options).some((option) => option.value === value)) {
+      select.add(new Option(value, value))
+    }
+
+    select.value = value
   }
 
   applyExistingTextToUi() {
@@ -71,6 +80,12 @@ export default class extends Controller {
       const checkbox = row.querySelector("[data-hours-open]")
       if (!checkbox || !label) return
 
+      if (label === "祝前" || label === "祝後") {
+        // 個別の営業時間行が後続処理で見つかった場合だけオンにする。
+        checkbox.checked = false
+        return
+      }
+
       checkbox.checked = !(closedLabels.includes(label) || closedLabels.includes(`${label}曜`))
     })
   }
@@ -80,7 +95,7 @@ export default class extends Controller {
       const line = rawLine.trim()
       if (!line) return
 
-      const label = line.match(/^(月|火|水|木|金|土|日|祝日|祝前)\s/)?.[1]
+      const label = line.match(/^(月|火|水|木|金|土|日|祝日|祝前|祝後)\s/)?.[1]
       if (!label) return
 
       const row = Array.from(this.element.querySelectorAll("[data-hours-row]")).find((candidate) => {
@@ -99,7 +114,7 @@ export default class extends Controller {
       .filter(Boolean)
 
     lines.forEach((line) => {
-      const label = line.match(/^(祝日|祝前)\s/)?.[1] || "祝日"
+      const label = line.match(/^(祝日|祝前|祝後)\s/)?.[1] || "祝日"
 
       const row = Array.from(this.element.querySelectorAll("[data-hours-row]")).find((candidate) => {
         return candidate.querySelector("span")?.textContent?.trim() === label
@@ -114,7 +129,7 @@ export default class extends Controller {
     const checkbox = row.querySelector("[data-hours-open]")
     if (checkbox) checkbox.checked = true
 
-    const cleanLine = line.replace(/^(月|火|水|木|金|土|日|祝前|祝日)\s*/, "").trim()
+    const cleanLine = line.replace(/^(月|火|水|木|金|土|日|祝前|祝後|祝日)\s*/, "").trim()
     const [hoursPart, smokingPart] = cleanLine.split("（喫煙可：")
 
     const ranges = hoursPart.match(/\d{1,2}:\d{2}\s*[-〜~－–—]\s*\d{1,2}:\d{2}(?:（L\.O\. \d{1,2}:\d{2}）)?/g) || []
@@ -198,9 +213,12 @@ export default class extends Controller {
     this.element.querySelectorAll("[data-hours-row]").forEach((row) => {
       const label = row.querySelector("span")?.textContent?.trim()
       const open = row.querySelector("[data-hours-open]")?.checked
+      const usesWeekdayFallback = label === "祝前" || label === "祝後"
 
       if (!open) {
-        if (label) closedDays.push(label)
+        // 祝前・祝後は未設定なら通常の曜日営業時間に従う。
+        // 明示的な行がある場合だけ特別営業時間として保存する。
+        if (label && !usesWeekdayFallback) closedDays.push(label)
         return
       }
 
@@ -234,7 +252,7 @@ export default class extends Controller {
 
       const line = `${label} ${hours}${smoking}`
 
-      if (label === "祝日" || label === "祝前") {
+      if (label === "祝日" || label === "祝前" || label === "祝後") {
         holidayLines.push(line)
       } else {
         openingLines.push(line)

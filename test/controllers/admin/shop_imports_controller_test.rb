@@ -115,7 +115,11 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
       area: "梅田",
       genre: "居酒屋",
       last_confirmed_on: Date.current,
-      import_source: "tabelog_paste"
+      import_source: "tabelog_paste",
+      opening_hours_text: "祝後 17:10-23:55",
+      opening_hours_json: {
+        "post_holiday" => { "closed" => false, "open" => "17:10", "close" => "23:55" }
+      }
     )
 
     get edit_admin_shop_path(shop, from: "shop_import"), headers: @auth_headers
@@ -123,6 +127,11 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'form[data-controller="single-submit"]', count: 1
     assert_select 'input[type="submit"][name="commit_action"][value="approve"]', count: 1
+    assert_select '[data-hours-row="post_holiday"]', count: 1 do
+      assert_select "span", text: "祝後"
+      assert_select "[data-hours-start1]", count: 1
+    end
+    assert_includes response.body, "祝後 17:10-23:55"
   end
 
   test "activity enqueue failure does not fail provisional registration" do

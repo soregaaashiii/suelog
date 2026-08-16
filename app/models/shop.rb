@@ -654,7 +654,9 @@ class Shop < ApplicationRecord
       ["木", "thursday"],
       ["金", "friday"],
       ["土", "saturday"],
-      ["日", "sunday"]
+      ["日", "sunday"],
+      ["祝前", "pre_holiday"],
+      ["祝後", "post_holiday"]
     ]
 
     data = opening_hours_data

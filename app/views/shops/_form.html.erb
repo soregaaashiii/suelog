@@ -129,9 +129,9 @@ Array(shop.seat_type_tags).map(&:to_s).include?(value) %>
 <hr>
 
 <h3 style="margin:0;">営業時間</h3>
-<p style="color:#666; margin:0 0 6px;">曜日ごとに「営業/定休」「開店/閉店」「中休み」を入力</p>
+<p style="color:#666; margin:0 0 6px;">曜日ごとに「営業/定休」「開店/閉店」「中休み」を入力。祝前・祝後は未設定なら通常の曜日営業時間として扱います。</p>
 
-<% days = [["月","monday"],["火","tuesday"],["水","wednesday"],["木","thursday"],["金","friday"],["土","saturday"],["日","sunday"]] %>
+<% days = [["月","monday"],["火","tuesday"],["水","wednesday"],["木","thursday"],["金","friday"],["土","saturday"],["日","sunday"],["祝前","pre_holiday"],["祝後","post_holiday"]] %>
 
 <div id="opening-hours-form" style="display:grid; gap:12px;">
 <% data = shop.opening_hours_data || {} %>
