@@ -98,4 +98,16 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
 
     assert_equal expected.join("\n"), result[:smoking_hours_text]
   end
+
+  test "treats separated heated tobacco wording as smoking at the seat" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      加熱式分煙テスト
+      禁煙・喫煙
+      分煙（加熱式たばこ限定）
+    TEXT
+
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+  end
 end
