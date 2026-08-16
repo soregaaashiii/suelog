@@ -251,6 +251,21 @@
       { required: true, style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border-radius:12px;" } %>
   </div>
 
+  <div style="margin:12px 0; padding:14px; border:1px solid #eee; border-radius:12px; background:#fffdf8;">
+    <div style="font-weight:800; margin-bottom:8px;">喫煙条件2（任意）</div>
+    <p style="margin:0 0 10px; color:#666; font-size:12px; line-height:1.6;">
+      加熱式は席、紙タバコは喫煙所など、条件が二つある場合だけ入力してください。
+    </p>
+    <%= f.select :smoking_area_2,
+      [["喫煙エリア2を選択", ""], ["喫煙所あり", "separated"], ["席で喫煙可", "all_smoking"], ["不明", "unknown"]],
+      {},
+      { style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border-radius:12px; margin-bottom:8px;" } %>
+    <%= f.select :smoking_type_2,
+      [["喫煙タイプ2を選択", ""], ["紙・加熱式どちらもOK", "both_ok"], ["加熱式タバコのみOK", "electronic_only"], ["紙タバコのみOK", "paper_only"], ["不明", "unknown"]],
+      {},
+      { style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border-radius:12px;" } %>
+  </div>
+
   <div style="margin:12px 0; padding:14px; border:1px solid #eee; border-radius:12px; background:#f9fafb;">
     <div style="font-weight:800; font-size:16px; margin-bottom:8px;">喫煙情報ステータス</div>
 

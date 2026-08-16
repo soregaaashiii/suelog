@@ -496,6 +496,8 @@ class ShopsController < ApplicationController
       :phone,
       :smoking_area,
       :smoking_type,
+      :smoking_area_2,
+      :smoking_type_2,
       :genre,
       :genre_other,
       :thumbnail_kind,

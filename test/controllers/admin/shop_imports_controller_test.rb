@@ -75,6 +75,25 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal shop.id, deliveries.first[:source_id]
   end
 
+  test "create saves both smoking conditions when the source describes separate rules" do
+    raw_text = tabelog_text("複数喫煙条件テスト店舗").sub(
+      "全席喫煙可",
+      "加熱式たばこは席で喫煙可、紙巻きたばこは喫煙所をご利用ください"
+    )
+
+    with_replaced_method(AicooActivityDeliveryJob, :perform_later, ->(_attributes) {}) do
+      post admin_shop_import_path,
+           params: { raw_text: raw_text, force_new: "1" },
+           headers: @auth_headers
+    end
+
+    shop = Shop.order(:id).last
+    assert_equal "all_smoking", shop.smoking_area
+    assert_equal "electronic_only", shop.smoking_type
+    assert_equal "separated", shop.smoking_area_2
+    assert_equal "paper_only", shop.smoking_type_2
+  end
+
   test "final approval uses the provisional shop and queues activity delivery" do
     shop = Shop.create!(
       name: "本登録テスト店舗",

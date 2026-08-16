@@ -68,6 +68,20 @@ include_blank: "選択してください" %>
 </div>
 
 <div>
+<%= f.label :smoking_area_2, "喫煙エリア2（任意）" %><br>
+<%= f.select :smoking_area_2,
+[["喫煙所あり","separated"],["席で喫煙可","all_smoking"]],
+include_blank: "条件が1つなら空欄" %>
+</div>
+
+<div>
+<%= f.label :smoking_type_2, "喫煙タイプ2（任意）" %><br>
+<%= f.select :smoking_type_2,
+[["紙・加熱式OK","both_ok"],["加熱式のみ","electronic_only"],["紙のみ","paper_only"]],
+include_blank: "条件が1つなら空欄" %>
+</div>
+
+<div>
 <%= f.label :last_confirmed_on, "最終確認日" %><br>
 <%= f.date_field :last_confirmed_on, required: true %>
 </div>

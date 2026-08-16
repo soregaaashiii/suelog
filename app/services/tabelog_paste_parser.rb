@@ -34,6 +34,8 @@ class TabelogPasteParser
       all_you_can_drink_type: metadata[:all_you_can_drink_type],
       smoking_area: metadata[:smoking_area],
       smoking_type: metadata[:smoking_type],
+      smoking_area_2: metadata[:smoking_area_2],
+      smoking_type_2: metadata[:smoking_type_2],
       smoking_hours_text: metadata[:smoking_hours_text],
       public_store_details: metadata[:smoking_note],
       raw_import_text: @raw_text,
@@ -53,6 +55,7 @@ class TabelogPasteParser
     drink_raw = field_value("ドリンク")
     course_raw = field_value("コース")
     menu_raw = section_text("メニュー")
+    smoking_conditions = extract_smoking_conditions(smoking_raw)
 
     {
       name: extract_name,
@@ -80,8 +83,10 @@ class TabelogPasteParser
       seat_type_tags: extract_seat_type_tags(space_raw),
       all_you_can_drink_type: extract_all_you_can_drink_type(course_raw, menu_raw),
       smoking_raw: smoking_raw,
-      smoking_area: extract_smoking_area(smoking_raw),
-      smoking_type: extract_smoking_type(smoking_raw),
+      smoking_area: smoking_conditions.dig(0, :area),
+      smoking_type: smoking_conditions.dig(0, :type),
+      smoking_area_2: smoking_conditions.dig(1, :area),
+      smoking_type_2: smoking_conditions.dig(1, :type),
       smoking_hours_text: extract_smoking_hours_text,
       smoking_note: extract_smoking_note,
       charter_raw: field_value("貸切"),
@@ -863,6 +868,25 @@ class TabelogPasteParser
     return "no_all_you_can_drink" if text.match?(/飲み放題\s*(?:無|なし|無し)/)
 
     "unknown"
+  end
+
+  def extract_smoking_conditions(raw)
+    text = [raw, @text].compact.join("\n")
+    heated_at_seat =
+      text.match?(/(?:加熱式(?:たばこ|タバコ)?|電子(?:たばこ|タバコ)?)[^。\n]{0,40}(?:席|店内)[^。\n]{0,20}(?:喫煙|吸)/) ||
+      text.match?(/(?:席|店内)[^。\n]{0,40}(?:加熱式(?:たばこ|タバコ)?|電子(?:たばこ|タバコ)?)[^。\n]{0,20}(?:喫煙|吸|可)/)
+    paper_at_smoking_area =
+      text.match?(/(?:紙(?:巻き)?(?:たばこ|タバコ)?)[^。\n]{0,40}(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|店外|屋外)/) ||
+      text.match?(/(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|店外|屋外)[^。\n]{0,40}(?:紙(?:巻き)?(?:たばこ|タバコ)?)/)
+
+    if heated_at_seat && paper_at_smoking_area
+      return [
+        { area: "all_smoking", type: "electronic_only" },
+        { area: "separated", type: "paper_only" }
+      ]
+    end
+
+    [{ area: extract_smoking_area(raw), type: extract_smoking_type(raw) }]
   end
 
   def extract_smoking_area(raw)

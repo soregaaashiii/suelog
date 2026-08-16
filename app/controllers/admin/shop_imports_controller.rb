@@ -159,6 +159,8 @@ class Admin::ShopImportsController < Admin::BaseController
       :all_you_can_drink_type,
       :smoking_area,
       :smoking_type,
+      :smoking_area_2,
+      :smoking_type_2,
       :smoking_hours_text,
       :public_store_details
     ].each do |key|

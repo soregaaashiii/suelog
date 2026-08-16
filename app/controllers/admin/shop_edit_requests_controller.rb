@@ -167,6 +167,34 @@ else
 end
 attrs[:smoking_type] = smoking_type if smoking_type.present?
 
+smoking_area_2 =
+case safe_str(req.proposed_smoking_area_2)
+when "area_separated", "proposed_secondary_area_separated"
+"separated"
+when "area_all_smoking", "proposed_secondary_area_all_smoking"
+"all_smoking"
+when "area_unknown", "proposed_secondary_area_unknown"
+"unknown"
+else
+nil
+end
+attrs[:smoking_area_2] = smoking_area_2
+
+smoking_type_2 =
+case safe_str(req.proposed_smoking_type_2)
+when "type_both_ok", "proposed_secondary_type_both_ok"
+"both_ok"
+when "type_electronic_only", "proposed_secondary_type_electronic_only"
+"electronic_only"
+when "type_paper_only", "proposed_secondary_type_paper_only"
+"paper_only"
+when "type_unknown", "proposed_secondary_type_unknown"
+"unknown"
+else
+nil
+end
+attrs[:smoking_type_2] = smoking_type_2
+
 genre = safe_str(req.genre)
 if genre.present?
 attrs[:genre] = genre

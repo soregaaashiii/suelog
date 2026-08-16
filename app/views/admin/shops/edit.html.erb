@@ -329,6 +329,22 @@
       style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
     </div>
 
+    <div>
+      <div style="font-weight:700;">喫煙エリア2（任意）</div>
+      <%= f.select :smoking_area_2,
+      [["席で喫煙可", "all_smoking"], ["喫煙所あり", "separated"], ["不明", "unknown"]],
+      { include_blank: "条件が1つなら空欄" },
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
+
+    <div>
+      <div style="font-weight:700;">喫煙タイプ2（任意）</div>
+      <%= f.select :smoking_type_2,
+      [["紙・加熱式どちらもOK", "both_ok"], ["加熱式タバコのみOK", "electronic_only"], ["紙タバコのみOK", "paper_only"], ["不明", "unknown"]],
+      { include_blank: "条件が1つなら空欄" },
+      style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+    </div>
+
     <div style="grid-column:1/-1; padding:14px; border:1px solid #eee; border-radius:12px; background:#f9fafb;">
       <div style="font-weight:800; font-size:16px; margin-bottom:8px;">喫煙情報ステータス</div>
 

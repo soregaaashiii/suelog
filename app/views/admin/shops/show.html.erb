@@ -18,6 +18,10 @@
       <div><strong>ジャンル:</strong> <%= (@shop.respond_to?(:display_genre) ? @shop.display_genre : @shop.genre).presence || "なし" %></div>
       <div><strong>喫煙エリア:</strong> <%= (@shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : @shop.smoking_area).presence || "なし" %></div>
       <div><strong>喫煙タイプ:</strong> <%= (@shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : @shop.smoking_type).presence || "なし" %></div>
+      <% if @shop.respond_to?(:secondary_smoking_condition?) && @shop.secondary_smoking_condition? %>
+        <div><strong>喫煙エリア2:</strong> <%= @shop.smoking_area_2_label %></div>
+        <div><strong>喫煙タイプ2:</strong> <%= @shop.smoking_type_2_label %></div>
+      <% end %>
       <div><strong>最終確認日:</strong> <%= @shop.last_confirmed_on.presence || "なし" %></div>
       <div>
         <strong>営業時間:</strong>

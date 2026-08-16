@@ -1324,6 +1324,8 @@ class Admin::ShopsController < Admin::BaseController
       :public_store_details,
       :smoking_area,
       :smoking_type,
+      :smoking_area_2,
+      :smoking_type_2,
       :smoking_unverified,
       :smoking_hours_text,
       :last_confirmed_on,

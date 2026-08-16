@@ -1415,6 +1415,11 @@
         <span class="ss-badge ss-badge--muted">喫煙タイプ不明</span>
       <% end %>
 
+      <% if @shop.respond_to?(:secondary_smoking_condition?) && @shop.secondary_smoking_condition? %>
+        <span class="ss-badge <%= @shop.smoking_area_2 == 'all_smoking' ? 'ss-badge--dark' : 'ss-badge--line' %>"><%= @shop.smoking_area_2_label %></span>
+        <span class="ss-badge ss-badge--gold"><%= @shop.smoking_type_2_label %></span>
+      <% end %>
+
       <% if @shop.respond_to?(:open_now?) && @shop.open_now? %>
         <span class="ss-badge ss-badge--green">
           営業中
@@ -1578,6 +1583,13 @@
             <%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定" %>
           </div>
         </div>
+
+        <% if @shop.respond_to?(:secondary_smoking_condition?) && @shop.secondary_smoking_condition? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">喫煙条件2</div>
+            <div class="shop-show__infoCell"><%= @shop.smoking_area_2_label %>／<%= @shop.smoking_type_2_label %></div>
+          </div>
+        <% end %>
 
         <% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
           <div class="shop-show__infoRow">

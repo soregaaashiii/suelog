@@ -34,6 +34,19 @@ enum :proposed_smoking_type, {
   type_unknown: 3
 }, prefix: :proposed
 
+enum :proposed_smoking_area_2, {
+  area_separated: 0,
+  area_all_smoking: 1,
+  area_unknown: 2
+}, prefix: :proposed_secondary
+
+enum :proposed_smoking_type_2, {
+  type_both_ok: 0,
+  type_electronic_only: 1,
+  type_paper_only: 2,
+  type_unknown: 3
+}, prefix: :proposed_secondary
+
 validates :proposed_smoking_area,
   presence: { message: "を選択してください（編集依頼では必須）" },
   unless: :status_report?
@@ -63,6 +76,16 @@ super(normalized)
 end
 
 def proposed_smoking_type=(value)
+normalized = normalize_smoking_type_token(value)
+super(normalized)
+end
+
+def proposed_smoking_area_2=(value)
+normalized = normalize_smoking_area_token(value)
+super(normalized)
+end
+
+def proposed_smoking_type_2=(value)
 normalized = normalize_smoking_type_token(value)
 super(normalized)
 end
@@ -118,6 +141,8 @@ def normalize_proposed_smoking_values
 # setter経由でもう正規化されるが、念のため再正規化して整合性を保つ
 self[:proposed_smoking_area] = self.class.proposed_smoking_areas[normalize_smoking_area_token(proposed_smoking_area)] if normalize_smoking_area_token(proposed_smoking_area).present?
 self[:proposed_smoking_type] = self.class.proposed_smoking_types[normalize_smoking_type_token(proposed_smoking_type)] if normalize_smoking_type_token(proposed_smoking_type).present?
+self[:proposed_smoking_area_2] = self.class.proposed_smoking_area_2s[normalize_smoking_area_token(proposed_smoking_area_2)] if normalize_smoking_area_token(proposed_smoking_area_2).present?
+self[:proposed_smoking_type_2] = self.class.proposed_smoking_type_2s[normalize_smoking_type_token(proposed_smoking_type_2)] if normalize_smoking_type_token(proposed_smoking_type_2).present?
 end
 
 def normalize_smoking_area_token(value)

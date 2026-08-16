@@ -175,6 +175,19 @@ class Shop < ApplicationRecord
     unknown: 3
   }, prefix: true
 
+  enum :smoking_area_2, {
+    separated: 0,
+    all_smoking: 1,
+    unknown: 2
+  }, prefix: true
+
+  enum :smoking_type_2, {
+    both_ok: 0,
+    electronic_only: 1,
+    paper_only: 2,
+    unknown: 3
+  }, prefix: true
+
   enum :private_room_type, {
     unknown: 0,
     no_private_room: 1,
@@ -450,6 +463,29 @@ class Shop < ApplicationRecord
     else
       "未設定"
     end
+  end
+
+  def smoking_area_2_label
+    case smoking_area_2
+    when "all_smoking" then "席で喫煙可"
+    when "separated" then "喫煙所あり"
+    when "unknown" then "不明"
+    else "未設定"
+    end
+  end
+
+  def smoking_type_2_label
+    case smoking_type_2
+    when "both_ok" then "紙・加熱式どちらもOK"
+    when "electronic_only" then "加熱式タバコのみOK"
+    when "paper_only" then "紙タバコのみOK"
+    when "unknown" then "不明"
+    else "未設定"
+    end
+  end
+
+  def secondary_smoking_condition?
+    smoking_area_2.present? || smoking_type_2.present?
   end
 
   def suggested_smoking_location_for_verification
