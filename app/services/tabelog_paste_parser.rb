@@ -872,8 +872,8 @@ normalized_scoped_text =
 
 weekday_lunch_non_smoking_match =
   normalized_scoped_text.match(/平日ランチタイム（?月[～〜\-−ー]金）?\s*(\d{1,2}:\d{2})[～〜\-−ー](\d{1,2}:\d{2}).*全席禁煙/) ||
-  normalized_scoped_text.match(/(\d{1,2}:\d{2})\s*[～〜~\-－–—]\s*(\d{1,2}:\d{2})まで.*(?:全席|全面)禁煙/) ||
-  normalized_scoped_text.match(/(\d{1,2})時\s*[～〜~\-－–—]\s*(\d{1,2})時まで.*(?:全席|全面)禁煙/) ||
+  normalized_scoped_text.match(/(\d{1,2}:\d{2})\s*[～〜~\-－–—]\s*(\d{1,2}:\d{2})まで.*(?:全席|全面|完全)禁煙/) ||
+  normalized_scoped_text.match(/(\d{1,2})時\s*[～〜~\-－–—]\s*(\d{1,2})時まで.*(?:全席|全面|完全)禁煙/) ||
   normalized_scoped_text.match(/open\s*[～〜~\-－–—]\s*(\d{1,2})時まで禁煙/i)
 
 if weekday_lunch_non_smoking_match
@@ -885,7 +885,9 @@ if weekday_lunch_non_smoking_match
 
       rows = opening_text.lines.map(&:strip).filter_map do |line|
         day = line[/\A(\S+)\s+/, 1]
-        ranges = line.scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
+        # opening_text には各営業時間の後ろに「（喫煙可：...）」が付く場合がある。
+        # その注記内の時間を再び営業時間として拾うと、喫煙可能枠が重複する。
+        ranges = line.gsub(/（喫煙可：[^）]+）/, "").scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
 
         next if day.blank? || ranges.blank?
 
@@ -917,7 +919,7 @@ if weekday_lunch_non_smoking_match
        scoped_text.match?(/ディナー.*分煙|ディナー.*喫煙|ディナー：喫煙可|分煙|喫煙可|喫煙スペース/)
       rows = opening_text.lines.map(&:strip).filter_map do |line|
         day = line[/\A(\S+)\s+/, 1]
-        ranges = line.scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
+        ranges = line.gsub(/（喫煙可：[^）]+）/, "").scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
 
         next if day.blank? || ranges.blank?
 
@@ -949,7 +951,7 @@ if weekday_lunch_non_smoking_match
     return "#{until_hour_match[1]}:00まで" if until_hour_match
 
     start_time =
-      scoped_text[/(\d{1,2}[:：]\d{2})\s*までは全席禁煙/, 1] ||
+      scoped_text[/(\d{1,2}[:：]\d{2})\s*までは(?:全席|全面|完全)禁煙/, 1] ||
       scoped_text[/(\d{1,2}[:：]\d{2})\s*[〜～~\-－–—]?\s*喫煙可/, 1]
 
     return nil if start_time.blank?

@@ -37,4 +37,42 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "17:10", result[:opening_hours_json].dig("post_holiday", "open")
     assert_equal "23:55", result[:opening_hours_json].dig("post_holiday", "close")
   end
+
+  test "does not duplicate smoking ranges embedded in opening hour annotations" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      ヒャン
+      営業時間
+      月・火・水・木・金・土
+      11:30 - 14:00
+      17:00 - 22:00
+      日
+      定休日
+      禁煙・喫煙
+      分煙
+      ランチタイム１１：３０～１３：００まで全席禁煙
+    TEXT
+
+    expected = %w[月 火 水 木 金 土].map do |day|
+      "#{day} 13:00 - 14:00, 17:00 - 22:00"
+    end.join("\n")
+
+    assert_equal expected, result[:smoking_hours_text]
+  end
+
+  test "treats completely non-smoking wording as a timed non-smoking rule" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      完全禁煙時間テスト
+      営業時間
+      月
+      11:30 - 14:00
+      17:30 - 23:30
+      禁煙・喫煙
+      全席喫煙可
+      11:00～17:00まで完全禁煙
+    TEXT
+
+    assert_equal "月 17:30 - 23:30", result[:smoking_hours_text]
+  end
 end
