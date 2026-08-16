@@ -163,7 +163,7 @@ export default class extends Controller {
       const [start, end] = this.parseRange(smokingPart)
       this.setSelect(row, "[data-smoking-start]", start)
       this.setSelect(row, "[data-smoking-end]", end)
-    } else if (smokingSame) {
+    } else if (smokingSame && row.querySelector("[data-smoking-unavailable]")?.dataset.smokingUnavailable !== "true") {
       smokingSame.checked = true
     }
   }

@@ -180,10 +180,14 @@
 
   <% imported_smoking_hours.lines.map(&:strip).each do |line| %>
     <% smoking_line_match = line.match(/\A(\S+)\s+(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/) %>
+    <% smoking_unavailable_match = line.match(/\A(\S+)\s+(?:喫煙不可|終日禁煙)\z/) %>
 
     <% if smoking_line_match.present? %>
       <% smoking_day_key = smoking_day_key_map[smoking_line_match[1]] %>
       <% imported_smoking_hours_by_day[smoking_day_key] = [smoking_line_match[2], smoking_line_match[3]] if smoking_day_key.present? %>
+    <% elsif smoking_unavailable_match.present? %>
+      <% smoking_day_key = smoking_day_key_map[smoking_unavailable_match[1]] %>
+      <% imported_smoking_hours_by_day[smoking_day_key] = [nil, nil] if smoking_day_key.present? %>
     <% end %>
   <% end %>
 
@@ -242,11 +246,13 @@
         </div>
 
         <% imported_day_smoking_hours = imported_smoking_hours_by_day[key] %>
-        <% existing_smoking_start = imported_day_smoking_hours.present? ? imported_day_smoking_hours[0] : (imported_smoking_start.presence || existing_open) %>
-        <% existing_smoking_end = imported_day_smoking_hours.present? ? imported_day_smoking_hours[1] : (imported_smoking_end.presence || existing_close) %>
-        <% smoking_same_checked = imported_day_smoking_hours.blank? && imported_smoking_start.blank? && imported_smoking_end.blank? %>
+        <% imported_day_smoking_configured = imported_smoking_hours_by_day.key?(key) %>
+        <% existing_smoking_start = imported_day_smoking_configured ? imported_day_smoking_hours[0].to_s : (imported_smoking_start.presence || existing_open) %>
+        <% existing_smoking_end = imported_day_smoking_configured ? imported_day_smoking_hours[1].to_s : (imported_smoking_end.presence || existing_close) %>
+        <% smoking_unavailable = imported_day_smoking_configured && existing_smoking_start.blank? && existing_smoking_end.blank? %>
+        <% smoking_same_checked = !imported_day_smoking_configured && imported_smoking_start.blank? && imported_smoking_end.blank? %>
 
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;" data-smoking-unavailable="<%= smoking_unavailable %>">
           <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700;">
             <input type="checkbox" data-smoking-same <%= "checked" if smoking_same_checked %>>
             喫煙時間は営業時間と同じ

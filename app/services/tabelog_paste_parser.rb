@@ -907,9 +907,11 @@ if weekday_lunch_non_smoking_match
             end
           end
 
-        next if smoking_ranges.blank?
-
-        "#{day} #{smoking_ranges.join(', ')}"
+        if smoking_ranges.blank?
+          "#{day} 喫煙不可"
+        else
+          "#{day} #{smoking_ranges.join(', ')}"
+        end
       end
 
       return rows.join("\n").presence if rows.present?

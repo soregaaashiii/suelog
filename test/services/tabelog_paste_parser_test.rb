@@ -75,4 +75,27 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
 
     assert_equal "月 17:30 - 23:30", result[:smoking_hours_text]
   end
+
+  test "marks a day unavailable when all of its opening hours are non-smoking" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      和 あいだ
+      営業時間
+      月・火・水・木・金
+      11:30 - 14:00
+      17:30 - 22:00
+      土
+      11:30 - 14:00
+      日・祝日
+      定休日
+      禁煙・喫煙
+      全席喫煙可
+      11：30～14：00まで全面禁煙
+    TEXT
+
+    expected = %w[月 火 水 木 金].map { |day| "#{day} 17:30 - 22:00" }
+    expected << "土 喫煙不可"
+
+    assert_equal expected.join("\n"), result[:smoking_hours_text]
+  end
 end

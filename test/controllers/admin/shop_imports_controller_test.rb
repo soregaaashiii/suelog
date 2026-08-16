@@ -116,8 +116,10 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
       genre: "居酒屋",
       last_confirmed_on: Date.current,
       import_source: "tabelog_paste",
-      opening_hours_text: "祝後 17:10-23:55",
+      opening_hours_text: "土 11:30-14:00\n祝後 17:10-23:55",
+      smoking_hours_text: "土 喫煙不可",
       opening_hours_json: {
+        "saturday" => { "closed" => false, "open" => "11:30", "close" => "14:00" },
         "post_holiday" => { "closed" => false, "open" => "17:10", "close" => "23:55" }
       }
     )
@@ -130,6 +132,11 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
     assert_select '[data-hours-row="post_holiday"]', count: 1 do
       assert_select "span", text: "祝後"
       assert_select "[data-hours-start1]", count: 1
+    end
+    assert_select '[data-hours-row="sat"] [data-smoking-unavailable="true"]', count: 1 do
+      assert_select "[data-smoking-same]:not([checked])", count: 1
+      assert_select "[data-smoking-start] option[selected][value='']", count: 1
+      assert_select "[data-smoking-end] option[selected][value='']", count: 1
     end
     assert_includes response.body, "祝後 17:10-23:55"
   end
