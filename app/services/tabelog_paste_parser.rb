@@ -594,10 +594,13 @@ class TabelogPasteParser
 
   def labeled_meal_range(line, label)
     normalized = line.to_s.tr("０１２３４５６７８９：", "0123456789:")
-    match = normalized.match(/#{Regexp.escape(label)}.*?(\d{1,2})(?::(\d{2}))?\s*時?\s*[〜～~\-－–—]\s*(\d{1,2})(?::(\d{2}))?\s*時?/)
+    match = normalized.match(/#{Regexp.escape(label)}.*?(\d{1,2})(?::(\d{2}))?\s*時?\s*[〜～~\-－–—]\s*(翌)?\s*(\d{1,2})(?::(\d{2}))?\s*時?/)
     return nil if match.blank?
 
-    [format("%02d:%02d", match[1].to_i, match[2].to_i), format("%02d:%02d", match[3].to_i, match[4].to_i)]
+    close_hour = match[4].to_i
+    close_hour += 24 if match[3].present? && close_hour < 24
+
+    [format("%02d:%02d", match[1].to_i, match[2].to_i), format("%02d:%02d", close_hour, match[5].to_i)]
   end
 
   def open_ended_meal_start(line, label)
