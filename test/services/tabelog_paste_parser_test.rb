@@ -110,4 +110,31 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "electronic_only", result[:smoking_type]
   end
+
+  test "parses open ended lunch hours using the following dinner start" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      キッチンスタジアム
+      営業時間
+      ■ 営業時間
+      [月～金]
+      ランチ11時〜
+      ディナー17:00〜22時
+      ■定休日
+      土曜日・日曜日、祝日
+      禁煙・喫煙
+      全席喫煙可
+      ランチタイムは、禁煙になります
+    TEXT
+
+    %w[月 火 水 木 金].each do |day|
+      assert_includes result[:opening_hours_text], "#{day} 11:00-17:00, 17:00-22:00"
+      assert_includes result[:smoking_hours_text], "#{day} 17:00 - 22:00"
+    end
+
+    assert_equal "11:00", result[:opening_hours_json].dig("monday", "open")
+    assert_equal "22:00", result[:opening_hours_json].dig("monday", "close")
+    assert_equal "17:00", result[:opening_hours_json].dig("monday", "break_start")
+    assert_equal "17:00", result[:opening_hours_json].dig("monday", "break_end")
+  end
 end

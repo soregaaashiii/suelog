@@ -296,7 +296,7 @@ class TabelogPasteParser
       current_hours = []
     end
 
-    raw.lines.map(&:strip).reject(&:blank?).each do |line|
+    opening_hours_lines_for_parsing.each do |line|
       lo_text =
         if line.match?(/\A[（(]?\s*L\.?O\.?/i)
           line.sub(/\A[（(]?\s*L\.?O\.?\s*/i, "").sub(/[）)]\z/, "").strip
@@ -353,7 +353,7 @@ class TabelogPasteParser
     periods_by_day = {}
     current_days = []
 
-    raw.lines.map(&:strip).reject(&:blank?).each do |line|
+    opening_hours_lines_for_parsing.each do |line|
       next if line.match?(/\A[（(]?\s*L\.?O\.?\s*\d{1,2}:\d{2}[）)]?\z/i)
 
       if day_label_line?(line)
@@ -577,12 +577,42 @@ class TabelogPasteParser
     format("%02d:00", hour.to_i)
   end
 
+  def opening_hours_lines_for_parsing
+    lines = opening_hours_field_value.to_s.lines.map(&:strip).reject(&:blank?)
+    dinner_range = lines.filter_map { |line| labeled_meal_range(line, "ディナー") }.first
+
+    lines.map do |line|
+      if (range = labeled_meal_range(line, "ディナー"))
+        "#{range[0]} - #{range[1]}"
+      elsif dinner_range.present? && (lunch_start = open_ended_meal_start(line, "ランチ"))
+        "#{lunch_start} - #{dinner_range[0]}"
+      else
+        line
+      end
+    end
+  end
+
+  def labeled_meal_range(line, label)
+    normalized = line.to_s.tr("０１２３４５６７８９：", "0123456789:")
+    match = normalized.match(/#{Regexp.escape(label)}.*?(\d{1,2})(?::(\d{2}))?\s*時?\s*[〜～~\-－–—]\s*(\d{1,2})(?::(\d{2}))?\s*時?/)
+    return nil if match.blank?
+
+    [format("%02d:%02d", match[1].to_i, match[2].to_i), format("%02d:%02d", match[3].to_i, match[4].to_i)]
+  end
+
+  def open_ended_meal_start(line, label)
+    normalized = line.to_s.tr("０１２３４５６７８９：", "0123456789:")
+    match = normalized.match(/#{Regexp.escape(label)}.*?(\d{1,2})(?::(\d{2}))?\s*時?\s*[〜～~\-－–—]\s*\z/)
+    return nil if match.blank?
+
+    format("%02d:%02d", match[1].to_i, match[2].to_i)
+  end
+
   def opening_ranges_by_day
-    raw = opening_hours_field_value.to_s
     result = {}
     current_days = []
 
-    raw.lines.map(&:strip).reject(&:blank?).each do |line|
+    opening_hours_lines_for_parsing.each do |line|
       if day_label_line?(line)
         current_days = expand_days(line)
         next
