@@ -937,6 +937,7 @@ class TabelogPasteParser
 
     return "all_smoking" if text.match?(/分煙\s*[（(][^）)]*加熱式(?:たばこ|タバコ)?(?:のみ|限定)[^）)]*[）)]/)
     return "all_smoking" if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)
+    return "separated" if text.match?(/(?:店外|屋外|外)に?[^。\n]{0,20}(?:灰皿|喫煙所)/)
     return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|喫煙専用室/)
     return "unknown" if text.match?(/分煙/)
     return "all_smoking" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
@@ -952,6 +953,7 @@ class TabelogPasteParser
     return "electronic_only" if text.match?(/加熱式たばこ限定|加熱式タバコ限定|加熱式限定/)
     return "both_ok" if text.match?(/紙.*加熱|加熱.*紙/)
     return "paper_only" if text.match?(/紙タバコのみ|紙たばこのみ|紙巻きのみ|紙巻たばこのみ/)
+    return "both_ok" if text.match?(/(?:店外|屋外|外)に?[^。\n]{0,20}(?:灰皿|喫煙所)/)
     return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|分煙/)
     return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "both_ok" if text.match?(/紙タバコ|紙たばこ/)
