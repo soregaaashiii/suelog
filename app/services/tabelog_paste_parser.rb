@@ -901,11 +901,11 @@ class TabelogPasteParser
       ]
     end
 
-    smoking_at_seat_and_outside_area =
+    smoking_at_seat_and_separate_area =
       text.match?(/全席喫煙可|席で喫煙可|店内喫煙可/) &&
-      text.match?(/(?:店外|屋外)[^。\n]{0,20}(?:喫煙所|喫煙スペース|喫煙ブース)/)
+      text.match?(/(?:店外|屋外|座席以外)[^。\n]{0,30}(?:喫煙所|喫煙スペース|喫煙ブース)|(?:トイレ前|ベンチ)[^。\n]{0,20}(?:灰皿|喫煙)/)
 
-    if smoking_at_seat_and_outside_area
+    if smoking_at_seat_and_separate_area
       return [
         { area: "all_smoking", type: "both_ok" },
         { area: "separated", type: "both_ok" }
