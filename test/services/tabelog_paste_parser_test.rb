@@ -127,6 +127,26 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "paper_only", result[:smoking_type_2]
   end
 
+  test "extracts outside smoking area and later indoor smoking as separate conditions" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      京橋 二刀流
+      営業時間
+      17:00 - 23:00
+      禁煙・喫煙
+      分煙
+      17時〜21時までは店内禁煙(店外に喫煙所あり)、21時以降店内喫煙可
+    TEXT
+
+    assert_equal "separated", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_equal "all_smoking", result[:smoking_area_2]
+    assert_equal "both_ok", result[:smoking_type_2]
+    %w[月 火 水 木 金 土 日 祝日].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 17:00 - 23:00"
+    end
+  end
+
   test "parses open ended lunch hours using the following dinner start" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名

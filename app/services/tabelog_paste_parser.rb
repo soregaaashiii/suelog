@@ -501,6 +501,13 @@ class TabelogPasteParser
     opening_raw = opening_hours_field_value.to_s
     return {} if smoking_raw.blank?
 
+    # 店内禁煙中も店外喫煙所を利用でき、その後は店内で吸える場合は、
+    # 喫煙可能時間そのものは営業時間全体なので時間限定の注記を付けない。
+    if smoking_raw.match?(/(?:店内)?禁煙[^。\n]{0,40}(?:店外|屋外)[^。\n]{0,20}喫煙所/) &&
+       smoking_raw.match?(/(?:以降|から)[^。\n]{0,20}店内喫煙可|店内[^。\n]{0,20}(?:以降|から)[^。\n]{0,20}喫煙可/)
+      return {}
+    end
+
     result = {}
 
     until_hour_match = smoking_raw.match(/(\d{1,2})時まで.*(?:加熱式たばこ限定|加熱式タバコ限定|加熱式限定|喫煙可)/)
@@ -872,6 +879,17 @@ class TabelogPasteParser
 
   def extract_smoking_conditions(raw)
     text = [raw, @text].compact.join("\n")
+    timed_outside_then_inside =
+      text.match?(/(?:店内)?禁煙[^。\n]{0,40}(?:店外|屋外)[^。\n]{0,20}喫煙所/) &&
+      text.match?(/(?:以降|から)[^。\n]{0,20}店内喫煙可|店内[^。\n]{0,20}(?:以降|から)[^。\n]{0,20}喫煙可/)
+
+    if timed_outside_then_inside
+      return [
+        { area: "separated", type: "both_ok" },
+        { area: "all_smoking", type: "both_ok" }
+      ]
+    end
+
     heated_at_seat =
       text.match?(/(?:加熱式(?:たばこ|タバコ)?|電子(?:たばこ|タバコ)?)[^。\n]{0,40}(?:席|店内)[^。\n]{0,20}(?:喫煙|吸)/) ||
       text.match?(/(?:席|店内)[^。\n]{0,40}(?:加熱式(?:たばこ|タバコ)?|電子(?:たばこ|タバコ)?)[^。\n]{0,20}(?:喫煙|吸|可)/)
@@ -927,6 +945,19 @@ normalized_scoped_text =
     "０１２３４５６７８９：",
     "0123456789:"
   )
+
+if normalized_scoped_text.match?(/(?:店内)?禁煙[^。\n]{0,40}(?:店外|屋外)[^。\n]{0,20}喫煙所/) &&
+   normalized_scoped_text.match?(/(?:以降|から)[^。\n]{0,20}店内喫煙可|店内[^。\n]{0,20}(?:以降|から)[^。\n]{0,20}喫煙可/)
+  rows = opening_text.lines.map(&:strip).filter_map do |line|
+    day = line[/\A(\S+)\s+/, 1]
+    ranges = line.gsub(/（喫煙可：[^）]+）/, "").scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
+    next if day.blank? || ranges.blank?
+
+    "#{day} #{ranges.map { |open_time, close_time| "#{open_time} - #{close_time}" }.join(', ')}"
+  end
+
+  return rows.join("\n").presence if rows.present?
+end
 
 weekday_lunch_non_smoking_match =
   normalized_scoped_text.match(/平日ランチタイム（?月[～〜\-−ー]金）?\s*(\d{1,2}:\d{2})[～〜\-−ー](\d{1,2}:\d{2}).*全席禁煙/) ||
