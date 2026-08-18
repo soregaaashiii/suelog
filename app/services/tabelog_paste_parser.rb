@@ -879,6 +879,17 @@ class TabelogPasteParser
 
   def extract_smoking_conditions(raw)
     text = [raw, @text].compact.join("\n")
+    smoking_space_and_smoking_seats =
+      text.match?(/(?:店内に?)?喫煙(?:所|スペース|ブース|専用室|ルーム)(?:あり|有)/) &&
+      text.match?(/喫煙席\s*[：:]?\s*\d*\s*席?/)
+
+    if smoking_space_and_smoking_seats
+      return [
+        { area: "separated", type: "both_ok" },
+        { area: "all_smoking", type: "both_ok" }
+      ]
+    end
+
     heated_inside_and_separate_paper_area =
       text.match?(/分煙\s*[（(][^）)]*加熱式(?:たばこ|タバコ)?(?:のみ|限定)[^）)]*[）)]/) &&
       (
