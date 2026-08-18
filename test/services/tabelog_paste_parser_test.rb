@@ -257,6 +257,21 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_nil result[:smoking_type_2]
   end
 
+  test "extracts heated tobacco indoors and paper tobacco on a balcony separately" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      jazzbar ROOM 335
+      禁煙・喫煙
+      分煙（加熱式たばこ限定）
+      店内加熱式たばこのみ喫煙可紙巻煙草はバルコニーに灰皿設置有
+    TEXT
+
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+    assert_equal "separated", result[:smoking_area_2]
+    assert_equal "paper_only", result[:smoking_type_2]
+  end
+
   test "parses open ended lunch hours using the following dinner start" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
