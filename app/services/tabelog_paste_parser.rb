@@ -879,6 +879,16 @@ class TabelogPasteParser
 
   def extract_smoking_conditions(raw)
     text = [raw, @text].compact.join("\n")
+    heated_at_seat = heated_tobacco_at_seats?(text)
+    paper_in_separate_area = paper_tobacco_in_separate_area?(text)
+
+    if heated_at_seat && paper_in_separate_area
+      return [
+        { area: "all_smoking", type: "electronic_only" },
+        { area: "separated", type: "paper_only" }
+      ]
+    end
+
     smoking_space_and_smoking_seats =
       text.match?(/(?:店内に?)?喫煙(?:所|スペース|ブース|専用室|ルーム)(?:あり|有)/) &&
       text.match?(/喫煙席\s*[：:]?\s*\d*\s*席?/)
@@ -927,22 +937,29 @@ class TabelogPasteParser
       ]
     end
 
-    heated_at_seat =
-      text.match?(/(?:加熱式(?:たばこ|タバコ)?|電子(?:たばこ|タバコ)?)[^。\n]{0,40}(?:席|店内)[^。\n]{0,20}(?:喫煙|吸)/) ||
-      text.match?(/(?:席|店内)[^。\n]{0,40}(?:加熱式(?:たばこ|タバコ)?|電子(?:たばこ|タバコ)?)[^。\n]{0,20}(?:喫煙|吸|可)/)
-    paper_at_smoking_area =
-      text.match?(/(?:紙(?:巻(?:き)?)?(?:たばこ|タバコ)?)[^。\n]{0,40}(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム|店外|屋外)/) ||
-      text.match?(/(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム|店外|屋外)[^。\n]{0,40}(?:紙(?:巻(?:き)?)?(?:たばこ|タバコ)?)/) ||
-      text.match?(/紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)[^。\n]{0,40}(?:バルコニー|ベランダ|テラス)[^。\n]{0,20}(?:灰皿|喫煙|吸)/)
-
-    if heated_at_seat && paper_at_smoking_area
-      return [
-        { area: "all_smoking", type: "electronic_only" },
-        { area: "separated", type: "paper_only" }
-      ]
-    end
-
     [{ area: extract_smoking_area(raw), type: extract_smoking_type(raw) }]
+  end
+
+  def heated_tobacco_at_seats?(text)
+    heated = /(?:加熱式(?:たばこ|タバコ)?|電子(?:たばこ|タバコ)?)/
+    seating = /(?:全席|座席|席|店内)/
+    smoking = /(?:喫煙|吸|可|限定)/
+
+    text.match?(/#{heated}[^。\n]{0,60}#{seating}[^。\n]{0,30}#{smoking}/) ||
+      text.match?(/#{seating}[^。\n]{0,60}#{heated}[^。\n]{0,30}#{smoking}/) ||
+      text.match?(/分煙\s*[（(][^）)]*加熱式(?:たばこ|タバコ)?(?:のみ|限定)[^）)]*[）)]/)
+  end
+
+  def paper_tobacco_in_separate_area?(text)
+    paper = /紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)?/
+    smoking_facility = /(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム)/
+    outside_location = /(?:店外|屋外|外|入口|入り口|店頭|店前|お店前|店舗前|バルコニー|ベランダ|テラス|ベンチ)/
+    smoking_marker = /(?:灰皿|喫煙|吸|利用)/
+
+    text.match?(/#{paper}[^。\n]{0,80}#{smoking_facility}/) ||
+      text.match?(/#{smoking_facility}[^。\n]{0,80}#{paper}/) ||
+      text.match?(/#{paper}[^。\n]{0,80}#{outside_location}[^。\n]{0,30}#{smoking_marker}/) ||
+      text.match?(/#{outside_location}[^。\n]{0,30}#{smoking_marker}[^。\n]{0,80}#{paper}/)
   end
 
   def extract_smoking_area(raw)
