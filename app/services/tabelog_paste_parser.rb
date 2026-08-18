@@ -1016,6 +1016,30 @@ if normalized_scoped_text.match?(/(?:店内)?禁煙[^。\n]{0,40}(?:店外|屋�
   return rows.join("\n").presence if rows.present?
 end
 
+non_smoking_until_match =
+  normalized_scoped_text.match(/[～〜~\-－–—]?\s*(\d{1,2}:\d{2})\s*まで(?:は)?\s*(?:全席|全面|完全)?禁煙/)
+
+if non_smoking_until_match
+  smoking_start = non_smoking_until_match[1]
+  rows = opening_text.lines.map(&:strip).filter_map do |line|
+    day = line[/\A(\S+)\s+/, 1]
+    ranges = line.gsub(/（喫煙可：[^）]+）/, "").scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
+    next if day.blank? || ranges.blank?
+
+    smoking_ranges = ranges.filter_map do |open_time, close_time|
+      if time_inside_range?(open_time, close_time, smoking_start)
+        "#{smoking_start} - #{close_time}"
+      elsif time_to_minutes(open_time) >= time_to_minutes(smoking_start)
+        "#{open_time} - #{close_time}"
+      end
+    end
+
+    smoking_ranges.present? ? "#{day} #{smoking_ranges.join(', ')}" : "#{day} 喫煙不可"
+  end
+
+  return rows.join("\n").presence if rows.present?
+end
+
 weekday_lunch_non_smoking_match =
   normalized_scoped_text.match(/平日ランチタイム（?月[～〜\-−ー]金）?\s*(\d{1,2}:\d{2})[～〜\-−ー](\d{1,2}:\d{2}).*全席禁煙/) ||
   normalized_scoped_text.match(/(\d{1,2}:\d{2})\s*[～〜~\-－–—]\s*(\d{1,2}:\d{2})まで.*(?:全席|全面|完全)禁煙/) ||
