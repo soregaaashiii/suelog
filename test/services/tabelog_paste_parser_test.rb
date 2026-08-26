@@ -340,6 +340,21 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     end
   end
 
+  test "adds an outside smoking space when heated tobacco is limited indoors" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      dasiyaふぁ～る
+      禁煙・喫煙
+      分煙（加熱式たばこ限定）
+      外に喫煙スペース有り
+    TEXT
+
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+    assert_equal "separated", result[:smoking_area_2]
+    assert_equal "both_ok", result[:smoking_type_2]
+  end
+
   test "parses open ended lunch hours using the following dinner start" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名

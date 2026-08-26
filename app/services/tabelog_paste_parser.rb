@@ -891,6 +891,13 @@ class TabelogPasteParser
       ]
     end
 
+    if heated_at_seat && separate_smoking_area?(text)
+      return [
+        { area: "all_smoking", type: "electronic_only" },
+        { area: "separated", type: "both_ok" }
+      ]
+    end
+
     smoking_space_and_smoking_seats =
       text.match?(/(?:店内に?)?喫煙(?:所|スペース|ブース|専用室|ルーム)(?:あり|有)/) &&
       text.match?(/喫煙席\s*[：:]?\s*\d*\s*席?/)
@@ -962,6 +969,14 @@ class TabelogPasteParser
       text.match?(/#{smoking_facility}[^。\n]{0,80}#{paper}/) ||
       text.match?(/#{paper}[^。\n]{0,80}#{outside_location}[^。\n]{0,30}#{smoking_marker}/) ||
       text.match?(/#{outside_location}[^。\n]{0,30}#{smoking_marker}[^。\n]{0,80}#{paper}/)
+  end
+
+  def separate_smoking_area?(text)
+    smoking_facility = /(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム)/
+    outside_location = /(?:店外|屋外|外|入口|入り口|店頭|店前|お店前|店舗前|バルコニー|ベランダ|テラス|ベンチ)/
+
+    text.match?(/#{outside_location}[^。\n]{0,40}#{smoking_facility}(?:あり|有り|有|設置)?/) ||
+      text.match?(/#{smoking_facility}[^。\n]{0,40}#{outside_location}/)
   end
 
   def extract_smoking_area(raw)
