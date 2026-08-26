@@ -319,6 +319,27 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     end
   end
 
+  test "does not reverse smoking hours when non-smoking-until and smoking-after are both written" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      YAKITORI PLANET
+      営業時間
+      月・水・木・金・土・日・祝日・祝前日・祝後日
+      18:00 - 03:00
+      火
+      定休日
+      禁煙・喫煙
+      分煙
+      21時まで禁煙/21時以降喫煙可能
+    TEXT
+
+    %w[月 水 木 金 土 日 祝日 祝前 祝後].each do |day|
+      assert_includes result[:opening_hours_text], "#{day} 18:00-03:00（喫煙可：21:00-03:00）"
+      assert_includes result[:smoking_hours_text], "#{day} 21:00 - 03:00"
+      refute_includes result[:opening_hours_text], "#{day} 18:00-03:00（喫煙可：18:00-21:00）"
+    end
+  end
+
   test "parses open ended lunch hours using the following dinner start" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名

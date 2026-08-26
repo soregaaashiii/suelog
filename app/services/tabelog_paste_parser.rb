@@ -510,21 +510,8 @@ class TabelogPasteParser
 
     result = {}
 
-    until_hour_match = smoking_raw.match(/(\d{1,2})時まで.*(?:加熱式たばこ限定|加熱式タバコ限定|加熱式限定|喫煙可)/)
-
-    if until_hour_match
-      smoking_end = format_hour_text(until_hour_match[1])
-
-      opening_ranges_by_day.each do |day_key, ranges|
-        first_open = ranges.first&.first
-        next if first_open.blank?
-
-        result[day_key] = "#{first_open}-#{smoking_end}"
-      end
-
-      return result if result.present?
-    end
-
+    # 「21時まで禁煙／21時以降喫煙可」のような併記は、後半の開始時刻を優先する。
+    # 先に「時まで」を見ると、後方の「喫煙可」まで拾って時間帯が逆転するため。
     after_hour_match = smoking_raw.match(/(\d{1,2})時以降.*喫煙可|(\d{1,2})時から.*喫煙可/)
 
     if after_hour_match
@@ -538,6 +525,21 @@ class TabelogPasteParser
         next unless time_inside_range?(open_text, close_text, smoking_start)
 
         result[day_key] = "#{smoking_start}-#{close_text}"
+      end
+
+      return result if result.present?
+    end
+
+    until_hour_match = smoking_raw.match(/(\d{1,2})時まで.*(?:加熱式たばこ限定|加熱式タバコ限定|加熱式限定|喫煙可)/)
+
+    if until_hour_match
+      smoking_end = format_hour_text(until_hour_match[1])
+
+      opening_ranges_by_day.each do |day_key, ranges|
+        first_open = ranges.first&.first
+        next if first_open.blank?
+
+        result[day_key] = "#{first_open}-#{smoking_end}"
       end
 
       return result if result.present?
@@ -1017,10 +1019,10 @@ if normalized_scoped_text.match?(/(?:店内)?禁煙[^。\n]{0,40}(?:店外|屋�
 end
 
 non_smoking_until_match =
-  normalized_scoped_text.match(/[～〜~\-－–—]?\s*(\d{1,2}:\d{2})\s*まで(?:は)?\s*(?:全席|全面|完全)?禁煙/)
+  normalized_scoped_text.match(/[～〜~\-－–—]?\s*(\d{1,2})(?::(\d{2}))?\s*時?\s*まで(?:は)?\s*(?:全席|全面|完全)?禁煙/)
 
 if non_smoking_until_match
-  smoking_start = non_smoking_until_match[1]
+  smoking_start = format("%02d:%02d", non_smoking_until_match[1].to_i, non_smoking_until_match[2].to_i)
   rows = opening_text.lines.map(&:strip).filter_map do |line|
     day = line[/\A(\S+)\s+/, 1]
     ranges = line.gsub(/（喫煙可：[^）]+）/, "").scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
