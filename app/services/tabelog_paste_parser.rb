@@ -1059,7 +1059,7 @@ end
 
 weekday_lunch_non_smoking_match =
   normalized_scoped_text.match(/平日ランチタイム（?月[～〜\-−ー]金）?\s*(\d{1,2}:\d{2})[～〜\-−ー](\d{1,2}:\d{2}).*全席禁煙/) ||
-  normalized_scoped_text.match(/(\d{1,2}:\d{2})\s*[～〜~\-－–—]\s*(\d{1,2}:\d{2})まで.*(?:全席|全面|完全)禁煙/) ||
+  normalized_scoped_text.match(/(\d{1,2}:\d{2})\s*[～〜~\-－–—]\s*(\d{1,2}:\d{2})\s*(?:まで)?\s*(?:は)?\s*(?:全席|全面|完全)禁煙/) ||
   normalized_scoped_text.match(/(\d{1,2})時\s*[～〜~\-－–—]\s*(\d{1,2})時まで.*(?:全席|全面|完全)禁煙/) ||
   normalized_scoped_text.match(/open\s*[～〜~\-－–—]\s*(\d{1,2})時まで禁煙/i)
 

@@ -340,6 +340,31 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     end
   end
 
+  test "treats a time range followed by wa as a non-smoking lunch period" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      串かつ 五右衛門
+      営業時間
+      月・火・水・木・金
+      11:30 - 13:30
+      18:00 - 22:00
+      土
+      18:00 - 22:00
+      日・祝日
+      定休日
+      禁煙・喫煙
+      分煙
+      11:30～13:30は全面禁煙
+    TEXT
+
+    %w[月 火 水 木 金 土].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 18:00 - 22:00"
+      refute_includes result[:smoking_hours_text], "#{day} 11:30 - 13:30"
+    end
+    refute_includes result[:smoking_hours_text], "日"
+    refute_includes result[:smoking_hours_text], "祝日"
+  end
+
   test "adds an outside smoking space when heated tobacco is limited indoors" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
