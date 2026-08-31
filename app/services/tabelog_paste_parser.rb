@@ -1047,6 +1047,47 @@ if normalized_scoped_text.match?(/(?:店内)?禁煙[^。\n]{0,40}(?:店外|屋�
   return rows.join("\n").presence if rows.present?
 end
 
+daily_non_smoking_range_match =
+  normalized_scoped_text.match(/(\d{1,2})(?::(\d{2}))?\s*時?\s*[～〜~\-－–—]\s*(\d{1,2})(?::(\d{2}))?\s*時?\s*(?:まで)?\s*(?:は)?\s*(?:全席|全面|完全)禁煙/)
+
+if daily_non_smoking_range_match
+  non_smoking_start = format("%02d:%02d", daily_non_smoking_range_match[1].to_i, daily_non_smoking_range_match[2].to_i)
+  non_smoking_end = format("%02d:%02d", daily_non_smoking_range_match[3].to_i, daily_non_smoking_range_match[4].to_i)
+  ban_start_minutes = time_to_minutes(non_smoking_start)
+  ban_end_minutes = time_to_minutes(non_smoking_end)
+  ban_end_minutes += 24 * 60 if ban_end_minutes <= ban_start_minutes
+
+  rows = opening_text.lines.map(&:strip).filter_map do |line|
+    day = line[/\A(\S+)\s+/, 1]
+    ranges = line.gsub(/（喫煙可：[^）]+）/, "").scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
+    next if day.blank? || ranges.blank?
+
+    smoking_ranges = ranges.flat_map do |open_time, close_time|
+      open_minutes, close_minutes = normalized_time_range(open_time, close_time)
+      aligned_ban_start = ban_start_minutes
+      aligned_ban_end = ban_end_minutes
+
+      if aligned_ban_end <= open_minutes
+        aligned_ban_start += 24 * 60
+        aligned_ban_end += 24 * 60
+      end
+
+      if aligned_ban_start >= close_minutes || aligned_ban_end <= open_minutes
+        ["#{open_time} - #{close_time}"]
+      else
+        available = []
+        available << "#{open_time} - #{non_smoking_start}" if open_minutes < aligned_ban_start
+        available << "#{non_smoking_end} - #{close_time}" if aligned_ban_end < close_minutes
+        available
+      end
+    end
+
+    smoking_ranges.present? ? "#{day} #{smoking_ranges.join(', ')}" : "#{day} 喫煙不可"
+  end
+
+  return rows.join("\n").presence if rows.present?
+end
+
 non_smoking_until_match =
   normalized_scoped_text.match(/[～〜~\-－–—]?\s*(\d{1,2})(?::(\d{2}))?\s*時?\s*まで(?:は)?\s*(?:全席|全面|完全)?禁煙/)
 
