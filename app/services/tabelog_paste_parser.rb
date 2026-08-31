@@ -512,7 +512,7 @@ class TabelogPasteParser
 
     # 「21時まで禁煙／21時以降喫煙可」のような併記は、後半の開始時刻を優先する。
     # 先に「時まで」を見ると、後方の「喫煙可」まで拾って時間帯が逆転するため。
-    after_hour_match = smoking_raw.match(/(\d{1,2})時以降.*喫煙可|(\d{1,2})時から.*喫煙可/)
+    after_hour_match = smoking_raw.match(/(\d{1,2})時以降.*喫煙可|(\d{1,2})時から.*喫煙可|(\d{1,2})時\s*[〜～~][^。\n]{0,20}喫煙可/)
 
     if after_hour_match
       smoking_start = format_hour_text(after_hour_match.captures.compact.first)
@@ -596,6 +596,8 @@ class TabelogPasteParser
     dinner_range = lines.filter_map { |line| labeled_meal_range(line, "ディナー") }.first
 
     lines.map do |line|
+      line = normalize_morning_closing_time(line)
+
       if (range = labeled_meal_range(line, "ディナー"))
         "#{range[0]} - #{range[1]}"
       elsif dinner_range.present? && (lunch_start = open_ended_meal_start(line, "ランチ"))
@@ -603,6 +605,16 @@ class TabelogPasteParser
       else
         line
       end
+    end
+  end
+
+  def normalize_morning_closing_time(line)
+    normalized = line.to_s.tr("０１２３４５６７８９：", "0123456789:")
+
+    normalized.gsub(/(\d{1,2}:\d{2})\s*[〜～~\-－–—]\s*(?:翌|朝)\s*(\d{1,2})(?::(\d{2}))?/) do
+      close_hour = Regexp.last_match(2).to_i
+      close_hour += 24 if close_hour < 24
+      "#{Regexp.last_match(1)}-#{format('%02d:%02d', close_hour, Regexp.last_match(3).to_i)}"
     end
   end
 
@@ -984,6 +996,7 @@ class TabelogPasteParser
 
     return "all_smoking" if text.match?(/分煙\s*[（(][^）)]*加熱式(?:たばこ|タバコ)?(?:のみ|限定)[^）)]*[）)]/)
     return "all_smoking" if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)
+    return "all_smoking" if text.match?(/喫煙不可[^。\n]{0,40}(?:以降|から|時\s*[〜～~])[^。\n]{0,20}喫煙可/)
     return "separated" if text.match?(/(?:店外|屋外|外)に?[^。\n]{0,20}(?:灰皿|喫煙所)/)
     return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|喫煙専用室/)
     return "unknown" if text.match?(/分煙/)
@@ -1000,6 +1013,7 @@ class TabelogPasteParser
     return "electronic_only" if text.match?(/加熱式たばこ限定|加熱式タバコ限定|加熱式限定/)
     return "both_ok" if text.match?(/紙.*加熱|加熱.*紙/)
     return "paper_only" if text.match?(/紙タバコのみ|紙たばこのみ|紙巻きのみ|紙巻たばこのみ/)
+    return "both_ok" if text.match?(/喫煙不可[^。\n]{0,40}(?:以降|から|時\s*[〜～~])[^。\n]{0,20}喫煙可/)
     return "both_ok" if text.match?(/(?:店外|屋外|外)に?[^。\n]{0,20}(?:灰皿|喫煙所)/)
     return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|分煙/)
     return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
@@ -1038,6 +1052,30 @@ non_smoking_until_match =
 
 if non_smoking_until_match
   smoking_start = format("%02d:%02d", non_smoking_until_match[1].to_i, non_smoking_until_match[2].to_i)
+  rows = opening_text.lines.map(&:strip).filter_map do |line|
+    day = line[/\A(\S+)\s+/, 1]
+    ranges = line.gsub(/（喫煙可：[^）]+）/, "").scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
+    next if day.blank? || ranges.blank?
+
+    smoking_ranges = ranges.filter_map do |open_time, close_time|
+      if time_inside_range?(open_time, close_time, smoking_start)
+        "#{smoking_start} - #{close_time}"
+      elsif time_to_minutes(open_time) >= time_to_minutes(smoking_start)
+        "#{open_time} - #{close_time}"
+      end
+    end
+
+    smoking_ranges.present? ? "#{day} #{smoking_ranges.join(', ')}" : "#{day} 喫煙不可"
+  end
+
+  return rows.join("\n").presence if rows.present?
+end
+
+smoking_after_match =
+  normalized_scoped_text.match(/(\d{1,2})(?::(\d{2}))?\s*時?\s*(?:以降|から|[〜～~])[^。\n]{0,20}喫煙可/)
+
+if smoking_after_match
+  smoking_start = format("%02d:%02d", smoking_after_match[1].to_i, smoking_after_match[2].to_i)
   rows = opening_text.lines.map(&:strip).filter_map do |line|
     day = line[/\A(\S+)\s+/, 1]
     ranges = line.gsub(/（喫煙可：[^）]+）/, "").scan(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/)
