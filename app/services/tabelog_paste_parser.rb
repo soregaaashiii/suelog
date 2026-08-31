@@ -965,8 +965,11 @@ class TabelogPasteParser
     heated = /(?:加熱式(?:たばこ|タバコ)?|電子(?:たばこ|タバコ)?)/
     seating = /(?:全席|座席|席|店内)/
     smoking = /(?:喫煙|吸|可|限定)/
+    heated_limited = text.match?(/#{heated}[^。\n]{0,30}(?:のみ|限定)/)
+    smoking_at_seat = text.match?(/全席喫煙可|お?席で(?:喫煙|吸)|(?:座席|店内)で?(?:喫煙|吸)/)
 
-    text.match?(/#{heated}[^。\n]{0,60}#{seating}[^。\n]{0,30}#{smoking}/) ||
+    (heated_limited && smoking_at_seat) ||
+      text.match?(/#{heated}[^。\n]{0,60}#{seating}[^。\n]{0,30}#{smoking}/) ||
       text.match?(/#{seating}[^。\n]{0,60}#{heated}[^。\n]{0,30}#{smoking}/) ||
       text.match?(/分煙\s*[（(][^）)]*加熱式(?:たばこ|タバコ)?(?:のみ|限定)[^）)]*[）)]/)
   end
