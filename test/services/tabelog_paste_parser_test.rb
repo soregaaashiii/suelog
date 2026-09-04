@@ -451,6 +451,26 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "both_ok", result[:smoking_type]
   end
 
+  test "converts a daytime hour cutoff to 24-hour smoking hours" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      冨士屋 あべちか店
+      営業時間
+      11:00 - 21:00
+      L.O. 20:50
+      禁煙・喫煙
+      分煙
+      昼2時まで禁煙
+    TEXT
+
+    %w[月 火 水 木 金 土 日 祝日].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 14:00 - 21:00"
+      refute_includes result[:smoking_hours_text], "#{day} 11:00 - 21:00"
+    end
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+  end
+
   test "adds an outside smoking space when heated tobacco is limited indoors" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
