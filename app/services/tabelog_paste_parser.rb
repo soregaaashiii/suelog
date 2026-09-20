@@ -899,7 +899,10 @@ class TabelogPasteParser
     if heated_at_seat && paper_in_separate_area
       return [
         { area: "all_smoking", type: "electronic_only" },
-        { area: "separated", type: "paper_only" }
+        {
+          area: "separated",
+          type: paper_tobacco_also_in_separate_area?(text) ? "both_ok" : "paper_only"
+        }
       ]
     end
 
@@ -984,6 +987,13 @@ class TabelogPasteParser
       text.match?(/#{smoking_facility}[^。\n]{0,80}#{paper}/) ||
       text.match?(/#{paper}[^。\n]{0,80}#{outside_location}[^。\n]{0,30}#{smoking_marker}/) ||
       text.match?(/#{outside_location}[^。\n]{0,30}#{smoking_marker}[^。\n]{0,80}#{paper}/)
+  end
+
+  def paper_tobacco_also_in_separate_area?(text)
+    paper = /紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)?/
+    smoking_facility = /(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム)/
+
+    text.match?(/#{paper}\s*も[^。\n]{0,40}#{smoking_facility}/)
   end
 
   def separate_smoking_area?(text)

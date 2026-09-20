@@ -414,10 +414,10 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     end
   end
 
-  test "links heated-only wording to seat smoking across sentence boundaries" do
+  test "treats a smoking space that also accepts paper tobacco as available to both types" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
-      焼肉食べ放題 焼肉ジャック 天王寺駅前店
+      焼肉食べ放題 焼肉クラブ 天王寺店
       禁煙・喫煙
       全席喫煙可
       ※喫煙の場合、加熱式たばこ限定です。 お席で吸えます！！紙たばこも喫煙スペース有り！
@@ -426,7 +426,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "electronic_only", result[:smoking_type]
     assert_equal "separated", result[:smoking_area_2]
-    assert_equal "paper_only", result[:smoking_type_2]
+    assert_equal "both_ok", result[:smoking_type_2]
   end
 
   test "parses a non-smoking time range written in parentheses" do
