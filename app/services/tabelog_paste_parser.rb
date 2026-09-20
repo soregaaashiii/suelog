@@ -1032,7 +1032,8 @@ class TabelogPasteParser
     return "both_ok" if text.match?(/昼\s*\d{1,2}(?::\d{2})?\s*時?\s*まで(?:は)?\s*禁煙/)
     return "both_ok" if text.match?(/喫煙不可[^。\n]{0,40}(?:以降|から|時\s*[〜～~])[^。\n]{0,20}喫煙可/)
     return "both_ok" if text.match?(/(?:店外|屋外|外)に?[^。\n]{0,20}(?:灰皿|喫煙所)/)
-    return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|分煙/)
+    return "both_ok" if text.match?(/喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム/)
+    return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|分煙/)
     return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "both_ok" if text.match?(/紙タバコ|紙たばこ/)
 
