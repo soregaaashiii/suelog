@@ -302,6 +302,21 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "both_ok", result[:smoking_type_2]
   end
 
+  test "extracts smoking at counter seats and a table smoking booth separately" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      八千代きっちん はは
+      禁煙・喫煙
+      分煙
+      カウンターのみ喫煙可。 テーブル席は店内に喫煙ブースあり。
+    TEXT
+
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_equal "separated", result[:smoking_area_2]
+    assert_equal "both_ok", result[:smoking_type_2]
+  end
+
   test "extracts heated tobacco at every seat and paper tobacco at an outside ashtray" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
