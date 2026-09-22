@@ -1039,6 +1039,7 @@ class TabelogPasteParser
     return "electronic_only" if text.match?(/加熱式たばこ限定|加熱式タバコ限定|加熱式限定/)
     return "both_ok" if text.match?(/紙.*加熱|加熱.*紙/)
     return "paper_only" if text.match?(/紙タバコのみ|紙たばこのみ|紙巻きのみ|紙巻たばこのみ/)
+    return "both_ok" if text.match?(/テラス席(?:のみ)?\s*喫煙(?:可|可能)/)
     return "both_ok" if text.match?(/時間帯禁煙\s*[（(][^）)]*[）)]/)
     return "both_ok" if text.match?(/昼\s*\d{1,2}(?::\d{2})?\s*時?\s*まで(?:は)?\s*禁煙/)
     return "both_ok" if text.match?(/喫煙不可[^。\n]{0,40}(?:以降|から|時\s*[〜～~])[^。\n]{0,20}喫煙可/)
