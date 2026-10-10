@@ -1,8 +1,7 @@
-require "test_helper"
-
+require 'test_helper'
 class StoresControllerTest < ActionDispatch::IntegrationTest
-  test "should get index" do
-    get stores_index_url
-    assert_response :success
+  test 'obsolete stores route returns 404' do
+    get '/stores'
+    assert_response :not_found
   end
 end

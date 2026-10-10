@@ -26,6 +26,8 @@ class ArticlesController < ApplicationController
     )
 
     redirect_to shop_path(shop)
+  rescue ActiveRecord::RecordNotFound
+    raise
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.warn("[article_shop_click] validation failed: #{e.message}")
     redirect_to article_path(params[:id]), alert: "クリック記録に失敗しました"

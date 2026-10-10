@@ -66,6 +66,12 @@ class HomeController < ApplicationController
   track_page_view
 
   set_default_page_meta!
+  if request.path_parameters[:station].present? && !STATION_SLUG_MAP.values.any? { |stations| stations.key?(current_station_slug.to_s) }
+    raise ActionController::RoutingError, "Not Found"
+  end
+  if request.path_parameters[:genre].present? && current_area_genre_config.blank?
+    raise ActionController::RoutingError, "Not Found"
+  end
   return if redirect_to_canonical_station_path!
   apply_area_page_context_from_params!
 
@@ -442,7 +448,7 @@ end
   end
 
   def genre_route_request?
-    route_genre_slug.present? && params[:genre].blank?
+    route_genre_slug.present? && request.query_parameters["genre"].blank?
   end
 
   def current_station_slug

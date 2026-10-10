@@ -1,8 +1,8 @@
-require "test_helper"
-
+require 'test_helper'
 class ShopsControllerTest < ActionDispatch::IntegrationTest
-  test "should get index" do
-    get shops_index_url
-    assert_response :success
+  test 'legacy shops index redirects permanently to public search' do
+    get '/shops'
+    assert_response :moved_permanently
+    assert_redirected_to '/'
   end
 end

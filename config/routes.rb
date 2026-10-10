@@ -9,6 +9,12 @@ Rails.application.routes.draw do
   end
 
   root "home#index"
+  get "shops/:id/photos", to: "shops#refine_section", defaults: { section: "photos" }
+  get "shops/:id/reviews", to: "shops#refine_section", defaults: { section: "reviews" }
+  get "shops/:id/access", to: "shops#refine_section", defaults: { section: "access" }
+  get "shops/:id/booking", to: "shops#refine_section", defaults: { section: "booking" }
+  get "shops/:id/reviews/new", to: "shops#refine_section", defaults: { section: "review-form" }
+
 
   get "map", to: "maps#index"
   get "map/affiliate_clicks", to: "maps#index", as: :map_affiliate_clicks
@@ -73,6 +79,7 @@ Rails.application.routes.draw do
       defaults: { area: "namba" }
 
   resources :shops do
+    collection { get :possible_duplicates }
     member do
       get :track_click
       post :track_click

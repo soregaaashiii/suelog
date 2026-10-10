@@ -135,6 +135,11 @@ class ShopsController < ApplicationController
     redirect_to root_path
   end
 
+  def refine_section
+    shop = Shop.find(params[:id])
+    redirect_to shop_path(shop, anchor: request.path_parameters[:section]), status: :moved_permanently
+  end
+
   def track_click
     @shop = Shop.find(params[:id])
 
@@ -154,6 +159,8 @@ class ShopsController < ApplicationController
     @shop.shop_clicks.create!(kind: kind)
 
     redirect_to target_url, allow_other_host: true
+  rescue ActiveRecord::RecordNotFound
+    raise
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.warn("[track_click] validation failed: #{e.message}")
     redirect_to shop_path(@shop), alert: "クリック記録に失敗しました"

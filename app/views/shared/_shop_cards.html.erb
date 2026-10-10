@@ -217,24 +217,7 @@
           <% end %>
 
           <div class="shop-card__cvLead">
-            <% if shop.smoking_area == "all_smoking" %>
-              <span class="shop-card__cvPill shop-card__cvPill--allSmoking">席で喫煙可</span>
-            <% elsif shop.smoking_area == "separated" %>
-              <span class="shop-card__cvPill shop-card__cvPill--separated">喫煙所あり</span>
-            <% elsif shop.smoking_area == "unknown" %>
-              <span class="shop-card__cvPill shop-card__cvPill--muted">喫煙エリア不明</span>
-            <% end %>
-
-            <% if shop.smoking_type == "both_ok" %>
-              <span class="shop-card__cvPill shop-card__cvPill--type">紙・加熱式OK</span>
-            <% elsif shop.smoking_type == "paper_only" %>
-              <span class="shop-card__cvPill shop-card__cvPill--typeLimited">紙のみ</span>
-            <% elsif shop.smoking_type == "electronic_only" %>
-              <span class="shop-card__cvPill shop-card__cvPill--typeLimited">加熱式のみ</span>
-            <% elsif shop.smoking_type == "unknown" %>
-              <span class="shop-card__cvPill shop-card__cvPill--muted">喫煙タイプ不明</span>
-            <% end %>
-
+            <%= refine_smoking_badges(shop.smoking_area, shop.smoking_type) %>
             <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
               <span class="shop-card__cvTrust shop-card__cvTrust--unverified">未確認</span>
             <% elsif confirmed.present? %>
