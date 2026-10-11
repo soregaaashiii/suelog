@@ -150,3 +150,9 @@ body.suelog-refine {
   .suelog-refine .hero__search .search-grid .search-field:nth-child(n) { grid-column:1 / -1; border:0; }
   .suelog-refine .hero__search .search-select,.suelog-refine .hero__search .search-input { min-height:48px; font-size:14px; }
 }
+
+.suelog-refine .smoking-badge--non-smoking { color:#ffb9ad; background:#351e1b; border:1px solid #99594e; font-weight:800; }
+.suelog-refine .refine-non-smoking-notice { border:1px solid #99594e; background:#251916; }
+.suelog-refine .refine-non-smoking-notice h2 { color:#ffb9ad; font-size:22px; }
+
+.suelog-refine .refine-non-smoking-summary { color:#ffb9ad; line-height:1.8; }

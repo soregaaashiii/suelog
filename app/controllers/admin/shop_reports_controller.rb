@@ -33,7 +33,8 @@ class Admin::ShopReportsController < Admin::BaseController
           approved: false,
           rejected: false,
           on_hold: true,
-          hold_reason: "通報対応",
+          hold_reason: rep.non_smoking_hold_reason || "通報対応",
+          held_at: Time.current,
           hold_note: [
             rep.shop.hold_note.presence,
             "通報対応により保留へ移動: #{report_summary.presence || "詳細未指定"}"
@@ -51,4 +52,3 @@ class Admin::ShopReportsController < Admin::BaseController
     redirect_back fallback_location: admin_shop_reports_path(status: "pending"), alert: "却下しました"
   end
 end
-
