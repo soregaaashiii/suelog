@@ -212,6 +212,15 @@ class Shop < ApplicationRecord
 
   # ===== Scopes =====
   scope :approved, -> { where(approved: true, on_hold: false) }
+  scope :confirmed_non_smoking, -> {
+    where(on_hold: true).where(
+      "shops.hold_reason IN (?) OR (shops.hold_reason = ? AND " \
+      "(SELECT shop_reports.reason FROM shop_reports WHERE shop_reports.shop_id = shops.id " \
+      "AND shop_reports.status = 1 ORDER BY shop_reports.updated_at DESC, shop_reports.id DESC LIMIT 1) IN (?))",
+      %w[was_non_smoking became_non_smoking], "通報対応", ShopReport::NON_SMOKING_REASONS.keys
+    )
+  }
+  scope :public_listing, -> { approved.or(confirmed_non_smoking) }
   scope :on_hold_only, -> { where(on_hold: true) }
   scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
 

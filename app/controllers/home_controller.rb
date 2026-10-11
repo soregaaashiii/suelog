@@ -485,7 +485,7 @@ end
   smoking_type = params[:smoking_type].to_s.strip
   keyword_q = normalized_keyword_query(params[:q])
 
-  base = Shop.approved
+  base = (smoking_area.present? || smoking_type.present? || @open_now_only) ? Shop.approved : Shop.public_listing
 
   if @forced_area_keyword.present?
     like = "%#{@forced_area_keyword}%"
@@ -575,6 +575,7 @@ end
     .left_joins(:reviews)
     .select(
       "shops.id",
+      "CASE WHEN shops.on_hold THEN 1 ELSE 0 END AS non_smoking_priority",
       "shops.last_confirmed_on",
       "shops.opening_hours_json",
       "shops.opening_hours_text",
@@ -596,7 +597,7 @@ end
   records.select! { |shop| open_now_map[shop.id] } if @open_now_only
   records = sort_shop_records(records, @current_sort, open_now_map)
 
-  @total_shops_count = Shop.approved.count
+  @total_shops_count = Shop.public_listing.count
   @shops_count = records.size
 
   requested_page = params[:page].to_i
@@ -739,7 +740,7 @@ end
     confirmed_on_i = shop[:confirmed_on_sort].to_i
     confirmed_penalty = confirmed_on_i.zero? ? 1 : 0
 
-    case sort_key
+    sort_values = case sort_key
     when "rating"
       [ confirmed_penalty, -confirmed_on_i, -avg_rating, -reviews_count, open_penalty, -created_at_i ]
     when "reviews_count"
@@ -749,6 +750,7 @@ end
     else
       [ confirmed_penalty, -confirmed_on_i, -avg_rating, -reviews_count, open_penalty, -created_at_i ]
     end
+    [ shop[:non_smoking_priority].to_i, *sort_values ]
   end
 end
 

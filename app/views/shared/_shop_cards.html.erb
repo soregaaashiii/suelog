@@ -5,6 +5,7 @@
 <% if shops.present? %>
   <div class="shop-grid">
     <% shops.each do |shop| %>
+      <% confirmed_non_smoking = shop.confirmed_non_smoking? %>
       <% confirmed = shop.last_confirmed_on %>
       <% very_old = confirmed.present? && confirmed < 2.years.ago.to_date %>
       <% thumb = nil %>
@@ -224,6 +225,10 @@
               <span class="shop-card__cvTrust shop-card__cvTrust--confirmed">確認済み</span>
             <% end %>
 
+            <% if confirmed_non_smoking %>
+              <span class="refine-non-smoking-summary">この店舗では喫煙できません</span>
+            <% end %>
+
             <% if very_old %>
               <span class="shop-card__cvPill shop-card__cvPill--muted">確認日が古い可能性</span>
             <% end %>
@@ -243,7 +248,7 @@
           </p>
 
           <div class="shop-card__actions shop-card__actions--primary">
-            <%= link_to "喫煙状況・地図・予約を見る",
+            <%= link_to (confirmed_non_smoking ? "禁煙店の情報を見る" : "喫煙状況・地図・予約を見る"),
                         shop_path(shop),
                         class: "btn btn--dark shop-card__detailBtn" %>
           </div>
