@@ -42,7 +42,7 @@
 <div>
 <%= f.label :genre, "ジャンル" %><br>
 <%= f.select :genre,
-Shop.genre_options.map { |genre| [genre, genre] },
+Shop.genre_form_options,
 include_blank: "選択してください" %>
 </div>
 

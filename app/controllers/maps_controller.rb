@@ -16,12 +16,7 @@ class MapsController < ApplicationController
 
     @shops_count = @shops.size
 
-    @genres = @shops
-      .flat_map { |shop| genre_candidates_for(shop) }
-      .map(&:strip)
-      .reject(&:blank?)
-      .uniq
-      .sort
+    @genres = Shop.selectable_genre_options
 
     # Share identical icon markup instead of repeating it for every map record.
     @map_smoking_badges_payload = {}
@@ -153,24 +148,17 @@ class MapsController < ApplicationController
 
     if base_genre == "その他"
       other = shop.try(:genre_other).to_s
-      values.concat(split_genre_text(other))
+      values.concat(Shop.split_genre_text(other))
     end
 
     if values.blank?
       label = genre_label_for(shop)
-      values.concat(split_genre_text(label))
+      values.concat(Shop.split_genre_text(label))
     end
 
     values
       .map { |v| v.to_s.strip }
       .reject(&:blank?)
       .uniq
-  end
-
-  def split_genre_text(text)
-    text.to_s
-      .split(/[、,\/／｜|・]+/)
-      .map(&:strip)
-      .reject(&:blank?)
   end
 end

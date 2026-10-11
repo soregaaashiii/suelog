@@ -359,6 +359,23 @@ class Shop < ApplicationRecord
     GENRES
   end
 
+  # Standard choices and custom genres from published shops share the map's ordering.
+  def self.selectable_genre_options
+    custom = approved.where(genre: "その他").pluck(:genre_other)
+      .flat_map { |text| split_genre_text(text) }
+    (GENRES + custom).reject { |genre| genre == "その他" }.uniq.sort + [ "その他" ]
+  end
+
+  def self.genre_form_options
+    selectable_genre_options.map do |genre|
+      [ genre, GENRES.include?(genre) ? genre : "custom_genre:#{genre}" ]
+    end
+  end
+
+  def self.split_genre_text(text)
+    text.to_s.split(/[、,，\/／｜|・]+/).map(&:strip).reject(&:blank?)
+  end
+
   def self.genre_search_terms(value)
     v = value.to_s.strip
     return [] if v.blank?
@@ -1096,6 +1113,12 @@ class Shop < ApplicationRecord
   def normalize_genre_value
     self.genre = genre.to_s.strip
     self.genre_other = genre_other.to_s.strip if respond_to?(:genre_other)
+
+    if genre.start_with?("custom_genre:")
+      self.genre_other = genre.delete_prefix("custom_genre:").strip
+      self.genre = "その他"
+      return
+    end
 
     self.genre = GENRE_ALIASES[genre] || genre
 

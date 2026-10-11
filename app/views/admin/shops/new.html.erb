@@ -46,7 +46,7 @@
   <div style="margin:12px 0;">
     <div style="font-weight:700;">ジャンル <%= req %></div>
     <%= f.select :genre,
-      Shop.genre_options.map { |genre| [genre, genre] },
+      Shop.genre_form_options,
       { include_blank: "選択してください" },
       { required: true, style: "width:100%; max-width:420px; padding:10px; border:1px solid #ddd; border-radius:12px;" } %>
   </div>
