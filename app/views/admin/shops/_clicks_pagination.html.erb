@@ -1,0 +1,16 @@
+<% if (@total_pages || 1) > 1 %>
+  <div style="margin:10px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <% if (@page || 1) > 1 %>
+      <%= link_to "← 前へ",
+          admin_shop_clicks_path(status: @status, source: @source, per: @per, page: (@page - 1), q: @q, sort: @sort),
+          style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+    <% end %>
+
+    <% if (@page || 1) < (@total_pages || 1) %>
+      <%= link_to "次へ →",
+          admin_shop_clicks_path(status: @status, source: @source, per: @per, page: (@page + 1), q: @q, sort: @sort),
+          style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
+    <% end %>
+  </div>
+<% end %>
+
