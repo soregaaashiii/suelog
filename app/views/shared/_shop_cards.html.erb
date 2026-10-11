@@ -174,10 +174,14 @@
         <% end %>
 
         <div class="shop-card__body">
+          <% shop_open_now = defined?(open_now_map) && open_now_map.present? ? open_now_map[shop.id] : shop.open_now? %>
           <div class="shop-card__meta">
-            <span class="shop-card__genre">
-              <%= shop.display_genre.presence || "未設定" %>
-            </span>
+            <div class="shop-card__statusRow">
+              <span class="shop-card__genre">
+                <%= shop.display_genre.presence || "未設定" %>
+              </span>
+              <%= refine_business_status_badge(shop_open_now) %>
+            </div>
 
             <% if confirmed.present? %>
               <span class="shop-card__confirmed">
@@ -186,21 +190,9 @@
             <% end %>
           </div>
 
-          <div class="shop-card__businessStatus">
-            <% shop_open_now = defined?(open_now_map) && open_now_map.present? ? open_now_map[shop.id] : shop.open_now? %>
-
-            <% if shop_open_now %>
-              <%= refine_business_status_badge(true) %>
-
-              <% if (label = closing_soon_label(shop)).present? %>
-                <span style="margin-left:6px; color:#b00020; font-size:12px; font-weight:800;">
-                  <%= label %>
-                </span>
-              <% end %>
-            <% else %>
-              <%= refine_business_status_badge(false) %>
-            <% end %>
-          </div>
+          <% if shop_open_now && (label = closing_soon_label(shop)).present? %>
+            <div class="shop-card__closingSoon"><%= label %></div>
+          <% end %>
 
           <% if card_avg_rating.present? && card_reviews_count.positive? %>
             <div class="shop-card__rating">
