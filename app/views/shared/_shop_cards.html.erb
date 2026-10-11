@@ -191,7 +191,7 @@
             <% shop_open_now = defined?(open_now_map) && open_now_map.present? ? open_now_map[shop.id] : shop.open_now? %>
 
             <% if shop_open_now %>
-              <span class="badge badge--open-inline">営業中</span>
+              <%= refine_business_status_badge(true) %>
 
               <% if (label = closing_soon_label(shop)).present? %>
                 <span style="margin-left:6px; color:#b00020; font-size:12px; font-weight:800;">
@@ -199,7 +199,7 @@
                 </span>
               <% end %>
             <% else %>
-              <span class="badge badge--closed-inline">営業終了</span>
+              <%= refine_business_status_badge(false) %>
             <% end %>
           </h3>
 
@@ -219,11 +219,7 @@
 
           <div class="shop-card__cvLead">
             <%= refine_shop_smoking_badges(shop) %>
-            <% if !shop.confirmed_non_smoking? && shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
-              <span class="shop-card__cvTrust shop-card__cvTrust--unverified">未確認</span>
-            <% elsif !shop.confirmed_non_smoking? && confirmed.present? %>
-              <span class="shop-card__cvTrust shop-card__cvTrust--confirmed">確認済み</span>
-            <% end %>
+            <%= refine_verification_badge(shop) %>
 
             <% if confirmed_non_smoking %>
               <span class="refine-non-smoking-summary">この店舗では喫煙できません</span>

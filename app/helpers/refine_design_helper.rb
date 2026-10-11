@@ -1,4 +1,20 @@
 module RefineDesignHelper
+  def refine_business_status_badge(open_now)
+    state, icon, label = open_now ? [ "open", "●", "営業中" ] : [ "outside", "◷", "営業時間外" ]
+    tag.span(class: "refine-business-status refine-business-status--#{state}") do
+      safe_join([ tag.span(icon, aria: { hidden: true }), tag.span(label) ])
+    end
+  end
+
+  def refine_verification_badge(shop)
+    return if shop.confirmed_non_smoking?
+
+    state, icon, label = shop.smoking_unverified? ? [ "unverified", "?", "喫煙情報 未確認" ] : [ "verified", "✓", "喫煙情報 確認済み" ]
+    tag.span(class: "refine-verification refine-verification--#{state}") do
+      safe_join([ tag.span(icon, aria: { hidden: true }), tag.span(label) ])
+    end
+  end
+
   def refine_shop_smoking_badges(shop)
     return refine_smoking_badges(shop.smoking_area, shop.smoking_type) unless shop.confirmed_non_smoking?
 
