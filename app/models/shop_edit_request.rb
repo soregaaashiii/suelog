@@ -63,6 +63,7 @@ validate :proposed_last_confirmed_on_not_future
 validate :genre_other_required_when_other
 validate :proposed_thumbnail_values
 
+before_validation :normalize_proposed_genre
 before_validation :normalize_proposed_opening_hours_json
 before_validation :normalize_proposed_smoking_values
 
@@ -183,6 +184,21 @@ def proposed_last_confirmed_on_not_future
 return if proposed_last_confirmed_on.blank?
 
 errors.add(:proposed_last_confirmed_on, "は未来の日付にできません") if proposed_last_confirmed_on > Date.current
+end
+
+def normalize_proposed_genre
+  value = genre.to_s.strip
+  if value.start_with?("custom_genre:")
+    self.genre_other = value.delete_prefix("custom_genre:").strip
+    self.genre = "その他"
+    return
+  end
+  value = Shop::GENRE_ALIASES[value] || value
+  self.genre = value
+  return if value.blank? || Shop::GENRES.include?(value)
+
+  self.genre_other = value
+  self.genre = "その他"
 end
 
 def genre_other_required_when_other

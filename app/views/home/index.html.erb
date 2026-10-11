@@ -53,7 +53,7 @@
   </section>
 
   <% genre_label = {} %>
-  <% Shop.genre_options.each { |g| genre_label[g] = g } %>
+  <% Shop.selectable_genre_options.each { |g| genre_label[g] = g } %>
   <% genre_label["izakaya"] = "居酒屋" %>
   <% genre_label["bar"] = "バー・パブ" %>
   <% genre_label["cafe"] = "カフェ" %>

@@ -22,14 +22,14 @@ end
 } %>
 
 <% genre_label = {} %>
-<% Shop.genre_options.each { |g| genre_label[g] = g } %>
+<% Shop.selectable_genre_options.each { |g| genre_label[g] = g } %>
 <% genre_label["izakaya"] = "居酒屋" %>
 <% genre_label["bar"] = "バー・パブ" %>
 <% genre_label["cafe"] = "カフェ" %>
 <% genre_label["yakiniku"] = "焼肉" %>
 
 <% genre_select_options = [["ジャンル", ""]] %>
-<% genre_select_options.concat(Shop.genre_options.map { |g| [genre_label[g] || g, g] }) %>
+<% genre_select_options.concat(Shop.selectable_genre_options.map { |g| [genre_label[g] || g, g] }) %>
 
 <% legacy_genre_labels = {
   "izakaya" => "居酒屋",

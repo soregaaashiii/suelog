@@ -527,6 +527,12 @@ end
       )
     SQL
 
+    # Match custom genre tokens using the same separators as the map and selectors.
+    [ "/", "／", "｜", "|", "・" ].each do |separator|
+      normalized_genre_sql = "REPLACE(#{normalized_genre_sql}, '#{separator}', '、')"
+      normalized_genre_other_sql = "REPLACE(#{normalized_genre_other_sql}, '#{separator}', '、')"
+    end
+
     genre_terms.each_with_index do |term, idx|
       key = :"genre_token_#{idx}"
 

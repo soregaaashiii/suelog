@@ -62,7 +62,7 @@
       <label>ジャンル</label><br>
       <%= select_tag :genre,
           options_for_select(
-            [["指定なし", ""]] + Shop.genre_options.map { |g| [g, g] },
+            [["指定なし", ""]] + Shop.selectable_genre_options.map { |g| [g, g] },
             params[:genre]
           ) %>
     </div>

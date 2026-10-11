@@ -609,7 +609,7 @@ function applyFilters(options = {}) {
 
     const keywordMatch = !keyword || keyword.split(/\s+/).filter(Boolean).every(word => keywordTarget.normalize("NFKC").includes(word));
     const stationMatch = !station || stationTarget.includes(station);
-    const genreMatch = !genre || genreTokens.includes(genre);
+    const genreMatch = !genre || genreTokens.includes(genre) || (genre === "その他" && shop.genre === "その他");
     const smokingAreaMatch = !smokingArea || shop.smoking_area === smokingArea;
     const smokingTypeMatch = !smokingType || shop.smoking_type === smokingType;
     const openNowMatch = !openNowOnly || shop.open_now === true;
