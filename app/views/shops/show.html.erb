@@ -1411,18 +1411,8 @@
         <span class="refine-secondary">条件2</span><%= refine_smoking_badges(@shop.smoking_area_2, @shop.smoking_type_2) %>
       <% end %>
 
-      <% if @shop.respond_to?(:open_now?) && @shop.open_now? %>
-        <span class="ss-badge ss-badge--green">
-          営業中
-          <% if @shop.respond_to?(:display_opening_hours_text) && @shop.display_opening_hours_text.present? %>
-            （本日営業）
-          <% end %>
-        </span>
-      <% end %>
-
-      <% if !confirmed_non_smoking && @shop.respond_to?(:smoking_unverified?) && !@shop.smoking_unverified? %>
-        <span class="ss-badge ss-badge--green">喫煙情報確認済み</span>
-      <% end %>
+      <%= refine_business_status_badge(@shop.open_now?) %>
+      <%= refine_verification_badge(@shop) %>
 
       <% if @shop.last_confirmed_on.present? %>
         <span class="ss-badge ss-badge--line">最終確認：<%= @shop.last_confirmed_on %></span>

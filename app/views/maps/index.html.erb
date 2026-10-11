@@ -299,19 +299,10 @@ function markerIconFor(shop) {
 }
 
 function buildStatusBadgeHtml(shop) {
-  if (shop.open_now === true) {
-    return `
-      <span style="display:inline-flex; align-items:center; padding:4px 8px; border-radius:999px; background:#e8f7ee; color:#15803d; border:1px solid #bbf7d0; font-size:11px; font-weight:800; margin-bottom:8px;">
-        営業中
-      </span>
-    `;
-  }
-
-  return `
-    <span style="display:inline-flex; align-items:center; padding:4px 8px; border-radius:999px; background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb; font-size:11px; font-weight:800; margin-bottom:8px;">
-      営業時間外
-    </span>
-  `;
+  const state = shop.open_now === true ? "open" : "outside";
+  const icon = shop.open_now === true ? "●" : "◷";
+  const label = shop.open_now === true ? "営業中" : "営業時間外";
+  return `<span class="refine-business-status refine-business-status--${state}"><span aria-hidden="true">${icon}</span><span>${label}</span></span>`;
 }
 
 function walkingMinutesFromCurrentLocation(shop) {

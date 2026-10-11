@@ -182,3 +182,19 @@ body.suelog-refine {
   outline:2px solid #e0c677;
   outline-offset:3px;
 }
+
+/* Business hours are filled pills; smoking verification uses outlined labels. */
+.suelog-refine .refine-business-status,
+.suelog-refine .refine-verification {
+  display:inline-flex; align-items:center; gap:6px; padding:5px 9px;
+  font-size:12px; font-weight:700; line-height:1.4; white-space:nowrap;
+  vertical-align:middle;
+}
+.suelog-refine .refine-business-status { border-radius:999px; border:1px solid transparent; }
+.suelog-refine .refine-business-status--open { background:#187446!important; color:#fff!important; border-color:#4bbd7e; }
+.suelog-refine .refine-business-status--outside { background:#2a2d31!important; color:#d6dae0!important; border-color:#656b74; }
+.suelog-refine .refine-verification { border-radius:3px; background:transparent!important; }
+.suelog-refine .refine-verification--verified { color:#a9d4ff!important; border:1px solid #6c9ac4; }
+.suelog-refine .refine-verification--unverified { color:#efd28f!important; border:1px dashed #b89b58; }
+.suelog-refine .refine-business-status > span,
+.suelog-refine .refine-verification > span { color:inherit!important; }

@@ -7,7 +7,7 @@
     <% if !shop.confirmed_non_smoking? && shop.secondary_smoking_condition? %>
       <span class="refine-secondary">条件2</span><%= refine_smoking_badges(shop.smoking_area_2, shop.smoking_type_2) %>
     <% end %>
-    <% unless shop.confirmed_non_smoking? %><span class="refine-secondary"><%= shop.smoking_unverified? ? "喫煙情報未確認" : "喫煙情報確認済" %></span><% end %>
-    <% if shop.open_now? %><span class="refine-secondary">営業中</span><% end %>
+    <%= refine_verification_badge(shop) %>
+    <%= refine_business_status_badge(shop.open_now?) %>
   </div>
 <% end %>

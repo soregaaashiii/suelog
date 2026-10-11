@@ -27,6 +27,30 @@ class RefineCompatibilityTest < ActionDispatch::IntegrationTest
     assert_select 'link[rel="canonical"]'
   end
 
+  test "business hours and smoking verification have distinct labels and states" do
+    @shop.update!(opening_hours_json: { "sunday" => { "open" => "11:00", "close" => "13:00", "closed" => false } }, smoking_unverified: true)
+    travel_to Time.zone.local(2026, 10, 11, 12, 0) do
+      assert @shop.open_now?
+      get root_path, params: { q: @shop.name }
+      assert_select ".shop-card .refine-business-status--open", text: /営業中/
+      assert_select ".shop-card .refine-verification--unverified", text: /喫煙情報 未確認/
+      get shop_path(@shop)
+      assert_select ".shop-show__badges .refine-business-status--open", text: /営業中/
+      assert_select ".shop-show__badges .refine-verification--unverified"
+    end
+    @shop.update!(smoking_unverified: false)
+    travel_to Time.zone.local(2026, 10, 11, 15, 0) do
+      assert_not @shop.open_now?
+      get root_path, params: { q: @shop.name }
+      assert_select ".shop-card .refine-business-status--outside", text: /営業時間外/
+      assert_select ".shop-card .refine-verification--verified", text: /喫煙情報 確認済み/
+      assert_select ".badge--closed-inline", count: 0
+      get shop_path(@shop)
+      assert_select ".shop-show__badges .refine-business-status--outside", text: /営業時間外/
+      assert_select ".shop-show__badges .refine-verification--verified"
+    end
+  end
+
   test "missing routes, station, shops and reviews return actual 404" do
     [ "/umeda/anything", "/umeda/genre/not-a-genre", "/umeda/station/not-a-station", "/shops/999999999", "/shops/999999999/reviews/new", "/shops/999999999/track_click", "/articles/missing/track_shop_click", "/reviews/999999999/edit", "/shops/999999999/shop_reports/new", "/articles/missing" ].each do |path|
       get path, headers: UA
