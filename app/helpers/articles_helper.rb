@@ -348,8 +348,8 @@ def replace_shop_shortcodes(text)
       img = figure.at_css("img")
       next unless img
 
-      figure["style"] = [figure["style"], "margin:20px 0; text-align:center;"].compact.join(" ")
-      img["style"] = [img["style"], "max-width:560px; width:100%; height:auto; border-radius:12px; display:inline-block;"].compact.join(" ")
+      figure["style"] = [ figure["style"], "margin:20px 0; text-align:center;" ].compact.join(" ")
+      img["style"] = [ img["style"], "max-width:560px; width:100%; height:auto; border-radius:12px; display:inline-block;" ].compact.join(" ")
     end
   end
 
