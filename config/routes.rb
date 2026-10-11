@@ -9,6 +9,12 @@ Rails.application.routes.draw do
   end
 
   root "home#index"
+  get "shops/:id/photos", to: "shops#refine_section", defaults: { section: "photos" }
+  get "shops/:id/reviews", to: "shops#refine_section", defaults: { section: "reviews" }
+  get "shops/:id/access", to: "shops#refine_section", defaults: { section: "access" }
+  get "shops/:id/booking", to: "shops#refine_section", defaults: { section: "booking" }
+  get "shops/:id/reviews/new", to: "shops#refine_section", defaults: { section: "review-form" }
+
 
   get "map", to: "maps#index"
   get "map/affiliate_clicks", to: "maps#index", as: :map_affiliate_clicks
@@ -23,7 +29,7 @@ Rails.application.routes.draw do
   get "contact/done", to: "contact_messages#done", as: :done_contact_messages
 
   # 記事
-  resources :articles, only: [:index, :show] do
+  resources :articles, only: [ :index, :show ] do
     member do
       get :track_shop_click
     end
@@ -73,20 +79,21 @@ Rails.application.routes.draw do
       defaults: { area: "namba" }
 
   resources :shops do
+    collection { get :possible_duplicates }
     member do
       get :track_click
       post :track_click
     end
 
-    resources :reviews, only: [:create]
+    resources :reviews, only: [ :create ]
 
-    resources :shop_edit_requests, only: [:new, :create] do
+    resources :shop_edit_requests, only: [ :new, :create ] do
       collection do
         get :done
       end
     end
 
-    resources :shop_reports, only: [:new, :create] do
+    resources :shop_reports, only: [ :new, :create ] do
       collection do
         get :done
       end
@@ -94,11 +101,11 @@ Rails.application.routes.draw do
   end
 
   # 口コミ本人編集用
-  resources :reviews, only: [:edit, :update]
+  resources :reviews, only: [ :edit, :update ]
 
   # 口コミ通報用
   resources :reviews, only: [] do
-    resources :review_reports, only: [:new, :create] do
+    resources :review_reports, only: [ :new, :create ] do
       collection do
         get :done
       end
@@ -119,7 +126,7 @@ Rails.application.routes.draw do
     post "page_view_tracking/exclude", to: "page_view_settings#exclude", as: :exclude_page_view_tracking
     delete "page_view_tracking/include", to: "page_view_settings#include", as: :include_page_view_tracking
 
-    resources :shops, only: [:index, :show, :new, :create, :edit, :update] do
+    resources :shops, only: [ :index, :show, :new, :create, :edit, :update ] do
       member do
         patch :approve
         patch :reject
@@ -142,26 +149,26 @@ Rails.application.routes.draw do
       end
     end
 
-    resource :shop_import, only: [:new, :create] do
+    resource :shop_import, only: [ :new, :create ] do
       post :preview
       get "preview", to: redirect("/panel_8m4k/shop_import/new")
     end
 
-    resources :reviews, only: [:index, :destroy] do
+    resources :reviews, only: [ :index, :destroy ] do
       member do
         patch :approve
         patch :reject
       end
     end
 
-    resources :shop_edit_requests, only: [:index, :show] do
+    resources :shop_edit_requests, only: [ :index, :show ] do
       member do
         patch :approve
         patch :reject
       end
     end
 
-    resources :shop_reports, only: [:index, :show] do
+    resources :shop_reports, only: [ :index, :show ] do
       member do
         patch :approve
         patch :reject
@@ -169,7 +176,7 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :contact_messages, only: [:index, :show, :destroy]
+    resources :contact_messages, only: [ :index, :show, :destroy ]
 
     # 広告管理 ← 追加
     resources :affiliate_ads
@@ -178,7 +185,7 @@ Rails.application.routes.draw do
     resources :articles
 
     resources :sub_admin_users
-    resources :shop_verification_submissions, only: [:index] do
+    resources :shop_verification_submissions, only: [ :index ] do
       collection do
         patch :bulk_approve
         patch :bulk_reject
@@ -203,6 +210,6 @@ Rails.application.routes.draw do
         to: "smoking_checks#submissions",
         as: :smoking_check_submissions
 
-    resources :smoking_checks, only: [:index, :create, :edit, :update]
+    resources :smoking_checks, only: [ :index, :create, :edit, :update ]
   end
 end

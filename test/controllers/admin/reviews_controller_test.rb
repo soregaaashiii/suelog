@@ -1,8 +1,7 @@
 require "test_helper"
-
 class Admin::ReviewsControllerTest < ActionDispatch::IntegrationTest
-  test "should get index" do
-    get admin_reviews_index_url
-    assert_response :success
+  test "review moderation requires authentication" do
+    get "/panel_8m4k/reviews"
+    assert_response :unauthorized
   end
 end

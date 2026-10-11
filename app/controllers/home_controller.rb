@@ -3,37 +3,37 @@
 
 class HomeController < ApplicationController
   AREA_GENRE_MAP = {
-    "izakaya" => { label: "居酒屋", terms: ["居酒屋"] },
-    "bar" => { label: "バー・パブ", terms: ["バー", "パブ", "ハブ", "ラウンジ"] },
-    "cafe" => { label: "カフェ", terms: ["カフェ", "喫茶店"] },
-    "yakiniku" => { label: "焼肉", terms: ["焼肉"] },
-    "yakitori" => { label: "焼鳥", terms: ["焼鳥"] },
-    "seafood" => { label: "海鮮", terms: ["海鮮"] },
-    "sushi" => { label: "寿司", terms: ["寿司"] },
-    "kushikatsu" => { label: "串カツ", terms: ["串カツ"] },
-    "teppanyaki" => { label: "鉄板焼き", terms: ["鉄板焼き"] },
-    "okonomiyaki" => { label: "お好み焼き", terms: ["お好み焼き"] },
-    "ramen" => { label: "ラーメン", terms: ["ラーメン"] },
-    "chinese" => { label: "中華", terms: ["中華"] },
-    "korean" => { label: "韓国料理", terms: ["韓国料理"] },
-    "italian" => { label: "イタリアン", terms: ["イタリアン"] },
-    "french" => { label: "フレンチ", terms: ["フレンチ"] },
-    "spanish" => { label: "スパニッシュ", terms: ["スパニッシュ"] },
-    "dining-bar" => { label: "ダイニングバー", terms: ["ダイニングバー"] },
-    "bal" => { label: "バル", terms: ["バル"] },
-    "bistro" => { label: "ビストロ", terms: ["ビストロ"] },
-    "wine-bar" => { label: "ワインバー", terms: ["ワインバー"] },
-    "sports-bar" => { label: "スポーツバー", terms: ["スポーツバー"] },
-    "oyster-bar" => { label: "オイスターバー", terms: ["オイスターバー"] },
-    "steak" => { label: "ステーキ", terms: ["ステーキ"] },
-    "gyoza" => { label: "餃子", terms: ["餃子"] },
-    "motsunabe" => { label: "もつ鍋", terms: ["もつ鍋"] },
-    "creative" => { label: "創作料理", terms: ["創作料理"] },
-    "washoku" => { label: "和食", terms: ["和食"] },
-    "shisha" => { label: "シーシャ", terms: ["シーシャ"] },
-    "snack" => { label: "スナック", terms: ["スナック"] },
-    "lounge" => { label: "ラウンジ", terms: ["ラウンジ"] },
-    "tachinomi" => { label: "立ち飲み", terms: ["立ち飲み"] }
+    "izakaya" => { label: "居酒屋", terms: [ "居酒屋" ] },
+    "bar" => { label: "バー・パブ", terms: [ "バー", "パブ", "ハブ", "ラウンジ" ] },
+    "cafe" => { label: "カフェ", terms: [ "カフェ", "喫茶店" ] },
+    "yakiniku" => { label: "焼肉", terms: [ "焼肉" ] },
+    "yakitori" => { label: "焼鳥", terms: [ "焼鳥" ] },
+    "seafood" => { label: "海鮮", terms: [ "海鮮" ] },
+    "sushi" => { label: "寿司", terms: [ "寿司" ] },
+    "kushikatsu" => { label: "串カツ", terms: [ "串カツ" ] },
+    "teppanyaki" => { label: "鉄板焼き", terms: [ "鉄板焼き" ] },
+    "okonomiyaki" => { label: "お好み焼き", terms: [ "お好み焼き" ] },
+    "ramen" => { label: "ラーメン", terms: [ "ラーメン" ] },
+    "chinese" => { label: "中華", terms: [ "中華" ] },
+    "korean" => { label: "韓国料理", terms: [ "韓国料理" ] },
+    "italian" => { label: "イタリアン", terms: [ "イタリアン" ] },
+    "french" => { label: "フレンチ", terms: [ "フレンチ" ] },
+    "spanish" => { label: "スパニッシュ", terms: [ "スパニッシュ" ] },
+    "dining-bar" => { label: "ダイニングバー", terms: [ "ダイニングバー" ] },
+    "bal" => { label: "バル", terms: [ "バル" ] },
+    "bistro" => { label: "ビストロ", terms: [ "ビストロ" ] },
+    "wine-bar" => { label: "ワインバー", terms: [ "ワインバー" ] },
+    "sports-bar" => { label: "スポーツバー", terms: [ "スポーツバー" ] },
+    "oyster-bar" => { label: "オイスターバー", terms: [ "オイスターバー" ] },
+    "steak" => { label: "ステーキ", terms: [ "ステーキ" ] },
+    "gyoza" => { label: "餃子", terms: [ "餃子" ] },
+    "motsunabe" => { label: "もつ鍋", terms: [ "もつ鍋" ] },
+    "creative" => { label: "創作料理", terms: [ "創作料理" ] },
+    "washoku" => { label: "和食", terms: [ "和食" ] },
+    "shisha" => { label: "シーシャ", terms: [ "シーシャ" ] },
+    "snack" => { label: "スナック", terms: [ "スナック" ] },
+    "lounge" => { label: "ラウンジ", terms: [ "ラウンジ" ] },
+    "tachinomi" => { label: "立ち飲み", terms: [ "立ち飲み" ] }
   }.freeze
 
   STATION_SLUG_MAP = {
@@ -66,6 +66,12 @@ class HomeController < ApplicationController
   track_page_view
 
   set_default_page_meta!
+  if request.path_parameters[:station].present? && !STATION_SLUG_MAP.values.any? { |stations| stations.key?(current_station_slug.to_s) }
+    raise ActionController::RoutingError, "Not Found"
+  end
+  if request.path_parameters[:genre].present? && current_area_genre_config.blank?
+    raise ActionController::RoutingError, "Not Found"
+  end
   return if redirect_to_canonical_station_path!
   apply_area_page_context_from_params!
 
@@ -442,7 +448,7 @@ end
   end
 
   def genre_route_request?
-    route_genre_slug.present? && params[:genre].blank?
+    route_genre_slug.present? && request.query_parameters["genre"].blank?
   end
 
   def current_station_slug
@@ -465,7 +471,7 @@ end
   def build_listing!
   set_recommended_articles!
   @per = params[:per].to_i
-  @per = 30 unless [30, 50, 100].include?(@per)
+  @per = 30 unless [ 30, 50, 100 ].include?(@per)
 
   @current_sort = normalized_sort_param
   @open_now_only = open_now_only_param?
@@ -649,12 +655,12 @@ end
       if AREA_GENRE_MAP.key?(normalized)
         Array(AREA_GENRE_MAP[normalized][:terms]).map(&:to_s).map(&:strip).reject(&:blank?).uniq
       else
-        [normalized].map(&:to_s).map(&:strip).reject(&:blank?).uniq
+        [ normalized ].map(&:to_s).map(&:strip).reject(&:blank?).uniq
       end
     elsif @forced_genre_terms.present?
       @forced_genre_terms.map(&:to_s).map(&:strip).reject(&:blank?).uniq
     else
-      [effective_genre_param].map(&:to_s).map(&:strip).reject(&:blank?).uniq
+      [ effective_genre_param ].map(&:to_s).map(&:strip).reject(&:blank?).uniq
     end
   end
 
@@ -735,13 +741,13 @@ end
 
     case sort_key
     when "rating"
-      [confirmed_penalty, -confirmed_on_i, -avg_rating, -reviews_count, open_penalty, -created_at_i]
+      [ confirmed_penalty, -confirmed_on_i, -avg_rating, -reviews_count, open_penalty, -created_at_i ]
     when "reviews_count"
-      [confirmed_penalty, -confirmed_on_i, -reviews_count, -avg_rating, open_penalty, -created_at_i]
+      [ confirmed_penalty, -confirmed_on_i, -reviews_count, -avg_rating, open_penalty, -created_at_i ]
     when "newest"
-      [confirmed_penalty, -confirmed_on_i, -created_at_i, -avg_rating, -reviews_count, open_penalty]
+      [ confirmed_penalty, -confirmed_on_i, -created_at_i, -avg_rating, -reviews_count, open_penalty ]
     else
-      [confirmed_penalty, -confirmed_on_i, -avg_rating, -reviews_count, open_penalty, -created_at_i]
+      [ confirmed_penalty, -confirmed_on_i, -avg_rating, -reviews_count, open_penalty, -created_at_i ]
     end
   end
 end

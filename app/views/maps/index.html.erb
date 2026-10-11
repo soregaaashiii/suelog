@@ -107,6 +107,17 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 
 <p id="map-status" style="margin:0 0 12px; color:#666; font-size:12px;"></p>
 
+<section class="map-quick-actions" aria-labelledby="map-quick-actions-title">
+  <div class="map-quick-actions__head">
+    <div>
+      <h2 id="map-quick-actions-title">表示中の店舗からすぐ行動</h2>
+      <p>気になる店舗は、地図を拡大しなくても電話・ルート・空席確認へ進めます。</p>
+    </div>
+    <span id="map-quick-actions-count" class="map-quick-actions__count"></span>
+  </div>
+  <div id="map-quick-actions-list" class="map-quick-actions__list"></div>
+</section>
+
 <div id="map" style="width:100%; height:70vh; min-height:520px; border:1px solid #ddd; border-radius:12px;"></div>
 
 <div style="margin-top:12px;">
@@ -117,6 +128,118 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 @media (max-width: 768px) {
   #map {
     min-height: 460px !important;
+  }
+}
+
+.map-quick-actions {
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid #e8e3d7;
+  border-radius: 12px;
+  background: #fffdf8;
+}
+
+.map-quick-actions__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.map-quick-actions__head h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.map-quick-actions__head p {
+  margin: 0;
+  color: #666;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.map-quick-actions__count {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #f7f4ee;
+  color: #444;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.map-quick-actions__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.map-quick-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #eee5d6;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.map-quick-card__title {
+  color: #111;
+  text-decoration: none;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.map-quick-card__meta {
+  color: #666;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.map-quick-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: auto;
+}
+
+.map-quick-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 1px solid #d7d2c8;
+  border-radius: 8px;
+  color: #111;
+  background: #fff;
+  text-align: center;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.map-quick-card__btn--primary {
+  grid-column: 1 / -1;
+  border-color: #b42318;
+  background: #b42318;
+  color: #fff;
+}
+
+.map-quick-card__btn--dark {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .map-quick-actions__list {
+    grid-template-columns: 1fr;
   }
 }
 </style>
@@ -208,6 +331,7 @@ function buildInfoHtml(shop) {
   return `
     <div style="min-width:220px; line-height:1.7;">
       ${buildStatusBadgeHtml(shop)}
+      ${shop.smoking_badges_html || ""}
       <div style="font-weight:800; margin-bottom:6px;">${escapeHtml(shop.name)}</div>
       ${shop.address ? `<div style="font-size:12px; color:#444;">住所：${escapeHtml(shop.address)}</div>` : ""}
       ${shop.nearest_station ? `<div style="font-size:12px; color:#444;">最寄駅：${escapeHtml(shop.nearest_station)}</div>` : ""}
@@ -250,6 +374,65 @@ function buildInfoHtml(shop) {
 function updateVisibleCount(count) {
   const el = document.getElementById("visible-shops-count");
   if (el) el.textContent = String(count);
+}
+
+function renderQuickActions(shops) {
+  const list = document.getElementById("map-quick-actions-list");
+  const count = document.getElementById("map-quick-actions-count");
+  if (!list) return;
+
+  if (count) {
+    count.textContent = `${shops.length}件表示中`;
+  }
+
+  const actionableShops = shops
+    .filter((shop) => shop.booking_url || shop.phone_url || shop.map_url)
+    .slice(0, 6);
+
+  if (actionableShops.length === 0) {
+    list.innerHTML = `
+      <div class="map-quick-card">
+        <div class="map-quick-card__title">すぐ行動できる店舗がありません</div>
+        <div class="map-quick-card__meta">条件を変えるか、地図上の店舗詳細を確認してください。</div>
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = actionableShops.map((shop) => {
+    const booking = shop.booking_url ? `
+      <a href="${escapeHtml(shop.booking_url)}" data-map-link class="map-quick-card__btn map-quick-card__btn--primary">
+        ${escapeHtml(shop.booking_label || "空席を確認")}
+      </a>
+    ` : "";
+    const phone = shop.phone_url ? `
+      <a href="${escapeHtml(shop.phone_url)}" data-map-link class="map-quick-card__btn map-quick-card__btn--dark">
+        電話する
+      </a>
+    ` : "";
+    const route = shop.map_url ? `
+      <a href="${escapeHtml(shop.map_url)}" data-map-link class="map-quick-card__btn">
+        ルート
+      </a>
+    ` : "";
+
+    return `
+      <article class="map-quick-card">
+        <a href="${escapeHtml(shop.url)}" data-map-link class="map-quick-card__title">${escapeHtml(shop.name)}</a>
+        <div class="map-quick-card__meta">
+          ${shop.nearest_station ? `${escapeHtml(shop.nearest_station)} ／ ` : ""}
+          ${shop.genre_label ? `${escapeHtml(shop.genre_label)} ／ ` : ""}
+          ${escapeHtml(shop.smoking_area_label || "喫煙情報あり")}
+        </div>
+        <div>${shop.smoking_badges_html || ""}</div>
+        <div class="map-quick-card__actions">
+          ${booking}
+          ${phone}
+          ${route}
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 
 function clearMarkers() {
@@ -433,7 +616,7 @@ function applyFilters(options = {}) {
     const stationTarget = String(shop.nearest_station || "").toLowerCase();
     const genreTokens = Array.isArray(shop.genre_tokens) ? shop.genre_tokens : [];
 
-    const keywordMatch = !keyword || keywordTarget.includes(keyword);
+    const keywordMatch = !keyword || keyword.split(/\s+/).filter(Boolean).every(word => keywordTarget.normalize("NFKC").includes(word));
     const stationMatch = !station || stationTarget.includes(station);
     const genreMatch = !genre || genreTokens.includes(genre);
     const smokingAreaMatch = !smokingArea || shop.smoking_area === smokingArea;
@@ -444,12 +627,14 @@ function applyFilters(options = {}) {
   });
 
   renderMarkers(filteredShops);
+  renderQuickActions(filteredShops);
 
   if (!options.preserveViewport) {
     fitMarkersToBounds();
   }
 
   renderActiveFilterChips();
+  syncMapQuery();
 
   if (filteredShops.length === 0) {
     setStatus("条件に一致する店舗がありません。");
@@ -663,6 +848,22 @@ function restoreMapState() {
   }
 }
 
+function readMapQuery() {
+  const p = new URLSearchParams(location.search);
+  const keys = {q:"map-keyword", station:"map-station", genre:"map-genre", smoking_area:"map-smoking-area", smoking_type:"map-smoking-type"};
+  Object.entries(keys).forEach(([key,id]) => { document.getElementById(id).value = p.get(key) || ""; });
+  const open = document.getElementById("map-open-now-only");
+  if (p.has("open_now_only") || p.has("open_now")) open.checked = p.get("open_now_only") !== "0" && p.get("open_now") !== "0";
+}
+function syncMapQuery() {
+  const url = new URL(location.href);
+  const keys = {q:"map-keyword", station:"map-station", genre:"map-genre", smoking_area:"map-smoking-area", smoking_type:"map-smoking-type"};
+  Object.entries(keys).forEach(([key,id]) => { const value = document.getElementById(id).value; value ? url.searchParams.set(key,value) : url.searchParams.delete(key); });
+  url.searchParams.delete("open_now");
+  url.searchParams.set("open_now_only",document.getElementById("map-open-now-only").checked ? "1" : "0");
+  history.replaceState(null,"",url);
+}
+window.addEventListener("popstate", () => { readMapQuery(); applyFilters({preserveViewport:true}); });
 function initMap() {
   const mapEl = document.getElementById("map");
   if (!mapEl) return;
@@ -678,7 +879,9 @@ function initMap() {
   infoWindow = new google.maps.InfoWindow();
   bindFilterEvents();
 
-  const restored = restoreMapState();
+  const hasQueryFilters = ["q","station","genre","smoking_area","smoking_type","open_now_only","open_now"].some(key => initialParams.has(key));
+  const restored = hasQueryFilters ? false : restoreMapState();
+  if (hasQueryFilters) readMapQuery();
 
   if (!restored) {
     applyFilters();

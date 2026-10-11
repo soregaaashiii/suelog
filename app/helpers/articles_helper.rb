@@ -62,11 +62,21 @@ module ArticlesHelper
         processed_body
       end
 
-    shortcode_replacements.each do |token, replacement_html|
-      html = html.gsub(token, replacement_html.to_s)
-    end
-
     fragment = Nokogiri::HTML::DocumentFragment.parse(html)
+    # Shortcodes are often inside Action Text paragraphs. Replacing the whole
+    # paragraph keeps block-level cards intact instead of splitting their links.
+    shortcode_replacements.each do |token, replacement_html|
+      fragment.xpath(".//text()").select { |node| node.content.include?(token) }.each do |node|
+        parent = node.parent
+        replacement = Nokogiri::HTML::DocumentFragment.parse(replacement_html.to_s)
+        if parent.name == "p" && parent.text.strip == token
+          parent.replace(replacement)
+        else
+          escaped = ERB::Util.html_escape(node.content).gsub(token, replacement_html.to_s)
+          node.replace(Nokogiri::HTML::DocumentFragment.parse(escaped))
+        end
+      end
+    end
 
     style_article_figures!(fragment)
     remove_image_marker_nodes!(fragment)
@@ -276,7 +286,7 @@ def replace_shop_shortcodes(text)
 
     return "" if img_src.blank?
 
-    %(<div style="margin:20px 0; text-align:center;">
+    %(<div style="margin:20px 0; text-align:center;"><span class="refine-ad-label">広告 / PR</span>
         <a href="#{url}" target="_blank" rel="nofollow sponsored noopener" style="display:inline-block; max-width:100%;">
              <img src="#{ERB::Util.html_escape(img_src)}" alt="広告" style="max-width:100%; height:auto; display:block; margin:0 auto;">
         </a>
@@ -338,8 +348,8 @@ def replace_shop_shortcodes(text)
       img = figure.at_css("img")
       next unless img
 
-      figure["style"] = [figure["style"], "margin:20px 0; text-align:center;"].compact.join(" ")
-      img["style"] = [img["style"], "max-width:560px; width:100%; height:auto; border-radius:12px; display:inline-block;"].compact.join(" ")
+      figure["style"] = [ figure["style"], "margin:20px 0; text-align:center;" ].compact.join(" ")
+      img["style"] = [ img["style"], "max-width:560px; width:100%; height:auto; border-radius:12px; display:inline-block;" ].compact.join(" ")
     end
   end
 

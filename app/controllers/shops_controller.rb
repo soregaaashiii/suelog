@@ -41,7 +41,7 @@ class ShopsController < ApplicationController
     if params[:lat].present? && params[:lng].present?
       lat = params[:lat].to_f
       lng = params[:lng].to_f
-      scope = scope.near([lat, lng], 0.5, units: :km)
+      scope = scope.near([ lat, lng ], 0.5, units: :km)
     end
 
     @shops = scope.order(
@@ -135,6 +135,11 @@ class ShopsController < ApplicationController
     redirect_to root_path
   end
 
+  def refine_section
+    shop = Shop.find(params[:id])
+    redirect_to shop_path(shop, anchor: request.path_parameters[:section]), status: :moved_permanently
+  end
+
   def track_click
     @shop = Shop.find(params[:id])
 
@@ -154,6 +159,8 @@ class ShopsController < ApplicationController
     @shop.shop_clicks.create!(kind: kind)
 
     redirect_to target_url, allow_other_host: true
+  rescue ActiveRecord::RecordNotFound
+    raise
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.warn("[track_click] validation failed: #{e.message}")
     redirect_to shop_path(@shop), alert: "クリック記録に失敗しました"
@@ -435,8 +442,8 @@ class ShopsController < ApplicationController
   def related_articles_for(shop)
     return [] unless defined?(Article)
 
-    area_text = [shop.area, shop.address, shop.nearest_station].compact.join(" ")
-    shop_genres = [shop.genre.to_s.strip, shop.genre_other.to_s.strip].reject(&:blank?)
+    area_text = [ shop.area, shop.address, shop.nearest_station ].compact.join(" ")
+    shop_genres = [ shop.genre.to_s.strip, shop.genre_other.to_s.strip ].reject(&:blank?)
 
     area_keywords = []
 
@@ -471,13 +478,13 @@ class ShopsController < ApplicationController
 
         score += 2 if article.eyecatch.attached?
 
-        [article, score]
+        [ article, score ]
       end
 
     matched =
       scored_articles
         .select { |_article, score| score.positive? }
-        .sort_by { |article, score| [-score, -(article.published_at || article.created_at).to_i] }
+        .sort_by { |article, score| [ -score, -(article.published_at || article.created_at).to_i ] }
         .map(&:first)
         .first(3)
 
@@ -562,16 +569,16 @@ class ShopsController < ApplicationController
     achieved_badge_name = nil
 
     if count > 0 && (count % 100 == 0)
-      return ["🔥 ご協力回数 #{count}回達成！！本当にありがとうございます！！", nil]
+      return [ "🔥 ご協力回数 #{count}回達成！！本当にありがとうございます！！", nil ]
     end
 
-    thresholds = [1, 5, 10, 30, 100]
+    thresholds = [ 1, 5, 10, 30, 100 ]
     if thresholds.include?(count)
       achieved_badge_name = badge[:name]
-      return ["🎉 #{badge[:name]} バッジ獲得！ ご協力回数：#{count}回", achieved_badge_name]
+      return [ "🎉 #{badge[:name]} バッジ獲得！ ご協力回数：#{count}回", achieved_badge_name ]
     end
 
-    ["ご協力ありがとうございます！ ご協力回数：#{count}回（バッジ：#{badge[:name]}）", nil]
+    [ "ご協力ありがとうございます！ ご協力回数：#{count}回（バッジ：#{badge[:name]}）", nil ]
   end
 
   def safe_redirect_target?(url, kind: nil)
