@@ -23,7 +23,11 @@ class MapsController < ApplicationController
       .uniq
       .sort
 
+    # Share identical icon markup instead of repeating it for every map record.
+    @map_smoking_badges_payload = {}
     @map_shops_payload = @shops.map do |shop|
+      badge_key = [ shop.smoking_area, shop.smoking_type ].join(":")
+      @map_smoking_badges_payload[badge_key] ||= helpers.refine_smoking_badges(shop.smoking_area, shop.smoking_type).to_s
       {
         id: shop.id,
         name: shop.name.to_s,
@@ -32,7 +36,7 @@ class MapsController < ApplicationController
         genre: shop.try(:genre).to_s,
         genre_label: genre_label_for(shop),
         genre_tokens: genre_candidates_for(shop),
-        smoking_badges_html: helpers.refine_smoking_badges(shop.smoking_area, shop.smoking_type).to_s,
+
         smoking_area: shop.try(:smoking_area).to_s,
         smoking_area_label: smoking_area_label_for(shop),
         smoking_type: shop.try(:smoking_type).to_s,
