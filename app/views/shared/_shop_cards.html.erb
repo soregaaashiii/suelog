@@ -217,10 +217,10 @@
           <% end %>
 
           <div class="shop-card__cvLead">
-            <%= refine_smoking_badges(shop.smoking_area, shop.smoking_type) %>
-            <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
+            <%= refine_shop_smoking_badges(shop) %>
+            <% if !shop.confirmed_non_smoking? && shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
               <span class="shop-card__cvTrust shop-card__cvTrust--unverified">未確認</span>
-            <% elsif confirmed.present? %>
+            <% elsif !shop.confirmed_non_smoking? && confirmed.present? %>
               <span class="shop-card__cvTrust shop-card__cvTrust--confirmed">確認済み</span>
             <% end %>
 

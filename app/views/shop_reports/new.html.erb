@@ -6,7 +6,7 @@
   <p>あなたの名前（任意）：<br><%= f.text_field :reporter_name %></p>
 
   <p>理由：<br>
-    <%= f.select :reason, ["禁煙になった", "閉店した", "場所が違う", "店名が違う", "その他"], include_blank: "選択してください" %>
+    <%= f.select :reason, ["禁煙になった", "禁煙店だった", "閉店した", "場所が違う", "店名が違う", "その他"], include_blank: "選択してください" %>
   </p>
 
   <p>詳細（任意）：<br><%= f.text_area :detail, rows: 4 %></p>

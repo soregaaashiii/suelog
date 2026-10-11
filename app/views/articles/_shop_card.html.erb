@@ -3,11 +3,11 @@
   <div class="refine-article-shop-card__head"><h3><%= shop.name %></h3><span>店舗を見る →</span></div>
   <p><%= [shop.nearest_station, shop.address].compact_blank.join(" ／ ") %></p>
   <div class="refine-article-shop-card__badges">
-    <%= refine_smoking_badges(shop.smoking_area, shop.smoking_type) %>
-    <% if shop.secondary_smoking_condition? %>
+    <%= refine_shop_smoking_badges(shop) %>
+    <% if !shop.confirmed_non_smoking? && shop.secondary_smoking_condition? %>
       <span class="refine-secondary">条件2</span><%= refine_smoking_badges(shop.smoking_area_2, shop.smoking_type_2) %>
     <% end %>
-    <span class="refine-secondary"><%= shop.smoking_unverified? ? "喫煙情報未確認" : "喫煙情報確認済" %></span>
+    <% unless shop.confirmed_non_smoking? %><span class="refine-secondary"><%= shop.smoking_unverified? ? "喫煙情報未確認" : "喫煙情報確認済" %></span><% end %>
     <% if shop.open_now? %><span class="refine-secondary">営業中</span><% end %>
   </div>
 <% end %>

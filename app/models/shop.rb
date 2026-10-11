@@ -544,6 +544,15 @@ class Shop < ApplicationRecord
     Array(seat_type_tags).map { |tag| SEAT_TYPE_LABELS[tag.to_s] }.compact
   end
 
+  def confirmed_non_smoking?
+    return false unless on_hold?
+    return true if %w[was_non_smoking became_non_smoking].include?(hold_reason.to_s)
+    return false unless hold_reason == "通報対応"
+
+    # Earlier report resolutions used a generic hold reason.
+    shop_reports.resolved.order(updated_at: :desc, id: :desc).first&.non_smoking_hold_reason.present?
+  end
+
   def hold_reason_label
     case hold_reason.to_s
     when "closed"

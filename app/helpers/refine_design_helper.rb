@@ -1,4 +1,12 @@
 module RefineDesignHelper
+  def refine_shop_smoking_badges(shop)
+    return refine_smoking_badges(shop.smoking_area, shop.smoking_type) unless shop.confirmed_non_smoking?
+
+    tag.span(class: "smoking-badge smoking-badge--non-smoking") do
+      safe_join([ tag.span(refine_smoking_icon(:non_smoking), class: "smoking-badge-icons", aria: { hidden: true }), tag.span("禁煙店") ])
+    end
+  end
+
   def refine_smoking_badges(area, type)
     safe_join([ refine_smoking_badge(:area, area), refine_smoking_badge(:type, type) ], " ")
   end
@@ -23,6 +31,7 @@ module RefineDesignHelper
       heated: '<rect x="8" y="8" width="8" height="13" rx="3"/><path d="M10 8V4h4v4M11 2h2M11 17h2"/><circle cx="12" cy="12" r=".8" fill="currentColor" stroke="none"/>',
       seat: '<rect x="5" y="4" width="10" height="9" rx="3"/><path d="M4 11v5h12v-5M6 16v4M14 16v4M18 9h3M19 5c-2-1 2-2 0-3"/>',
       room: '<path d="M4 20V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v15M2 20h20"/><rect x="7" y="11" width="7" height="2.5" rx=".8"/><path d="M14 11h2v2.5h-2M16 8c-2-1 2-2 0-3"/>',
+      non_smoking: '<circle cx="12" cy="12" r="10"/><path d="M5 5l14 14M4 13h12v3H4zM19 12v4M18 8c-2-1 2-2 0-3"/>',
       unknown: '<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4M12 17h.01"/>'
     }
     # Only static, repository-owned SVG markup is marked safe.

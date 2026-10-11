@@ -1,6 +1,7 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/shops/show.html.erb %>
 
 <%
+  confirmed_non_smoking = @shop.confirmed_non_smoking?
   shop_location_text = [@shop.area, @shop.address, @shop.nearest_station, @shop.name].compact.join(" ")
   is_umeda_shop = shop_location_text.include?("梅田")
   is_namba_shop = shop_location_text.include?("難波") || shop_location_text.include?("なんば")
@@ -39,6 +40,9 @@
       nil
     end
 
+  smoking_area_text = "禁煙店" if confirmed_non_smoking
+  smoking_type_text = nil if confirmed_non_smoking
+
   seo_area_title =
     if shop_location_text.include?("東通り") || shop_location_text.include?("堂山")
       "#{area_label}・東通り"
@@ -47,7 +51,9 @@
     end
 
   seo_smoking_title =
-    if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
+    if confirmed_non_smoking
+      "禁煙店"
+    elsif !confirmed_non_smoking && @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
       "喫煙情報確認中"
     elsif @shop.smoking_area.to_s == "all_smoking"
       case @shop.smoking_type.to_s
@@ -86,9 +92,11 @@
 
   page_description_parts << seo_smoking_title
 
-  if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
+  if confirmed_non_smoking
+    page_description_parts << "禁煙の報告を確認し、対応済みです。喫煙できる店舗の一覧には掲載していません。"
+  elsif !confirmed_non_smoking && @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
     page_description_parts << "喫煙情報は確認中のため、最新情報は店舗へご確認ください。"
-  elsif @shop.respond_to?(:smoking_unverified?) && !@shop.smoking_unverified?
+  elsif !confirmed_non_smoking && @shop.respond_to?(:smoking_unverified?) && !@shop.smoking_unverified?
     page_description_parts << "喫煙情報確認済み。"
   end
 
@@ -216,6 +224,7 @@
     }
   end
 
+  booking_links = [] if confirmed_non_smoking
   primary_booking_url = booking_links.first&.dig(:url)
 
   related_area_links = []
@@ -293,14 +302,14 @@
     } : nil),
     "servesCuisine": @shop.display_genre.presence,
     "description": page_description_parts.join(" "),
-    "smokingAllowed": (@shop.smoking_area == "all_smoking"),
+    "smokingAllowed": (!confirmed_non_smoking && @shop.smoking_area == "all_smoking"),
     "keywords": [
-      (@shop.smoking_area_label if @shop.respond_to?(:smoking_area_label)),
-      (@shop.smoking_type_label if @shop.respond_to?(:smoking_type_label)),
+      smoking_area_text,
+      smoking_type_text,
       @shop.display_genre.presence,
       @shop.nearest_station.presence,
       area_label,
-      "喫煙可"
+      (confirmed_non_smoking ? "禁煙店" : "喫煙可")
     ].compact.join(", "),
     "geo": (@shop.latitude.present? && @shop.longitude.present? ? {
       "@type": "GeoCoordinates",
@@ -1397,8 +1406,8 @@
     </p>
 
     <div class="shop-show__badges">
-      <%= refine_smoking_badges(@shop.smoking_area, @shop.smoking_type) %>
-      <% if @shop.secondary_smoking_condition? %>
+      <%= refine_shop_smoking_badges(@shop) %>
+      <% if !@shop.confirmed_non_smoking? && @shop.secondary_smoking_condition? %>
         <span class="refine-secondary">条件2</span><%= refine_smoking_badges(@shop.smoking_area_2, @shop.smoking_type_2) %>
       <% end %>
 
@@ -1411,7 +1420,7 @@
         </span>
       <% end %>
 
-      <% if @shop.respond_to?(:smoking_unverified?) && !@shop.smoking_unverified? %>
+      <% if !confirmed_non_smoking && @shop.respond_to?(:smoking_unverified?) && !@shop.smoking_unverified? %>
         <span class="ss-badge ss-badge--green">喫煙情報確認済み</span>
       <% end %>
 
@@ -1427,6 +1436,10 @@
         </span>
       <% end %>
     </div>
+
+    <% if confirmed_non_smoking %>
+      <p class="refine-non-smoking-summary">禁煙の報告を確認し、対応済みです。この店舗では喫煙できません。</p>
+    <% end %>
 
     <% if booking_links.present? || (@shop.phone.present? && tel_target_url.present?) || @shop.address.present? %>
       <div class="shop-show__heroActions shop-show__heroActions--fv">
@@ -1464,7 +1477,7 @@
       </div>
 
       <p class="shop-show__heroCtaNote">
-        来店前に、喫煙可否・営業時間・場所を確認しておくと安心です。
+        <%= confirmed_non_smoking ? "来店前に、営業時間・場所を確認しておくと安心です。" : "来店前に、喫煙可否・営業時間・場所を確認しておくと安心です。" %>
       </p>
     <% end %>
   </section>
@@ -1495,7 +1508,7 @@
     <div class="ss-alert ss-alert--alert"><%= flash[:alert] %></div>
   <% end %>
 
-  <% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
+  <% if !confirmed_non_smoking && @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
     <div class="ss-alert ss-alert--warn">
       この店舗の喫煙情報は未確認です。来店前に店舗へご確認ください。
     </div>
@@ -1555,25 +1568,25 @@
         <div class="shop-show__infoRow">
           <div class="shop-show__infoHead">喫煙エリア</div>
           <div class="shop-show__infoCell">
-            <%= @shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "未設定" %>
+            <%= confirmed_non_smoking ? "禁煙店" : (@shop.respond_to?(:smoking_area_label) ? @shop.smoking_area_label : "未設定") %>
           </div>
         </div>
 
         <div class="shop-show__infoRow">
           <div class="shop-show__infoHead">喫煙タイプ</div>
           <div class="shop-show__infoCell">
-            <%= @shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定" %>
+            <%= confirmed_non_smoking ? "喫煙不可" : (@shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定") %>
           </div>
         </div>
 
-        <% if @shop.respond_to?(:secondary_smoking_condition?) && @shop.secondary_smoking_condition? %>
+        <% if !@shop.confirmed_non_smoking? && @shop.respond_to?(:secondary_smoking_condition?) && @shop.secondary_smoking_condition? %>
           <div class="shop-show__infoRow">
             <div class="shop-show__infoHead">喫煙条件2</div>
             <div class="shop-show__infoCell"><%= @shop.smoking_area_2_label %>／<%= @shop.smoking_type_2_label %></div>
           </div>
         <% end %>
 
-        <% if @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
+        <% if !confirmed_non_smoking && @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified? %>
           <div class="shop-show__infoRow">
             <div class="shop-show__infoHead">喫煙情報ステータス</div>
             <div class="shop-show__infoCell">未確認</div>
@@ -1662,7 +1675,12 @@
       </div>
     </section>
 
-    <% unless @shop.approved? %>
+    <% if confirmed_non_smoking %>
+      <section class="shop-show__section refine-non-smoking-notice" role="note">
+        <h2>この店舗は禁煙店です</h2>
+        <p>禁煙の報告を確認し、対応済みです。喫煙できる店舗の一覧には掲載していません。</p>
+      </section>
+    <% elsif !@shop.approved? %>
       <section class="shop-show__section">
         <div class="ss-pending">
           <p class="ss-pending__title">この店舗は承認待ちです</p>
