@@ -245,10 +245,10 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 </style>
 
 <script>
+(() => {
 const allShops = <%= raw @map_shops_payload.to_json %>;
-</script>
-
-<script>
+const smokingBadges = <%= raw @map_smoking_badges_payload.to_json %>;
+function smokingBadgesFor(shop) { return smokingBadges[`${shop.smoking_area}:${shop.smoking_type}`] || ""; }
 let map;
 let infoWindow;
 let markers = [];
@@ -331,7 +331,7 @@ function buildInfoHtml(shop) {
   return `
     <div style="min-width:220px; line-height:1.7;">
       ${buildStatusBadgeHtml(shop)}
-      ${shop.smoking_badges_html || ""}
+      ${smokingBadgesFor(shop)}
       <div style="font-weight:800; margin-bottom:6px;">${escapeHtml(shop.name)}</div>
       ${shop.address ? `<div style="font-size:12px; color:#444;">住所：${escapeHtml(shop.address)}</div>` : ""}
       ${shop.nearest_station ? `<div style="font-size:12px; color:#444;">最寄駅：${escapeHtml(shop.nearest_station)}</div>` : ""}
@@ -424,7 +424,7 @@ function renderQuickActions(shops) {
           ${shop.genre_label ? `${escapeHtml(shop.genre_label)} ／ ` : ""}
           ${escapeHtml(shop.smoking_area_label || "喫煙情報あり")}
         </div>
-        <div>${shop.smoking_badges_html || ""}</div>
+        <div>${smokingBadgesFor(shop)}</div>
         <div class="map-quick-card__actions">
           ${booking}
           ${phone}
@@ -896,6 +896,7 @@ function initMap() {
 }
 
 window.initMap = initMap;
+})();
 </script>
 
 <script async defer

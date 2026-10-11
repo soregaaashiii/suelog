@@ -142,3 +142,11 @@ body.suelog-refine {
 @media(max-width:640px) { .suelog-refine form[method="post"] { padding:20px 16px; } }
 .suelog-refine .article-body > .trix-content,.suelog-refine .article-body .trix-content { color:var(--text)!important; }
 .suelog-refine .refine-preview-banner { padding:6px 12px; text-align:center; font-size:10px; letter-spacing:.03em; color:#c4b792; background:#282315; border-bottom:1px solid #5c4c2c; }
+
+/* Keep the hero transition in the dark theme and make mobile filters readable. */
+.suelog-refine .hero--visual::after { background:linear-gradient(180deg,transparent,var(--bg)); }
+@media (max-width:640px) {
+  .suelog-refine .hero__search .search-grid { grid-template-columns:minmax(0,1fr); gap:8px; padding:0; }
+  .suelog-refine .hero__search .search-grid .search-field:nth-child(n) { grid-column:1 / -1; border:0; }
+  .suelog-refine .hero__search .search-select,.suelog-refine .hero__search .search-input { min-height:48px; font-size:14px; }
+}
