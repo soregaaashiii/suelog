@@ -156,3 +156,29 @@ body.suelog-refine {
 .suelog-refine .refine-non-smoking-notice h2 { color:#ffb9ad; font-size:22px; }
 
 .suelog-refine .refine-non-smoking-summary { color:#ffb9ad; line-height:1.8; }
+
+/* Selected search conditions must stay legible against the dark theme. */
+.suelog-refine .filter-chip,
+.suelog-refine .map-filter-chip-btn {
+  background:#24221b!important;
+  color:#f5e5b5!important;
+  border:1px solid #827344!important;
+}
+.suelog-refine .filter-chip span,
+.suelog-refine .map-filter-chip-btn span { color:inherit!important; }
+.suelog-refine .filter-chip--clear,
+.suelog-refine .map-filter-chip-btn--clear {
+  background:#1c1c18!important;
+  color:#e4e1d7!important;
+  border-color:#716c5a!important;
+}
+.suelog-refine a.filter-chip:hover,
+.suelog-refine .map-filter-chip-btn:hover {
+  background:#393427!important;
+  color:#fff4d4!important;
+}
+.suelog-refine a.filter-chip:focus-visible,
+.suelog-refine .map-filter-chip-btn:focus-visible {
+  outline:2px solid #e0c677;
+  outline-offset:3px;
+}
