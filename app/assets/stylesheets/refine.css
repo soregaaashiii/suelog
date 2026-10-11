@@ -198,3 +198,26 @@ body.suelog-refine {
 .suelog-refine .refine-verification--unverified { color:#efd28f!important; border:1px dashed #b89b58; }
 .suelog-refine .refine-business-status > span,
 .suelog-refine .refine-verification > span { color:inherit!important; }
+
+/* Area article recommendations: keep text legible against the dark public theme. */
+.suelog-refine .shop-show__relatedArticles .shop-show__sectionTitle { color:var(--text); font-size:22px; line-height:1.5; font-weight:700; }
+.suelog-refine .shop-show__articleIntro { margin:8px 0 0; color:#c9c5b9; font-size:14px; line-height:1.8; }
+.suelog-refine .shop-show__relatedArticles .shop-show__sectionMeta { color:var(--gold-text); background:var(--gold-soft); border:1px solid var(--line-strong); }
+.suelog-refine .shop-show__articleCards { gap:16px; }
+.suelog-refine .shop-show__articleCard { background:#20201b; border:1px solid #625a43; border-radius:8px; color:var(--text); align-items:stretch; flex-direction:row; }
+.suelog-refine .shop-show__articleCard::after { display:none; }
+.suelog-refine .shop-show__articleCard:hover { background:#29271e; border-color:var(--gold); box-shadow:none; }
+.suelog-refine .shop-show__articleCard:focus-visible { outline:3px solid var(--gold-text); outline-offset:4px; }
+.suelog-refine .shop-show__articleThumb { background:var(--surface-alt); width:120px; min-width:120px; height:auto; min-height:140px; aspect-ratio:auto; flex-shrink:0; }
+.suelog-refine .shop-show__articleBody { padding:18px; gap:8px; width:100%; }
+.suelog-refine .shop-show__articleLabel { color:var(--gold-text); font-size:12px; margin:0; width:fit-content; padding:3px 9px; background:var(--gold-soft); border:1px solid var(--line-strong); }
+.suelog-refine .shop-show__articleTitle { color:#f5f2e9; font-size:18px; line-height:1.7; font-weight:700; overflow-wrap:anywhere; display:block; }
+.suelog-refine .shop-show__articleSummary { color:#c9c5b9; font-size:14px; line-height:1.8; margin:0; }
+.suelog-refine .shop-show__articleAction { color:var(--gold-text); font-size:14px; font-weight:700; margin-top:4px; }
+@media(max-width:720px) {
+  .suelog-refine .shop-show__relatedArticles .shop-show__sectionHeader { flex-direction:column; align-items:flex-start; gap:12px; }
+  .suelog-refine .shop-show__relatedArticles .shop-show__sectionTitle { font-size:20px; }
+  .suelog-refine .shop-show__articleTitle { font-size:16px; }
+  .suelog-refine .shop-show__articleBody { padding:14px; }
+  .suelog-refine .shop-show__articleThumb { width:88px; min-width:88px; }
+}
