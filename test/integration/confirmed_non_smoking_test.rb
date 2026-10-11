@@ -22,7 +22,8 @@ class ConfirmedNonSmokingTest < ActionDispatch::IntegrationTest
       assert_not @shop.approved?
       assert_public_non_smoking
       get root_path
-      assert_select ".shop-card__titleLink", text: @shop.name, count: 0
+      assert_select ".shop-card__titleLink", text: @shop.name
+      assert_select ".shop-card .smoking-badge--non-smoking", text: "禁煙店"
     end
   end
 
@@ -73,6 +74,58 @@ class ConfirmedNonSmokingTest < ActionDispatch::IntegrationTest
     assert_not @shop.reload.confirmed_non_smoking?
     get shop_path(@shop)
     assert_select ".smoking-badge--non-smoking", count: 0
+  end
+
+  test "confirmed non smoking shops come last for every sort and appear in name search" do
+    @shop.update!(name: "掲載互換 禁煙", approved: false, on_hold: true, hold_reason: "became_non_smoking")
+    smoking = Shop.create!(name: "掲載互換 喫煙", address: "大阪市北区梅田1-2-4", genre: "カフェ", approved: true, smoking_area: :all_smoking, smoking_type: :both_ok, last_confirmed_on: 1.year.ago.to_date)
+    %w[recommended rating reviews_count newest].each do |sort|
+      get root_path, params: { q: "掲載互換", sort: sort }
+      assert_response :success
+      assert_equal [ smoking.name, @shop.name ], css_select(".shop-card__titleLink").map(&:text)
+      assert_select ".shop-card:last-child .smoking-badge--non-smoking", text: "禁煙店"
+      assert_includes response.body, "この店舗では喫煙できません"
+    end
+    get root_path, params: { q: @shop.name }
+    assert_select ".shop-card__titleLink", text: @shop.name
+  end
+
+  test "non smoking shops stay out of smoking filters open now search and map" do
+    @shop.update!(approved: false, on_hold: true, hold_reason: "was_non_smoking", latitude: 34.7, longitude: 135.5)
+    [ { smoking_area: "all_smoking" }, { smoking_type: "both_ok" }, { open_now: "1" }, { open_now_only: "1" } ].each do |filters|
+      get root_path, params: filters.merge(q: @shop.name)
+      assert_response :success
+      assert_select ".shop-card__titleLink", text: @shop.name, count: 0
+    end
+    get umeda_smoking_path("all_smoking"), params: { q: @shop.name }
+    assert_select ".shop-card__titleLink", text: @shop.name, count: 0
+    get map_path
+    assert_response :success
+    assert_not_includes response.body, %Q("id":#{@shop.id},)
+  end
+
+  test "legacy resolved non smoking holds are listed but other holds and pending shops are excluded" do
+    @shop.update!(approved: false, on_hold: true, hold_reason: "通報対応")
+    @shop.shop_reports.create!(reason: "禁煙になった", status: :resolved)
+    assert_includes Shop.public_listing, @shop
+    get root_path, params: { q: @shop.name }
+    assert_select ".shop-card .smoking-badge--non-smoking", text: "禁煙店"
+    @shop.shop_reports.create!(reason: "閉店した", status: :resolved)
+    assert_not_includes Shop.public_listing, @shop
+    @shop.update!(on_hold: false)
+    assert_not_includes Shop.public_listing, @shop
+  end
+
+  test "non smoking ordering is applied before pagination" do
+    @shop.update!(name: "掲載ページ 禁煙", approved: false, on_hold: true, hold_reason: "became_non_smoking")
+    30.times do |i|
+      Shop.create!(name: "掲載ページ 喫煙#{i}", address: "大阪市北区梅田1-#{i+10}", genre: "カフェ", approved: true, smoking_area: :all_smoking, smoking_type: :both_ok, last_confirmed_on: 1.year.ago.to_date)
+    end
+    get root_path, params: { q: "掲載ページ", per: 30 }
+    assert_select ".shop-card__titleLink", count: 30
+    assert_select ".shop-card__titleLink", text: @shop.name, count: 0
+    get root_path, params: { q: "掲載ページ", per: 30, page: 2 }
+    assert_equal [ @shop.name ], css_select(".shop-card__titleLink").map(&:text)
   end
 
   private

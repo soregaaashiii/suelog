@@ -93,7 +93,7 @@
   page_description_parts << seo_smoking_title
 
   if confirmed_non_smoking
-    page_description_parts << "禁煙の報告を確認し、対応済みです。喫煙できる店舗の一覧には掲載していません。"
+    page_description_parts << "禁煙の報告を確認し、対応済みです。通常の一覧では禁煙店として表示しています。"
   elsif !confirmed_non_smoking && @shop.respond_to?(:smoking_unverified?) && @shop.smoking_unverified?
     page_description_parts << "喫煙情報は確認中のため、最新情報は店舗へご確認ください。"
   elsif !confirmed_non_smoking && @shop.respond_to?(:smoking_unverified?) && !@shop.smoking_unverified?
@@ -1678,7 +1678,7 @@
     <% if confirmed_non_smoking %>
       <section class="shop-show__section refine-non-smoking-notice" role="note">
         <h2>この店舗は禁煙店です</h2>
-        <p>禁煙の報告を確認し、対応済みです。喫煙できる店舗の一覧には掲載していません。</p>
+        <p>禁煙の報告を確認し、対応済みです。通常の一覧では禁煙店として表示しています。</p>
       </section>
     <% elsif !@shop.approved? %>
       <section class="shop-show__section">
