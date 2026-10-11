@@ -158,16 +158,17 @@
                     decoding: "async" %>
             <% end %>
 
-            <% unless card_photos.present? %>
-              <div class="shop-card__overlay">
+            <div class="shop-card__overlay">
+              <% unless card_photos.present? %>
                 <div class="shop-card__imageNote">※画像はイメージです</div>
-
-                <div class="shop-card__overlayTitle"><%= shop.name %></div>
+              <% end %>
+              <h3 class="shop-card__overlayTitle shop-card__titleLink"><%= shop.name %></h3>
+              <% unless card_photos.present? %>
                 <div class="shop-card__overlaySub">
                   このお店の最新情報・写真を募集中！
                 </div>
-              </div>
-            <% end %>
+              <% end %>
+            </div>
 
           </div>
         <% end %>
@@ -185,9 +186,7 @@
             <% end %>
           </div>
 
-          <h3 class="shop-card__title">
-            <%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink text-outline" %>
-
+          <div class="shop-card__businessStatus">
             <% shop_open_now = defined?(open_now_map) && open_now_map.present? ? open_now_map[shop.id] : shop.open_now? %>
 
             <% if shop_open_now %>
@@ -201,7 +200,7 @@
             <% else %>
               <%= refine_business_status_badge(false) %>
             <% end %>
-          </h3>
+          </div>
 
           <% if card_avg_rating.present? && card_reviews_count.positive? %>
             <div class="shop-card__rating">

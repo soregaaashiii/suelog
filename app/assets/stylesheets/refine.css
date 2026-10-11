@@ -48,7 +48,8 @@ body.suelog-refine {
 .suelog-refine .shop-card__areaLinks { border-color:var(--line); }
 .suelog-refine .shop-card__detailBtn { width:100%; }
 .suelog-refine .shop-card__overlay { background:linear-gradient(transparent,#000b); }
-.suelog-refine .shop-card__overlayTitle { font-size:19px; }
+.suelog-refine .shop-card__overlayTitle { margin:0; color:#fff; font-size:19px; line-height:1.4; text-shadow:0 1px 2px #000,0 0 6px #0009; }
+.suelog-refine .shop-card__businessStatus { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:8px 0; }
 .suelog-refine .shop-show__hero,.suelog-refine .shop-show__section,.suelog-refine .sidebar-box,.suelog-refine .article-toc { background:var(--surface)!important; border-color:var(--line)!important; border-radius:3px!important; box-shadow:none!important; }
 .suelog-refine .shop-show__hero { padding:36px; }
 .suelog-refine .shop-show__hero::before { background:var(--gold); }
