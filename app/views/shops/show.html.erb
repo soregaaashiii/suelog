@@ -2122,13 +2122,7 @@
                 <% end %>
 
                 <div class="shop-show__articleBody">
-                  <div class="shop-show__articleLabel">関連記事</div>
                   <h3 class="shop-show__articleTitle"><%= article.title %></h3>
-
-                  <% if article.summary.present? %>
-                    <p class="shop-show__articleSummary"><%= article.summary %></p>
-                  <% end %>
-                  <span class="shop-show__articleAction">記事を読む <span aria-hidden="true">→</span></span>
                 </div>
               <% end %>
             <% end %>
