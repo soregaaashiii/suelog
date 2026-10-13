@@ -239,3 +239,8 @@ body.suelog-refine {
 @media(max-width:720px) { .suelog-refine .refine-article-shop-list { grid-template-columns:1fr; } }
 
 .suelog-refine .refine-article-shop-list p.refine-article-shop-list__station { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* Area search links on shop pages need explicit dark-theme colors. */
+.suelog-refine .shop-show__relatedChip { background:#29261d; color:#f3df9f; border:1px solid #82734a; font-size:14px; line-height:1.5; font-weight:700; padding:10px 14px; text-decoration:none; }
+.suelog-refine .shop-show__relatedChip:hover { background:#393326; color:#fff4cf; border-color:#d1b76b; }
+.suelog-refine .shop-show__relatedChip:focus-visible { outline:2px solid #f3df9f; outline-offset:3px; }
