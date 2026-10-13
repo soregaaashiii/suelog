@@ -15,6 +15,9 @@
           <h3><%= shop.name %></h3>
           <span class="refine-article-shop-card__genre"><%= shop.display_genre.presence || "未設定" %></span>
         </div>
+        <% if (station = compact_station_label(shop.nearest_station)).present? %>
+          <p class="refine-article-shop-list__station" title="<%= shop.nearest_station %>"><%= station %></p>
+        <% end %>
         <div class="refine-article-shop-card__badges">
           <%= refine_shop_smoking_badges(shop) %>
           <% if !shop.confirmed_non_smoking? && shop.secondary_smoking_condition? %>

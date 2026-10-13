@@ -237,3 +237,5 @@ body.suelog-refine {
 .suelog-refine .refine-article-shop-list .refine-article-shop-card__badges { gap:5px; margin-top:8px; }
 .suelog-refine .refine-article-shop-list .shop-card__closingSoon { margin:6px 0 0; }
 @media(max-width:720px) { .suelog-refine .refine-article-shop-list { grid-template-columns:1fr; } }
+
+.suelog-refine .refine-article-shop-list p.refine-article-shop-list__station { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
