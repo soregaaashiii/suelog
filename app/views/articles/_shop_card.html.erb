@@ -1,7 +1,15 @@
 <%= link_to shop_path(shop), class: "refine-article-shop-card" do %>
-  <span class="refine-eyebrow"><%= shop.display_genre.presence || "SHOP" %></span>
-  <div class="refine-article-shop-card__head"><h3><%= shop.name %></h3><span>店舗を見る →</span></div>
-  <p><%= [shop.nearest_station, shop.address].compact_blank.join(" ／ ") %></p>
+  <div class="refine-article-shop-card__head">
+    <div class="refine-article-shop-card__identity">
+      <h3><%= shop.name %></h3>
+      <span class="refine-article-shop-card__genre"><%= shop.display_genre.presence || "未設定" %></span>
+    </div>
+    <span>店舗を見る →</span>
+  </div>
+  <% location = [shop.nearest_station, shop.address].compact_blank.join(" ／ ") %>
+  <% if location.present? %>
+    <p class="refine-article-shop-card__location" title="<%= location %>"><%= location %></p>
+  <% end %>
   <div class="refine-article-shop-card__badges">
     <%= refine_shop_smoking_badges(shop) %>
     <% if !shop.confirmed_non_smoking? && shop.secondary_smoking_condition? %>
