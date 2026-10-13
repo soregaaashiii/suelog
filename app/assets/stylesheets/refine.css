@@ -244,3 +244,16 @@ body.suelog-refine {
 .suelog-refine .shop-show__relatedChip { background:#29261d; color:#f3df9f; border:1px solid #82734a; font-size:14px; line-height:1.5; font-weight:700; padding:10px 14px; text-decoration:none; }
 .suelog-refine .shop-show__relatedChip:hover { background:#393326; color:#fff4cf; border-color:#d1b76b; }
 .suelog-refine .shop-show__relatedChip:focus-visible { outline:2px solid #f3df9f; outline-offset:3px; }
+
+.suelog-refine .refine-popular-areas .area-card { padding:0; overflow:hidden; border-radius:3px; }
+.suelog-refine .refine-area-photo { display:block; position:relative; height:260px; color:#fff; text-decoration:none; overflow:hidden; }
+.suelog-refine .refine-area-photo::after { content:""; position:absolute; inset:0; background:linear-gradient(transparent 20%,#000c); }
+.suelog-refine .refine-area-photo img { width:100%; height:100%; object-fit:cover; transition:transform .25s; }
+.suelog-refine .refine-area-photo:hover img { transform:scale(1.03); }
+.suelog-refine .refine-area-photo__copy { position:absolute; z-index:1; bottom:24px; left:24px; right:24px; }
+.suelog-refine .refine-area-photo__copy p { margin:0 0 6px; color:#e4c978; font-size:12px; letter-spacing:.2em; }
+.suelog-refine .refine-area-photo__copy h3 { display:flex; justify-content:space-between; align-items:center; margin:0 0 8px; font-size:30px; color:#fff; }
+.suelog-refine .refine-area-photo__copy > span { color:#eee; font-size:13px; }
+.suelog-refine .refine-popular-areas .area-card__quick-grid { padding:14px; margin:0; }
+.suelog-refine .refine-area-photo:focus-visible { outline:3px solid var(--gold); outline-offset:-3px; }
+@media(max-width:640px) { .suelog-refine .refine-area-photo { height:220px; } }
