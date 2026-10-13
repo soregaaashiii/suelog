@@ -257,3 +257,6 @@ body.suelog-refine {
 .suelog-refine .refine-popular-areas .area-card__quick-grid { padding:14px; margin:0; }
 .suelog-refine .refine-area-photo:focus-visible { outline:3px solid var(--gold); outline-offset:-3px; }
 @media(max-width:640px) { .suelog-refine .refine-area-photo { height:220px; } }
+
+.suelog-refine .refine-area-photo[href="/namba"] img { filter:blur(6px); transform:scale(1.08); }
+.suelog-refine .refine-area-photo[href="/namba"]:hover img { transform:scale(1.11); }
