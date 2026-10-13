@@ -2160,7 +2160,7 @@
         </div>
 
         <% if defined?(@nearby_shops) && @nearby_shops.present? %>
-          <%= render partial: "shared/shop_cards", locals: { shops: @nearby_shops } %>
+          <%= render partial: "articles/shop_list", locals: { shops: @nearby_shops } %>
         <% else %>
           <p style="margin:0; color:#666666; font-size:14px;">
             近くの候補を取得できませんでした。
@@ -2183,7 +2183,7 @@
             </span>
           </div>
 
-          <%= render partial: "shared/shop_cards", locals: { shops: @same_genre_shops } %>
+          <%= render partial: "articles/shop_list", locals: { shops: @same_genre_shops } %>
         </section>
       <% end %>
 
@@ -2202,7 +2202,7 @@
             </span>
           </div>
 
-          <%= render partial: "shared/shop_cards", locals: { shops: @popular_shops } %>
+          <%= render partial: "articles/shop_list", locals: { shops: @popular_shops } %>
         </section>
       <% end %>
 
