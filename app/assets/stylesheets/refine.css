@@ -108,12 +108,14 @@ body.suelog-refine {
   .suelog-refine .shop-card__body { padding:18px; }
   .suelog-refine .shop-show__hero { padding:24px 18px; }
 }
-.suelog-refine .refine-article-shop-card { display:block; margin:24px 0; padding:24px; background:#171713; border:1px solid #49402a; border-radius:3px; color:var(--text)!important; text-decoration:none; transition:border-color .2s; }
+.suelog-refine .refine-article-shop-card { display:block; margin:16px 0; padding:14px 16px; background:#171713; border:1px solid #49402a; border-radius:3px; color:var(--text)!important; text-decoration:none; transition:border-color .2s; }
 .suelog-refine .refine-article-shop-card:hover { border-color:var(--gold); }
-.suelog-refine .refine-article-shop-card__head { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-.suelog-refine .refine-article-shop-card__head h3 { margin:10px 0!important; padding:0!important; background:none!important; border:0!important; font-size:21px; }
+.suelog-refine .refine-article-shop-card__head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.suelog-refine .refine-article-shop-card__head h3 { margin:0!important; padding:0!important; background:none!important; border:0!important; font-size:18px; line-height:1.4; overflow-wrap:anywhere; }
 .suelog-refine .refine-article-shop-card__head > span { font-size:11px; color:var(--gold); flex-shrink:0; }
-.suelog-refine .refine-article-shop-card p { font-size:12px; color:var(--muted); margin:0 0 14px; }
+.suelog-refine .refine-article-shop-card__identity { display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; min-width:0; }
+.suelog-refine .refine-article-shop-card__genre { font-size:12px; line-height:1.5; color:var(--gold); overflow-wrap:anywhere; }
+.suelog-refine .refine-article-shop-card p.refine-article-shop-card__location { font-size:12px; line-height:1.5; color:var(--muted); margin:6px 0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .suelog-refine .refine-article-shop-card__badges { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
 .suelog-refine .refine-ad-label { display:block; font-size:10px; letter-spacing:.15em; color:var(--muted); margin-bottom:8px; }
 .suelog-refine .map-filter-panel,.suelog-refine .map-quick-actions,.suelog-refine .map-quick-card { background:var(--surface)!important; border-color:var(--line)!important; color:var(--text)!important; }
@@ -121,7 +123,7 @@ body.suelog-refine {
 .suelog-refine .map-quick-card__meta,.suelog-refine .map-quick-actions__head p { color:var(--muted)!important; }
 .suelog-refine .map-quick-card__btn { background:#242117; color:var(--gold); border-color:#6b5a35; }
 .suelog-refine .map-quick-card__btn--primary { background:var(--gold); color:#111; }
-@media(max-width:640px) { .suelog-refine .refine-article-shop-card { padding:18px; } .suelog-refine .refine-article-shop-card__head { align-items:flex-start; } }
+@media(max-width:640px) { .suelog-refine .refine-article-shop-card { padding:12px; } .suelog-refine .refine-article-shop-card__head { align-items:flex-start; } .suelog-refine .refine-article-shop-card__head h3 { font-size:17px; } }
 .suelog-refine .main-content { background:var(--bg); }
 .suelog-refine .search-grid--compact-hero { border:1px solid var(--line)!important; border-radius:0!important; background:#151510!important; box-shadow:none!important; }
 .suelog-refine .area-card,.suelog-refine .panel,.suelog-refine .result-controls,.suelog-refine .result-topbar { background:var(--surface)!important; color:var(--text)!important; border-color:var(--line)!important; }
