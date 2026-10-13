@@ -87,7 +87,7 @@ module ArticlesHelper
       fragment.add_child(cta_fragment)
 
       shops_html = render(
-        partial: "shared/shop_cards",
+        partial: "articles/shop_list",
         locals: { shops: popular_shops_for_article(limit: 3) }
       )
 
