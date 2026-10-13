@@ -202,10 +202,6 @@
               <span class="shop-card__ratingValue"><%= card_avg_rating.round(1) %></span>
               <span class="shop-card__ratingCount">（<%= card_reviews_count %>件）</span>
             </div>
-          <% else %>
-            <div class="shop-card__rating shop-card__rating--empty">
-              まだ評価なし
-            </div>
           <% end %>
 
           <div class="shop-card__cvLead">
@@ -222,10 +218,7 @@
           </div>
 
           <p class="shop-card__address">
-            <%= shop.nearest_station.presence || "最寄駅未設定" %>
-            <% if shop.address.present? %>
-              / <%= shop.address %>
-            <% end %>
+            <%= compact_station_label(shop.nearest_station).presence || "最寄駅未設定" %>
 
             <% if shop.respond_to?(:distance) && shop.distance.present? %>
               <span style="display:inline-flex; align-items:center; margin-left:8px; padding:2px 7px; border-radius:999px; background:#f6edd7; color:#7a5a12; font-size:11px; font-weight:900; white-space:nowrap;">
