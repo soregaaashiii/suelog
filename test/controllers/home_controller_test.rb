@@ -19,8 +19,8 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "link[rel='canonical'][href='http://www.example.com/']"
     assert_select "meta[name='robots'][content='index,follow']"
     assert_select "script[type='application/ld+json']", count: 0
-    assert_select "a[href='#{umeda_path}']", text: "梅田の一覧を見る"
-    assert_select "a[href='#{namba_path}']", text: "難波の一覧を見る"
+    assert_select "a[href='#{umeda_path}'][aria-label='梅田の一覧を見る']"
+    assert_select "a[href='#{namba_path}'][aria-label='難波の一覧を見る']"
     assert_select ".result-hit-text", text: "1件ヒット"
     assert_select ".shop-card__titleLink", text: "公開店舗"
   end
