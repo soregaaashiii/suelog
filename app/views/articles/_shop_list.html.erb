@@ -1,0 +1,32 @@
+<div class="refine-article-shop-list">
+  <% shops.each do |shop| %>
+    <%= link_to shop_path(shop), class: "refine-article-shop-list__card" do %>
+      <div class="refine-article-shop-list__photo">
+        <% photo = shop.thumbnail_attachment %>
+        <% if photo.present? %>
+          <%= image_tag(photo.variable? ? photo.variant(resize_to_limit: [160, 160]) : photo, alt: "", loading: "lazy") %>
+        <% else %>
+          <%= image_tag "fallbacks/other.jpg", alt: "", loading: "lazy" %>
+          <span>イメージ</span>
+        <% end %>
+      </div>
+      <div class="refine-article-shop-list__body">
+        <div class="refine-article-shop-card__identity">
+          <h3><%= shop.name %></h3>
+          <span class="refine-article-shop-card__genre"><%= shop.display_genre.presence || "未設定" %></span>
+        </div>
+        <div class="refine-article-shop-card__badges">
+          <%= refine_shop_smoking_badges(shop) %>
+          <% if !shop.confirmed_non_smoking? && shop.secondary_smoking_condition? %>
+            <span class="refine-secondary">条件2</span><%= refine_smoking_badges(shop.smoking_area_2, shop.smoking_type_2) %>
+          <% end %>
+          <%= refine_verification_badge(shop) %>
+          <%= refine_business_status_badge(shop.open_now?) %>
+        </div>
+        <% if shop.open_now? && (label = closing_soon_label(shop)).present? %>
+          <div class="shop-card__closingSoon"><%= label %></div>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</div>
