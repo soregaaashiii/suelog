@@ -6,23 +6,24 @@
 <%= render "shared/hero" %>
 
 <div class="home-page">
-  <section class="home-section">
+  <section class="home-section refine-popular-areas">
     <div class="section-head">
       <div>
+        <p class="refine-eyebrow">EXPLORE OSAKA</p>
         <h2 class="section-title">人気エリアから探す</h2>
       </div>
     </div>
 
     <div class="area-grid area-grid--top">
       <article class="area-card area-card--top">
-        <div class="area-card__head">
-          <h3 class="area-card__title">梅田</h3>
-          <span class="area-card__badge">人気</span>
-        </div>
-
-        <div class="area-card__actions area-card__actions--stack">
-          <%= link_to "梅田の一覧を見る", umeda_path, class: "btn btn--dark area-card__main-btn" %>
-        </div>
+        <%= link_to umeda_path, class: "refine-area-photo", aria: { label: "梅田の一覧を見る" } do %>
+          <%= image_tag "refine/area-umeda.jpg", alt: "梅田の街並み", loading: "lazy" %>
+          <div class="refine-area-photo__copy">
+            <p>UMEDA</p>
+            <h3>梅田<span aria-hidden="true">↗</span></h3>
+            <span>大阪駅・北新地・中崎町</span>
+          </div>
+        <% end %>
 
         <div class="area-card__quick-grid">
           <%= link_to "席で喫煙可", umeda_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
@@ -33,14 +34,14 @@
       </article>
 
       <article class="area-card area-card--top">
-        <div class="area-card__head">
-          <h3 class="area-card__title">難波</h3>
-          <span class="area-card__badge">定番</span>
-        </div>
-
-        <div class="area-card__actions area-card__actions--stack">
-          <%= link_to "難波の一覧を見る", namba_path, class: "btn btn--dark area-card__main-btn" %>
-        </div>
+        <%= link_to namba_path, class: "refine-area-photo", aria: { label: "難波の一覧を見る" } do %>
+          <%= image_tag "refine/area-namba.jpg", alt: "難波の街並み", loading: "lazy" %>
+          <div class="refine-area-photo__copy">
+            <p>NAMBA</p>
+            <h3>難波<span aria-hidden="true">↗</span></h3>
+            <span>なんば・心斎橋・日本橋</span>
+          </div>
+        <% end %>
 
         <div class="area-card__quick-grid">
           <%= link_to "席で喫煙可", namba_smoking_path("all_smoking"), class: "btn btn--ghost area-card__quick-btn" %>
