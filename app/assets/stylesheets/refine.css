@@ -214,7 +214,7 @@ body.suelog-refine {
 .suelog-refine .shop-show__articleCard:hover { background:#29271e; border-color:var(--gold); box-shadow:none; }
 .suelog-refine .shop-show__articleCard:focus-visible { outline:3px solid var(--gold-text); outline-offset:4px; }
 .suelog-refine .shop-show__articleThumb { background:var(--surface-alt); width:80px; min-width:80px; height:60px; min-height:0; aspect-ratio:4/3; flex-shrink:0; border-radius:3px; }
-.suelog-refine .shop-show__articleBody { padding:0; gap:0; flex:1; min-width:0; }
+.suelog-refine .shop-show__articleBody { padding:0; gap:0; flex:1; min-width:0; min-height:0; }
 .suelog-refine .shop-show__articleTitle { margin:0; color:#f5f2e9; font-size:16px; line-height:1.5; font-weight:700; overflow-wrap:anywhere; display:block; }
 @media(max-width:720px) {
   .suelog-refine .shop-show__relatedArticles .shop-show__sectionHeader { flex-direction:column; align-items:flex-start; gap:12px; }
