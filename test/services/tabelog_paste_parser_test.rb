@@ -1,6 +1,35 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "daytime nonsmoking does not become smoking after lunch on lunch-only days" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      First Flower
+      営業時間
+      月・火
+      11:00 - 16:00
+      木・金・土・日
+      11:00 - 16:00
+      18:00 - 22:30
+      水
+      定休日
+      ランチ11:00〜14:30
+      テイクアウト11:00〜16:00
+      焼き鳥(木)〜(日)
+      18:00〜22:30
+      禁煙・喫煙
+      分煙
+      昼、禁煙　　夜、喫煙可
+    TEXT
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    %w[月 火].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
+    %w[木 金 土 日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 18:00 - 22:30" }
+    refute_includes result[:smoking_hours_text], "14:30"
+    refute_match(/水.*11:00/, result[:opening_hours_text])
+    assert_includes result[:smoking_hours_text], "水 喫煙不可"
+  end
+
   test "hours without a pre or post holiday description use the regular schedule" do
     result = TabelogPasteParser.call(<<~TEXT)
       通常営業時間テスト店

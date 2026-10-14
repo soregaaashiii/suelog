@@ -496,7 +496,23 @@ class TabelogPasteParser
     %w[monday tuesday wednesday thursday friday saturday sunday holiday]
   end
 
+  def evening_only_smoking_ranges
+    raw = field_value_with_continuation("禁煙・喫煙").to_s
+    return nil unless raw.match?(/昼[^。\n]*禁煙/) && raw.match?(/夜[^。\n]*喫煙可/)
+
+    hours = opening_ranges_by_day
+    evening_start = hours.values.filter_map { |ranges| ranges[1]&.first }.min_by { |time| time_to_minutes(time) }
+    return nil if evening_start.blank?
+
+    ordered_day_keys.first(7).to_h { |day| [day, hours.fetch(day, [])] }.transform_values do |ranges|
+      ranges.select { |open_time, _| time_to_minutes(open_time) >= time_to_minutes(evening_start) }
+    end
+  end
+
   def extract_smoking_hours_by_day
+    if (evening_ranges = evening_only_smoking_ranges)
+      return evening_ranges.filter_map { |day, ranges| [day, ranges.map { |times| times.join("-") }.join(", ")] if ranges.present? }.to_h
+    end
     smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
     opening_raw = opening_hours_field_value.to_s
     return {} if smoking_raw.blank?
@@ -593,6 +609,13 @@ class TabelogPasteParser
 
   def opening_hours_lines_for_parsing
     lines = opening_hours_field_value.to_s.lines.map(&:strip).reject(&:blank?)
+    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
+    if smoking_raw.match?(/昼[^。\n]*禁煙/) && smoking_raw.match?(/夜[^。\n]*喫煙可/) && lines.any? { |line| day_label_line?(line) }
+      # Meal/takeout notes after the weekday table are not additional hours for
+      # the last weekday (which may be closed).
+      note_index = lines.index { |line| line.match?(/\A(?:ランチ|テイクアウト|焼き鳥)/) }
+      lines = lines.take(note_index) if note_index
+    end
     dinner_range = lines.filter_map { |line| labeled_meal_range(line, "ディナー") }.first
 
     lines.map do |line|
@@ -1026,6 +1049,7 @@ class TabelogPasteParser
     return "all_smoking" if text.match?(/喫煙不可[^。\n]{0,40}(?:以降|から|時\s*[〜～~])[^。\n]{0,20}喫煙可/)
     return "separated" if text.match?(/(?:店外|屋外|外)に?[^。\n]{0,20}(?:灰皿|喫煙所)/)
     return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|喫煙専用室/)
+    return "all_smoking" if text.match?(/昼[^。\n]*禁煙/) && text.match?(/夜[^。\n]*喫煙可/)
     return "unknown" if text.match?(/分煙/)
     return "all_smoking" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "unknown" if text.match?(/全席禁煙|禁煙|不明/)
@@ -1047,6 +1071,7 @@ class TabelogPasteParser
     return "both_ok" if text.match?(/喫煙不可[^。\n]{0,40}(?:以降|から|時\s*[〜～~])[^。\n]{0,20}喫煙可/)
     return "both_ok" if text.match?(/(?:店外|屋外|外)に?[^。\n]{0,20}(?:灰皿|喫煙所)/)
     return "both_ok" if text.match?(/喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム/)
+    return "both_ok" if text.match?(/昼[^。\n]*禁煙/) && text.match?(/夜[^。\n]*喫煙可/)
     return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|分煙/)
     return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "both_ok" if text.match?(/紙タバコ|紙たばこ/)
@@ -1055,6 +1080,12 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    if (evening_ranges = evening_only_smoking_ranges)
+      return evening_ranges.map do |day, ranges|
+        label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"
+        "#{day_label(day)} #{label}"
+      end.join("\n")
+    end
     smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
     opening_text = extract_opening_hours_text.to_s
     opening_raw = opening_hours_field_value.to_s
