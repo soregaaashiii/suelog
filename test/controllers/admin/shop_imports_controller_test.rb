@@ -196,7 +196,7 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h3", text: "重複候補があります"
-    assert_select "a[href='#{edit_admin_shop_path(existing)}']"
+    assert_select "a[href='#{edit_admin_shop_path(existing, from: "shop_import")}']"
 
     assert_no_difference("Shop.count") do
       post admin_shop_import_path,
@@ -234,7 +234,8 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :success
-    assert_select "a[href='#{edit_admin_shop_path(existing)}']"
+    assert_operator response.body.index("重複候補があります"), :<, response.body.index("貼り付け本文")
+    assert_select "a[href='#{edit_admin_shop_path(existing, from: "shop_import")}']"
     assert sql.any? { |statement| statement.include?("duplicate_normalized_name") }
     assert_equal 1, sql.count { |statement| statement.include?("UNION ALL") }
     assert_equal 1, sql.count { |statement| statement.include?("AS pending_reviews") }
