@@ -12,7 +12,9 @@ class Admin::PageViewSettingsController < Admin::BaseController
   end
 
   def include
-    cookies.delete(:exclude_page_views)
+    cookies.permanent.signed[:exclude_page_views] = {
+      value: "0", httponly: true, same_site: :lax
+    }
 
     redirect_back fallback_location: admin_analytics_path,
                   notice: "この端末のアクセスを集計対象に戻しました"
