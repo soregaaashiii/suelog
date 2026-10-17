@@ -20,6 +20,29 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "admin tracking defaults to excluded but explicit inclusion persists" do
+    get admin_shops_path, headers: @headers
+    assert_response :success
+    assert_includes response.body, "現在、この端末のフロント閲覧はアクセス集計から除外されています。"
+    assert_no_difference("PageView.count") { get "/", headers: @headers }
+
+    delete admin_include_page_view_tracking_path, headers: @headers
+    get admin_shops_path, headers: @headers
+    assert_includes response.body, "現在、この端末のフロント閲覧はアクセス集計の対象です。"
+    post admin_exclude_page_view_tracking_path, headers: @headers
+    get admin_shops_path, headers: @headers
+    assert_includes response.body, "現在、この端末のフロント閲覧はアクセス集計から除外されています。"
+  end
+
+  test "import and edit screens hide device tracking controls" do
+    [new_admin_shop_import_path, edit_admin_shop_path(@shop)].each do |path|
+      get path, headers: @headers
+      assert_response :success
+      refute_includes response.body, "この端末のアクセス集計"
+      assert_select "form[action='#{admin_include_page_view_tracking_path}']", count: 0
+    end
+  end
+
   test "admin lists forms detail analytics and approval queues render without public styling" do
     paths = %w[/panel_8m4k/shops /panel_8m4k/shops/new /panel_8m4k/shops/holds /panel_8m4k/shops/smoking_unverified /panel_8m4k/shops/phone_check_holds /panel_8m4k/shops/clicks /panel_8m4k/reviews /panel_8m4k/shop_edit_requests /panel_8m4k/shop_reports /panel_8m4k/contact_messages /panel_8m4k/articles /panel_8m4k/articles/new /panel_8m4k/affiliate_ads /panel_8m4k/affiliate_ads/new /panel_8m4k/sub_admin_users /panel_8m4k/sub_admin_users/new /panel_8m4k/shop_verification_submissions /panel_8m4k/analytics]
     paths += [ "/panel_8m4k/shops/#{@shop.id}", "/panel_8m4k/shops/#{@shop.id}/edit", "/panel_8m4k/shop_edit_requests/#{@edit.id}", "/panel_8m4k/shop_reports/#{@report.id}", "/panel_8m4k/contact_messages/#{@contact.id}", "/panel_8m4k/articles/#{@article.slug}/edit", "/panel_8m4k/affiliate_ads/#{@ad.id}/edit", "/panel_8m4k/sub_admin_users/#{@user.id}/edit" ]
