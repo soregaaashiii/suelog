@@ -1,4 +1,7 @@
 <h1>食べログ貼り付けインポート</h1>
+<% if @parsed_attrs&.dig(:name).present? %>
+  <h2 style="margin:8px 0 16px; font-size:22px; overflow-wrap:anywhere;"><%= @parsed_attrs[:name] %></h2>
+<% end %>
 
 <% if flash[:admin_notice].present? %>
   <div style="padding:12px; border:1px solid #d8e7d7; background:#eef7ee; border-radius:12px; margin:10px 0; color:#2f6b3b;">
@@ -12,10 +15,7 @@
   </div>
 <% end %>
 
-<p style="color:#666; line-height:1.7;">
-  食べログ店舗詳細ページのテキストをそのまま貼り付けると、店舗情報を自動整形して仮登録します。<br>
-  登録後は編集画面で内容を確認してから承認してください。
-</p>
+
 
   <% if @duplicate_candidates.present? %>
     <div style="margin-top:16px; padding:12px; border:1px solid #f0de9c; background:#fffaf0; border-radius:12px;">
