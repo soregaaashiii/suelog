@@ -65,15 +65,15 @@ class MapsControllerTest < ActionDispatch::IntegrationTest
     assert response.parsed_body["shops"].all? { |entry| entry["open_now"] }
   end
 
-  test "wide views return bounded clusters without silently dropping shops" do
+  test "wide views return every shop individually without a 350 shop cutoff" do
     rows = 351.times.map { |i| { name: "集約#{i}", address: "大阪市", approved: true, latitude: 34.704, longitude: 135.494, last_confirmed_on: Date.current, created_at: Time.current, updated_at: Time.current } }
     Shop.insert_all!(rows)
     get map_url(format: :json), params: { south: 34.70, west: 135.49, north: 34.71, east: 135.50 }
     assert_response :success
     data = response.parsed_body
-    assert_empty data["shops"]
-    assert_operator data["clusters"].size, :<=, 81
-    assert_equal data["total"], data["clusters"].sum { |cluster| cluster["count"] }
+    assert_empty data["clusters"]
+    assert_equal data["total"], data["shops"].size
+    assert_equal data["shops"].size, data["shops"].map { |shop| shop["id"] }.uniq.size
     assert_operator data["total"], :>=, 351
   end
 

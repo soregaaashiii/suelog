@@ -35,10 +35,6 @@ class MapsController < ApplicationController
       end
       scope = scope.where(id: ids)
     end
-    if %i[q station genre smoking_area smoking_type].all? { |key| params[key].blank? } && params[:open_now_only] != "1" && scope.count > 350
-      points = scope.pluck(:latitude, :longitude)
-      return render json: { shops: [], badges: {}, clusters: cluster_points(points, south, west, north, east), total: points.size }
-    end
     columns = Shop.column_names - %w[raw_import_text import_metadata public_store_details note]
     @shops = scope.select(*columns).order(last_confirmed_on: :desc, id: :desc).to_a
     @open_now_cache = {}
@@ -54,11 +50,6 @@ class MapsController < ApplicationController
         (params[:open_now_only] != "1" || open_now_for(shop))
     end
     total = @shops.size
-    if total > 350
-      clusters = cluster_points(@shops.map { |shop| [shop.latitude, shop.longitude] }, south, west, north, east)
-      return render json: { shops: [], badges: {}, clusters: clusters, total: total }
-    end
-
     # Share identical icon markup instead of repeating it for every map record.
     @map_smoking_badges_payload = {}
     @map_shops_payload = @shops.map do |shop|
@@ -93,14 +84,6 @@ class MapsController < ApplicationController
   end
 
   private
-
-  def cluster_points(points, south, west, north, east)
-    lat_step = (north - south) / 8.0
-    lng_step = (east - west) / 8.0
-    points.group_by { |lat, lng| [((lat - south) / lat_step).floor, ((lng - west) / lng_step).floor] }.values.map do |group|
-      { lat: group.sum(&:first) / group.size, lng: group.sum(&:last) / group.size, count: group.size }
-    end
-  end
 
   def phone_track_url_for(shop)
     digits = shop.phone.to_s.gsub(/[^0-9]/, "")
