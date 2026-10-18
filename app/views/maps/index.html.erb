@@ -12,7 +12,7 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 
 <p style="color:#666; font-size:12px; line-height:1.7;">
   梅田・難波を中心に、大阪で喫煙できる飲食店を地図で探せます。席で喫煙可・喫煙所あり・営業中などで絞り込み、気になる店舗は地図上の吹き出しから電話、ルート確認、空席確認へ進めます。<br>
-  ※ 現在地が許可されていれば、現在地マーカーも表示します。
+  初回は現在地から半径800mの店舗を表示します。地図を移動・拡大縮小すると、新しい表示範囲の店舗を自動で読み込みます。
 </p>
 
 <p id="shops-summary" style="margin:6px 0; color:#666; font-size:12px;">
@@ -254,6 +254,9 @@ let map;
 let infoWindow;
 let markers = [];
 let myLocationMarker = null;
+let initialSearchCenter = null;
+let initialSearchCircle = null;
+let firstRangeRendered = false;
 let filteredShops = [...allShops];
 
 const initialParams = new URLSearchParams(window.location.search);
@@ -601,6 +604,10 @@ let requestVersion = 0;
 let mapLoadingReady = false;
 
 function focusNearby(center) {
+  initialSearchCenter = center;
+  firstRangeRendered = false;
+  initialSearchCircle?.setMap(null);
+  initialSearchCircle = new google.maps.Circle({map,center,radius:800,strokeColor:"#c5a858",strokeWeight:1,fillColor:"#c5a858",fillOpacity:0.05,clickable:false});
   const latitudeDelta = 800 / 111320;
   const longitudeDelta = latitudeDelta / Math.cos(center.lat * Math.PI / 180);
   map.fitBounds(new google.maps.LatLngBounds(
@@ -610,6 +617,7 @@ function focusNearby(center) {
 }
 
 function renderMapResponse(data) {
+  firstRangeRendered = true;
   allShops = data.shops;
   smokingBadges = data.badges;
   filteredShops = allShops;
@@ -653,6 +661,11 @@ function applyFilters() {
     const filters = getCurrentFilterValues();
     const query = new URLSearchParams({south:sw.lat(),west:Math.max(-180,sw.lng()),north:ne.lat(),east:Math.min(180,ne.lng()),
       q:filters.keyword,station:filters.station,genre:filters.genre,smoking_area:filters.smokingArea,smoking_type:filters.smokingType,open_now_only:filters.openNowOnly ? "1":"0"});
+    if (initialSearchCenter) {
+      query.set("center_lat", initialSearchCenter.lat);
+      query.set("center_lng", initialSearchCenter.lng);
+      query.set("radius", "800");
+    }
     const key = query.toString();
     const cached = mapResponseCache.get(key);
     if (cached && Date.now()-cached.time < 60000) { renderMapResponse(cached.data); return; }
@@ -916,6 +929,12 @@ function initMap() {
 
   mapLoadingReady = true;
   map.addListener("idle", applyFilters);
+  const leaveInitialRadius = () => {
+    initialSearchCenter = null;
+    initialSearchCircle?.setMap(null);
+  };
+  map.addListener("dragstart", leaveInitialRadius);
+  map.addListener("zoom_changed", () => { if (firstRangeRendered) leaveInitialRadius(); });
   if (!restored) {
     if (hasInitialLocation) setMyLocationMarker(initialLat, initialLng);
     else { focusNearby({lat:34.7025,lng:135.4959}); showMyLocation(); }

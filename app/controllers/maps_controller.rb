@@ -20,6 +20,21 @@ class MapsController < ApplicationController
       return render json: { error: "検索範囲を確認してください" }, status: :unprocessable_entity
     end
     scope = scope.where(latitude: south..north, longitude: west..east)
+    if params[:radius].present?
+      begin
+        center_lat, center_lng = %i[center_lat center_lng].map { |key| Float(params.require(key)) }
+        radius = Float(params[:radius])
+        raise ArgumentError unless center_lat.finite? && center_lng.finite? && center_lat.abs < 85 && center_lng.abs <= 180 && radius.between?(1, 800)
+      rescue ArgumentError, TypeError, ActionController::ParameterMissing
+        return render json: { error: "初期検索範囲を確認してください" }, status: :unprocessable_entity
+      end
+      ids = scope.pluck(:id, :latitude, :longitude).filter_map do |id, lat, lng|
+        rad = Math::PI / 180
+        a = Math.sin((lat - center_lat) * rad / 2)**2 + Math.cos(lat * rad) * Math.cos(center_lat * rad) * Math.sin((lng - center_lng) * rad / 2)**2
+        id if 6_371_000 * 2 * Math.asin(Math.sqrt([a, 1].min)) <= radius
+      end
+      scope = scope.where(id: ids)
+    end
     if %i[q station genre smoking_area smoking_type].all? { |key| params[key].blank? } && params[:open_now_only] != "1" && scope.count > 350
       points = scope.pluck(:latitude, :longitude)
       return render json: { shops: [], badges: {}, clusters: cluster_points(points, south, west, north, east), total: points.size }
