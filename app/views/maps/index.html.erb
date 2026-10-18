@@ -625,22 +625,8 @@ function renderMapResponse(data) {
   filteredShops = allShops;
   renderMarkers(allShops);
   renderQuickActions(allShops);
-  (data.clusters || []).forEach(cluster => {
-    const marker = new google.maps.Marker({map, position:{lat:cluster.lat,lng:cluster.lng},
-      label:{text:String(cluster.count),color:"#fff"}, title:`${cluster.count}店舗・拡大して表示`,
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:22,fillColor:"#78602d",fillOpacity:1,strokeColor:"#e7cc83",strokeWeight:2}});
-    marker.addListener("click",()=>{map.setCenter({lat:cluster.lat,lng:cluster.lng});map.setZoom(map.getZoom()+2);});
-    markers.push(marker);
-  });
-  if (data.clusters?.length) {
-    const list = document.getElementById("map-quick-actions-list");
-    if (list) list.textContent = "地図を拡大すると、この範囲の店舗詳細を確認できます。";
-    const count = document.getElementById("map-quick-actions-count");
-    if (count) count.textContent = `${data.total}店舗を集約表示`;
-  }
-  updateVisibleCount(data.total);
-  setStatus(data.clusters?.length ? `${data.total}店舗をまとめて表示しています。拡大すると個別の店舗が表示されます。` :
-    (data.total ? `この範囲に${data.total}店舗を表示しています。` : "この範囲では条件に一致する店舗がありません。地図を移動・縮小して範囲を広げられます。"));
+  updateVisibleCount(allShops.length);
+  setStatus(allShops.length ? `この範囲に${allShops.length}店舗を個別表示しています。` : "この範囲では条件に一致する店舗がありません。地図を移動・縮小して範囲を広げられます。");
 }
 
 function applyFilters() {
