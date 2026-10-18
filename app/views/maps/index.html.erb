@@ -16,7 +16,7 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 </p>
 
 <p id="shops-summary" style="margin:6px 0; color:#666; font-size:12px;">
-  店舗数：<%= @shops_count %> ／ 地図表示可能：<%= map_shops.size %> ／ 表示中：<span id="visible-shops-count"><%= map_shops.size %></span>
+  掲載店舗数：<%= @shops_count %> ／ この範囲の表示中：<span id="visible-shops-count">0</span>
 </p>
 
 <div class="map-filter-panel">
@@ -105,6 +105,7 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
   </button>
 </div>
 
+<button type="button" id="reload-map-shops" class="btn btn--dark">この範囲を再読み込み</button>
 <p id="map-status" style="margin:0 0 12px; color:#666; font-size:12px;"></p>
 
 <section class="map-quick-actions" aria-labelledby="map-quick-actions-title">
@@ -246,8 +247,8 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 
 <script>
 (() => {
-const allShops = <%= raw @map_shops_payload.to_json %>;
-const smokingBadges = <%= raw @map_smoking_badges_payload.to_json %>;
+let allShops = <%= raw @map_shops_payload.to_json %>;
+let smokingBadges = <%= raw @map_smoking_badges_payload.to_json %>;
 function smokingBadgesFor(shop) { return smokingBadges[`${shop.smoking_area}:${shop.smoking_type}`] || ""; }
 let map;
 let infoWindow;
@@ -258,7 +259,7 @@ let filteredShops = [...allShops];
 const initialParams = new URLSearchParams(window.location.search);
 const initialLat = parseFloat(initialParams.get("lat"));
 const initialLng = parseFloat(initialParams.get("lng"));
-const hasInitialLocation = Number.isFinite(initialLat) && Number.isFinite(initialLng);
+const hasInitialLocation = Number.isFinite(initialLat) && Number.isFinite(initialLng) && Math.abs(initialLat) < 85 && Math.abs(initialLng) <= 180;
 
 const smokingAreaLabels = {
   all_smoking: "席で喫煙可",
@@ -593,45 +594,82 @@ function renderActiveFilterChips() {
   list.innerHTML = chipsHtml + clearAllHtml;
 }
 
-function applyFilters(options = {}) {
-  const { keyword, station, genre, smokingArea, smokingType, openNowOnly } = getCurrentFilterValues();
+const mapResponseCache = new Map();
+let requestTimer;
+let activeRequest;
+let requestVersion = 0;
+let mapLoadingReady = false;
 
-  filteredShops = allShops.filter((shop) => {
-    const keywordTarget = [
-      shop.name,
-      shop.address,
-      shop.genre_label,
-      shop.nearest_station
-    ].join(" ").toLowerCase();
+function focusNearby(center) {
+  const latitudeDelta = 800 / 111320;
+  const longitudeDelta = latitudeDelta / Math.cos(center.lat * Math.PI / 180);
+  map.fitBounds(new google.maps.LatLngBounds(
+    {lat:center.lat-latitudeDelta,lng:center.lng-longitudeDelta},
+    {lat:center.lat+latitudeDelta,lng:center.lng+longitudeDelta}
+  ), 12);
+}
 
-    const stationTarget = String(shop.nearest_station || "").toLowerCase();
-    const genreTokens = Array.isArray(shop.genre_tokens) ? shop.genre_tokens : [];
-
-    const keywordMatch = !keyword || keyword.split(/\s+/).filter(Boolean).every(word => keywordTarget.normalize("NFKC").includes(word));
-    const stationMatch = !station || stationTarget.includes(station);
-    const genreMatch = !genre || genreTokens.includes(genre) || (genre === "その他" && shop.genre === "その他");
-    const smokingAreaMatch = !smokingArea || shop.smoking_area === smokingArea;
-    const smokingTypeMatch = !smokingType || shop.smoking_type === smokingType;
-    const openNowMatch = !openNowOnly || shop.open_now === true;
-
-    return keywordMatch && stationMatch && genreMatch && smokingAreaMatch && smokingTypeMatch && openNowMatch;
+function renderMapResponse(data) {
+  allShops = data.shops;
+  smokingBadges = data.badges;
+  filteredShops = allShops;
+  renderMarkers(allShops);
+  renderQuickActions(allShops);
+  (data.clusters || []).forEach(cluster => {
+    const marker = new google.maps.Marker({map, position:{lat:cluster.lat,lng:cluster.lng},
+      label:{text:String(cluster.count),color:"#fff"}, title:`${cluster.count}店舗・拡大して表示`,
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:22,fillColor:"#78602d",fillOpacity:1,strokeColor:"#e7cc83",strokeWeight:2}});
+    marker.addListener("click",()=>{map.setCenter({lat:cluster.lat,lng:cluster.lng});map.setZoom(map.getZoom()+2);});
+    markers.push(marker);
   });
-
-  renderMarkers(filteredShops);
-  renderQuickActions(filteredShops);
-
-  if (!options.preserveViewport) {
-    fitMarkersToBounds();
+  if (data.clusters?.length) {
+    const list = document.getElementById("map-quick-actions-list");
+    if (list) list.textContent = "地図を拡大すると、この範囲の店舗詳細を確認できます。";
+    const count = document.getElementById("map-quick-actions-count");
+    if (count) count.textContent = `${data.total}店舗を集約表示`;
   }
+  updateVisibleCount(data.total);
+  setStatus(data.clusters?.length ? `${data.total}店舗をまとめて表示しています。拡大すると個別の店舗が表示されます。` :
+    (data.total ? `この範囲に${data.total}店舗を表示しています。` : "この範囲では条件に一致する店舗がありません。地図を移動・縮小して範囲を広げられます。"));
+}
 
+function applyFilters() {
   renderActiveFilterChips();
   syncMapQuery();
-
-  if (filteredShops.length === 0) {
-    setStatus("条件に一致する店舗がありません。");
-  } else {
-    setStatus(`${filteredShops.length} 店舗を表示しています。`);
-  }
+  if (!mapLoadingReady) return;
+  clearTimeout(requestTimer);
+  activeRequest?.abort();
+  const version = ++requestVersion;
+  // Clear stale pins so failed or pending searches never look like current results.
+  clearMarkers();
+  const quickList = document.getElementById("map-quick-actions-list");
+  if (quickList) quickList.textContent = "この範囲の店舗を読み込み中です…";
+  updateVisibleCount(0);
+  setStatus("表示範囲の店舗を読み込み中です…");
+  requestTimer = setTimeout(async () => {
+    const bounds = map.getBounds();
+    if (!bounds) return;
+    const ne = bounds.getNorthEast(), sw = bounds.getSouthWest();
+    const filters = getCurrentFilterValues();
+    const query = new URLSearchParams({south:sw.lat(),west:Math.max(-180,sw.lng()),north:ne.lat(),east:Math.min(180,ne.lng()),
+      q:filters.keyword,station:filters.station,genre:filters.genre,smoking_area:filters.smokingArea,smoking_type:filters.smokingType,open_now_only:filters.openNowOnly ? "1":"0"});
+    const key = query.toString();
+    const cached = mapResponseCache.get(key);
+    if (cached && Date.now()-cached.time < 60000) { renderMapResponse(cached.data); return; }
+    activeRequest = new AbortController();
+    try {
+      const response = await fetch(`/map.json?${query}`,{signal:activeRequest.signal,headers:{Accept:"application/json"}});
+      if (!response.ok) throw new Error("map request failed");
+      const data = await response.json();
+      if (version !== requestVersion) return;
+      mapResponseCache.set(key,{time:Date.now(),data});
+      if (mapResponseCache.size > 12) mapResponseCache.delete(mapResponseCache.keys().next().value);
+      renderMapResponse(data);
+    } catch(error) {
+      if (error.name === "AbortError" || version !== requestVersion) return;
+      setStatus("店舗を読み込めませんでした。再読み込みボタンで再試行してください。");
+    }
+  }, 300);
 }
 
 function clearFilters() {
@@ -680,8 +718,7 @@ function setMyLocationMarker(lat, lng, options = {}) {
   });
 
   if (!options.preserveCenter) {
-    map.setCenter(me);
-    map.setZoom(options.zoom || 15);
+    focusNearby(me);
   }
 }
 
@@ -786,6 +823,8 @@ function bindFilterEvents() {
     });
   }
 
+  document.getElementById("reload-map-shops")?.addEventListener("click",()=>{mapResponseCache.clear();applyFilters();});
+
   if (myBtn) {
     myBtn.addEventListener("click", showMyLocation);
   }
@@ -861,7 +900,8 @@ function initMap() {
 
   map = new google.maps.Map(mapEl, {
     center: { lat: 34.7025, lng: 135.4959 },
-    zoom: 13,
+    zoom: 15,
+    minZoom: 6,
     mapTypeControl: false,
     streetViewControl: false,
     fullscreenControl: true
@@ -874,16 +914,13 @@ function initMap() {
   const restored = hasQueryFilters ? false : restoreMapState();
   if (hasQueryFilters) readMapQuery();
 
+  mapLoadingReady = true;
+  map.addListener("idle", applyFilters);
   if (!restored) {
-    applyFilters();
+    if (hasInitialLocation) setMyLocationMarker(initialLat, initialLng);
+    else { focusNearby({lat:34.7025,lng:135.4959}); showMyLocation(); }
   }
-
-  if (!restored && hasInitialLocation) {
-    setMyLocationMarker(initialLat, initialLng);
-    setStatus("現在地周辺の店舗を表示しています。");
-  } else if (!restored && filteredShops.length === 0) {
-    setStatus("地図に表示できる店舗がありません。");
-  }
+  applyFilters();
 }
 
 window.initMap = initMap;

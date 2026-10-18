@@ -3,20 +3,46 @@
 
 class MapsController < ApplicationController
   def index
-    @shops = Shop
-      .approved
-      .where.not(latitude: nil, longitude: nil)
-      .order(
-        Arel.sql("
-          CASE WHEN last_confirmed_on IS NOT NULL THEN 0 ELSE 1 END ASC,
-          last_confirmed_on DESC,
-          created_at DESC
-        ")
-      )
+    scope = Shop.approved.where.not(latitude: nil, longitude: nil)
+    @shops = []
+    unless request.format.json?
+      @genres = Shop.selectable_genre_options
+      @shops_count = scope.count
+      @map_smoking_badges_payload = {}
+      @map_shops_payload = []
+      return
+    end
 
-    @shops_count = @shops.size
-
-    @genres = Shop.selectable_genre_options
+    begin
+      south, west, north, east = %i[south west north east].map { |key| Float(params.require(key)) }
+      raise ArgumentError unless [south, west, north, east].all?(&:finite?) && south.between?(-90, 90) && north.between?(-90, 90) && west.between?(-180, 180) && east.between?(-180, 180) && south < north && west < east
+    rescue ArgumentError, TypeError, ActionController::ParameterMissing
+      return render json: { error: "検索範囲を確認してください" }, status: :unprocessable_entity
+    end
+    scope = scope.where(latitude: south..north, longitude: west..east)
+    if %i[q station genre smoking_area smoking_type].all? { |key| params[key].blank? } && params[:open_now_only] != "1" && scope.count > 350
+      points = scope.pluck(:latitude, :longitude)
+      return render json: { shops: [], badges: {}, clusters: cluster_points(points, south, west, north, east), total: points.size }
+    end
+    columns = Shop.column_names - %w[raw_import_text import_metadata public_store_details note]
+    @shops = scope.select(*columns).order(last_confirmed_on: :desc, id: :desc).to_a
+    @open_now_cache = {}
+    keyword = params[:q].to_s.strip.downcase.unicode_normalize(:nfkc)
+    station = params[:station].to_s.strip.downcase
+    @shops.select! do |shop|
+      target = [shop.name, shop.address, genre_label_for(shop), shop.nearest_station].join(" ").downcase.unicode_normalize(:nfkc)
+      keyword.split.all? { |word| target.include?(word) } &&
+        (station.blank? || shop.nearest_station.to_s.downcase.include?(station)) &&
+        (params[:genre].blank? || genre_candidates_for(shop).include?(params[:genre]) || (params[:genre] == "その他" && shop.genre == "その他")) &&
+        (params[:smoking_area].blank? || shop.smoking_area == params[:smoking_area]) &&
+        (params[:smoking_type].blank? || shop.smoking_type == params[:smoking_type]) &&
+        (params[:open_now_only] != "1" || open_now_for(shop))
+    end
+    total = @shops.size
+    if total > 350
+      clusters = cluster_points(@shops.map { |shop| [shop.latitude, shop.longitude] }, south, west, north, east)
+      return render json: { shops: [], badges: {}, clusters: clusters, total: total }
+    end
 
     # Share identical icon markup instead of repeating it for every map record.
     @map_smoking_badges_payload = {}
@@ -48,9 +74,18 @@ class MapsController < ApplicationController
         booking_url: booking_track_url_for(shop)
       }
     end
+    render json: { shops: @map_shops_payload, badges: @map_smoking_badges_payload, clusters: [], total: total }
   end
 
   private
+
+  def cluster_points(points, south, west, north, east)
+    lat_step = (north - south) / 8.0
+    lng_step = (east - west) / 8.0
+    points.group_by { |lat, lng| [((lat - south) / lat_step).floor, ((lng - west) / lng_step).floor] }.values.map do |group|
+      { lat: group.sum(&:first) / group.size, lng: group.sum(&:last) / group.size, count: group.size }
+    end
+  end
 
   def phone_track_url_for(shop)
     digits = shop.phone.to_s.gsub(/[^0-9]/, "")
@@ -135,7 +170,7 @@ class MapsController < ApplicationController
   def open_now_for(shop)
     return false unless shop.respond_to?(:open_now?)
 
-    !!shop.open_now?
+    @open_now_cache.fetch(shop.id) { @open_now_cache[shop.id] = !!shop.open_now? }
   rescue StandardError
     false
   end
