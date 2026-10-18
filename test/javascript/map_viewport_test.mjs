@@ -38,7 +38,7 @@ function harness() {
     history:{replaceState(){}},document:{getElementById:node,addEventListener(){}},
     navigator:{geolocation:{getCurrentPosition(ok, fail){fail();}}},
     sessionStorage:{getItem(){return null;}}, URL,URLSearchParams,AbortController,console,
-    google:{maps:{Map:MapMock,LatLngBounds:Bounds,InfoWindow:class {},SymbolPath:{CIRCLE:'circle'}}},
+    google:{maps:{Map:MapMock,LatLngBounds:Bounds,InfoWindow:class {},Circle:class {setMap(){}},SymbolPath:{CIRCLE:'circle'}}},
     setTimeout(fn){const id=++sequence; timers.set(id,fn);return id;},clearTimeout(id){timers.delete(id);},
     fetch(url, options) {return new Promise((resolve,reject)=>{requests.push({url,signal:options.signal,resolve,reject});});}
   };
@@ -56,6 +56,7 @@ test('initial view covers an 800m radius and loads only the requested bounds',as
   const pending=h.flush();
   const request=h.requests[0];
   assert.ok(request.url.startsWith('/map.json?south='));
+  assert.equal(new URL(request.url,"https://example.test").searchParams.get("radius"),"800");
   h.reply(request);await pending;
   assert.match(h.nodes.get('map-status').textContent,/この範囲では/);
   h.map.events.idle();await h.flush();

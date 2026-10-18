@@ -77,4 +77,14 @@ class MapsControllerTest < ActionDispatch::IntegrationTest
     assert_operator data["total"], :>=, 351
   end
 
+  test "initial radius excludes shops outside 800m even on wide screens" do
+    base = { address: "大阪市", genre: "カフェ", last_confirmed_on: Date.current, approved: true, longitude: 135.4959 }
+    near = Shop.create!(base.merge(name: "近い店", latitude: 34.704))
+    far = Shop.create!(base.merge(name: "円の外の店", latitude: 34.72))
+    get map_url(format: :json), params: { south:34.68, west:135.47, north:34.73, east:135.52, center_lat:34.7025, center_lng:135.4959, radius:800 }
+    ids = response.parsed_body["shops"].map { |shop| shop["id"] }
+    assert_includes ids, near.id
+    refute_includes ids, far.id
+  end
+
 end
