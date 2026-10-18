@@ -108,6 +108,10 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 <button type="button" id="reload-map-shops" class="btn btn--dark">この範囲を再読み込み</button>
 <p id="map-status" style="margin:0 0 12px; color:#666; font-size:12px;"></p>
 
+
+
+<div id="map" style="width:100%; height:70vh; min-height:520px; border:1px solid #ddd; border-radius:12px;"></div>
+
 <section class="map-quick-actions" aria-labelledby="map-quick-actions-title">
   <div class="map-quick-actions__head">
     <div>
@@ -118,8 +122,6 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
   </div>
   <div id="map-quick-actions-list" class="map-quick-actions__list"></div>
 </section>
-
-<div id="map" style="width:100%; height:70vh; min-height:520px; border:1px solid #ddd; border-radius:12px;"></div>
 
 <div style="margin-top:12px;">
   <%= link_to "一覧に戻る", root_path, style: "color:#666; text-decoration:none; font-weight:700;" %>
@@ -133,7 +135,7 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 }
 
 .map-quick-actions {
-  margin: 0 0 14px;
+  margin: 14px 0;
   padding: 12px;
   border: 1px solid #e8e3d7;
   border-radius: 12px;
