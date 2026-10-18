@@ -934,6 +934,7 @@ function initMap() {
     initialSearchCircle?.setMap(null);
   };
   map.addListener("dragstart", leaveInitialRadius);
+  map.addListener("center_changed", () => { if (firstRangeRendered) leaveInitialRadius(); });
   map.addListener("zoom_changed", () => { if (firstRangeRendered) leaveInitialRadius(); });
   if (!restored) {
     if (hasInitialLocation) setMyLocationMarker(initialLat, initialLng);

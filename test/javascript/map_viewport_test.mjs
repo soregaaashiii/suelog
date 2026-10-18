@@ -78,3 +78,13 @@ test('failed searches show retry status instead of claiming there are no stores'
   const h=harness();const pending=h.flush();h.requests[0].reject(new Error('network'));await pending;
   assert.match(h.nodes.get('map-status').textContent,/再試行/);
 });
+
+
+test('keyboard or camera panning leaves the initial radius and searches the new bounds',async()=>{
+  const h=harness();const first=h.flush();h.reply(h.requests[0]);await first;
+  h.map.events.center_changed();
+  h.map.bounds.ne.lng+=0.01;h.map.bounds.sw.lng+=0.01;
+  h.map.events.idle();const next=h.flush();
+  assert.equal(new URL(h.requests[1].url,'https://example.test').searchParams.has('radius'),false);
+  h.reply(h.requests[1]);await next;
+});
