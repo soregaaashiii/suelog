@@ -13,8 +13,8 @@ function builder(unknown) {
   const controls = {
     'span': {textContent:'月'},
     '[data-hours-open]': {checked:true},
-    '[data-hours-start1]': {value:'11:00', options:[{value:'11:00'}]},
-    '[data-hours-end1]': {value:'21:00', options:[{value:'21:00'}]},
+    '[data-hours-start1]': {value:'11:00', options:[{value:'11:00'}, {value:'11:30'}]},
+    '[data-hours-end1]': {value:'21:00', options:[{value:'21:00'}, {value:'00:00'}]},
     '[data-smoking-same]': {checked:!unknown},
     '[data-smoking-start]': {value:'', options:[]},
     '[data-smoking-end]': {value:'', options:[]}
@@ -42,4 +42,16 @@ test('regular unrestricted schedules retain the existing same-hours default', ()
   assert.equal(controls['[data-smoking-same]'].checked, true);
   controller.rebuild();
   assert.equal(controller.openingText.value, '月 11:00-21:00');
+});
+
+test('parsed smoking schedule survives initialization without an opening-hours suffix', () => {
+  const {controller, controls, row} = builder(false);
+  controls['[data-smoking-same]'].checked = false;
+  controls['[data-smoking-start]'].value = '13:00';
+  controls['[data-smoking-end]'].value = '00:00';
+  controls['[data-smoking-hours-configured]'] = {dataset:{smokingHoursConfigured:'true'}};
+  controller.applyLineToRow(row, '月 11:30-00:00');
+  assert.equal(controls['[data-smoking-same]'].checked, false);
+  controller.rebuild();
+  assert.match(controller.openingText.value, /（喫煙可：13:00-00:00）/);
 });

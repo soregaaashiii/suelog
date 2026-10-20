@@ -258,7 +258,7 @@
         <% smoking_unavailable = imported_day_smoking_configured && existing_smoking_start.blank? && existing_smoking_end.blank? %>
         <% smoking_same_checked = !smoking_hours_unknown && !imported_day_smoking_configured && imported_smoking_start.blank? && imported_smoking_end.blank? %>
 
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;" data-smoking-unavailable="<%= smoking_unavailable %>">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;" data-smoking-unavailable="<%= smoking_unavailable %>" data-smoking-hours-configured="<%= imported_day_smoking_configured || imported_smoking_match.present? %>">
           <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700;">
             <input type="checkbox" data-smoking-same <%= "checked" if smoking_same_checked %>>
             喫煙時間は営業時間と同じ

@@ -1,6 +1,26 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "nonsmoking range written with kara and time period is excluded" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      新大阪 海鮮食堂 おーうえすと
+      営業時間
+      11:30 - 00:00
+      L.O. 23:00
+      禁煙・喫煙
+      全席喫煙可
+      11:30から13:00の時間帯は全席禁煙です。
+      駐車場
+      無
+    TEXT
+    %w[月 火 水 木 金 土 日 祝日].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 13:00 - 00:00"
+    end
+    assert_includes result[:opening_hours_text], "11:30-00:00"
+    assert_includes result[:public_store_details], "11:30から13:00の時間帯は全席禁煙"
+  end
+
   test "lunch nonsmoking without lunch times leaves smoking hours unset" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
