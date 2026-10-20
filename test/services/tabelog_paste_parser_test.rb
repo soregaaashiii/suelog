@@ -1,6 +1,39 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "night only smoking follows the evening service and excludes closed days" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      隆勝
+      （リュウショウ）
+      営業時間
+      月・火・木・金・土・日
+      11:00 - 14:30
+      17:30 - 02:00
+      水
+      定休日
+      禁煙・喫煙
+      分煙
+      夜だけ喫煙可
+      駐車場
+      無
+    TEXT
+    %w[月 火 木 金 土 日].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 17:30 - 02:00"
+      assert_match(/#{day}.*喫煙可：17:30-02:00/, result[:opening_hours_text])
+    end
+    assert_includes result[:smoking_hours_text], "水 喫煙不可"
+    refute_includes result[:smoking_hours_text], "14:30"
+    assert_includes result[:public_store_details], "夜だけ喫煙可"
+  end
+
+  test "night only smoking with no separate evening hours stays unknown" do
+    result = TabelogPasteParser.call("店名\n夜限定テスト\n営業時間\n11:00 - 23:00\n禁煙・喫煙\n分煙\n夜だけ喫煙可\n駐車場\n無")
+    assert_nil result[:smoking_hours_text]
+    shop = Shop.new(public_store_details: result[:public_store_details])
+    assert shop.smoking_hours_unset_with_restriction?
+  end
+
   test "nonsmoking range written with kara and time period is excluded" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
