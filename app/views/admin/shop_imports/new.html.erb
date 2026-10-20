@@ -1,6 +1,9 @@
 <h1>食べログ貼り付けインポート</h1>
 <% if @parsed_attrs&.dig(:name).present? %>
-  <h2 style="margin:8px 0 16px; font-size:22px; overflow-wrap:anywhere;"><%= @parsed_attrs[:name] %></h2>
+  <h2 style="margin:8px 0 4px; font-size:22px; overflow-wrap:anywhere;"><%= @parsed_attrs[:name] %></h2>
+  <% if @parsed_attrs[:address].present? %>
+    <p style="margin:0 0 16px; color:#666; font-size:13px; line-height:1.6; overflow-wrap:anywhere;"><%= @parsed_attrs[:address] %></p>
+  <% end %>
 <% end %>
 
 <% if flash[:admin_notice].present? %>
