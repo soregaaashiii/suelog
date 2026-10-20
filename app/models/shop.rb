@@ -463,6 +463,14 @@ class Shop < ApplicationRecord
     genre == "その他" ? genre_other.to_s : genre.to_s
   end
 
+  # A time restriction without a parsed schedule must not imply all-day smoking.
+  def smoking_hours_unset_with_restriction?
+    return false if smoking_hours_text.present?
+
+    note = [public_store_details, import_metadata.to_h["smoking_note"], import_metadata.to_h["smoking_raw"]].compact.join("\n")
+    note.match?(/(?:ランチ|昼|日中).*禁煙|ディナーのみ喫煙可/)
+  end
+
   def smoking_area_label
     case smoking_area
     when "all_smoking"

@@ -142,7 +142,7 @@
   <p style="margin:0 0 12px; color:#666; font-size:13px; line-height:1.7;">
     営業日にチェックを入れて、営業時間を選択してください。チェックなしの曜日は定休日として表示されます。<br>
     祝前・祝後は未設定なら平日と同じ営業時間として扱います。特別営業時間がある場合だけチェックしてください。<br>
-    喫煙時間は未指定なら「営業時間中は喫煙可」として扱います。<br>
+    「喫煙時間は営業時間と同じ」にチェックした場合のみ、営業時間全体を喫煙可として扱います。時間が不明な場合はチェックせず未設定にしてください。<br>
     <span style="color:#888;">L.O. は食べログ貼り付けインポート時に営業時間の横へ「（L.O. 22:30）」形式で反映されます。</span>
   </p>
 
@@ -167,6 +167,7 @@
   <% existing_hours_data = @shop.respond_to?(:opening_hours_data) ? @shop.opening_hours_data : {} %>
   <% time_options = [["未設定", ""]] + (0..96).map { |i| t = "%02d:%02d" % [i / 4, (i % 4) * 15]; [t, t] } %>
 
+  <% smoking_hours_unknown = @shop.smoking_hours_unset_with_restriction? %>
   <% imported_smoking_hours = @shop.smoking_hours_text.to_s.strip %>
   <% imported_smoking_hours_by_day = {} %>
 
@@ -228,7 +229,7 @@
       <% existing_break_start = existing_break_enabled ? existing_day_hours["break_start"].to_s : "" %>
       <% existing_break_end = existing_break_enabled ? existing_day_hours["break_end"].to_s : "" %>
 
-      <div data-hours-row="<%= key %>" style="padding:10px; border:1px solid #eadfca; border-radius:12px; background:#fff;">
+      <div data-hours-row="<%= key %>" data-smoking-hours-unknown="<%= smoking_hours_unknown %>" style="padding:10px; border:1px solid #eadfca; border-radius:12px; background:#fff;">
         <label style="display:flex; align-items:center; gap:8px; font-weight:800; margin-bottom:8px;">
           <input type="checkbox" data-hours-open <%= "checked" if existing_open.present? && existing_close.present? %>>
           <span style="width:42px;"><%= label %></span>
@@ -252,10 +253,10 @@
 
         <% imported_day_smoking_hours = imported_smoking_hours_by_day[key] %>
         <% imported_day_smoking_configured = imported_smoking_hours_by_day.key?(key) %>
-        <% existing_smoking_start = imported_day_smoking_configured ? imported_day_smoking_hours[0].to_s : (imported_smoking_start.presence || existing_open) %>
-        <% existing_smoking_end = imported_day_smoking_configured ? imported_day_smoking_hours[1].to_s : (imported_smoking_end.presence || existing_close) %>
+        <% existing_smoking_start = imported_day_smoking_configured ? imported_day_smoking_hours[0].to_s : (imported_smoking_start.presence || (smoking_hours_unknown ? "" : existing_open)) %>
+        <% existing_smoking_end = imported_day_smoking_configured ? imported_day_smoking_hours[1].to_s : (imported_smoking_end.presence || (smoking_hours_unknown ? "" : existing_close)) %>
         <% smoking_unavailable = imported_day_smoking_configured && existing_smoking_start.blank? && existing_smoking_end.blank? %>
-        <% smoking_same_checked = !imported_day_smoking_configured && imported_smoking_start.blank? && imported_smoking_end.blank? %>
+        <% smoking_same_checked = !smoking_hours_unknown && !imported_day_smoking_configured && imported_smoking_start.blank? && imported_smoking_end.blank? %>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;" data-smoking-unavailable="<%= smoking_unavailable %>">
           <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700;">

@@ -163,7 +163,7 @@ export default class extends Controller {
       const [start, end] = this.parseRange(smokingPart)
       this.setSelect(row, "[data-smoking-start]", start)
       this.setSelect(row, "[data-smoking-end]", end)
-    } else if (smokingSame && row.querySelector("[data-smoking-unavailable]")?.dataset.smokingUnavailable !== "true") {
+    } else if (smokingSame && row.dataset.smokingHoursUnknown !== "true" && row.querySelector("[data-smoking-unavailable]")?.dataset.smokingUnavailable !== "true") {
       smokingSame.checked = true
     }
   }
@@ -246,7 +246,9 @@ export default class extends Controller {
 
       let smoking = ""
 
-      if (!smokingSame && smokingStart && smokingEnd) {
+      if (!smokingSame && (!smokingStart || !smokingEnd) && row.dataset.smokingHoursUnknown === "true") {
+        smoking = "（喫煙可：時間未設定）"
+      } else if (!smokingSame && smokingStart && smokingEnd) {
         smoking = `（喫煙可：${smokingStart}-${smokingEnd}）`
       }
 

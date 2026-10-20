@@ -20,6 +20,23 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "unknown lunch restriction stays unset in admin editing and after saving" do
+    @shop.update!(public_store_details: "分煙\nランチタイム禁煙", smoking_hours_text: nil,
+      opening_hours_text: "月 11:00-21:00", opening_hours_json: { monday: { open: "11:00", close: "21:00" } })
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_response :success
+    assert_select '[data-hours-row="mon"][data-smoking-hours-unknown="true"]' do
+      assert_select '[data-smoking-same][checked]', count: 0
+      assert_select '[data-smoking-start] option[selected]', text: "未設定"
+      assert_select '[data-smoking-end] option[selected]', text: "未設定"
+    end
+    patch admin_shop_path(@shop), params: { shop: { name: @shop.name } }, headers: @headers
+    assert_response :redirect
+    assert @shop.reload.smoking_hours_unset_with_restriction?
+    assert_nil @shop.smoking_hours_text
+    assert_includes @shop.public_store_details, "ランチタイム禁煙"
+  end
+
   test "admin tracking defaults to excluded but explicit inclusion persists" do
     get admin_shops_path, headers: @headers
     assert_response :success
