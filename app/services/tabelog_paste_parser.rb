@@ -498,7 +498,9 @@ class TabelogPasteParser
 
   def evening_only_smoking_ranges
     raw = field_value_with_continuation("禁煙・喫煙").to_s
-    return nil unless raw.match?(/昼[^。\n]*禁煙/) && raw.match?(/夜[^。\n]*喫煙可/)
+    night_only = raw.match?(/(?:夜|夜間|ディナー)(?:だけ|のみ)(?:は)?喫煙可/)
+    daytime_ban = raw.match?(/昼[^。\n]*禁煙/) && raw.match?(/夜[^。\n]*喫煙可/)
+    return nil unless night_only || daytime_ban
 
     hours = opening_ranges_by_day
     evening_start = hours.values.filter_map { |ranges| ranges[1]&.first }.min_by { |time| time_to_minutes(time) }
