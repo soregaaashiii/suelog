@@ -1,6 +1,32 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "weekday start and weekend holiday full smoking are separate schedules" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      昴 新大阪店
+      営業時間
+      11:00 - 00:00
+      ■ 営業時間
+      売切次第終了
+      ■ 定休日
+      無休
+      禁煙・喫煙
+      分煙
+      平日：14:00～、土日祝：終日喫煙可
+      駐車場
+      無
+    TEXT
+    %w[月 火 水 木 金].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 14:00 - 00:00"
+      assert_match(/#{day}.*喫煙可：14:00-00:00/, result[:opening_hours_text])
+    end
+    %w[土 日 祝日].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 11:00 - 00:00"
+    end
+    assert_includes result[:public_store_details], "平日：14:00～、土日祝：終日喫煙可"
+  end
+
   test "night only smoking follows the evening service and excludes closed days" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名

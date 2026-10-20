@@ -496,6 +496,26 @@ class TabelogPasteParser
     %w[monday tuesday wednesday thursday friday saturday sunday holiday]
   end
 
+  def weekday_start_weekend_full_smoking_ranges
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:")
+    weekday = raw.match(/平日\s*:?\s*(\d{1,2}:\d{2})\s*(?:[～〜~]|から|以降)/)
+    return nil unless weekday && raw.match?(/土日祝\s*:?\s*終日喫煙可/)
+
+    start = weekday[1]
+    opening_ranges_by_day.to_h do |day, ranges|
+      allowed = ranges.filter_map do |open_time, close_time|
+        if %w[saturday sunday holiday].include?(day)
+          [open_time, close_time]
+        elsif time_inside_range?(open_time, close_time, start)
+          [start, close_time]
+        elsif time_to_minutes(open_time) >= time_to_minutes(start)
+          [open_time, close_time]
+        end
+      end
+      [day, allowed]
+    end
+  end
+
   def evening_only_smoking_ranges
     raw = field_value_with_continuation("禁煙・喫煙").to_s
     night_only = raw.match?(/(?:夜|夜間|ディナー)(?:だけ|のみ)(?:は)?喫煙可/)
@@ -512,6 +532,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
+    if (weekday_ranges = weekday_start_weekend_full_smoking_ranges)
+      return weekday_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
+    end
     if (evening_ranges = evening_only_smoking_ranges)
       return evening_ranges.filter_map { |day, ranges| [day, ranges.map { |times| times.join("-") }.join(", ")] if ranges.present? }.to_h
     end
@@ -1082,6 +1105,12 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    if (weekday_ranges = weekday_start_weekend_full_smoking_ranges)
+      return weekday_ranges.map do |day, ranges|
+        label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"
+        "#{day_label(day)} #{label}"
+      end.join("\n")
+    end
     if (evening_ranges = evening_only_smoking_ranges)
       return evening_ranges.map do |day, ranges|
         label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"
