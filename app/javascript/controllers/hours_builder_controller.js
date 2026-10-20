@@ -163,7 +163,7 @@ export default class extends Controller {
       const [start, end] = this.parseRange(smokingPart)
       this.setSelect(row, "[data-smoking-start]", start)
       this.setSelect(row, "[data-smoking-end]", end)
-    } else if (smokingSame && row.dataset.smokingHoursUnknown !== "true" && row.querySelector("[data-smoking-unavailable]")?.dataset.smokingUnavailable !== "true") {
+    } else if (smokingSame && row.dataset.smokingHoursUnknown !== "true" && row.querySelector("[data-smoking-hours-configured]")?.dataset.smokingHoursConfigured !== "true" && row.querySelector("[data-smoking-unavailable]")?.dataset.smokingUnavailable !== "true") {
       smokingSame.checked = true
     }
   }
