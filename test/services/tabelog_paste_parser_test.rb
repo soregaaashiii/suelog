@@ -1,6 +1,33 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "lunch nonsmoking without lunch times leaves smoking hours unset" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      大悟
+      （ダイゴ）
+      ジャンル 洋食
+      住所
+      大阪府大阪市中央区上汐2-2-12
+      営業時間
+      月・火・水・木・金・土
+      11:00 - 21:00
+      日
+      定休日
+      禁煙・喫煙
+      分煙
+      ランチタイム禁煙
+      駐車場
+      無
+    TEXT
+
+    assert_nil result[:smoking_hours_text]
+    assert_nil result[:import_metadata][:smoking_hours_text]
+    assert_includes result[:public_store_details], "ランチタイム禁煙"
+    assert_includes result[:opening_hours_text], "月 11:00-21:00"
+    refute_includes result[:opening_hours_text], "喫煙可："
+  end
+
   test "daytime nonsmoking does not become smoking after lunch on lunch-only days" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
