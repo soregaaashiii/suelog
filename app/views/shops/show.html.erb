@@ -1619,6 +1619,17 @@
           }, tag.br) %></div>
         </div>
 
+        <% if !confirmed_non_smoking && @shop.smoking_hours_text.present? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">喫煙可能時間</div>
+            <div class="shop-show__infoCell shop-show__infoCell--multiline">
+              <%= safe_join(@shop.smoking_hours_text.lines.map { |line| h(line.chomp) }, tag.br) %>
+              <p>営業時間内のみ喫煙可能です。休憩時間・定休日などの営業時間外は喫煙できません。</p>
+              <strong><%= !@shop.open_now? ? "現在：営業時間外（喫煙不可）" : (@shop.smoking_now? ? "現在：喫煙可能時間内" : "現在：喫煙時間外（喫煙不可）") %></strong>
+            </div>
+          </div>
+        <% end %>
+
         <% if @shop.respond_to?(:last_order_text) && @shop.last_order_text.present? %>
           <div class="shop-show__infoRow">
             <div class="shop-show__infoHead">LO</div>

@@ -1209,7 +1209,12 @@ if daytime_non_smoking_until_match || non_smoking_until_match
       end
     end
 
-    smoking_ranges.present? ? "#{day} #{smoking_ranges.join(', ')}" : "#{day} 喫煙不可"
+    # Keep a single editable window; business hours still exclude the break.
+    if smoking_ranges.present?
+      "#{day} #{smoking_ranges.first.split(' - ').first} - #{smoking_ranges.last.split(' - ').last}"
+    else
+      "#{day} 喫煙不可"
+    end
   end
 
   return rows.join("\n").presence if rows.present?
