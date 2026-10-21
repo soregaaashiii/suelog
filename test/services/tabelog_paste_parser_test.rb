@@ -1,6 +1,23 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "separated smoking with nonsmoking seats is smoking at seats with the note preserved" do
+    result = TabelogPasteParser.call("店名\nがんこ 十三総本店\n禁煙・喫煙\n分煙\n禁煙席あり\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_nil result[:smoking_area_2]
+    assert_includes result[:public_store_details], "禁煙席あり"
+  end
+
+  test "plain separated smoking remains unknown and explicit heated restriction is preserved" do
+    result = TabelogPasteParser.call("店名\n不明テスト\n禁煙・喫煙\n分煙\n駐車場\n無")
+    assert_equal "unknown", result[:smoking_area]
+    assert_equal "unknown", result[:smoking_type]
+    result = TabelogPasteParser.call("店名\n限定テスト\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n禁煙席あり\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+  end
+
   test "breakfast nonsmoking excludes breakfast only days" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
