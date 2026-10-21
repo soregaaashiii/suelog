@@ -1628,6 +1628,11 @@
               <strong><%= !@shop.open_now? ? "現在：営業時間外（喫煙不可）" : (@shop.smoking_now? ? "現在：喫煙可能時間内" : "現在：喫煙時間外（喫煙不可）") %></strong>
             </div>
           </div>
+        <% elsif !confirmed_non_smoking && @shop.smoking_hours_unset_with_restriction? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">喫煙可能時間</div>
+            <div class="shop-show__infoCell">未設定・要確認。禁煙時間の詳しい時刻は店舗にご確認ください。</div>
+          </div>
         <% end %>
 
         <% if @shop.respond_to?(:last_order_text) && @shop.last_order_text.present? %>

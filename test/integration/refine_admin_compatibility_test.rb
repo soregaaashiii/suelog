@@ -20,6 +20,12 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "ambiguous lunch restriction is explicitly marked for confirmation in import preview" do
+    get new_admin_shop_import_path, params: { raw_text: "店名\n時刻不明テスト\n営業時間\n07:00 - 09:30\n11:30 - 13:30\n17:30 - 21:30\n禁煙・喫煙\n分煙\nランチタイムは禁煙タイムあります\n駐車場\n有" }, headers: @headers
+    assert_response :success
+    assert_includes response.body, "未設定（禁煙時間不明・要確認）"
+  end
+
   test "unknown lunch restriction stays unset in admin editing and after saving" do
     @shop.update!(public_store_details: "分煙\nランチタイム禁煙", smoking_hours_text: nil,
       opening_hours_text: "月 11:00-21:00", opening_hours_json: { monday: { open: "11:00", close: "21:00" } })
