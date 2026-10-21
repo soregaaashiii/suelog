@@ -535,6 +535,20 @@ class TabelogPasteParser
     end
   end
 
+  def breakfast_nonsmoking_ranges
+    raw = field_value_with_continuation("禁煙・喫煙").to_s
+    return nil unless raw.match?(/(?:朝食|モーニング)(?:時|時間帯|タイム)?(?:は)?禁煙[^。\n]*(?:それ以外|以外).*喫煙可/)
+
+    hours = opening_ranges_by_day
+    after_breakfast = hours.values.filter_map { |ranges| ranges[1]&.first }.min_by { |time| time_to_minutes(time) }
+    return nil if after_breakfast.blank?
+
+    hours.transform_values do |ranges|
+      allowed = ranges.select { |open_time, _| time_to_minutes(open_time) >= time_to_minutes(after_breakfast) }
+      allowed.present? ? [[allowed.first.first, allowed.last.last]] : []
+    end
+  end
+
   def ambiguous_partial_lunch_ban?
     raw = field_value_with_continuation("禁煙・喫煙").to_s
     raw.match?(/ランチ[^。\n]*禁煙(?:タイム|時間)(?:が|は)?(?:あります|あり)/) &&
@@ -542,6 +556,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
+    if (breakfast_ranges = breakfast_nonsmoking_ranges)
+      return breakfast_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
+    end
     return {} if ambiguous_partial_lunch_ban?
     if (weekday_ranges = weekday_start_weekend_full_smoking_ranges)
       return weekday_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
@@ -1135,6 +1152,12 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    if (breakfast_ranges = breakfast_nonsmoking_ranges)
+      return breakfast_ranges.map do |day, ranges|
+        label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"
+        "#{day_label(day)} #{label}"
+      end.join("\n")
+    end
     return nil if ambiguous_partial_lunch_ban?
     if (weekday_ranges = weekday_start_weekend_full_smoking_ranges)
       return weekday_ranges.map do |day, ranges|

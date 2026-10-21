@@ -468,7 +468,7 @@ class Shop < ApplicationRecord
     return false if smoking_hours_text.present?
 
     note = [public_store_details, import_metadata.to_h["smoking_note"], import_metadata.to_h["smoking_raw"]].compact.join("\n")
-    note.match?(/(?:ランチ|昼|日中).*禁煙|(?:夜|夜間|ディナー)(?:だけ|のみ)(?:は)?喫煙可/)
+    note.match?(/(?:ランチ|昼|日中|朝食|モーニング).*禁煙|(?:夜|夜間|ディナー)(?:だけ|のみ)(?:は)?喫煙可/)
   end
 
   def smoking_area_label
