@@ -549,6 +549,20 @@ class TabelogPasteParser
       return {}
     end
 
+    cutoff = smoking_raw.match(/(\d{1,2})(?::(\d{2}))?\s*時?\s*まで(?:は)?\s*(?:全席|全面|完全)?禁煙/)
+    if cutoff
+      hour = cutoff[1].to_i
+      hour += 12 if hour < 12 && smoking_raw.match?(/昼\s*\d/)
+      start = format("%02d:%02d", hour, cutoff[2].to_i)
+      return opening_ranges_by_day.filter_map do |day, ranges|
+        available = ranges.select { |open_time, close_time| time_inside_range?(open_time, close_time, start) || time_to_minutes(open_time) >= time_to_minutes(start) }
+        next if available.blank?
+        first_open = available.first.first
+        from = time_inside_range?(first_open, available.first.last, start) ? start : first_open
+        [day, "#{from}-#{available.last.last}"]
+      end.to_h
+    end
+
     result = {}
 
     # 「21時まで禁煙／21時以降喫煙可」のような併記は、後半の開始時刻を優先する。
