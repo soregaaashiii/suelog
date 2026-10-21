@@ -497,9 +497,11 @@ class TabelogPasteParser
   end
 
   def weekday_start_weekend_full_smoking_ranges
-    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:")
-    weekday = raw.match(/平日\s*:?\s*(\d{1,2}:\d{2})\s*(?:[～〜~]|から|以降)/)
-    return nil unless weekday && raw.match?(/土日祝\s*:?\s*終日喫煙可/)
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：　", "0123456789: ")
+    weekday_ban = raw.match(/平日\s*:?\s*\d{1,2}:\d{2}\s*(?:[～〜~]|から)\s*(\d{1,2}:\d{2})\s*(?:まで)?\s*(?:は)?\s*(?:全席|全面|完全)?禁煙/)
+    weekday = weekday_ban || raw.match(/平日\s*:?\s*(\d{1,2}:\d{2})\s*(?:[～〜~]|から|以降)/)
+    weekend_full = raw.match?(/土[・、\s]*日[・、\s]*祝(?:日)?\s*:?\s*(?:終日|全席|全面)?\s*喫煙可/)
+    return nil unless weekday && weekend_full
 
     start = weekday[1]
     opening_ranges_by_day.to_h do |day, ranges|
@@ -512,6 +514,8 @@ class TabelogPasteParser
           [open_time, close_time]
         end
       end
+      # Business-hour checks exclude service breaks inside this editable window.
+      allowed = [[allowed.first.first, allowed.last.last]] if allowed.present?
       [day, allowed]
     end
   end
