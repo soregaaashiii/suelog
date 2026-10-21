@@ -1,6 +1,31 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "paper smoking area without an exclusive qualifier accepts both types" do
+    ["外に紙タバコ喫煙所あり", "外に紙たばこ喫煙所あり", "紙巻きたばこ喫煙ブースあり"].each do |note|
+      result = TabelogPasteParser.call("店名\n立ち飲み酒場ほっ\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "electronic_only", result[:smoking_type]
+      assert_equal "separated", result[:smoking_area_2]
+      assert_equal "both_ok", result[:smoking_type_2]
+    end
+  end
+
+  test "explicit paper only qualifiers remain paper only in a separate area" do
+    %w[のみ だけ 限定 専用].each do |qualifier|
+      result = TabelogPasteParser.call("店名\n限定テスト\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n外に紙タバコ#{qualifier}の喫煙所あり\n駐車場\n無")
+      assert_equal "electronic_only", result[:smoking_type]
+      assert_equal "paper_only", result[:smoking_type_2]
+    end
+  end
+
+  test "standalone paper only qualifiers are not broadened" do
+    %w[のみ だけ 限定 専用].each do |qualifier|
+      result = TabelogPasteParser.call("店名\n紙限定テスト\n禁煙・喫煙\n紙タバコ#{qualifier}喫煙可\n駐車場\n無")
+      assert_equal "paper_only", result[:smoking_type]
+    end
+  end
+
   test "partial lunch nonsmoking with unknown times does not mistake breakfast and lunch for dinner" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
@@ -426,7 +451,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "electronic_only", result[:smoking_type]
     assert_equal "separated", result[:smoking_area_2]
-    assert_equal "paper_only", result[:smoking_type_2]
+    assert_equal "both_ok", result[:smoking_type_2]
   end
 
   test "extracts outside smoking area and later indoor smoking as separate conditions" do
@@ -511,7 +536,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "electronic_only", result[:smoking_type]
     assert_equal "separated", result[:smoking_area_2]
-    assert_equal "paper_only", result[:smoking_type_2]
+    assert_equal "both_ok", result[:smoking_type_2]
   end
 
   test "extracts heated tobacco seating and a paper tobacco booth separately" do
@@ -526,7 +551,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "electronic_only", result[:smoking_type]
     assert_equal "separated", result[:smoking_area_2]
-    assert_equal "paper_only", result[:smoking_type_2]
+    assert_equal "both_ok", result[:smoking_type_2]
   end
 
   test "extracts heated tobacco seating and a paper tobacco smoking room separately" do
@@ -541,7 +566,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "electronic_only", result[:smoking_type]
     assert_equal "separated", result[:smoking_area_2]
-    assert_equal "paper_only", result[:smoking_type_2]
+    assert_equal "both_ok", result[:smoking_type_2]
   end
 
   test "treats an outside ashtray as one smoking area for both tobacco types" do
@@ -616,7 +641,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "electronic_only", result[:smoking_type]
     assert_equal "separated", result[:smoking_area_2]
-    assert_equal "paper_only", result[:smoking_type_2]
+    assert_equal "both_ok", result[:smoking_type_2]
   end
 
   test "extracts an indoor smoking space and smoking seats separately" do
@@ -661,7 +686,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "electronic_only", result[:smoking_type]
     assert_equal "separated", result[:smoking_area_2]
-    assert_equal "paper_only", result[:smoking_type_2]
+    assert_equal "both_ok", result[:smoking_type_2]
   end
 
   test "starts smoking hours after an until-time non-smoking rule for overnight hours" do
