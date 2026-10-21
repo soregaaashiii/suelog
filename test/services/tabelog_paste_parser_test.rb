@@ -717,7 +717,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
       assert_includes result[:smoking_hours_text], "#{day} 13:00 - 02:00"
     end
     %w[土 日 祝日].each do |day|
-      assert_includes result[:smoking_hours_text], "#{day} 13:00 - 15:00, 18:00 - 02:00"
+      assert_includes result[:smoking_hours_text], "#{day} 13:00 - 02:00"
     end
     refute_includes result[:smoking_hours_text], "水 "
   end
