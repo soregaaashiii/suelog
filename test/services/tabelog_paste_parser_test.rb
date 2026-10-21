@@ -1,6 +1,38 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "prefix nonsmoking times without parentheses exclude lunch only service" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      長芋ざんまい とろろん
+      営業時間
+      月
+      11:30 - 14:30
+      L.O. 14:00
+      火・水・木・金
+      11:30 - 14:30
+      L.O. 14:00
+      18:00 - 22:00
+      L.O. 21:30
+      土
+      18:00 - 22:00
+      L.O. 21:30
+      日・祝日
+      定休日
+      月曜日（昼のみ営業）
+      土曜日（夜のみ営業）
+      禁煙・喫煙
+      分煙
+      時間帯禁煙11:30~14:30
+      駐車場
+      無
+    TEXT
+    assert_includes result[:smoking_hours_text], "月 喫煙不可"
+    %w[火 水 木 金 土].each { |day| assert_includes result[:smoking_hours_text], "#{day} 18:00 - 22:00" }
+    refute_match(/(?:日|祝日) \d/, result[:smoking_hours_text])
+    assert_includes result[:public_store_details], "時間帯禁煙11:30~14:30"
+  end
+
   test "weekday nonsmoking with weekend holiday exception preserves full weekend hours" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
