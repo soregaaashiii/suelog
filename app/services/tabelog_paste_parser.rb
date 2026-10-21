@@ -974,7 +974,7 @@ class TabelogPasteParser
         { area: "all_smoking", type: "electronic_only" },
         {
           area: "separated",
-          type: paper_tobacco_also_in_separate_area?(text) ? "both_ok" : "paper_only"
+          type: paper_tobacco_exclusive?(raw.to_s) ? "paper_only" : "both_ok"
         }
       ]
     end
@@ -1019,7 +1019,7 @@ class TabelogPasteParser
     if heated_inside_and_separate_paper_area
       return [
         { area: "all_smoking", type: "electronic_only" },
-        { area: "separated", type: "paper_only" }
+        { area: "separated", type: paper_tobacco_exclusive?(raw.to_s) ? "paper_only" : "both_ok" }
       ]
     end
 
@@ -1073,6 +1073,10 @@ class TabelogPasteParser
       text.match?(/#{outside_location}[^。\n]{0,30}#{smoking_marker}[^。\n]{0,80}#{paper}/)
   end
 
+  def paper_tobacco_exclusive?(text)
+    text.match?(/紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)?\s*(?:は|が)?\s*(?:のみ|だけ|限定|専用)/)
+  end
+
   def paper_tobacco_also_in_separate_area?(text)
     paper = /紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)?/
     smoking_facility = /(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム)/
@@ -1112,8 +1116,8 @@ class TabelogPasteParser
 
     return "electronic_only" if text.match?(/電子タバコのみ|電子たばこのみ|加熱式たばこのみ|加熱式タバコのみ|加熱式のみ/)
     return "electronic_only" if text.match?(/加熱式たばこ限定|加熱式タバコ限定|加熱式限定/)
+    return "paper_only" if paper_tobacco_exclusive?(raw.to_s)
     return "both_ok" if text.match?(/紙.*加熱|加熱.*紙/)
-    return "paper_only" if text.match?(/紙タバコのみ|紙たばこのみ|紙巻きのみ|紙巻たばこのみ/)
     return "both_ok" if text.match?(/テラス席(?:のみ)?\s*喫煙(?:可|可能)/)
     return "both_ok" if text.match?(/\d+階[^。\n]{0,20}喫煙(?:可|可能)/)
     return "both_ok" if text.match?(/時間帯禁煙\s*[（(][^）)]*[）)]/)
@@ -1122,6 +1126,7 @@ class TabelogPasteParser
     return "both_ok" if text.match?(/(?:店外|屋外|外)に?[^。\n]{0,20}(?:灰皿|喫煙所)/)
     return "both_ok" if text.match?(/喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム/)
     return "both_ok" if text.match?(/昼[^。\n]*禁煙/) && text.match?(/夜[^。\n]*喫煙可/)
+    return "both_ok" if raw.to_s.match?(/紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)/)
     return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|分煙/)
     return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "both_ok" if text.match?(/紙タバコ|紙たばこ/)

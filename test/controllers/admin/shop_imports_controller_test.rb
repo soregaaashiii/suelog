@@ -91,7 +91,7 @@ class Admin::ShopImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "all_smoking", shop.smoking_area
     assert_equal "electronic_only", shop.smoking_type
     assert_equal "separated", shop.smoking_area_2
-    assert_equal "paper_only", shop.smoking_type_2
+    assert_equal "both_ok", shop.smoking_type_2
   end
 
   test "final approval uses the provisional shop and queues activity delivery" do
