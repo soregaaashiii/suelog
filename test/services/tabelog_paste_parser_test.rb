@@ -1,6 +1,29 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "morning nonsmoking range keeps a single smoking window across lunch break" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      一番どり 西中島店
+      営業時間
+      月・火・水・木・金・土
+      11:30 - 15:00
+      18:00 - 23:00
+      日・祝日
+      定休日
+      禁煙・喫煙
+      分煙
+      11時から14時まで全面禁煙
+      駐車場
+      無
+    TEXT
+    %w[月 火 水 木 金 土].each { |day| assert_includes result[:smoking_hours_text], "#{day} 14:00 - 23:00" }
+    refute_includes result[:smoking_hours_text], "15:00"
+    refute_match(/(?:日|祝日) \d/, result[:smoking_hours_text])
+    assert_equal "15:00", result[:opening_hours_json].dig("monday", "break_start")
+    assert_equal "18:00", result[:opening_hours_json].dig("monday", "break_end")
+  end
+
   test "smoking cutoff spans the service break as a single editable window" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
@@ -215,7 +238,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     TEXT
 
     expected = %w[月 火 水 木 金 土].map do |day|
-      "#{day} 13:00 - 14:00, 17:00 - 22:00"
+      "#{day} 13:00 - 22:00"
     end.join("\n")
 
     assert_equal expected, result[:smoking_hours_text]
@@ -691,7 +714,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     TEXT
 
     %w[月 火 木 金].each do |day|
-      assert_includes result[:smoking_hours_text], "#{day} 13:00 - 14:00, 18:00 - 02:00"
+      assert_includes result[:smoking_hours_text], "#{day} 13:00 - 02:00"
     end
     %w[土 日 祝日].each do |day|
       assert_includes result[:smoking_hours_text], "#{day} 13:00 - 15:00, 18:00 - 02:00"

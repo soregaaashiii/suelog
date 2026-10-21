@@ -1191,7 +1191,13 @@ if daily_non_smoking_range_match
       end
     end
 
-    smoking_ranges.present? ? "#{day} #{smoking_ranges.join(', ')}" : "#{day} 喫煙不可"
+    # When the ban ends during the first service, retain one editable window
+    # across the service break. Never bridge a nonsmoking interval itself.
+    if smoking_ranges.present? && ban_start_minutes <= time_to_minutes(ranges.first.first)
+      "#{day} #{smoking_ranges.first.split(' - ').first} - #{smoking_ranges.last.split(' - ').last}"
+    else
+      smoking_ranges.present? ? "#{day} #{smoking_ranges.join(', ')}" : "#{day} 喫煙不可"
+    end
   end
 
   return rows.join("\n").presence if rows.present?
