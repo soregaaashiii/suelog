@@ -24,6 +24,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "15:00", result[:opening_hours_json].dig("monday", "break_start")
     assert_equal "17:00", result[:opening_hours_json].dig("monday", "break_end")
     refute_includes result[:smoking_hours_text], "15:00"
+    assert_includes result[:opening_hours_text], "喫煙可：13:00-23:00"
   end
 
   test "weekday start and weekend holiday full smoking are separate schedules" do
