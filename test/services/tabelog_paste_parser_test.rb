@@ -1,6 +1,37 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "partial lunch nonsmoking with unknown times does not mistake breakfast and lunch for dinner" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      レストラン プレノール
+      営業時間
+      月
+      07:00 - 09:30
+      11:30 - 13:30
+      火・水・木・金
+      07:00 - 09:30
+      11:30 - 13:30
+      17:30 - 21:30
+      L.O. 21:00
+      土
+      07:00 - 09:30
+      17:30 - 21:30
+      L.O. 21:00
+      日・祝日
+      定休日
+      禁煙・喫煙
+      分煙
+      ランチタイムは禁煙タイムあります
+      駐車場
+      有
+    TEXT
+    assert_nil result[:smoking_hours_text]
+    assert_includes result[:public_store_details], "ランチタイムは禁煙タイムあります"
+    refute_includes result[:opening_hours_text], "喫煙可："
+    assert Shop.new(public_store_details: result[:public_store_details]).smoking_hours_unset_with_restriction?
+  end
+
   test "prefix nonsmoking times without parentheses exclude lunch only service" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
