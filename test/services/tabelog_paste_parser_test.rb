@@ -1,6 +1,36 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "breakfast nonsmoking excludes breakfast only days" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      カフェ・ド・カプリス
+      営業時間
+      月・火・水・木・金
+      06:30 - 09:30
+      11:30 - 14:00
+      土・日
+      07:00 - 09:30
+      ■ 定休日
+      不定休
+      禁煙・喫煙
+      分煙
+      時間分煙（朝食時禁煙、それ以外喫煙可）
+      空間・設備
+      カウンター席あり
+    TEXT
+    %w[月 火 水 木 金].each { |day| assert_includes result[:smoking_hours_text], "#{day} 11:30 - 14:00" }
+    %w[土 日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
+    refute_includes result[:smoking_hours_text], "09:30"
+    assert_includes result[:public_store_details], "朝食時禁煙"
+  end
+
+  test "breakfast nonsmoking without separate hours remains unknown" do
+    result = TabelogPasteParser.call("店名\n朝食テスト\n営業時間\n06:30 - 14:00\n禁煙・喫煙\n分煙\n朝食時禁煙、それ以外喫煙可\n駐車場\n無")
+    assert_nil result[:smoking_hours_text]
+    assert Shop.new(public_store_details: result[:public_store_details]).smoking_hours_unset_with_restriction?
+  end
+
   test "paper smoking area without an exclusive qualifier accepts both types" do
     ["外に紙タバコ喫煙所あり", "外に紙たばこ喫煙所あり", "紙巻きたばこ喫煙ブースあり"].each do |note|
       result = TabelogPasteParser.call("店名\n立ち飲み酒場ほっ\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n#{note}\n駐車場\n無")
