@@ -6,6 +6,22 @@ class ShopBusinessHoursProjectionTest < ActiveSupport::TestCase
   MONDAY = Date.new(2026, 8, 3)
   TUESDAY = MONDAY + 1.day
 
+  test "smoking window never makes a closed break open or smokeable" do
+    text = "月 11:30-15:00（喫煙可：13:00-23:00）, 17:00-23:00（喫煙可：13:00-23:00）"
+    [ {}, OpeningHoursParser.parse_legacy_text(text) ].each do |json|
+      shop = Shop.new(name: "休憩テスト", opening_hours_json: json, opening_hours_text: text,
+        smoking_hours_text: "月 13:00 - 23:00")
+      { "12:00" => [true, false], "13:00" => [true, true], "15:00" => [false, false],
+        "16:00" => [false, false], "17:00" => [true, true], "23:00" => [false, false] }.each do |clock, expected|
+        travel_to Time.zone.parse("2026-08-03 #{clock}") do
+          assert_equal expected[0], shop.open_now?, "open at #{clock}"
+          assert_equal expected[1], shop.smoking_now?, "smoking at #{clock}"
+          assert_equal expected[0], ShopBusinessHoursProjection.open_at?(shop, Time.current), "projection at #{clock}"
+        end
+      end
+    end
+  end
+
   test "normal opening boundaries match the legacy predicate" do
     shop = shop_with_json("monday" => day(open: "09:00", close: "18:00"))
 

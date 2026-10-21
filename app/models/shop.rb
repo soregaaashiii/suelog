@@ -685,6 +685,20 @@ class Shop < ApplicationRecord
     weekday_ranges.any? { |open_min, close_min| within_range?(now_min, open_min, close_min) }
   end
 
+  def smoking_now?
+    return false unless open_now?
+    return false if confirmed_non_smoking?
+    return !smoking_hours_unset_with_restriction? if smoking_hours_text.blank?
+
+    label = holiday_today? ? "祝日" : weekday_label_for_today
+    line = smoking_hours_text.lines.find { |value| value.match?(/\A#{Regexp.escape(label)}\s/) }
+    line ||= smoking_hours_text unless smoking_hours_text.match?(/\A[月火水木金土日祝]/)
+    return false if line.blank? || line.match?(/喫煙不可|未設定|終日禁煙/)
+
+    minute = Time.zone.now.hour * 60 + Time.zone.now.min
+    time_ranges_from_text(line).any? { |start_min, end_min| within_range?(minute, start_min, end_min) }
+  end
+
   def today_closing_time
     now = Time.zone.now
     now_min = now.hour * 60 + now.min
@@ -1182,10 +1196,10 @@ class Shop < ApplicationRecord
   end
 
   def time_ranges_from_text(text, target_label = nil)
-    raw = text.to_s
+    raw = text.to_s.gsub(/（喫煙可：[^）]*）/, "")
     return [] if raw.blank?
 
-    lines = raw.split(/\r?\n|\/|、|,|，/).map(&:strip).reject(&:blank?)
+    lines = raw.split(/\r?\n|\/|[、,，](?=\s*(?:[月火水木金土日]|祝日)\s)/).map(&:strip).reject(&:blank?)
 
     target_lines =
       if target_label.present?

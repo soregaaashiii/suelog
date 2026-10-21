@@ -1,6 +1,31 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "smoking cutoff spans the service break as a single editable window" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      魚居酒屋 すなおや 西中島本店
+      営業時間
+      月・火・水・木・金
+      11:30 - 15:00
+      L.O. 14:30
+      17:00 - 23:00
+      L.O. 22:20
+      土・日・祝日
+      11:30 - 23:00
+      L.O. 22:20
+      禁煙・喫煙
+      分煙
+      ランチタイム13時までは全席禁煙です。
+      駐車場
+      無
+    TEXT
+    %w[月 火 水 木 金 土 日 祝日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 13:00 - 23:00" }
+    assert_equal "15:00", result[:opening_hours_json].dig("monday", "break_start")
+    assert_equal "17:00", result[:opening_hours_json].dig("monday", "break_end")
+    refute_includes result[:smoking_hours_text], "15:00"
+  end
+
   test "weekday start and weekend holiday full smoking are separate schedules" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名

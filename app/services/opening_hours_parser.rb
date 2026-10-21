@@ -25,7 +25,7 @@ m = s.match(/\A([日月火水木金土])\s+(.*)\z/)
 next unless m
 
 day_ja = m[1]
-rest = m[2].to_s.strip
+rest = m[2].to_s.gsub(/（喫煙可：[^）]*）/, "").strip
 day = DAYS[day_ja]
 next unless day
 
