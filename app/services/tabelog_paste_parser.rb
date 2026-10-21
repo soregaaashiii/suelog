@@ -1156,7 +1156,7 @@ if normalized_scoped_text.match?(/(?:店内)?禁煙[^。\n]{0,40}(?:店外|屋�
 end
 
 daily_non_smoking_range_match =
-  normalized_scoped_text.match(/(\d{1,2})(?::(\d{2}))?\s*時?\s*(?:[～〜~\-－–—]|から)\s*(\d{1,2})(?::(\d{2}))?\s*時?\s*(?:まで)?\s*(?:の時間帯)?\s*(?:は)?\s*(?:(?:全席|全面|完全)\s*)?(?:のみ\s*)?禁煙/) ||
+  normalized_scoped_text.match(/(\d{1,2})(?::(\d{2}))?\s*時?\s*(?:[～〜~\-－–—]|から)\s*(\d{1,2})(?::(\d{2}))?\s*時?\s*(?:まで)?\s*(?:の時間帯)?\s*(?:は)?\s*(?:のみ\s*)?(?:(?:全席|全面|完全)\s*)?(?:のみ\s*)?禁煙/) ||
   normalized_scoped_text.match(/時間帯禁煙\s*[（(]\s*(\d{1,2})(?::(\d{2}))?\s*時?\s*[～〜~\-－–—]\s*(\d{1,2})(?::(\d{2}))?\s*時?\s*[）)]/)
 
 if daily_non_smoking_range_match
