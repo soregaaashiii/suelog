@@ -55,3 +55,13 @@ test('parsed smoking schedule survives initialization without an opening-hours s
   controller.rebuild();
   assert.match(controller.openingText.value, /（喫煙可：13:00-00:00）/);
 });
+
+test('rebuilding preserves the second smoking interval across a lunch ban', () => {
+  const {controller, controls, row} = builder(false);
+  controls['[data-smoking-same]'].checked = false;
+  controls['[data-smoking-start]'].value = '10:30';
+  controls['[data-smoking-end]'].value = '11:30';
+  row.dataset.extraSmokingRanges = '14:00-20:45';
+  controller.rebuild();
+  assert.match(controller.openingText.value, /喫煙可：10:30-11:30, 14:00-20:45/);
+});

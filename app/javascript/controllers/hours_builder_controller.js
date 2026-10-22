@@ -249,7 +249,7 @@ export default class extends Controller {
       if (!smokingSame && (!smokingStart || !smokingEnd) && row.dataset.smokingHoursUnknown === "true") {
         smoking = "（喫煙可：時間未設定）"
       } else if (!smokingSame && smokingStart && smokingEnd) {
-        smoking = `（喫煙可：${smokingStart}-${smokingEnd}）`
+        smoking = `（喫煙可：${[`${smokingStart}-${smokingEnd}`, row.dataset.extraSmokingRanges].filter(Boolean).join(", ")}）`
       }
 
       const line = `${label} ${hours}${smoking}`

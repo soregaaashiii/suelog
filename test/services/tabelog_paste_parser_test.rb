@@ -1,6 +1,29 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "parenthesized lunch ban preserves smoking before and after lunch" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      大一そば
+      営業時間
+      月・水・木・金
+      10:30 - 20:45
+      土・日・祝日
+      09:00 - 20:45
+      火
+      定休日
+      禁煙・喫煙
+      全席喫煙可
+      ※ランチ時（11:30~14:00）禁煙
+      駐車場
+      無
+    TEXT
+    %w[月 水 木 金].each { |day| assert_includes result[:smoking_hours_text], "#{day} 10:30 - 11:30, 14:00 - 20:45" }
+    %w[土 日 祝日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 09:00 - 11:30, 14:00 - 20:45" }
+    refute_match(/火 \d/, result[:smoking_hours_text])
+    assert_includes result[:public_store_details], "11:30~14:00"
+  end
+
   test "separated smoking with nonsmoking seats is smoking at seats with the note preserved" do
     result = TabelogPasteParser.call("店名\nがんこ 十三総本店\n禁煙・喫煙\n分煙\n禁煙席あり\n駐車場\n無")
     assert_equal "all_smoking", result[:smoking_area]

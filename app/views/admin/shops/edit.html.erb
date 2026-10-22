@@ -170,6 +170,7 @@
   <% smoking_hours_unknown = @shop.smoking_hours_unset_with_restriction? %>
   <% imported_smoking_hours = @shop.smoking_hours_text.to_s.strip %>
   <% imported_smoking_hours_by_day = {} %>
+  <% extra_smoking_hours_by_day = {} %>
 
   <% smoking_day_key_map = {
     "月" => "mon",
@@ -191,6 +192,7 @@
     <% if smoking_line_match.present? %>
       <% smoking_day_key = smoking_day_key_map[smoking_line_match[1]] %>
       <% imported_smoking_hours_by_day[smoking_day_key] = [smoking_line_match[2], smoking_line_match[3]] if smoking_day_key.present? %>
+      <% extra_smoking_hours_by_day[smoking_day_key] = line.scan(/(\d{1,2}:\d{2})\s*[-〜~－–—]\s*(\d{1,2}:\d{2})/).drop(1).map { |times| times.join("-") }.join(", ") if smoking_day_key.present? %>
     <% elsif smoking_unavailable_match.present? %>
       <% smoking_day_key = smoking_day_key_map[smoking_unavailable_match[1]] %>
       <% imported_smoking_hours_by_day[smoking_day_key] = [nil, nil] if smoking_day_key.present? %>
@@ -229,7 +231,7 @@
       <% existing_break_start = existing_break_enabled ? existing_day_hours["break_start"].to_s : "" %>
       <% existing_break_end = existing_break_enabled ? existing_day_hours["break_end"].to_s : "" %>
 
-      <div data-hours-row="<%= key %>" data-smoking-hours-unknown="<%= smoking_hours_unknown %>" style="padding:10px; border:1px solid #eadfca; border-radius:12px; background:#fff;">
+      <div data-hours-row="<%= key %>" data-smoking-hours-unknown="<%= smoking_hours_unknown %>" data-extra-smoking-ranges="<%= extra_smoking_hours_by_day[key] %>" style="padding:10px; border:1px solid #eadfca; border-radius:12px; background:#fff;">
         <label style="display:flex; align-items:center; gap:8px; font-weight:800; margin-bottom:8px;">
           <input type="checkbox" data-hours-open <%= "checked" if existing_open.present? && existing_close.present? %>>
           <span style="width:42px;"><%= label %></span>
@@ -268,6 +270,9 @@
           <%= select_tag nil, options_for_select(time_options, existing_smoking_start), data: { smoking_start: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
           <span>〜</span>
           <%= select_tag nil, options_for_select(time_options, existing_smoking_end), data: { smoking_end: true }, style: "padding:8px; border:1px solid #ddd; border-radius:10px;" %>
+          <% if extra_smoking_hours_by_day[key].present? %>
+            <span style="font-size:13px;">喫煙可2：<%= extra_smoking_hours_by_day[key] %></span>
+          <% end %>
         </div>
       </div>
     <% end %>
