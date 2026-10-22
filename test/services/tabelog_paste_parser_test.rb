@@ -1,6 +1,30 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "parenthesized smoking allowed and explicit meal hours override broad summary" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      丸万寿司 OAP店
+      営業時間
+      11:00 - 21:00
+      L.O. 20:30
+      ■ 営業時間
+      ランチ 11：00～15：00
+      ディナー17：00～21：00
+      ■ 定休日
+      不定休（ビル休館日に準ずる）
+      禁煙・喫煙
+      分煙
+      13：00まで禁煙/13:00以降喫煙（可）
+      駐車場
+      有
+    TEXT
+    %w[月 火 水 木 金 土 日 祝日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 13:00 - 21:00" }
+    assert_equal "15:00", result[:opening_hours_json].dig("monday", "break_start")
+    assert_equal "17:00", result[:opening_hours_json].dig("monday", "break_end")
+    refute_includes result[:opening_hours_text], "11:00-21:00"
+  end
+
   test "weekend holiday cutoff does not restrict weekday smoking" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
