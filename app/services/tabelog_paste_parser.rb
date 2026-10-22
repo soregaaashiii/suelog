@@ -496,6 +496,27 @@ class TabelogPasteParser
     %w[monday tuesday wednesday thursday friday saturday sunday holiday]
   end
 
+  def weekend_nonsmoking_until_ranges
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：　", "0123456789: ")
+    rule = raw.match(/土[、・\s]*日[、・\s]*祝日?(?:は)?\s*(\d{1,2})(?::(\d{2}))?時?まで(?:は)?\s*(?:全席|全面|完全)?禁煙/)
+    return nil unless rule
+
+    start = format("%02d:%02d", rule[1].to_i, rule[2].to_i)
+    opening_ranges_by_day.to_h do |day, ranges|
+      allowed = ranges.filter_map do |open_time, close_time|
+        if !%w[saturday sunday holiday].include?(day)
+          [open_time, close_time]
+        elsif time_inside_range?(open_time, close_time, start)
+          [start, close_time]
+        elsif time_to_minutes(open_time) >= time_to_minutes(start)
+          [open_time, close_time]
+        end
+      end
+      allowed = [[allowed.first.first, allowed.last.last]] if allowed.present?
+      [day, allowed]
+    end
+  end
+
   def weekday_start_weekend_full_smoking_ranges
     raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：　", "0123456789: ")
     weekday_ban = raw.match(/平日\s*:?\s*\d{1,2}:\d{2}\s*(?:[～〜~]|から)\s*(\d{1,2}:\d{2})\s*(?:まで)?\s*(?:は)?\s*(?:全席|全面|完全)?禁煙/)
@@ -556,6 +577,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
+    if (weekend_ranges = weekend_nonsmoking_until_ranges)
+      return weekend_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
+    end
     if (breakfast_ranges = breakfast_nonsmoking_ranges)
       return breakfast_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
     end
@@ -1154,6 +1178,12 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    if (weekend_ranges = weekend_nonsmoking_until_ranges)
+      return weekend_ranges.map do |day, ranges|
+        label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"
+        "#{day_label(day)} #{label}"
+      end.join("\n")
+    end
     if (breakfast_ranges = breakfast_nonsmoking_ranges)
       return breakfast_ranges.map do |day, ranges|
         label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"
