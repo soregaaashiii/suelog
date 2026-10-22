@@ -161,13 +161,14 @@ class TabelogPasteParser
     return nil if raw.blank?
 
     lines = raw.lines.map(&:strip).reject(&:blank?)
+    explicit_meals = lines.any? { |line| labeled_meal_range(line, "ランチ") } && lines.any? { |line| labeled_meal_range(line, "ディナー") }
     kept = []
 
     lines.each do |line|
       break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|ホールスタッフ|調理師|料理長候補/)
       break if line.match?(/\A勤務時間/)
       if line.match?(/\A■\s*営業時間\z/)
-        break if kept.present?
+        break if kept.present? && !explicit_meals
         next
       end
 
@@ -590,7 +591,7 @@ class TabelogPasteParser
     if (evening_ranges = evening_only_smoking_ranges)
       return evening_ranges.filter_map { |day, ranges| [day, ranges.map { |times| times.join("-") }.join(", ")] if ranges.present? }.to_h
     end
-    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
+    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:").gsub(/喫煙[（(]可[）)]/, "喫煙可")
     opening_raw = opening_hours_field_value.to_s
     return {} if smoking_raw.blank?
 
@@ -707,12 +708,20 @@ class TabelogPasteParser
       note_index = lines.index { |line| line.match?(/\A(?:ランチ|テイクアウト|焼き鳥)/) }
       lines = lines.take(note_index) if note_index
     end
+    # Explicit lunch/dinner periods override an unbroken summary range.
+    if lines.none? { |line| day_label_line?(line) } &&
+       lines.any? { |line| labeled_meal_range(line, "ランチ") } &&
+       lines.any? { |line| labeled_meal_range(line, "ディナー") }
+      lines = lines.reject { |line| normalize_morning_closing_time(line).match?(/\A\d{1,2}:\d{2}\s*[-〜～~－–—]\s*\d{1,2}:\d{2}\z/) }
+    end
     dinner_range = lines.filter_map { |line| labeled_meal_range(line, "ディナー") }.first
 
     lines.map do |line|
       line = normalize_morning_closing_time(line)
 
       if (range = labeled_meal_range(line, "ディナー"))
+        "#{range[0]} - #{range[1]}"
+      elsif (range = labeled_meal_range(line, "ランチ"))
         "#{range[0]} - #{range[1]}"
       elsif dinner_range.present? && (lunch_start = open_ended_meal_start(line, "ランチ"))
         "#{lunch_start} - #{dinner_range[0]}"
@@ -1203,7 +1212,7 @@ class TabelogPasteParser
         "#{day_label(day)} #{label}"
       end.join("\n")
     end
-    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s
+    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:").gsub(/喫煙[（(]可[）)]/, "喫煙可")
     opening_text = extract_opening_hours_text.to_s
     opening_raw = opening_hours_field_value.to_s
     scoped_text = [smoking_raw, opening_raw].join("\n")
