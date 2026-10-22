@@ -4,6 +4,9 @@
   <% if @parsed_attrs[:address].present? %>
     <p style="margin:0 0 16px; color:#666; font-size:13px; line-height:1.6; overflow-wrap:anywhere;"><%= @parsed_attrs[:address] %></p>
   <% end %>
+  <% if @parsed_attrs[:public_store_details].present? %>
+    <p aria-label="店舗詳細（ユーザーに表示）" style="margin:0 0 16px; color:#555; font-size:13px; line-height:1.6; max-width:100%; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= @parsed_attrs[:public_store_details].to_s.squish %></p>
+  <% end %>
 <% end %>
 
 <% if flash[:admin_notice].present? %>
