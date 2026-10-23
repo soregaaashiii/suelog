@@ -1,6 +1,19 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "floor smoking seat rule does not turn smoking prohibited into permission" do
+    result = TabelogPasteParser.call("店名\n禁煙テスト\n禁煙・喫煙\n全席禁煙\n1階席が喫煙不可、2階席も禁煙です。\n駐車場\n無")
+    refute_equal "all_smoking", result[:smoking_area]
+  end
+
+  test "smoking seats on one floor remain seat smoking when another floor is nonsmoking" do
+    result = TabelogPasteParser.call("店名\nこてこて 都島店\n禁煙・喫煙\n分煙\n1階席が喫煙、2階席が禁煙となります。\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_nil result[:smoking_area_2]
+    assert_includes result[:public_store_details], "1階席が喫煙、2階席が禁煙"
+  end
+
   test "parenthesized smoking allowed and explicit meal hours override broad summary" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
