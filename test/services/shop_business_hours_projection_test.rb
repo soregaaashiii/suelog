@@ -6,6 +6,16 @@ class ShopBusinessHoursProjectionTest < ActiveSupport::TestCase
   MONDAY = Date.new(2026, 8, 3)
   TUESDAY = MONDAY + 1.day
 
+  test "Sunday nonsmoking remains unavailable even when Sunday is a holiday" do
+    shop = Shop.new(name: "日曜禁煙", opening_hours_text: "日 17:00-01:00", holiday_hours_text: "祝日 17:00-01:00",
+      smoking_hours_text: "日 喫煙不可\n祝日 17:00 - 01:00")
+    shop.define_singleton_method(:holiday_today?) { true }
+    travel_to Time.zone.parse("2026-05-03 18:00") do
+      assert shop.open_now?
+      refute shop.smoking_now?
+    end
+  end
+
   test "smoking window never makes a closed break open or smokeable" do
     text = "月 11:30-15:00（喫煙可：13:00-23:00）, 17:00-23:00（喫煙可：13:00-23:00）"
     [ {}, OpeningHoursParser.parse_legacy_text(text) ].each do |json|
