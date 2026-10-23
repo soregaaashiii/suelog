@@ -497,6 +497,19 @@ class TabelogPasteParser
     %w[monday tuesday wednesday thursday friday saturday sunday holiday]
   end
 
+  def weekday_nonsmoking_exception_ranges
+    raw = field_value_with_continuation("禁煙・喫煙").to_s
+    rule = raw.match(/(?:\A|[。\n（(])\s*(?:毎週)?((?:[月火水木金土日](?:曜日|曜)?)(?:[・、\s]+[月火水木金土日](?:曜日|曜)?)*)\s*(?:のみ|だけ|は)?\s*(?:全席|全面|完全|終日)?禁煙/)
+    return nil unless rule && raw.match?(/全席喫煙可|喫煙可能|喫煙可/)
+
+    excluded = expand_days(rule[1].gsub(/曜日|曜/, ""))
+    return nil if excluded.blank?
+
+    opening_ranges_by_day.to_h do |day, ranges|
+      [day, excluded.include?(day) ? [] : ranges]
+    end
+  end
+
   def weekend_nonsmoking_until_ranges
     raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：　", "0123456789: ")
     rule = raw.match(/土[、・\s]*日[、・\s]*祝日?(?:は)?\s*(\d{1,2})(?::(\d{2}))?時?まで(?:は)?\s*(?:全席|全面|完全)?禁煙/)
@@ -578,6 +591,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
+    if (exception_ranges = weekday_nonsmoking_exception_ranges)
+      return exception_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
+    end
     if (weekend_ranges = weekend_nonsmoking_until_ranges)
       return weekend_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
     end
@@ -1204,6 +1220,12 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    if (exception_ranges = weekday_nonsmoking_exception_ranges)
+      return exception_ranges.map do |day, ranges|
+        label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"
+        "#{day_label(day)} #{label}"
+      end.join("\n")
+    end
     if (weekend_ranges = weekend_nonsmoking_until_ranges)
       return weekend_ranges.map do |day, ranges|
         label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"

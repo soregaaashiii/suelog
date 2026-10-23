@@ -1,6 +1,32 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "Sunday only nonsmoking overrides all seat smoking without closing the shop" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      炭火焼鳥酒場 いろとりどり
+      営業時間
+      月・火・木・金・土・日・祝日・祝前日・祝後日
+      17:00 - 01:00
+      水
+      定休日
+      ■定休日
+      水曜日、不定休
+      禁煙・喫煙
+      全席喫煙可
+      日曜日のみ全席禁煙
+      駐車場
+      無
+    TEXT
+    assert_includes result[:smoking_hours_text], "日 喫煙不可"
+    %w[月 火 木 金 土 祝日 祝前 祝後].each { |day| assert_includes result[:smoking_hours_text], "#{day} 17:00 - 01:00" }
+    assert_includes result[:opening_hours_text], "日 17:00-01:00"
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_includes result[:public_store_details], "日曜日のみ全席禁煙"
+    refute_match(/水 \d/, result[:smoking_hours_text])
+  end
+
   test "positive smoking seat counts including fullwidth numbers mean seat smoking" do
     ["禁煙席：３０席／喫煙席：１８席", "禁煙席:30席/喫煙席:18席"].each do |note|
       result = TabelogPasteParser.call("店名\nミスタードーナツ 都島ショップ\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")

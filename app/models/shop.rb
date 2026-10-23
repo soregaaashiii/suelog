@@ -690,6 +690,10 @@ class Shop < ApplicationRecord
     return false if confirmed_non_smoking?
     return !smoking_hours_unset_with_restriction? if smoking_hours_text.blank?
 
+    # An explicit nonsmoking weekday still applies when that day is a holiday.
+    weekday_rule = smoking_hours_text.lines.find { |value| value.strip.match?(/\A#{Regexp.escape(weekday_label_for_today)}\s+(?:喫煙不可|終日禁煙)\z/) }
+    return false if weekday_rule.present?
+
     label = holiday_today? ? "祝日" : weekday_label_for_today
     line = smoking_hours_text.lines.find { |value| value.match?(/\A#{Regexp.escape(label)}\s/) }
     line ||= smoking_hours_text unless smoking_hours_text.match?(/\A[月火水木金土日祝]/)
