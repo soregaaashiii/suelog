@@ -1,6 +1,27 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "positive smoking seat counts including fullwidth numbers mean seat smoking" do
+    ["禁煙席：３０席／喫煙席：１８席", "禁煙席:30席/喫煙席:18席"].each do |note|
+      result = TabelogPasteParser.call("店名\nミスタードーナツ 都島ショップ\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "both_ok", result[:smoking_type]
+      assert_nil result[:smoking_area_2]
+      assert_includes result[:public_store_details], note
+    end
+  end
+
+  test "zero smoking seats are not a positive smoking condition" do
+    result = TabelogPasteParser.call("店名\nゼロ席テスト\n禁煙・喫煙\n分煙\n禁煙席：３０席／喫煙席：０席\n駐車場\n無")
+    refute_equal "all_smoking", result[:smoking_area]
+  end
+
+  test "counted smoking seats preserve explicit heated tobacco restriction" do
+    result = TabelogPasteParser.call("店名\n限定席テスト\n禁煙・喫煙\n分煙\n喫煙席：１８席（加熱式のみ）\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+  end
+
   test "floor smoking seat rule does not turn smoking prohibited into permission" do
     result = TabelogPasteParser.call("店名\n禁煙テスト\n禁煙・喫煙\n全席禁煙\n1階席が喫煙不可、2階席も禁煙です。\n駐車場\n無")
     refute_equal "all_smoking", result[:smoking_area]
