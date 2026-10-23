@@ -1036,6 +1036,17 @@ class TabelogPasteParser
       ]
     end
 
+    if raw.to_s.match?(/\d+階(?:の)?席(?:が|は|で)?\s*喫煙(?!不可|禁止|所|ブース|スペース|室)(?:可)?/)
+      type = if raw.to_s.match?(/(?:加熱式|電子)(?:たばこ|タバコ)?(?:のみ|限定)/)
+        "electronic_only"
+      elsif paper_tobacco_exclusive?(raw.to_s)
+        "paper_only"
+      else
+        "both_ok"
+      end
+      return [{ area: "all_smoking", type: type }]
+    end
+
     smoking_at_counter_and_separate_booth =
       text.match?(/カウンター(?:席)?(?:のみ)?\s*喫煙可/) &&
       text.match?(/(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム)(?:あり|有り|有)/)
