@@ -1,6 +1,15 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "heated tobacco indoors and paper tobacco in a dedicated space produce two conditions" do
+    result = TabelogPasteParser.call("店名\nカラオケサロンバーレッドリバー\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n加熱式タバコ⇒店内喫煙可、紙タバコ⇒屋内に専用スペース有\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+    assert_equal "separated", result[:smoking_area_2]
+    assert_equal "both_ok", result[:smoking_type_2]
+    assert_includes result[:public_store_details], "紙タバコ⇒屋内に専用スペース有"
+  end
+
   test "paper tobacco only prohibited means heated tobacco only at seats" do
     ["紙タバコのみ禁煙", "紙たばこだけは禁止", "紙巻き煙草のみ喫煙不可"].each do |note|
       result = TabelogPasteParser.call("店名\n太郎\n営業時間\n木・金・土・日\n17:00 - 22:00\n月・火・水\n定休日\n禁煙・喫煙\n全席喫煙可\n#{note}\n駐車場\n無")
