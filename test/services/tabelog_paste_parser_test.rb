@@ -1,6 +1,17 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "kanji floor smoking permission means seat smoking" do
+    ["一階は喫煙可　二階は禁煙", "１階は喫煙可、２階は禁煙"].each do |note|
+      result = TabelogPasteParser.call("店名\n炭火屋 一\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "both_ok", result[:smoking_type]
+      assert_includes result[:public_store_details], note
+    end
+    result = TabelogPasteParser.call("店名\n禁煙店\n禁煙・喫煙\n分煙\n一階は喫煙不可　二階は禁煙\n駐車場\n無")
+    refute_equal "all_smoking", result[:smoking_area]
+  end
+
   test "separated smoking with a nonsmoking floor means smoking seats elsewhere" do
     ["二階席は禁煙です", "２階の席が禁煙"].each do |note|
       result = TabelogPasteParser.call("店名\n馬肉料理専門店 馬郎\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")

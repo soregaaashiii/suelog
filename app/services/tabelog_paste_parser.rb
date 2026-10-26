@@ -1052,7 +1052,7 @@ class TabelogPasteParser
       ]
     end
 
-    if raw.to_s.match?(/\d+階(?:の)?席(?:が|は|で)?\s*喫煙(?!不可|禁止|所|ブース|スペース|室)(?:可)?/)
+    if raw.to_s.match?(/[0-9０-９一二三四五六七八九十]+階(?:の)?(?:席)?(?:が|は|で)?\s*喫煙(?!不可|禁止|所|ブース|スペース|室)(?:可)?/)
       type = if raw.to_s.match?(/(?:加熱式|電子)(?:たばこ|タバコ)?(?:のみ|限定)/)
         "electronic_only"
       elsif paper_tobacco_exclusive?(raw.to_s)
