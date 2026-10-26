@@ -103,6 +103,7 @@
     ["sat", "土"], ["sun", "日"], ["holiday", "祝日"], ["pre_holiday", "祝前"], ["post_holiday", "祝後"]
   ] %>
 
+  <%= f.hidden_field :smoking_hours_text %>
   <% time_options = [["未設定", ""]] + (0..96).map { |i| t = "%02d:%02d" % [i / 4, (i % 4) * 15]; [t, t] } %>
 
   <div style="display:grid; gap:10px;">
@@ -130,6 +131,7 @@
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <label><input type="checkbox" data-smoking-nonsmoking> 終日禁煙</label>
           <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700;">
             <input type="checkbox" data-smoking-same checked>
             喫煙時間は営業時間と同じ

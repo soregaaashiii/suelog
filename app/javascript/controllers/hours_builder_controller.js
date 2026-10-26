@@ -17,13 +17,27 @@ export default class extends Controller {
       this.element.querySelector("#shop_closed_days_text") ||
       this.element.querySelector("#shop_edit_request_proposed_closed_days_text")
 
+    this.smokingText = this.element.querySelector("#shop_smoking_hours_text")
+
     this.bindEvents()
     this.applyExistingTextToUi()
   }
 
   bindEvents() {
     this.element.querySelectorAll("input, select").forEach((input) => {
-      input.addEventListener("change", () => this.rebuild())
+      input.addEventListener("change", () => {
+        const row = input.closest("[data-hours-row]")
+        if (row) {
+          const unavailable = row.querySelector("[data-smoking-nonsmoking]")
+          const same = row.querySelector("[data-smoking-same]")
+          if (input === unavailable && unavailable.checked && same) same.checked = false
+          if (input.matches("[data-smoking-start], [data-smoking-end]") && same) same.checked = false
+          if ((input === same && same.checked) || input.matches("[data-smoking-start], [data-smoking-end]")) {
+            if (unavailable) unavailable.checked = false
+          }
+        }
+        this.rebuild()
+      })
     })
 
     this.element.querySelectorAll("[data-copy-hours-to-all]").forEach((button) => {
@@ -157,13 +171,16 @@ export default class extends Controller {
 
     const smokingSame = row.querySelector("[data-smoking-same]")
 
+    const nonsmoking = row.querySelector("[data-smoking-nonsmoking]")
+    if (smokingPart?.includes("終日禁煙") && nonsmoking) nonsmoking.checked = true
+
     if (smokingPart && !smokingPart.includes("営業時間中")) {
       if (smokingSame) smokingSame.checked = false
 
       const [start, end] = this.parseRange(smokingPart)
       this.setSelect(row, "[data-smoking-start]", start)
       this.setSelect(row, "[data-smoking-end]", end)
-    } else if (smokingSame && row.dataset.smokingHoursUnknown !== "true" && row.querySelector("[data-smoking-hours-configured]")?.dataset.smokingHoursConfigured !== "true" && row.querySelector("[data-smoking-unavailable]")?.dataset.smokingUnavailable !== "true") {
+    } else if (!nonsmoking?.checked && smokingSame && row.dataset.smokingHoursUnknown !== "true" && row.querySelector("[data-smoking-hours-configured]")?.dataset.smokingHoursConfigured !== "true" && row.querySelector("[data-smoking-unavailable]")?.dataset.smokingUnavailable !== "true") {
       smokingSame.checked = true
     }
   }
@@ -189,6 +206,7 @@ export default class extends Controller {
       "[data-hours-end1]",
       "[data-hours-start2]",
       "[data-hours-end2]",
+      "[data-smoking-nonsmoking]",
       "[data-smoking-same]",
       "[data-smoking-start]",
       "[data-smoking-end]"
@@ -197,6 +215,7 @@ export default class extends Controller {
     this.element.querySelectorAll("[data-hours-row]").forEach((row) => {
       if (row === sourceRow) return
 
+      row.dataset.extraSmokingRanges = sourceRow.dataset.extraSmokingRanges || ""
       selectors.forEach((selector) => {
         this.copyValue(sourceRow, row, selector)
       })
@@ -206,6 +225,7 @@ export default class extends Controller {
   }
 
   rebuild() {
+    const smokingLines = []
     const openingLines = []
     const holidayLines = []
     const closedDays = []
@@ -214,6 +234,9 @@ export default class extends Controller {
       const label = row.querySelector("span")?.textContent?.trim()
       const open = row.querySelector("[data-hours-open]")?.checked
       const usesWeekdayFallback = label === "祝前" || label === "祝後"
+
+      const nonsmoking = row.querySelector("[data-smoking-nonsmoking]")?.checked
+      if (nonsmoking && label) smokingLines.push(`${label} 喫煙不可`)
 
       if (!open) {
         // 祝前・祝後は未設定なら通常の曜日営業時間に従う。
@@ -246,10 +269,18 @@ export default class extends Controller {
 
       let smoking = ""
 
-      if (!smokingSame && (!smokingStart || !smokingEnd) && row.dataset.smokingHoursUnknown === "true") {
+      if (nonsmoking) {
+        smoking = "（喫煙可：終日禁煙）"
+      } else if (!smokingSame && (!smokingStart || !smokingEnd) && row.dataset.smokingHoursUnknown === "true") {
         smoking = "（喫煙可：時間未設定）"
       } else if (!smokingSame && smokingStart && smokingEnd) {
         smoking = `（喫煙可：${[`${smokingStart}-${smokingEnd}`, row.dataset.extraSmokingRanges].filter(Boolean).join(", ")}）`
+      }
+
+      if (!nonsmoking) {
+        const allowed = smokingSame ? [range1, range2].filter(Boolean).join(", ") :
+          (smokingStart && smokingEnd ? [this.rangeText(smokingStart, smokingEnd), row.dataset.extraSmokingRanges].filter(Boolean).join(", ") : "")
+        smokingLines.push(`${label} ${allowed || "時間未設定"}`)
       }
 
       const line = `${label} ${hours}${smoking}`
@@ -260,6 +291,8 @@ export default class extends Controller {
         openingLines.push(line)
       }
     })
+
+    if (this.smokingText) this.smokingText.value = smokingLines.join("\n")
 
     if (this.openingText) {
       this.openingText.value = openingLines.concat(holidayLines).join("\n")

@@ -65,3 +65,19 @@ test('rebuilding preserves the second smoking interval across a lunch ban', () =
   controller.rebuild();
   assert.match(controller.openingText.value, /喫煙可：10:30-11:30, 14:00-20:45/);
 });
+
+ test('whole-day ban remains distinct from unknown and keeps business hours', () => {
+  const {controller, controls, row} = builder(false);
+  controls['[data-smoking-nonsmoking]'] = {checked:true};
+  controller.smokingText = {value:''};
+  controller.applyLineToRow(row, '月 11:00-21:00');
+  assert.equal(controls['[data-smoking-nonsmoking]'].checked, true);
+  controller.rebuild();
+  assert.equal(controller.smokingText.value, '月 喫煙不可');
+  assert.equal(controls['[data-hours-open]'].checked, true);
+  assert.match(controller.openingText.value, /終日禁煙/);
+  controls['[data-smoking-nonsmoking]'].checked = false;
+  controls['[data-smoking-same]'].checked = false;
+  controller.rebuild();
+  assert.equal(controller.smokingText.value, '月 時間未設定');
+});

@@ -1,6 +1,12 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "separate weekday bans are all imported without treating partial bans as whole days" do
+    result = TabelogPasteParser.call("店名\n曜日テスト\n営業時間\n11:00 - 23:00\n禁煙・喫煙\n全席喫煙可\n月曜日は終日禁煙。水・金のみ全面禁煙\n駐車場\n無")
+    %w[月 水 金].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
+    %w[火 木 土 日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 11:00 - 23:00" }
+  end
+
   test "Sunday only nonsmoking overrides all seat smoking without closing the shop" do
     result = TabelogPasteParser.call(<<~TEXT)
       店名
