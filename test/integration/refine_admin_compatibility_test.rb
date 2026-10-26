@@ -20,6 +20,26 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "imported weekday nonsmoking checkbox survives saving without closing business" do
+    result = TabelogPasteParser.call("店名\n曜日テスト\n営業時間\n17:00 - 23:00\n禁煙・喫煙\n全席喫煙可\n日曜日のみ全席禁煙\n駐車場\n無")
+    @shop.update!(opening_hours_text: result[:opening_hours_text], smoking_hours_text: result[:smoking_hours_text])
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_response :success
+    assert_select '[data-hours-row="sun"] [data-smoking-nonsmoking][checked]', count: 1
+    assert_select '[data-hours-row="mon"] [data-smoking-nonsmoking][checked]', count: 0
+    schedule = "月 時間未設定\n火 喫煙不可\n日 喫煙不可"
+    patch admin_shop_path(@shop), params: { shop: { smoking_hours_text: schedule } }, headers: @headers
+    assert_response :redirect
+    assert_equal schedule, @shop.reload.smoking_hours_text
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_select '[data-hours-row="tue"] [data-smoking-nonsmoking][checked]', count: 1
+    assert_select '[data-hours-row="mon"]' do
+      assert_select '[data-smoking-nonsmoking][checked]', count: 0
+      assert_select '[data-smoking-same][checked]', count: 0
+      assert_select '[data-smoking-start] option[selected]', text: "未設定"
+    end
+  end
+
   test "admin editing shows and preserves both smoking periods around lunch" do
     @shop.update!(opening_hours_text: "月 10:30-20:45", smoking_hours_text: "月 10:30 - 11:30, 14:00 - 20:45")
     get edit_admin_shop_path(@shop), headers: @headers
