@@ -1,6 +1,24 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "morning nonsmoking means smoking from noon until closing on operating days" do
+    result = TabelogPasteParser.call("店名\n喫茶 むらかみ\n営業時間\n火・水・木・金・土\n08:00 - 17:00\n月・日\n定休日\n禁煙・喫煙\n全席喫煙可\n午前中は喫煙不可\n駐車場\n無")
+    %w[火 水 木 金 土].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 12:00 - 17:00"
+      assert_includes result[:opening_hours_text], "#{day} 08:00-17:00（喫煙可：12:00-17:00）"
+    end
+    refute_match(/[月日] \d/, result[:smoking_hours_text])
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_includes result[:public_store_details], "午前中は喫煙不可"
+  end
+
+  test "morning only business remains nonsmoking after morning ban" do
+    result = TabelogPasteParser.call("店名\n午前営業\n営業時間\n08:00 - 11:00\n禁煙・喫煙\n全席喫煙可\n午前中は禁煙\n駐車場\n無")
+    assert_includes result[:smoking_hours_text], "月 喫煙不可"
+    refute_match(/12:00 - 11:00/, result[:smoking_hours_text])
+  end
+
   test "AM lunch ban with a PM end and outdoor permission preserves both conditions" do
     result = TabelogPasteParser.call("店名\n二両半 鶴橋本店\n営業時間\n月・火・木・金・土・日\n11:00 - 03:00\n水\n定休日\n禁煙・喫煙\n全席喫煙可\nランチタイムAM11~2時まで店内禁煙　店外は喫煙OK\n駐車場\n無")
     assert_equal "all_smoking", result[:smoking_area]
