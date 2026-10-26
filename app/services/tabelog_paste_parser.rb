@@ -1146,7 +1146,7 @@ class TabelogPasteParser
 
   def paper_tobacco_in_separate_area?(text)
     paper = /紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)?/
-    smoking_facility = /(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム)/
+    smoking_facility = /(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム|専用スペース(?:あり|有り|有|設置))/
     outside_location = /(?:店外|屋外|外|入口|入り口|店頭|店前|お店前|店舗前|バルコニー|ベランダ|テラス|ベンチ)/
     smoking_marker = /(?:灰皿|喫煙|吸|利用)/
 
