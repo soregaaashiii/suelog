@@ -1198,6 +1198,10 @@ class TabelogPasteParser
   def extract_smoking_type(raw)
     text = [raw, @text].compact.join("\n")
 
+    # 「紙のみ禁煙」の「のみ」は許可する種類の限定ではない。
+    # 口コミなど本文全体ではなく店舗の喫煙欄の明示条件を優先する。
+    return "electronic_only" if raw.to_s.match?(/紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)\s*(?:のみ|だけ)(?:は|が)?\s*(?:禁煙|喫煙不可|禁止)/)
+
     return "electronic_only" if text.match?(/電子タバコのみ|電子たばこのみ|加熱式たばこのみ|加熱式タバコのみ|加熱式のみ/)
     return "electronic_only" if text.match?(/加熱式たばこ限定|加熱式タバコ限定|加熱式限定/)
     return "paper_only" if paper_tobacco_exclusive?(raw.to_s)
@@ -1502,7 +1506,7 @@ if weekday_lunch_non_smoking_match
       next if line.match?(/2020年4月1日|受動喫煙対策|改正健康増進法|最新の情報|ご来店前|店舗にご確認/)
       next if line.match?(/\A\d{1,2}[:：]\d{2}\s*[〜～~\-－–—]?\s*喫煙可\z/)
 
-      notes << line if line.match?(/分煙|喫煙できるスペース|喫煙スペース|喫煙ブース|喫煙所|喫煙専用室|喫煙可|禁煙/)
+      notes << line if line.match?(/分煙|喫煙できるスペース|喫煙スペース|喫煙ブース|喫煙所|喫煙専用室|喫煙可|喫煙不可|禁煙|(?:タバコ|たばこ|煙草).*禁止/)
     end
 
     if text.match?(/テラス席.*喫煙可|喫煙可.*テラス席/)

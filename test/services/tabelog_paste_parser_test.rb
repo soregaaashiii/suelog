@@ -1,6 +1,21 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "paper tobacco only prohibited means heated tobacco only at seats" do
+    ["紙タバコのみ禁煙", "紙たばこだけは禁止", "紙巻き煙草のみ喫煙不可"].each do |note|
+      result = TabelogPasteParser.call("店名\n太郎\n営業時間\n木・金・土・日\n17:00 - 22:00\n月・火・水\n定休日\n禁煙・喫煙\n全席喫煙可\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "electronic_only", result[:smoking_type]
+      assert_nil result[:smoking_area_2]
+      assert_includes result[:public_store_details], note
+    end
+  end
+
+  test "paper tobacco only permission is not a prohibition" do
+    result = TabelogPasteParser.call("店名\n紙限定店\n禁煙・喫煙\n全席喫煙可\n紙タバコのみ喫煙可\n駐車場\n無")
+    assert_equal "paper_only", result[:smoking_type]
+  end
+
   test "separate weekday bans are all imported without treating partial bans as whole days" do
     result = TabelogPasteParser.call("店名\n曜日テスト\n営業時間\n11:00 - 23:00\n禁煙・喫煙\n全席喫煙可\n月曜日は終日禁煙。水・金のみ全面禁煙\n駐車場\n無")
     %w[月 水 金].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
