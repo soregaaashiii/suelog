@@ -590,6 +590,22 @@ class TabelogPasteParser
       !raw.match?(/\d{1,2}[:：時]\d*/)
   end
 
+  def normalized_smoking_rule_text
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:").gsub(/喫煙[（(]可[）)]/, "喫煙可")
+    raw.lines.map do |line|
+      next line unless line.include?("ランチ")
+
+      line.gsub(/(?:AM|午前)\s*(\d{1,2})(?::(\d{2}))?\s*時?\s*[~〜～－–—-]\s*(\d{1,2})(?::(\d{2}))?\s*時?まで\s*店内禁煙/i) do
+        start_hour = Regexp.last_match(1).to_i
+        start_minute = Regexp.last_match(2).to_i
+        end_hour = Regexp.last_match(3).to_i
+        end_minute = Regexp.last_match(4).to_i
+        end_hour += 12 if end_hour < 12
+        format("%02d:%02d～%02d:%02dまで禁煙", start_hour, start_minute, end_hour, end_minute)
+      end
+    end.join
+  end
+
   def extract_smoking_hours_by_day
     if (exception_ranges = weekday_nonsmoking_exception_ranges)
       return exception_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
@@ -607,7 +623,7 @@ class TabelogPasteParser
     if (evening_ranges = evening_only_smoking_ranges)
       return evening_ranges.filter_map { |day, ranges| [day, ranges.map { |times| times.join("-") }.join(", ")] if ranges.present? }.to_h
     end
-    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:").gsub(/喫煙[（(]可[）)]/, "喫煙可")
+    smoking_raw = normalized_smoking_rule_text
     opening_raw = opening_hours_field_value.to_s
     return {} if smoking_raw.blank?
 
@@ -1100,6 +1116,14 @@ class TabelogPasteParser
       ]
     end
 
+    if raw.to_s.match?(/全席喫煙可|席で喫煙可/) && raw.to_s.match?(/店内禁煙/) &&
+       raw.to_s.match?(/(?:店外|屋外)(?:は|で)?\s*喫煙(?:OK|可|可能)/i)
+      return [
+        { area: "all_smoking", type: "both_ok" },
+        { area: "separated", type: "both_ok" }
+      ]
+    end
+
     timed_outside_then_inside =
       text.match?(/(?:店内)?禁煙[^。\n]{0,40}(?:店外|屋外)[^。\n]{0,20}喫煙所/) &&
       text.match?(/(?:以降|から)[^。\n]{0,20}店内喫煙可|店内[^。\n]{0,20}(?:以降|から)[^。\n]{0,20}喫煙可/)
@@ -1261,7 +1285,7 @@ class TabelogPasteParser
         "#{day_label(day)} #{label}"
       end.join("\n")
     end
-    smoking_raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:").gsub(/喫煙[（(]可[）)]/, "喫煙可")
+    smoking_raw = normalized_smoking_rule_text
     opening_text = extract_opening_hours_text.to_s
     opening_raw = opening_hours_field_value.to_s
     scoped_text = [smoking_raw, opening_raw].join("\n")

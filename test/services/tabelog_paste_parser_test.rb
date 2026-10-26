@@ -1,6 +1,18 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "AM lunch ban with a PM end and outdoor permission preserves both conditions" do
+    result = TabelogPasteParser.call("店名\n二両半 鶴橋本店\n営業時間\n月・火・木・金・土・日\n11:00 - 03:00\n水\n定休日\n禁煙・喫煙\n全席喫煙可\nランチタイムAM11~2時まで店内禁煙　店外は喫煙OK\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_equal "separated", result[:smoking_area_2]
+    assert_equal "both_ok", result[:smoking_type_2]
+    %w[月 火 木 金 土 日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 14:00 - 03:00" }
+    refute_match(/水 \d/, result[:smoking_hours_text])
+    assert_includes result[:opening_hours_text], "喫煙可：14:00-03:00"
+    assert_includes result[:public_store_details], "店外は喫煙OK"
+  end
+
   test "kanji floor smoking permission means seat smoking" do
     ["一階は喫煙可　二階は禁煙", "１階は喫煙可、２階は禁煙"].each do |note|
       result = TabelogPasteParser.call("店名\n炭火屋 一\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
