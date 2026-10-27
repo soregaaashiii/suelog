@@ -1,6 +1,16 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "table smoking with nonsmoking counter means smoking seats and both types" do
+    result = TabelogPasteParser.call("店名\n石鹿\n禁煙・喫煙\n分煙\nカウンター禁煙/テーブル喫煙\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_nil result[:smoking_area_2]
+    assert_includes result[:public_store_details], "カウンター禁煙/テーブル喫煙"
+    result = TabelogPasteParser.call("店名\n禁煙テーブル\n禁煙・喫煙\n分煙\nテーブル喫煙不可\n駐車場\n無")
+    refute_equal "all_smoking", result[:smoking_area]
+  end
+
   test "morning nonsmoking means smoking from noon until closing on operating days" do
     result = TabelogPasteParser.call("店名\n喫茶 むらかみ\n営業時間\n火・水・木・金・土\n08:00 - 17:00\n月・日\n定休日\n禁煙・喫煙\n全席喫煙可\n午前中は喫煙不可\n駐車場\n無")
     %w[火 水 木 金 土].each do |day|
