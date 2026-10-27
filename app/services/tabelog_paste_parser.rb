@@ -691,7 +691,9 @@ class TabelogPasteParser
       next unless line.include?("喫煙")
       next if line.match?(/営業時間中|終日/)
 
-      time_match = line.match(TIME_RANGE_PATTERN)
+      # 同じ行の「禁煙」枠ではなく、直後に喫煙可が続く枠を優先する。
+      time_match = line.match(/(\d{1,2}:\d{2})\s*[-〜～~－–—]\s*(\d{1,2}:\d{2})\s*(?:は)?\s*喫煙(?:可能|可|OK)/i)
+      time_match ||= line.match(TIME_RANGE_PATTERN) unless line.match?(/禁煙|喫煙不可/)
       next unless time_match
 
       range = "#{time_match[1]}-#{time_match[2]}"
