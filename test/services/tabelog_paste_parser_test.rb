@@ -1,6 +1,42 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "weekday hours override repeated meal notes and parenthesized lunch ban starts at 14" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      Garage Craft
+      営業時間
+      月・火・水・木・金・土・祝日・祝前日・祝後日
+      11:30 - 15:00
+      L.O. 14:30
+      17:30 - 23:30
+      L.O. 料理22:30 ドリンク23:00
+      日
+      定休日
+      ■ 営業時間
+      ランチ:11:30〜15:00 LO14:45
+      ディナー:17:30〜23:30 LO23:00
+      予算
+      ～￥999
+      禁煙・喫煙
+      全席喫煙可
+      (紙タバコ不可) ランチタイム(11:30～14:00)のみ全面禁煙
+      駐車場
+      無
+    TEXT
+    %w[月 火 水 木 金 土 祝日 祝前 祝後].each do |day|
+      line = result[:opening_hours_text].lines.find { |entry| entry.start_with?("#{day} ") }
+      assert_equal 1, line.scan("11:30-15:00").size
+      assert_equal 1, line.scan("17:30-23:30").size
+      assert_includes line, "L.O. 14:30"
+      assert_includes line, "料理22:30 ドリンク23:00"
+      assert_includes result[:smoking_hours_text], "#{day} 14:00 - 23:30"
+    end
+    refute_match(/^日 \d/, result[:smoking_hours_text])
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+  end
+
   test "table smoking with nonsmoking counter means smoking seats and both types" do
     result = TabelogPasteParser.call("店名\n石鹿\n禁煙・喫煙\n分煙\nカウンター禁煙/テーブル喫煙\n駐車場\n無")
     assert_equal "all_smoking", result[:smoking_area]

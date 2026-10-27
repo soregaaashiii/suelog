@@ -168,7 +168,7 @@ class TabelogPasteParser
       break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|ホールスタッフ|調理師|料理長候補/)
       break if line.match?(/\A勤務時間/)
       if line.match?(/\A■\s*営業時間\z/)
-        break if kept.present? && !explicit_meals
+        break if kept.present? && (!explicit_meals || kept.any? { |entry| day_label_line?(entry) })
         next
       end
 
@@ -594,6 +594,7 @@ class TabelogPasteParser
     raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:").gsub(/喫煙[（(]可[）)]/, "喫煙可")
     raw.lines.map do |line|
       line = line.gsub(/\A\s*午前中(?:は|のみ|だけ)?\s*(?:禁煙|喫煙不可)/, "00:00～12:00まで禁煙")
+      line = line.gsub(/ランチタイム[（(]\s*(\d{1,2}:\d{2})\s*[～〜~-]\s*(\d{1,2}:\d{2})\s*[）)]\s*のみ\s*(?:全席|全面|完全)?禁煙/, '\1～\2まで禁煙')
       next line unless line.include?("ランチ")
 
       line.gsub(/(?:AM|午前)\s*(\d{1,2})(?::(\d{2}))?\s*時?\s*[~〜～－–—-]\s*(\d{1,2})(?::(\d{2}))?\s*時?まで\s*店内禁煙/i) do
@@ -1236,7 +1237,7 @@ class TabelogPasteParser
 
     # 「紙のみ禁煙」の「のみ」は許可する種類の限定ではない。
     # 口コミなど本文全体ではなく店舗の喫煙欄の明示条件を優先する。
-    return "electronic_only" if raw.to_s.match?(/紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)\s*(?:のみ|だけ)(?:は|が)?\s*(?:禁煙|喫煙不可|禁止)/)
+    return "electronic_only" if raw.to_s.match?(/紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)\s*(?:(?:のみ|だけ)(?:は|が)?|は|が)?\s*(?:禁煙|喫煙不可|禁止|不可)/)
 
     return "electronic_only" if text.match?(/電子タバコのみ|電子たばこのみ|加熱式たばこのみ|加熱式タバコのみ|加熱式のみ/)
     return "electronic_only" if text.match?(/加熱式たばこ限定|加熱式タバコ限定|加熱式限定/)
