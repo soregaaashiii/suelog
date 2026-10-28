@@ -3,13 +3,25 @@
 module SmokingConditionSchedules
   extend ActiveSupport::Concern
 
+  SMOKING_SEAT_LOCATIONS = { "indoor" => "店内席", "terrace" => "テラス席", "indoor_and_terrace" => "店内席・テラス席", "other" => "その他の席" }.freeze
+
   included do
     before_validation :normalize_condition_schedules
     validate :validate_condition_schedules
   end
 
   def advanced_smoking_schedules?
-    smoking_condition_schedules.present?
+    smoking_condition_schedules.to_h.values.any? { |rule| rule.to_h["mode"].present? }
+  end
+
+  def smoking_seat_location_label(key)
+    row = smoking_condition_rows.find { |condition| condition[:key] == key.to_s }
+    return unless row && row[:area] == "all_smoking"
+    SMOKING_SEAT_LOCATIONS[smoking_condition_schedules.to_h[key.to_s].to_h["seat_location"]]
+  end
+
+  def smoking_seat_locations?
+    smoking_condition_rows.any? { |row| smoking_seat_location_label(row[:key]).present? }
   end
 
   def smoking_condition_rows
@@ -65,8 +77,10 @@ module SmokingConditionSchedules
 
     self.smoking_condition_schedules = smoking_condition_schedules.stringify_keys.filter_map do |key, value|
       next unless %w[primary secondary].include?(key) && value.is_a?(Hash)
-      rule = value.stringify_keys.slice("mode", "hours_text")
-      next if rule["mode"].blank?
+      rule = value.stringify_keys.slice("mode", "hours_text", "seat_location")
+      rule["seat_location"] = rule["seat_location"].to_s.strip
+      rule.delete("seat_location") if rule["seat_location"].blank?
+      next if rule["mode"].blank? && rule["seat_location"].blank?
       rule["hours_text"] = rule["mode"] == "custom" ? rule["hours_text"].to_s.strip : ""
       [key, rule]
     end.to_h
@@ -78,7 +92,10 @@ module SmokingConditionSchedules
       return
     end
     smoking_condition_schedules.each do |key, rule|
-      unless %w[business custom unknown].include?(rule["mode"])
+      if rule["seat_location"].present? && !SMOKING_SEAT_LOCATIONS.key?(rule["seat_location"])
+        errors.add(:base, "喫煙する席の場所を選択してください")
+      end
+      unless rule["mode"].blank? || %w[business custom unknown].include?(rule["mode"])
         errors.add(:base, "喫煙条件の時間設定を選択してください")
         next
       end
