@@ -31,7 +31,7 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_equal "both_ok", imported.smoking_type_2
     assert_equal "22:00-04:00", imported.smoking_condition_schedules.dig("secondary", "hours_text")
     get edit_admin_shop_path(imported, from: "shop_import"), headers: @headers
-    assert_select 'details.smoking-advanced-settings:not([open])', count: 1
+    assert_select 'details.smoking-advanced-settings[open]', count: 1
     assert_select '#smoking_schedule_primary_mode option[selected]', text: "営業時間と同じ"
     assert_select '#smoking_schedule_secondary_hours', text: "22:00-04:00"
     post admin_shop_import_path, headers: @headers, params: { raw_text: raw, target_shop_id: @shop.id }
@@ -40,7 +40,7 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_equal({}, @shop.smoking_condition_schedules)
   end
 
-  test "advanced condition schedules are collapsed and survive save and reload" do
+  test "configured advanced schedules open automatically and survive save and reload" do
     get edit_admin_shop_path(@shop), headers: @headers
     assert_response :success
     assert_select 'details.smoking-advanced-settings:not([open])', count: 1
@@ -54,7 +54,7 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_equal "22:00-04:00", @shop.reload.smoking_condition_schedules.dig("secondary", "hours_text")
     get edit_admin_shop_path(@shop), headers: @headers
     assert_select '#smoking_schedule_secondary_hours', text: "22:00-04:00"
-    assert_select 'details.smoking-advanced-settings:not([open])', count: 1
+    assert_select 'details.smoking-advanced-settings[open]', count: 1
     patch admin_shop_path(@shop), headers: @headers, params: { shop: { name: @shop.name } }
     assert_equal "business", @shop.reload.smoking_condition_schedules.dig("primary", "mode")
     get shop_path(@shop)
@@ -73,9 +73,17 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_response :redirect
     assert_equal schedule, @shop.reload.smoking_condition_schedules.dig("primary", "hours_text")
     get edit_admin_shop_path(@shop), headers: @headers
-    assert_select 'details.smoking-advanced-settings:not([open])', count: 1
+    assert_select 'details.smoking-advanced-settings[open]', count: 1
     assert_select '#smoking_schedule_primary_hours', text: schedule
     assert_select '[data-action="smoking-windows#add"]', count: 2
+  end
+
+  test "a partially entered secondary condition opens detailed settings" do
+    @shop.update!(smoking_area_2: "all_smoking")
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_response :success
+    assert_select 'details.smoking-advanced-settings[open]', count: 1
+    assert_includes response.body, "［詳細設定あり］"
   end
 
   test "imported weekday nonsmoking checkbox survives saving without closing business" do
