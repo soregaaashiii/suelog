@@ -1,6 +1,23 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "separate heated and paper starting hours import condition-specific schedules" do
+    result = TabelogPasteParser.call("店名\n洋風ダイニングレーヴ\n営業時間\n月・火・木・金・土・日・祝日・祝前日・祝後日\n17:00 - 23:00\n水\n定休日\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n17時～加熱式タバコ 21時～紙タバコ喫煙可能となっておます。\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+    assert_equal "all_smoking", result[:smoking_area_2]
+    assert_equal "both_ok", result[:smoking_type_2]
+    assert_equal "17:00-23:00", result.dig(:smoking_condition_schedules, "primary", "hours_text")
+    assert_equal "21:00-23:00", result.dig(:smoking_condition_schedules, "secondary", "hours_text")
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    { "2026-10-26 16:59" => nil, "2026-10-26 17:00" => "electronic_only", "2026-10-26 20:59" => "electronic_only", "2026-10-26 21:00" => "both_ok", "2026-10-26 23:00" => nil, "2026-10-28 21:00" => nil }.each do |clock, type|
+      travel_to Time.zone.parse(clock) do
+        actual = shop.current_smoking_badge_conditions.first&.dig(:type)
+        type.nil? ? assert_nil(actual, clock) : assert_equal(type, actual, clock)
+      end
+    end
+  end
+
   test "outside paper smoking becomes a second condition after heated-only seats" do
     ["店外にて紙タバコ喫煙可", "屋外で紙たばこ喫煙可能"].each do |note|
       result = TabelogPasteParser.call("店名\n朝日うまみ食堂\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n#{note}\n駐車場\n有")

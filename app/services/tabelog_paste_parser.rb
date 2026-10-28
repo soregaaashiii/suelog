@@ -1115,12 +1115,25 @@ class TabelogPasteParser
   end
 
   def timed_tobacco_switch
-    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:")
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：　", "0123456789: ")
     return nil unless raw.match?(/(?:加熱式|電子)(?:たばこ|タバコ)?(?:のみ|限定)/)
-    match = raw.match(/(\d{1,2})(?::(\d{2}))?時?(?:以降|から)[、,\s]*紙(?:巻(?:き)?)?(?:タバコ|たばこ|煙草)(?:も|は)?\s*喫煙(?:可能|可)/)
-    return nil unless match
-    cutoff = format("%02d:%02d", match[1].to_i, match[2].to_i)
-    return nil if match[1].to_i >= 24 || match[2].to_i >= 60
+    match = raw.match(/(\d{1,2})(?::(\d{2}))?時?(?:以降|から|[〜～~])[、,\s]*紙(?:巻(?:き)?)?(?:タバコ|たばこ|煙草)(?:も|は)?\s*喫煙(?:可能|可)/)
+    return nil unless match && match[1].to_i < 24 && match[2].to_i < 60
+    paper_hours = smoking_window_after_cutoff(format("%02d:%02d", match[1].to_i, match[2].to_i))
+    return nil if paper_hours.blank?
+    primary = { "mode" => "business", "hours_text" => "" }
+    heated = raw.match(/(\d{1,2})(?::(\d{2}))?時?(?:以降|から|[〜～~])\s*(?:加熱式|電子)(?:タバコ|たばこ)?/)
+    if heated
+      return nil unless heated[1].to_i < 24 && heated[2].to_i < 60
+      primary = { "mode" => "custom", "hours_text" => smoking_window_after_cutoff(format("%02d:%02d", heated[1].to_i, heated[2].to_i)) }
+    end
+    { schedules: {
+      "primary" => primary,
+      "secondary" => { "mode" => "custom", "hours_text" => paper_hours }
+    } }
+  end
+
+  def smoking_window_after_cutoff(cutoff)
     rows = opening_ranges_by_day.map do |day, ranges|
       allowed = ranges.filter_map do |open_time, close_time|
         opening, closing = normalized_time_range(open_time, close_time)
@@ -1131,13 +1144,8 @@ class TabelogPasteParser
       "#{day_label(day)} #{allowed.presence&.join(', ') || '喫煙不可'}"
     end
     return nil if rows.empty?
-    # A common daily window is easier to edit; otherwise retain weekday rows.
     values = rows.map { |row| row.split(" ", 2).last }.uniq
-    hours = values.size == 1 && values.first != "喫煙不可" ? values.first : rows.join("\n")
-    { schedules: {
-      "primary" => { "mode" => "business", "hours_text" => "" },
-      "secondary" => { "mode" => "custom", "hours_text" => hours }
-    } }
+    values.size == 1 && values.first != "喫煙不可" ? values.first : rows.join("\n")
   end
 
   def extract_smoking_conditions(raw)
