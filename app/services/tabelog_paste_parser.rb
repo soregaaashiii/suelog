@@ -1150,8 +1150,8 @@ class TabelogPasteParser
       ]
     end
 
-    # 分煙のうち特定階の座席だけが禁煙の場合、残る喫煙席として扱う。
-    if raw.to_s.match?(/分煙/) && raw.to_s.match?(/[0-9０-９一二三四五六七八九十]+階(?:の)?席(?:は|が)\s*禁煙/)
+    # 分煙のうち特定階や特定の席が禁煙の場合、残る喫煙席として扱う。
+    if raw.to_s.match?(/分煙/) && raw.to_s.match?(/(?:[0-9０-９一二三四五六七八九十]+階(?:の)?席|座敷席|テーブル席|カウンター席)(?:は|が)\s*禁煙/)
       type = extract_smoking_type(raw)
       return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
     end

@@ -1,6 +1,16 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "separated smoking with nonsmoking tatami seats retains smoking seats" do
+    result = TabelogPasteParser.call("店名\n焼肉 しろ\n禁煙・喫煙\n分煙\n座敷席は禁煙席\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_nil result[:smoking_area_2]
+    assert_includes result[:public_store_details], "座敷席は禁煙席"
+    result = TabelogPasteParser.call("店名\n禁煙店\n禁煙・喫煙\n全席禁煙\n座敷席は禁煙席\n駐車場\n無")
+    refute_equal "all_smoking", result[:smoking_area]
+  end
+
   test "adjacent nonsmoking and smoking periods use only the smoking interval" do
     ["11:30〜14:00禁煙16:30〜22:00喫煙可", "16:30〜22:00喫煙可、11:30〜14:00禁煙"].each do |note|
       result = TabelogPasteParser.call("店名\n国産鶏焼肉 和気あいあい\n営業時間\n月・火・木・金・土・日\n11:30 - 14:00\n16:30 - 22:00\nL.O. 21:30\n水\n定休日\n禁煙・喫煙\n全席喫煙可\n#{note}\n駐車場\n無")
