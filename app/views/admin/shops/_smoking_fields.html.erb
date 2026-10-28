@@ -23,7 +23,7 @@
       style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
     </div>
 
-<% smoking_details_present = @shop.smoking_area_2.present? || @shop.smoking_type_2.present? || @shop.smoking_condition_schedules.to_h.values.any? { |rule| rule.to_h.values.any?(&:present?) } %>
+<% smoking_details_present = @shop.smoking_area_2.present? || @shop.smoking_type_2.present? || @shop.smoking_condition_schedules.to_h.values.any? { |rule| rule.to_h["mode"] == "unknown" || (rule.to_h["mode"] == "custom" && rule.to_h["hours_text"].present?) } %>
 <details <%= "open" if smoking_details_present %> class="smoking-advanced-settings" style="grid-column:1 / -1; margin:12px 0; padding:12px; border:1px solid #ddd; border-radius:12px;">
   <summary style="cursor:pointer; font-weight:700;">もっと詳細に設定（条件の追加・条件ごとの時間）<%= "［詳細設定あり］" if smoking_details_present %></summary>
   <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:12px;">

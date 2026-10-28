@@ -85,6 +85,14 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_select '[data-action="smoking-windows#add"]', count: 2
   end
 
+  test "business-only timing without additional details stays collapsed" do
+    @shop.update!(smoking_condition_schedules: { primary: { mode: "business" } })
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_response :success
+    assert_select 'details.smoking-advanced-settings:not([open])', count: 1
+    refute_includes response.body, "［詳細設定あり］"
+  end
+
   test "a partially entered secondary condition opens detailed settings" do
     @shop.update!(smoking_area_2: "all_smoking")
     get edit_admin_shop_path(@shop), headers: @headers
