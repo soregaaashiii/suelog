@@ -1,6 +1,17 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "smoking at terrace seats accepts de-no wording and records terrace location" do
+    ["テラス席での喫煙可", "テラス席で喫煙可"].each do |note|
+      result = TabelogPasteParser.call("店名\nおだしと鶏のお店 ちゃぼ 長居店\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "both_ok", result[:smoking_type]
+      assert_equal "terrace", result.dig(:smoking_condition_schedules, "primary", "seat_location")
+    end
+    result = TabelogPasteParser.call("店名\n禁煙\n禁煙・喫煙\n分煙\nテラス席での喫煙不可\n駐車場\n無")
+    refute_equal "both_ok", result[:smoking_type]
+  end
+
   test "lunch-time nonsmoking wording means seat smoking with unset times for continuous service" do
     %w[ランチ時間は禁煙 ランチ時間帯は禁煙 ランチ時は禁煙].each do |note|
       result = TabelogPasteParser.call("店名\nヤマダ カフェ\n営業時間\n火・水・木・金・土\n11:30 - 21:00\n日\n11:30 - 20:00\n月\n定休日\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n有")
