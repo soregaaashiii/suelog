@@ -1,6 +1,19 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "full-width space before a timed ban preserves the smoking cutoff" do
+    ["11:00～14:00　禁煙", "11:00～14:00 禁煙", "11:00～14:00禁煙"].each do |note|
+      result = TabelogPasteParser.call("店名\n日光\n営業時間\n月・火・水・金・土・日\n11:00 - 21:00\n木\n定休日\n禁煙・喫煙\n全席喫煙可\n#{note}\n駐車場\n無")
+      assert_includes result[:smoking_hours_text], "月 14:00 - 21:00", note
+      assert_includes result[:opening_hours_text], "月 11:00-21:00（喫煙可：14:00-21:00）", note
+      refute_includes result[:smoking_hours_text], "木 14:00", note
+      shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+      { "2026-10-26 13:59" => false, "2026-10-26 14:00" => true, "2026-10-26 21:00" => false, "2026-10-29 15:00" => false }.each do |clock, permitted|
+        travel_to(Time.zone.parse(clock)) { assert_equal permitted, shop.smoking_now?, clock }
+      end
+    end
+  end
+
   test "smoking at terrace seats accepts de-no wording and records terrace location" do
     ["テラス席での喫煙可", "テラス席で喫煙可"].each do |note|
       result = TabelogPasteParser.call("店名\nおだしと鶏のお店 ちゃぼ 長居店\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
