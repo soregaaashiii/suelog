@@ -1234,6 +1234,16 @@ class TabelogPasteParser
       ]
     end
 
+    # 「分煙／ランチ禁煙」は時間帯による席での分煙として取り込む。
+    if raw.to_s.match?(/分煙/) && raw.to_s.match?(/ランチ(?:タイム|時|時間帯)?(?:は|のみ)?\s*禁煙/)
+      type = extract_smoking_type(raw)
+      conditions = [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
+      if raw.to_s.match?(/(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室)(?:あり|有り|有|設置)/)
+        conditions << { area: "separated", type: "both_ok" }
+      end
+      return conditions
+    end
+
     # 分煙のうち特定階や特定の席が禁煙の場合、残る喫煙席として扱う。
     if raw.to_s.match?(/分煙/) && raw.to_s.match?(/(?:[0-9０-９一二三四五六七八九十]+階(?:の)?席|座敷席|テーブル席|カウンター席)(?:は|が)\s*禁煙/)
       type = extract_smoking_type(raw)
