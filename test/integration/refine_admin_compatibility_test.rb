@@ -23,8 +23,8 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
   test "unknown night smoking is labeled explicitly in import preview" do
     get new_admin_shop_import_path, headers: @headers, params: { raw_text: "店名\n福城\n営業時間\n11:00 - 22:00\n禁煙・喫煙\n全席喫煙可\n夜は喫煙可\n駐車場\n無" }
     assert_response :success
-    assert_select 'tr', text: /喫煙可能時間帯\s*時間不明・要確認/
-    assert_select 'tr', text: /条件別の詳細時間\s*条件1：時間不明・要確認/
+    assert_select 'tr', text: /喫煙可能時間帯\s*未設定/
+    assert_select 'tr', text: /条件別の詳細時間\s*未取得/
   end
 
   test "timed tobacco import saves advanced settings and blank-only merge cannot change existing permissions" do

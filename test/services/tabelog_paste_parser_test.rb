@@ -1380,10 +1380,11 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "both_ok", result[:smoking_type]
     assert_nil result[:smoking_hours_text]
-    assert_equal "unknown", result.dig(:smoking_condition_schedules, "primary", "mode")
+    assert_nil result[:smoking_condition_schedules]
     refute_includes result[:opening_hours_text], "喫煙可："
     shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
-    assert_equal "時間不明・要確認", shop.smoking_condition_time_label("primary")
+    assert shop.smoking_hours_unset_with_restriction?
+    refute shop.advanced_smoking_schedules?
     travel_to(Time.zone.parse("2026-10-26 19:00")) { refute shop.smoking_now? }
   end
 
