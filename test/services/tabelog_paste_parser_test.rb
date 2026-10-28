@@ -1,6 +1,17 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "lunch-time nonsmoking wording means seat smoking with unset times for continuous service" do
+    %w[ランチ時間は禁煙 ランチ時間帯は禁煙 ランチ時は禁煙].each do |note|
+      result = TabelogPasteParser.call("店名\nヤマダ カフェ\n営業時間\n火・水・木・金・土\n11:30 - 21:00\n日\n11:30 - 20:00\n月\n定休日\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n有")
+      assert_equal "all_smoking", result[:smoking_area], note
+      assert_equal "both_ok", result[:smoking_type], note
+      assert_nil result[:smoking_hours_text], note
+      shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+      assert shop.smoking_hours_unset_with_restriction?, note
+    end
+  end
+
   test "lunch nonsmoking separated seats use dinner hours and both tobacco types" do
     raw = "店名\n肉匠 牛虎 あびこ店\n営業時間\n月・火・水・木・金・土\n11:30 - 15:00\nL.O. 14:30\n17:00 - 00:00\nL.O. 23:00\n日\n11:30 - 15:00\n17:00 - 23:00\n禁煙・喫煙\n分煙\nランチ禁煙\n駐車場\n有"
     result = TabelogPasteParser.call(raw)
