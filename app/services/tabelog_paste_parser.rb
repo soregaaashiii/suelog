@@ -648,7 +648,7 @@ class TabelogPasteParser
 
   def imported_smoking_condition_schedules
     return timed_tobacco_switch[:schedules] if timed_tobacco_switch
-    return { "primary" => { "mode" => "unknown", "hours_text" => "" } } if unknown_night_smoking_time?
+    return nil if unknown_night_smoking_time?
     return unless multiple_daily_smoking_ranges && extract_smoking_conditions(field_value_with_continuation("禁煙・喫煙")).length == 1
     { "primary" => { "mode" => "custom", "hours_text" => extract_smoking_hours_text } }
   end

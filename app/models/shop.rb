@@ -470,7 +470,7 @@ class Shop < ApplicationRecord
 
     metadata = has_attribute?(:import_metadata) ? import_metadata.to_h : {}
     note = [public_store_details, metadata["smoking_note"], metadata["smoking_raw"]].compact.join("\n")
-    note.match?(/(?:ランチ|昼|日中|朝食|モーニング).*禁煙|(?:夜|夜間|ディナー)(?:だけ|のみ)(?:は)?喫煙可/)
+    note.match?(/(?:ランチ|昼|日中|朝食|モーニング).*禁煙|(?:夜|夜間|ディナー)(?:だけ|のみ)?(?:は)?\s*喫煙(?:可能|可)/)
   end
 
   def smoking_area_label
