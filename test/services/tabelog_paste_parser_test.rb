@@ -1375,4 +1375,16 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     travel_to(Time.zone.parse("2026-11-01 13:00")) { refute shop.smoking_now? }
   end
 
+  test "night smoking without a defined evening start imports unknown timing" do
+    result = TabelogPasteParser.call("店名\n福城\n営業時間\n11:00 - 22:00\n禁煙・喫煙\n全席喫煙可\n夜は喫煙可\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_nil result[:smoking_hours_text]
+    assert_equal "unknown", result.dig(:smoking_condition_schedules, "primary", "mode")
+    refute_includes result[:opening_hours_text], "喫煙可："
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    assert_equal "時間不明・要確認", shop.smoking_condition_time_label("primary")
+    travel_to(Time.zone.parse("2026-10-26 19:00")) { refute shop.smoking_now? }
+  end
+
 end

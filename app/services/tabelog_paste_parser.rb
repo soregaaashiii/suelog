@@ -559,7 +559,7 @@ class TabelogPasteParser
 
   def evening_only_smoking_ranges
     raw = field_value_with_continuation("禁煙・喫煙").to_s
-    night_only = raw.match?(/(?:夜|夜間|ディナー)(?:だけ|のみ)(?:は)?喫煙可/)
+    night_only = raw.match?(/(?:夜|夜間|ディナー)(?:だけ|のみ)?(?:は)?\s*喫煙可/)
     daytime_ban = raw.match?(/昼[^。\n]*禁煙/) && raw.match?(/夜[^。\n]*喫煙可/)
     return nil unless night_only || daytime_ban
 
@@ -570,6 +570,12 @@ class TabelogPasteParser
     ordered_day_keys.first(7).to_h { |day| [day, hours.fetch(day, [])] }.transform_values do |ranges|
       ranges.select { |open_time, _| time_to_minutes(open_time) >= time_to_minutes(evening_start) }
     end
+  end
+
+  def unknown_night_smoking_time?
+    raw = normalized_smoking_rule_text
+    raw.match?(/(?:夜|夜間|ディナー)(?:だけ|のみ)?(?:は)?\s*喫煙(?:可能|可)/) &&
+      !raw.match?(/\d{1,2}(?::\d{2}|時)/) && evening_only_smoking_ranges.nil?
   end
 
   def breakfast_nonsmoking_ranges
@@ -642,11 +648,13 @@ class TabelogPasteParser
 
   def imported_smoking_condition_schedules
     return timed_tobacco_switch[:schedules] if timed_tobacco_switch
+    return { "primary" => { "mode" => "unknown", "hours_text" => "" } } if unknown_night_smoking_time?
     return unless multiple_daily_smoking_ranges && extract_smoking_conditions(field_value_with_continuation("禁煙・喫煙")).length == 1
     { "primary" => { "mode" => "custom", "hours_text" => extract_smoking_hours_text } }
   end
 
   def extract_smoking_hours_by_day
+    return {} if unknown_night_smoking_time?
     return {} if timed_tobacco_switch
     if (exception_ranges = weekday_nonsmoking_exception_ranges)
       return exception_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
@@ -1339,6 +1347,7 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    return nil if unknown_night_smoking_time?
     return nil if timed_tobacco_switch
     if (exception_ranges = weekday_nonsmoking_exception_ranges)
       return exception_ranges.map do |day, ranges|
