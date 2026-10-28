@@ -137,6 +137,15 @@ class Admin::ShopImportsController < Admin::BaseController
       new_value = parsed_attrs[key]
 
       next if new_value.blank?
+      if key == :smoking_condition_schedules
+        # Blank-only merge must not attach new timing rules to incompatible,
+        # already-entered smoking types or places.
+        compatible = %i[smoking_area smoking_type smoking_area_2 smoking_type_2].all? do |field|
+          actual = attrs.fetch(field) { shop.public_send(field) }
+          actual.to_s == parsed_attrs[field].to_s
+        end
+        next unless compatible
+      end
       next unless import_blank_value?(current_value)
 
       attrs[key] = new_value
@@ -162,6 +171,7 @@ class Admin::ShopImportsController < Admin::BaseController
       :smoking_area_2,
       :smoking_type_2,
       :smoking_hours_text,
+      :smoking_condition_schedules,
       :public_store_details
     ].each do |key|
       fill_if_blank.call(key)

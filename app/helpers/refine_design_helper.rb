@@ -16,11 +16,30 @@ module RefineDesignHelper
   end
 
   def refine_shop_smoking_badges(shop)
-    return refine_smoking_badges(shop.smoking_area, shop.smoking_type) unless shop.confirmed_non_smoking?
+    unless shop.confirmed_non_smoking?
+      return refine_advanced_smoking_badges(shop) if shop.advanced_smoking_schedules?
+      return refine_smoking_badges(shop.smoking_area, shop.smoking_type)
+    end
 
     tag.span(class: "smoking-badge smoking-badge--non-smoking") do
       safe_join([ tag.span(refine_smoking_icon(:non_smoking), class: "smoking-badge-icons", aria: { hidden: true }), tag.span("禁煙店") ])
     end
+  end
+
+  def refine_advanced_smoking_badges(shop)
+    conditions = shop.open_now? ? shop.current_smoking_badge_conditions : shop.smoking_condition_rows
+    badges = conditions.map { |row| refine_smoking_badges(row[:area], row[:type]) }
+    if badges.empty?
+      label = shop.smoking_condition_schedules.values.any? { |rule| rule["mode"] == "unknown" } ? "喫煙時間は要確認" : "現在は喫煙不可"
+      badges << tag.span(label, class: "smoking-badge smoking-badge--unknown")
+    end
+    labels = { "electronic_only" => "加熱式", "paper_only" => "紙", "both_ok" => "紙・加熱式", "unknown" => "種類不明" }
+    notes = shop.smoking_condition_rows.map do |row|
+      place = row[:area] == "separated" ? "喫煙所" : "席"
+      "#{place}・#{labels[row[:type]] || '種類不明'}：#{shop.smoking_condition_time_label(row[:key])}"
+    end
+    badges << tag.span(notes.join(" ／ "), class: "smoking-schedule-note", style: "display:block; width:100%; font-size:12px; line-height:1.7; color:inherit; margin-top:4px;")
+    safe_join(badges, " ")
   end
 
   def refine_smoking_badges(area, type)

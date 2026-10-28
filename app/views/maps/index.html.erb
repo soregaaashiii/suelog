@@ -251,7 +251,7 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
 (() => {
 let allShops = <%= raw @map_shops_payload.to_json %>;
 let smokingBadges = <%= raw @map_smoking_badges_payload.to_json %>;
-function smokingBadgesFor(shop) { return smokingBadges[`${shop.smoking_area}:${shop.smoking_type}`] || ""; }
+function smokingBadgesFor(shop) { return smokingBadges[shop.smoking_badge_key || `${shop.smoking_area}:${shop.smoking_type}`] || ""; }
 let map;
 let infoWindow;
 let markers = [];

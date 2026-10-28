@@ -1,0 +1,17 @@
+<div style="grid-column:1 / -1; width:100%;">
+  <p style="font-size:13px; line-height:1.7; color:#555;">通常は共通の喫煙時間を使用します。種類や場所ごとに時間が違う場合だけ設定してください。営業時間外は、どの条件でも喫煙不可になります。</p>
+  <% [["primary", "条件1"], ["secondary", "条件2"]].each do |key, title| %>
+    <% rule = @shop.smoking_condition_schedules.to_h[key].to_h %>
+    <fieldset style="margin:12px 0; padding:12px; border:1px solid #ddd; border-radius:10px;">
+      <legend><%= title %>の喫煙時間</legend>
+      <%= label_tag "smoking_schedule_#{key}_mode", "#{title}の時間設定" %>
+      <%= select_tag "shop[smoking_condition_schedules][#{key}][mode]", options_for_select([["共通の喫煙時間を使う（通常）", ""], ["営業時間と同じ", "business"], ["時間・曜日を指定する", "custom"], ["時間不明", "unknown"]], rule["mode"]), id: "smoking_schedule_#{key}_mode", style: "display:block; width:100%; padding:8px; margin:6px 0;" %>
+      <%= label_tag "smoking_schedule_#{key}_hours", "#{title}の指定時間（時間・曜日を指定する場合のみ）" %>
+      <%= text_area_tag "shop[smoking_condition_schedules][#{key}][hours_text]", rule["hours_text"], id: "smoking_schedule_#{key}_hours", rows: 4, maxlength: 2000, placeholder: "毎日同じ：22:00-04:00\n曜日別：月 22:00-04:00\n火 喫煙不可", style: "display:block; width:100%; padding:8px; box-sizing:border-box;" %>
+      <small>翌朝までの時間は22:00-04:00のように指定。曜日別は月〜日・祝日を1行ずつ入力し、禁煙日は「日 喫煙不可」、時間不明は「日 時間未設定」と記載します。曜日別で省略した曜日は喫煙可と判定しません。</small>
+    </fieldset>
+  <% end %>
+  <% if @shop.advanced_smoking_schedules? %>
+    <p style="color:#805d19; font-weight:700;">条件別の時間設定あり。共通時間よりこちらの設定が優先されます。</p>
+  <% end %>
+</div>

@@ -562,7 +562,14 @@ end
 
   if smoking_type.present?
     smoking_type_value = Shop.smoking_types[smoking_type]
-    base = base.where(shops: { smoking_type: smoking_type_value }) if smoking_type_value.present?
+    if smoking_type_value.present?
+      advanced = "CAST(shops.smoking_condition_schedules AS TEXT) NOT IN ('{}', 'null')"
+      sql = "shops.smoking_type = :kind OR (#{advanced} AND shops.smoking_type_2 = :kind)"
+      if smoking_type == "both_ok"
+        sql += " OR (#{advanced} AND ((shops.smoking_type = 1 AND shops.smoking_type_2 = 2) OR (shops.smoking_type = 2 AND shops.smoking_type_2 = 1)))"
+      end
+      base = base.where(sql, kind: smoking_type_value)
+    end
   end
 
   if keyword_q.present?
