@@ -1332,4 +1332,35 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "11:30", result[:opening_hours_json].dig("monday", "open")
     assert_equal "25:00", result[:opening_hours_json].dig("monday", "close")
   end
+  test "imports smoking windows before and after a midday ban into advanced settings" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      お食事カフェ asahi
+      営業時間
+      月・火・水・木・金・土
+      07:00 - 15:00
+      17:30 - 21:00
+      日・祝日
+      定休日
+      禁煙・喫煙
+      全席喫煙可
+      11:00～12:30まで完全禁煙
+      駐車場
+      無
+    TEXT
+    expected = "月 07:00 - 11:00, 12:30 - 15:00, 17:30 - 21:00"
+    assert_includes result[:smoking_hours_text], expected
+    assert_equal result[:smoking_hours_text], result.dig(:smoking_condition_schedules, "primary", "hours_text")
+    assert_equal "custom", result.dig(:smoking_condition_schedules, "primary", "mode")
+    assert_includes result[:opening_hours_text], "07:00-15:00（喫煙可：07:00-11:00, 12:30-15:00）"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    shop.assign_attributes(address: "大阪府大阪市西区九条南2-34-9", last_confirmed_on: Date.current, genre: "cafe")
+    assert shop.valid?, shop.errors.full_messages.join(", ")
+    { "07:00" => true, "10:59" => true, "11:00" => false, "12:29" => false,
+      "12:30" => true, "15:00" => false, "17:29" => false, "17:30" => true, "21:00" => false }.each do |clock, allowed|
+      travel_to(Time.zone.parse("2026-10-26 #{clock}")) { assert_equal allowed, shop.smoking_now?, clock }
+    end
+    travel_to(Time.zone.parse("2026-11-01 13:00")) { refute shop.smoking_now? }
+  end
+
 end

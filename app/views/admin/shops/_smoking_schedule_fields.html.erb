@@ -2,12 +2,23 @@
   <p style="font-size:13px; line-height:1.7; color:#555;">通常は共通の喫煙時間を使用します。種類や場所ごとに時間が違う場合だけ設定してください。営業時間外は、どの条件でも喫煙不可になります。</p>
   <% [["primary", "条件1"], ["secondary", "条件2"]].each do |key, title| %>
     <% rule = @shop.smoking_condition_schedules.to_h[key].to_h %>
-    <fieldset style="margin:12px 0; padding:12px; border:1px solid #ddd; border-radius:10px;">
+    <fieldset data-controller="smoking-windows" style="margin:12px 0; padding:12px; border:1px solid #ddd; border-radius:10px;">
       <legend><%= title %>の喫煙時間</legend>
       <%= label_tag "smoking_schedule_#{key}_mode", "#{title}の時間設定" %>
-      <%= select_tag "shop[smoking_condition_schedules][#{key}][mode]", options_for_select([["共通の喫煙時間を使う（通常）", ""], ["営業時間と同じ", "business"], ["時間・曜日を指定する", "custom"], ["時間不明", "unknown"]], rule["mode"]), id: "smoking_schedule_#{key}_mode", style: "display:block; width:100%; padding:8px; margin:6px 0;" %>
+      <%= select_tag "shop[smoking_condition_schedules][#{key}][mode]", options_for_select([["共通の喫煙時間を使う（通常）", ""], ["営業時間と同じ", "business"], ["時間・曜日を指定する", "custom"], ["時間不明", "unknown"]], rule["mode"]), id: "smoking_schedule_#{key}_mode", data: { smoking_windows_target: "mode" }, style: "display:block; width:100%; padding:8px; margin:6px 0;" %>
       <%= label_tag "smoking_schedule_#{key}_hours", "#{title}の指定時間（時間・曜日を指定する場合のみ）" %>
-      <%= text_area_tag "shop[smoking_condition_schedules][#{key}][hours_text]", rule["hours_text"], id: "smoking_schedule_#{key}_hours", rows: 4, maxlength: 2000, placeholder: "毎日同じ：22:00-04:00\n曜日別：月 22:00-04:00\n火 喫煙不可", style: "display:block; width:100%; padding:8px; box-sizing:border-box;" %>
+      <%= text_area_tag "shop[smoking_condition_schedules][#{key}][hours_text]", rule["hours_text"], id: "smoking_schedule_#{key}_hours", data: { smoking_windows_target: "text" }, rows: 4, maxlength: 2000, placeholder: "07:00-11:00, 12:30-21:00\n曜日別：月 07:00-11:00, 12:30-21:00\n日 喫煙不可", style: "display:block; width:100%; padding:8px; box-sizing:border-box;" %>
+      <div style="display:flex; flex-wrap:wrap; align-items:end; gap:8px; margin:10px 0;">
+        <label>対象日<select data-smoking-windows-target="day" style="display:block; padding:6px;">
+          <option value="">毎日同じ</option>
+          <% %w[月 火 水 木 金 土 日 祝日 祝前 祝後].each do |day| %><option value="<%= day %>"><%= day %></option><% end %>
+        </select></label>
+        <label>開始<input type="time" data-smoking-windows-target="start" style="display:block; padding:6px;"></label>
+        <label>終了<input type="time" data-smoking-windows-target="finish" style="display:block; padding:6px;"></label>
+        <button type="button" data-action="smoking-windows#add" style="padding:7px 12px;">時間帯を追加</button>
+      </div>
+      <p data-smoking-windows-target="message" role="status" style="font-size:13px; color:#805d19;"></p>
+      <small>複数の時間帯はカンマで区切ります（例：07:00-11:00, 12:30-21:00）。追加した時間は上の欄で編集・削除できます。休憩時間をまたいでも営業時間外は喫煙不可です。</small><br>
       <small>翌朝までの時間は22:00-04:00のように指定。曜日別は月〜日・祝日を1行ずつ入力し、禁煙日は「日 喫煙不可」、時間不明は「日 時間未設定」と記載します。曜日別で省略した曜日は喫煙可と判定しません。</small>
     </fieldset>
   <% end %>

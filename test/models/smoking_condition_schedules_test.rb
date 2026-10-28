@@ -62,4 +62,15 @@ class SmokingConditionSchedulesTest < ActiveSupport::TestCase
       assert shop.errors[:base].any?, text
     end
   end
+  test "multiple custom windows keep a ban and exclude a service break" do
+    shop = Shop.new(name: "複数時間帯", smoking_area: :all_smoking, smoking_type: :both_ok,
+      opening_hours_text: "月 07:00-15:00, 17:30-21:00",
+      smoking_condition_schedules: { primary: { mode: "custom", hours_text: "07:00-11:00, 12:30-21:00" } })
+    shop.assign_attributes(address: "大阪府大阪市西区九条南2-34-9", last_confirmed_on: Date.current, genre: "cafe")
+    assert shop.valid?, shop.errors.full_messages.join(", ")
+    { "10:59" => true, "11:00" => false, "12:30" => true, "16:00" => false, "18:00" => true }.each do |clock, allowed|
+      travel_to(Time.zone.parse("2026-10-26 #{clock}")) { assert_equal allowed, shop.smoking_now?, clock }
+    end
+  end
+
 end
