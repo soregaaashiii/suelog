@@ -20,6 +20,13 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "unknown night smoking is labeled explicitly in import preview" do
+    get new_admin_shop_import_path, headers: @headers, params: { raw_text: "店名\n福城\n営業時間\n11:00 - 22:00\n禁煙・喫煙\n全席喫煙可\n夜は喫煙可\n駐車場\n無" }
+    assert_response :success
+    assert_select 'tr', text: /喫煙可能時間帯\s*時間不明・要確認/
+    assert_select 'tr', text: /条件別の詳細時間\s*条件1：時間不明・要確認/
+  end
+
   test "timed tobacco import saves advanced settings and blank-only merge cannot change existing permissions" do
     raw = "店名\n時間別インポート\n住所\n大阪府大阪市北区梅田1-20\nジャンル\n居酒屋\n営業時間\n16:00 - 04:00\n禁煙・喫煙\n全席喫煙可\n※加熱式タバコ限定（22時以降、紙タバコも喫煙可）\n駐車場\n無"
     assert_difference("Shop.count", 1) do
