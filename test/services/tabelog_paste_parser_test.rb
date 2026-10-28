@@ -25,6 +25,15 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
 
   end
 
+  test "partially smoking terrace seats allow both tobacco types at seats" do
+    result = TabelogPasteParser.call("店名\nSAILS 大阪\n禁煙・喫煙\n分煙\n室内は禁煙。テラス席の一部喫煙可。\n駐車場\n有")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_includes result[:public_store_details], "室内は禁煙。テラス席の一部喫煙可。"
+    result = TabelogPasteParser.call("店名\n禁煙テラス\n禁煙・喫煙\n分煙\nテラス席の一部喫煙不可。\n駐車場\n有")
+    refute_equal "both_ok", result[:smoking_type]
+  end
+
   test "smoking permitted only in terrace seat section means seat smoking and both types" do
     ["２階テラス席部分のみ喫煙可能", "2階テラス席エリアのみ喫煙可"].each do |note|
       result = TabelogPasteParser.call("店名\nビア スタンド マルカ\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
