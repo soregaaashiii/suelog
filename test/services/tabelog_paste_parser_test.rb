@@ -1,6 +1,20 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "outside paper smoking becomes a second condition after heated-only seats" do
+    ["店外にて紙タバコ喫煙可", "屋外で紙たばこ喫煙可能"].each do |note|
+      result = TabelogPasteParser.call("店名\n朝日うまみ食堂\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n#{note}\n駐車場\n有")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "electronic_only", result[:smoking_type]
+      assert_equal "separated", result[:smoking_area_2]
+      assert_equal "both_ok", result[:smoking_type_2]
+    end
+    restricted = TabelogPasteParser.call("店名\n紙のみ\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n店外にて紙タバコのみ喫煙可\n駐車場\n有")
+    assert_equal "paper_only", restricted[:smoking_type_2]
+    prohibited = TabelogPasteParser.call("店名\n禁煙\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n店外にて紙タバコ喫煙不可\n駐車場\n有")
+    assert_nil prohibited[:smoking_area_2]
+  end
+
   test "full-width space before a timed ban preserves the smoking cutoff" do
     ["11:00～14:00　禁煙", "11:00～14:00 禁煙", "11:00～14:00禁煙"].each do |note|
       result = TabelogPasteParser.call("店名\n日光\n営業時間\n月・火・水・金・土・日\n11:00 - 21:00\n木\n定休日\n禁煙・喫煙\n全席喫煙可\n#{note}\n駐車場\n無")

@@ -1144,6 +1144,14 @@ class TabelogPasteParser
     if timed_tobacco_switch
       return [{ area: "all_smoking", type: "electronic_only" }, { area: "all_smoking", type: "both_ok" }]
     end
+    if raw.to_s.match?(/分煙\s*[（(][^）)]*加熱式(?:たばこ|タバコ)?(?:のみ|限定)[^）)]*[）)]/) &&
+       raw.to_s.match?(/(?:店外|屋外)(?:にて|で|は|に)?\s*紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)(?:のみ|だけ|限定)?\s*喫煙(?:可能|可)/)
+      return [
+        { area: "all_smoking", type: "electronic_only" },
+        { area: "separated", type: paper_tobacco_exclusive?(raw.to_s) ? "paper_only" : "both_ok" }
+      ]
+    end
+
     text = [raw, @text].compact.join("\n")
     heated_at_seat = heated_tobacco_at_seats?(text)
     paper_in_separate_area = paper_tobacco_in_separate_area?(text)
