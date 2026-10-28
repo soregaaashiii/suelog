@@ -1,6 +1,18 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "smoking bar floor with nonsmoking dance floor means smoking seats" do
+    ["barフロアは喫煙　ダンスフロアは禁煙です", "バーフロアは喫煙可。ダンスフロアは禁煙"].each do |note|
+      result = TabelogPasteParser.call("店名\nbar daphnia\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "both_ok", result[:smoking_type]
+      assert_includes result[:public_store_details], note
+      assert_nil result[:smoking_area_2]
+    end
+    result = TabelogPasteParser.call("店名\n禁止\n禁煙・喫煙\n分煙\nbarフロアは喫煙不可\n駐車場\n無")
+    refute_equal "all_smoking", result[:smoking_area]
+  end
+
   test "separate heated and paper starting hours import condition-specific schedules" do
     result = TabelogPasteParser.call("店名\n洋風ダイニングレーヴ\n営業時間\n月・火・木・金・土・日・祝日・祝前日・祝後日\n17:00 - 23:00\n水\n定休日\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n17時～加熱式タバコ 21時～紙タバコ喫煙可能となっておます。\n駐車場\n無")
     assert_equal "all_smoking", result[:smoking_area]
