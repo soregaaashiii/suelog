@@ -647,10 +647,20 @@ class TabelogPasteParser
   end
 
   def imported_smoking_condition_schedules
-    return timed_tobacco_switch[:schedules] if timed_tobacco_switch
-    return nil if unknown_night_smoking_time?
-    return unless multiple_daily_smoking_ranges && extract_smoking_conditions(field_value_with_continuation("禁煙・喫煙")).length == 1
-    { "primary" => { "mode" => "custom", "hours_text" => extract_smoking_hours_text } }
+    schedules = if timed_tobacco_switch
+      timed_tobacco_switch[:schedules]
+    elsif !unknown_night_smoking_time? && multiple_daily_smoking_ranges && extract_smoking_conditions(field_value_with_continuation("禁煙・喫煙")).length == 1
+      { "primary" => { "mode" => "custom", "hours_text" => extract_smoking_hours_text } }
+    else
+      {}
+    end
+    raw = field_value_with_continuation("禁煙・喫煙").to_s
+    conditions = extract_smoking_conditions(raw)
+    if conditions.length == 1 && conditions.first[:area] == "all_smoking" && raw.match?(/テラス(?:席)?[^。\n]{0,20}喫煙(?:可能|可)|喫煙[（(]テラス/)
+      schedules["primary"] ||= {}
+      schedules["primary"]["seat_location"] = raw.match?(/(?:店内|室内)(?:席)?(?:は|で|も)?\s*喫煙(?:可能|可)/) ? "indoor_and_terrace" : "terrace"
+    end
+    schedules.presence
   end
 
   def extract_smoking_hours_by_day

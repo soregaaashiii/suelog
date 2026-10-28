@@ -1580,6 +1580,19 @@
           </div>
         <% end %>
 
+        <% if !@shop.confirmed_non_smoking? && @shop.smoking_seat_locations? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">喫煙できる席</div>
+            <div class="shop-show__infoCell">
+              <% @shop.smoking_condition_rows.each do |condition| %>
+                <% if (place = @shop.smoking_seat_location_label(condition[:key])) %>
+                  <div><%= condition[:key] == "primary" ? "条件1" : "条件2" %>：<%= place %></div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
         <% if !@shop.confirmed_non_smoking? && @shop.respond_to?(:secondary_smoking_condition?) && @shop.secondary_smoking_condition? %>
           <div class="shop-show__infoRow">
             <div class="shop-show__infoHead">喫煙条件2</div>

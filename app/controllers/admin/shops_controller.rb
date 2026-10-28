@@ -1352,7 +1352,7 @@ class Admin::ShopsController < Admin::BaseController
       :thumbnail_index,
       seat_type_tags: [],
       import_metadata: {},
-      smoking_condition_schedules: { primary: [:mode, :hours_text], secondary: [:mode, :hours_text] },
+      smoking_condition_schedules: { primary: [:mode, :hours_text, :seat_location], secondary: [:mode, :hours_text, :seat_location] },
       opening_hours_json: {}
     )
   end

@@ -73,4 +73,15 @@ class SmokingConditionSchedulesTest < ActiveSupport::TestCase
     end
   end
 
+  test "seat location does not change time permission and rejects unsupported values" do
+    shop = shop_with_rules
+    shop.smoking_condition_schedules["primary"] = { "seat_location" => "terrace" }
+    shop.valid?
+    assert_equal "テラス席", shop.smoking_seat_location_label("primary")
+    travel_to(Time.zone.parse("2026-10-26 16:30")) { assert shop.smoking_condition_now?("primary") }
+    shop.smoking_condition_schedules["primary"]["seat_location"] = "invalid"
+    shop.valid?
+    assert shop.errors[:base].any?
+  end
+
 end

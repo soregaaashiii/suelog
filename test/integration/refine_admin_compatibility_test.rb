@@ -20,6 +20,26 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "seat location saves independently of time and keeps details open" do
+    patch admin_shop_path(@shop), headers: @headers, params: { shop: {
+      smoking_condition_schedules: { primary: { mode: "", hours_text: "", seat_location: "terrace" } }
+    } }
+    assert_response :redirect
+    assert_equal "terrace", @shop.reload.smoking_condition_schedules.dig("primary", "seat_location")
+    refute @shop.advanced_smoking_schedules?
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_select 'details.smoking-advanced-settings[open]', count: 1
+    assert_select '#smoking_seat_location_primary option[selected]', text: "テラス席"
+    get shop_path(@shop)
+    assert_response :success
+    assert_includes response.body, "喫煙できる席"
+    assert_includes response.body, "テラス席"
+    patch admin_shop_path(@shop), headers: @headers, params: { shop: {
+      smoking_condition_schedules: { primary: { mode: "", seat_location: "" } }
+    } }
+    assert_equal({}, @shop.reload.smoking_condition_schedules)
+  end
+
   test "unknown night smoking is labeled explicitly in import preview" do
     get new_admin_shop_import_path, headers: @headers, params: { raw_text: "店名\n福城\n営業時間\n11:00 - 22:00\n禁煙・喫煙\n全席喫煙可\n夜は喫煙可\n駐車場\n無" }
     assert_response :success

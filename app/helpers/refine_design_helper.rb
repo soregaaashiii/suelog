@@ -18,7 +18,12 @@ module RefineDesignHelper
   def refine_shop_smoking_badges(shop)
     unless shop.confirmed_non_smoking?
       return refine_advanced_smoking_badges(shop) if shop.advanced_smoking_schedules?
-      return refine_smoking_badges(shop.smoking_area, shop.smoking_type)
+      badges = refine_smoking_badges(shop.smoking_area, shop.smoking_type)
+      if shop.smoking_seat_locations?
+        places = shop.smoking_condition_rows.filter_map { |row| shop.smoking_seat_location_label(row[:key]) }.uniq
+        return safe_join([badges, tag.span(places.join(" ／ "), class: "smoking-seat-location", style: "display:block; width:100%; font-size:12px;")], " ")
+      end
+      return badges
     end
 
     tag.span(class: "smoking-badge smoking-badge--non-smoking") do
@@ -35,7 +40,7 @@ module RefineDesignHelper
     end
     labels = { "electronic_only" => "加熱式", "paper_only" => "紙", "both_ok" => "紙・加熱式", "unknown" => "種類不明" }
     notes = shop.smoking_condition_rows.map do |row|
-      place = row[:area] == "separated" ? "喫煙所" : "席"
+      place = row[:area] == "separated" ? "喫煙所" : (shop.smoking_seat_location_label(row[:key]) || "席")
       "#{place}・#{labels[row[:type]] || '種類不明'}：#{shop.smoking_condition_time_label(row[:key])}"
     end
     badges << tag.span(notes.join(" ／ "), class: "smoking-schedule-note", style: "display:block; width:100%; font-size:12px; line-height:1.7; color:inherit; margin-top:4px;")

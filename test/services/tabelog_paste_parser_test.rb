@@ -47,6 +47,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "both_ok", result[:smoking_type]
     assert_includes result[:public_store_details], "室内は禁煙。テラス席の一部喫煙可。"
+    assert_equal "terrace", result.dig(:smoking_condition_schedules, "primary", "seat_location")
     result = TabelogPasteParser.call("店名\n禁煙テラス\n禁煙・喫煙\n分煙\nテラス席の一部喫煙不可。\n駐車場\n有")
     refute_equal "both_ok", result[:smoking_type]
   end

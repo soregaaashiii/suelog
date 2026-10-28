@@ -23,9 +23,16 @@
       style: "width:100%; padding:8px; border:1px solid #ddd; border-radius:10px;" %>
     </div>
 
-<% smoking_details_present = @shop.smoking_area_2.present? || @shop.smoking_type_2.present? || @shop.smoking_condition_schedules.to_h.values.any? { |rule| rule.to_h["mode"] == "unknown" || (rule.to_h["mode"] == "custom" && rule.to_h["hours_text"].present?) } %>
+<% smoking_details_present = @shop.smoking_seat_locations? || @shop.smoking_area_2.present? || @shop.smoking_type_2.present? || @shop.smoking_condition_schedules.to_h.values.any? { |rule| rule.to_h["seat_location"].present? || rule.to_h["mode"] == "unknown" || (rule.to_h["mode"] == "custom" && rule.to_h["hours_text"].present?) } %>
 <details <%= "open" if smoking_details_present %> class="smoking-advanced-settings" style="grid-column:1 / -1; margin:12px 0; padding:12px; border:1px solid #ddd; border-radius:12px;">
   <summary style="cursor:pointer; font-weight:700;">もっと詳細に設定（条件の追加・条件ごとの時間）<%= "［詳細設定あり］" if smoking_details_present %></summary>
+  <p style="font-size:13px; color:#555;">「席で喫煙可」の場合は、喫煙できる席の場所も指定できます。未指定なら場所の補足を表示しません。</p>
+  <% [["primary", "条件1"], ["secondary", "条件2"]].each do |key, title| %>
+    <div style="margin:10px 0;">
+      <%= label_tag "smoking_seat_location_#{key}", "#{title}：喫煙できる席の場所" %>
+      <%= select_tag "shop[smoking_condition_schedules][#{key}][seat_location]", options_for_select([["未指定", ""]] + Shop::SMOKING_SEAT_LOCATIONS.map { |value, label| [label, value] }, @shop.smoking_condition_schedules.to_h[key].to_h["seat_location"]), id: "smoking_seat_location_#{key}", style: "display:block; width:100%; padding:8px;" %>
+    </div>
+  <% end %>
   <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:12px;">
     <div>
       <div style="font-weight:700;">喫煙エリア2（任意）</div>

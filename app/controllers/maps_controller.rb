@@ -53,8 +53,8 @@ class MapsController < ApplicationController
     # Share identical icon markup instead of repeating it for every map record.
     @map_smoking_badges_payload = {}
     @map_shops_payload = @shops.map do |shop|
-      badge_key = shop.advanced_smoking_schedules? ? "schedule:#{shop.id}" : [ shop.smoking_area, shop.smoking_type ].join(":")
-      @map_smoking_badges_payload[badge_key] ||= (shop.advanced_smoking_schedules? ? helpers.refine_shop_smoking_badges(shop) : helpers.refine_smoking_badges(shop.smoking_area, shop.smoking_type)).to_s
+      badge_key = (shop.advanced_smoking_schedules? || shop.smoking_seat_locations?) ? "schedule:#{shop.id}" : [ shop.smoking_area, shop.smoking_type ].join(":")
+      @map_smoking_badges_payload[badge_key] ||= ((shop.advanced_smoking_schedules? || shop.smoking_seat_locations?) ? helpers.refine_shop_smoking_badges(shop) : helpers.refine_smoking_badges(shop.smoking_area, shop.smoking_type)).to_s
       {
         id: shop.id,
         name: shop.name.to_s,

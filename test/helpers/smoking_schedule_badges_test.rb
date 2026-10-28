@@ -19,4 +19,14 @@ class SmokingScheduleBadgesTest < ActionView::TestCase
       assert_includes refine_shop_smoking_badges(shop), "紙・加熱式OK"
     end
   end
+  test "seat location appears on cards without activating a time schedule" do
+    shop = Shop.new(name: "テラス", smoking_area: :all_smoking, smoking_type: :both_ok,
+      smoking_condition_schedules: { "primary" => { "seat_location" => "terrace" } })
+    refute shop.advanced_smoking_schedules?
+    assert_includes refine_shop_smoking_badges(shop), "テラス席"
+    assert_includes refine_shop_smoking_badges(shop), "紙・加熱式OK"
+    shop.smoking_area = :separated
+    refute_includes refine_shop_smoking_badges(shop), "テラス席"
+  end
+
 end
