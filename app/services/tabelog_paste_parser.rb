@@ -1249,7 +1249,7 @@ class TabelogPasteParser
     return "electronic_only" if text.match?(/加熱式たばこ限定|加熱式タバコ限定|加熱式限定/)
     return "paper_only" if paper_tobacco_exclusive?(raw.to_s)
     return "both_ok" if text.match?(/紙.*加熱|加熱.*紙/)
-    return "both_ok" if text.match?(/テラス席(?:のみ)?\s*喫煙(?:可|可能)/)
+    return "both_ok" if text.match?(/テラス席(?:部分|エリア)?(?:のみ)?\s*喫煙(?:可能|可)/)
     return "both_ok" if text.match?(/\d+階[^。\n]{0,20}喫煙(?:可|可能)/)
     return "both_ok" if text.match?(/時間帯禁煙\s*[（(][^）)]*[）)]/)
     return "both_ok" if text.match?(/昼\s*\d{1,2}(?::\d{2})?\s*時?\s*まで(?:は)?\s*禁煙/)
