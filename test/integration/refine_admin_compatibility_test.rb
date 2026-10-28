@@ -28,7 +28,7 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_response :redirect
     imported = Shop.find_by!(name: "時間別インポート")
     assert_equal "electronic_only", imported.smoking_type
-    assert_equal "paper_only", imported.smoking_type_2
+    assert_equal "both_ok", imported.smoking_type_2
     assert_equal "22:00-04:00", imported.smoking_condition_schedules.dig("secondary", "hours_text")
     get edit_admin_shop_path(imported, from: "shop_import"), headers: @headers
     assert_select 'details.smoking-advanced-settings:not([open])', count: 1

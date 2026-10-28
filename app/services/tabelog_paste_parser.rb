@@ -1121,7 +1121,7 @@ class TabelogPasteParser
 
   def extract_smoking_conditions(raw)
     if timed_tobacco_switch
-      return [{ area: "all_smoking", type: "electronic_only" }, { area: "all_smoking", type: "paper_only" }]
+      return [{ area: "all_smoking", type: "electronic_only" }, { area: "all_smoking", type: "both_ok" }]
     end
     text = [raw, @text].compact.join("\n")
     heated_at_seat = heated_tobacco_at_seats?(text)
