@@ -89,7 +89,7 @@ class TabelogPasteParser
       smoking_area_2: smoking_conditions.dig(1, :area),
       smoking_type_2: smoking_conditions.dig(1, :type),
       smoking_hours_text: extract_smoking_hours_text,
-      smoking_condition_schedules: timed_tobacco_switch&.dig(:schedules),
+      smoking_condition_schedules: imported_smoking_condition_schedules,
       smoking_note: extract_smoking_note,
       charter_raw: field_value("貸切"),
       parking_raw: field_value("駐車場"),
@@ -610,6 +610,42 @@ class TabelogPasteParser
     end.join
   end
 
+  # Keep both sides of a daytime ban, including morning service before lunch.
+  # Use raw opening ranges here to avoid recursing through display annotations.
+  def multiple_daily_smoking_ranges
+    return @multiple_daily_smoking_ranges if defined?(@multiple_daily_smoking_ranges)
+    @multiple_daily_smoking_ranges = nil
+    raw = normalized_smoking_rule_text
+    return if raw.match?(/平日|土日|曜日|店外|屋外/)
+    match = raw.match(/(\d{1,2}):(\d{2})\s*[～〜~\-－–—]\s*(\d{1,2}):(\d{2})\s*(?:まで)?\s*(?:は)?\s*(?:のみ)?\s*(?:全席|全面|完全)?\s*禁煙/)
+    return unless match
+    ban_start = time_to_minutes("#{match[1]}:#{match[2]}")
+    ban_end = time_to_minutes("#{match[3]}:#{match[4]}")
+    return unless ban_end > ban_start
+    ranges = opening_ranges_by_day.transform_values do |services|
+      services.flat_map do |start, finish|
+        from, to = normalized_time_range(start, finish)
+        if ban_end <= from || ban_start >= to
+          [[start, finish]]
+        else
+          allowed = []
+          allowed << [start, format("%02d:%02d", ban_start / 60, ban_start % 60)] if from < ban_start
+          allowed << [format("%02d:%02d", ban_end / 60, ban_end % 60), finish] if ban_end < to
+          allowed
+        end
+      end
+    end
+    # Other existing rules retain their usual single-window behavior.
+    @multiple_daily_smoking_ranges = ranges if ranges.values.any? { |parts| parts.length > 1 } &&
+      opening_ranges_by_day.values.any? { |parts| parts.any? { |start, finish| time_to_minutes(start) < ban_start && time_to_minutes(finish) > ban_end } }
+  end
+
+  def imported_smoking_condition_schedules
+    return timed_tobacco_switch[:schedules] if timed_tobacco_switch
+    return unless multiple_daily_smoking_ranges && extract_smoking_conditions(field_value_with_continuation("禁煙・喫煙")).length == 1
+    { "primary" => { "mode" => "custom", "hours_text" => extract_smoking_hours_text } }
+  end
+
   def extract_smoking_hours_by_day
     return {} if timed_tobacco_switch
     if (exception_ranges = weekday_nonsmoking_exception_ranges)
@@ -627,6 +663,9 @@ class TabelogPasteParser
     end
     if (evening_ranges = evening_only_smoking_ranges)
       return evening_ranges.filter_map { |day, ranges| [day, ranges.map { |times| times.join("-") }.join(", ")] if ranges.present? }.to_h
+    end
+    if (multiple_ranges = multiple_daily_smoking_ranges)
+      return multiple_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
     end
     smoking_raw = normalized_smoking_rule_text
     opening_raw = opening_hours_field_value.to_s
@@ -939,9 +978,10 @@ class TabelogPasteParser
 
     current_hours.map do |hours|
       next hours if hours.include?("（喫煙可：")
-      next hours unless smoking_range_applies_to_hours?(smoking_range, hours)
+      applicable = smoking_range.split(/,\s*/).select { |range| smoking_range_applies_to_hours?(range, hours) }
+      next hours if applicable.blank?
 
-      "#{hours}（喫煙可：#{smoking_range}）"
+      "#{hours}（喫煙可：#{applicable.join(", ")}）"
     end
   end
 

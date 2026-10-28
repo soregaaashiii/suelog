@@ -65,6 +65,19 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_equal({}, @shop.reload.smoking_condition_schedules)
   end
 
+  test "multiple detailed windows survive saving and reopening the form" do
+    schedule = "月 07:00-11:00, 12:30-21:00\n火 07:00-11:00, 12:30-21:00\n日 喫煙不可"
+    patch admin_shop_path(@shop), headers: @headers, params: { shop: {
+      smoking_condition_schedules: { primary: { mode: "custom", hours_text: schedule } }
+    } }
+    assert_response :redirect
+    assert_equal schedule, @shop.reload.smoking_condition_schedules.dig("primary", "hours_text")
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_select 'details.smoking-advanced-settings:not([open])', count: 1
+    assert_select '#smoking_schedule_primary_hours', text: schedule
+    assert_select '[data-action="smoking-windows#add"]', count: 2
+  end
+
   test "imported weekday nonsmoking checkbox survives saving without closing business" do
     result = TabelogPasteParser.call("店名\n曜日テスト\n営業時間\n17:00 - 23:00\n禁煙・喫煙\n全席喫煙可\n日曜日のみ全席禁煙\n駐車場\n無")
     @shop.update!(opening_hours_text: result[:opening_hours_text], smoking_hours_text: result[:smoking_hours_text])
