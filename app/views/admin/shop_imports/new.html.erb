@@ -106,7 +106,7 @@
     }.each do |label, value| %>
       <tr>
         <th style="border:1px solid #ddd; background:#f8f8f8; padding:8px; width:160px; text-align:left;"><%= label %></th>
-        <td style="border:1px solid #ddd; padding:8px; white-space:pre-wrap;"><%= value.presence || (label == "喫煙可能時間帯" && @parsed_attrs[:public_store_details].to_s.match?(/ランチ.*禁煙(?:タイム|時間)(?:が|は)?(?:あります|あり)|(?:夜|夜間|ディナー)(?:だけ|のみ)?(?:は)?\s*喫煙(?:可能|可)/) ? (@parsed_attrs[:public_store_details].to_s.match?(/ランチ.*禁煙(?:タイム|時間)(?:が|は)?(?:あります|あり)/) ? "未設定（禁煙時間不明・要確認）" : "未設定") : "未取得") %></td>
+        <td style="border:1px solid #ddd; padding:8px; white-space:pre-wrap;"><%= value.presence || (label == "喫煙可能時間帯" && @parsed_attrs[:public_store_details].to_s.match?(/ランチ.*禁煙|(?:夜|夜間|ディナー)(?:だけ|のみ)?(?:は)?\s*喫煙(?:可能|可)/) ? (@parsed_attrs[:public_store_details].to_s.match?(/ランチ.*禁煙(?:タイム|時間)(?:が|は)?(?:あります|あり)/) ? "未設定（禁煙時間不明・要確認）" : "未設定") : "未取得") %></td>
       </tr>
     <% end %>
   </table>

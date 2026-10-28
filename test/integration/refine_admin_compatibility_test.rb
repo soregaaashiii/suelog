@@ -20,6 +20,14 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "lunch-time ban with no lunch hours previews unset smoking time" do
+    get new_admin_shop_import_path, headers: @headers, params: { raw_text: "店名\nヤマダ カフェ\n営業時間\n11:30 - 21:00\n禁煙・喫煙\n分煙\nランチ時間は禁煙\n駐車場\n有" }
+    assert_response :success
+    assert_select 'tr', text: /喫煙エリア\s*all_smoking/
+    assert_select 'tr', text: /喫煙タイプ\s*both_ok/
+    assert_select 'tr', text: /喫煙可能時間帯\s*未設定/
+  end
+
   test "seat location saves independently of time and keeps details open" do
     patch admin_shop_path(@shop), headers: @headers, params: { shop: {
       smoking_condition_schedules: { primary: { mode: "", hours_text: "", seat_location: "terrace" } }
