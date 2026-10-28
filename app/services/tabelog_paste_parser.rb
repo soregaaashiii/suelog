@@ -37,6 +37,7 @@ class TabelogPasteParser
       smoking_area_2: metadata[:smoking_area_2],
       smoking_type_2: metadata[:smoking_type_2],
       smoking_hours_text: metadata[:smoking_hours_text],
+      smoking_condition_schedules: metadata[:smoking_condition_schedules],
       public_store_details: metadata[:smoking_note],
       raw_import_text: @raw_text,
       import_metadata: metadata,
@@ -88,6 +89,7 @@ class TabelogPasteParser
       smoking_area_2: smoking_conditions.dig(1, :area),
       smoking_type_2: smoking_conditions.dig(1, :type),
       smoking_hours_text: extract_smoking_hours_text,
+      smoking_condition_schedules: timed_tobacco_switch&.dig(:schedules),
       smoking_note: extract_smoking_note,
       charter_raw: field_value("貸切"),
       parking_raw: field_value("駐車場"),
@@ -609,6 +611,7 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
+    return {} if timed_tobacco_switch
     if (exception_ranges = weekday_nonsmoking_exception_ranges)
       return exception_ranges.transform_values { |ranges| ranges.map { |times| times.join("-") }.join(", ") }
     end
@@ -1050,7 +1053,36 @@ class TabelogPasteParser
     "unknown"
   end
 
+  def timed_tobacco_switch
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:")
+    return nil unless raw.match?(/(?:加熱式|電子)(?:たばこ|タバコ)?(?:のみ|限定)/)
+    match = raw.match(/(\d{1,2})(?::(\d{2}))?時?(?:以降|から)[、,\s]*紙(?:巻(?:き)?)?(?:タバコ|たばこ|煙草)(?:も|は)?\s*喫煙(?:可能|可)/)
+    return nil unless match
+    cutoff = format("%02d:%02d", match[1].to_i, match[2].to_i)
+    return nil if match[1].to_i >= 24 || match[2].to_i >= 60
+    rows = opening_ranges_by_day.map do |day, ranges|
+      allowed = ranges.filter_map do |open_time, close_time|
+        opening, closing = normalized_time_range(open_time, close_time)
+        start = [opening, time_to_minutes(cutoff)].max
+        next if start >= closing
+        "#{format('%02d:%02d', start / 60, start % 60)}-#{close_time}"
+      end
+      "#{day_label(day)} #{allowed.presence&.join(', ') || '喫煙不可'}"
+    end
+    return nil if rows.empty?
+    # A common daily window is easier to edit; otherwise retain weekday rows.
+    values = rows.map { |row| row.split(" ", 2).last }.uniq
+    hours = values.size == 1 && values.first != "喫煙不可" ? values.first : rows.join("\n")
+    { schedules: {
+      "primary" => { "mode" => "business", "hours_text" => "" },
+      "secondary" => { "mode" => "custom", "hours_text" => hours }
+    } }
+  end
+
   def extract_smoking_conditions(raw)
+    if timed_tobacco_switch
+      return [{ area: "all_smoking", type: "electronic_only" }, { area: "all_smoking", type: "paper_only" }]
+    end
     text = [raw, @text].compact.join("\n")
     heated_at_seat = heated_tobacco_at_seats?(text)
     paper_in_separate_area = paper_tobacco_in_separate_area?(text)
@@ -1267,6 +1299,7 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    return nil if timed_tobacco_switch
     if (exception_ranges = weekday_nonsmoking_exception_ranges)
       return exception_ranges.map do |day, ranges|
         label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"

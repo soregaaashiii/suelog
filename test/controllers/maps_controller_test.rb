@@ -1,6 +1,30 @@
 require "test_helper"
 
 class MapsControllerTest < ActionDispatch::IntegrationTest
+  test "advanced smoking rules are included in paper search with time notes" do
+    Geocoder.configure(lookup: :test)
+    Geocoder::Lookup::Test.set_default_stub([])
+    shop = Shop.create!(name: "時間別マップ", address: "大阪市北区梅田", genre: "居酒屋", last_confirmed_on: Date.current,
+      smoking_area: :all_smoking, smoking_type: :electronic_only, smoking_area_2: :all_smoking, smoking_type_2: :paper_only,
+      latitude: 34.7025, longitude: 135.4959, approved: true,
+      opening_hours_text: "月 16:00-04:00", smoking_condition_schedules: {
+        "primary" => { "mode" => "business" }, "secondary" => { "mode" => "custom", "hours_text" => "22:00-04:00" }
+      })
+    travel_to Time.zone.parse("2026-10-26 21:00") do
+      get map_url(format: :json), params: { south: 34.70, west: 135.49, north: 34.71, east: 135.50, smoking_type: "paper_only" }
+      assert_response :success
+      entry = response.parsed_body.fetch("shops").find { |row| row["id"] == shop.id }
+      assert entry
+      badges = response.parsed_body.fetch("badges").fetch(entry.fetch("smoking_badge_key"))
+      assert_includes badges, "22:00-04:00"
+      assert_includes badges, "加熱式のみ"
+      refute_includes badges, "紙・加熱式OK"
+      get root_path, params: { smoking_type: "paper_only" }
+      assert_response :success
+      assert_includes response.body, "時間別マップ"
+    end
+  end
+
   test "should get index" do
     get map_url
     assert_response :success

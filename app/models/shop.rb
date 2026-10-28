@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 class Shop < ApplicationRecord
+  include SmokingConditionSchedules
   attr_accessor :defer_aicoo_activity_delivery
 
   # ===== Associations =====
@@ -467,7 +468,8 @@ class Shop < ApplicationRecord
   def smoking_hours_unset_with_restriction?
     return false if smoking_hours_text.present?
 
-    note = [public_store_details, import_metadata.to_h["smoking_note"], import_metadata.to_h["smoking_raw"]].compact.join("\n")
+    metadata = has_attribute?(:import_metadata) ? import_metadata.to_h : {}
+    note = [public_store_details, metadata["smoking_note"], metadata["smoking_raw"]].compact.join("\n")
     note.match?(/(?:ランチ|昼|日中|朝食|モーニング).*禁煙|(?:夜|夜間|ディナー)(?:だけ|のみ)(?:は)?喫煙可/)
   end
 
@@ -686,6 +688,12 @@ class Shop < ApplicationRecord
   end
 
   def smoking_now?
+    return smoking_condition_rows.any? { |row| smoking_condition_now?(row[:key]) } if advanced_smoking_schedules?
+
+    legacy_smoking_now?
+  end
+
+  def legacy_smoking_now?
     return false unless open_now?
     return false if confirmed_non_smoking?
     return !smoking_hours_unset_with_restriction? if smoking_hours_text.blank?

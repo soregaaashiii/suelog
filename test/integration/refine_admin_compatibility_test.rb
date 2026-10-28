@@ -20,6 +20,51 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "timed tobacco import saves advanced settings and blank-only merge cannot change existing permissions" do
+    raw = "店名\n時間別インポート\n住所\n大阪府大阪市北区梅田1-20\nジャンル\n居酒屋\n営業時間\n16:00 - 04:00\n禁煙・喫煙\n全席喫煙可\n※加熱式タバコ限定（22時以降、紙タバコも喫煙可）\n駐車場\n無"
+    assert_difference("Shop.count", 1) do
+      post admin_shop_import_path, headers: @headers, params: { raw_text: raw, force_new: "1" }
+    end
+    assert_response :redirect
+    imported = Shop.find_by!(name: "時間別インポート")
+    assert_equal "electronic_only", imported.smoking_type
+    assert_equal "paper_only", imported.smoking_type_2
+    assert_equal "22:00-04:00", imported.smoking_condition_schedules.dig("secondary", "hours_text")
+    get edit_admin_shop_path(imported, from: "shop_import"), headers: @headers
+    assert_select 'details.smoking-advanced-settings:not([open])', count: 1
+    assert_select '#smoking_schedule_primary_mode option[selected]', text: "営業時間と同じ"
+    assert_select '#smoking_schedule_secondary_hours', text: "22:00-04:00"
+    post admin_shop_import_path, headers: @headers, params: { raw_text: raw, target_shop_id: @shop.id }
+    assert_response :redirect
+    assert_equal "both_ok", @shop.reload.smoking_type
+    assert_equal({}, @shop.smoking_condition_schedules)
+  end
+
+  test "advanced condition schedules are collapsed and survive save and reload" do
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_response :success
+    assert_select 'details.smoking-advanced-settings:not([open])', count: 1
+    assert_select 'details.smoking-advanced-settings #shop_smoking_area_2', count: 1
+    assert_select '#smoking_schedule_primary_mode', count: 1
+    schedules = { primary: { mode: "business" }, secondary: { mode: "custom", hours_text: "22:00-04:00" } }
+    patch admin_shop_path(@shop), headers: @headers, params: { shop: {
+      smoking_type: "electronic_only", smoking_area_2: "all_smoking", smoking_type_2: "paper_only", smoking_condition_schedules: schedules
+    } }
+    assert_response :redirect
+    assert_equal "22:00-04:00", @shop.reload.smoking_condition_schedules.dig("secondary", "hours_text")
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_select '#smoking_schedule_secondary_hours', text: "22:00-04:00"
+    assert_select 'details.smoking-advanced-settings:not([open])', count: 1
+    patch admin_shop_path(@shop), headers: @headers, params: { shop: { name: @shop.name } }
+    assert_equal "business", @shop.reload.smoking_condition_schedules.dig("primary", "mode")
+    get shop_path(@shop)
+    assert_response :success
+    assert_includes response.body, "22:00-04:00"
+    patch admin_shop_path(@shop), headers: @headers, params: { shop: { smoking_condition_schedules: { primary: { mode: "" }, secondary: { mode: "" } } } }
+    assert_response :redirect
+    assert_equal({}, @shop.reload.smoking_condition_schedules)
+  end
+
   test "imported weekday nonsmoking checkbox survives saving without closing business" do
     result = TabelogPasteParser.call("店名\n曜日テスト\n営業時間\n17:00 - 23:00\n禁煙・喫煙\n全席喫煙可\n日曜日のみ全席禁煙\n駐車場\n無")
     @shop.update!(opening_hours_text: result[:opening_hours_text], smoking_hours_text: result[:smoking_hours_text])

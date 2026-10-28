@@ -35,7 +35,7 @@ class MapsController < ApplicationController
       end
       scope = scope.where(id: ids)
     end
-    columns = Shop.column_names - %w[raw_import_text import_metadata public_store_details note]
+    columns = Shop.column_names - %w[raw_import_text import_metadata note]
     @shops = scope.select(*columns).order(last_confirmed_on: :desc, id: :desc).to_a
     @open_now_cache = {}
     keyword = params[:q].to_s.strip.downcase.unicode_normalize(:nfkc)
@@ -46,15 +46,15 @@ class MapsController < ApplicationController
         (station.blank? || shop.nearest_station.to_s.downcase.include?(station)) &&
         (params[:genre].blank? || genre_candidates_for(shop).include?(params[:genre]) || (params[:genre] == "その他" && shop.genre == "その他")) &&
         (params[:smoking_area].blank? || shop.smoking_area == params[:smoking_area]) &&
-        (params[:smoking_type].blank? || shop.smoking_type == params[:smoking_type]) &&
+        (params[:smoking_type].blank? || shop.smoking_search_types.include?(params[:smoking_type])) &&
         (params[:open_now_only] != "1" || open_now_for(shop))
     end
     total = @shops.size
     # Share identical icon markup instead of repeating it for every map record.
     @map_smoking_badges_payload = {}
     @map_shops_payload = @shops.map do |shop|
-      badge_key = [ shop.smoking_area, shop.smoking_type ].join(":")
-      @map_smoking_badges_payload[badge_key] ||= helpers.refine_smoking_badges(shop.smoking_area, shop.smoking_type).to_s
+      badge_key = shop.advanced_smoking_schedules? ? "schedule:#{shop.id}" : [ shop.smoking_area, shop.smoking_type ].join(":")
+      @map_smoking_badges_payload[badge_key] ||= (shop.advanced_smoking_schedules? ? helpers.refine_shop_smoking_badges(shop) : helpers.refine_smoking_badges(shop.smoking_area, shop.smoking_type)).to_s
       {
         id: shop.id,
         name: shop.name.to_s,
@@ -67,7 +67,8 @@ class MapsController < ApplicationController
         smoking_area: shop.try(:smoking_area).to_s,
         smoking_area_label: smoking_area_label_for(shop),
         smoking_type: shop.try(:smoking_type).to_s,
-        smoking_type_label: smoking_type_label_for(shop),
+        smoking_type_label: shop.advanced_smoking_schedules? ? "条件ごとの時間をご確認ください" : smoking_type_label_for(shop),
+        smoking_badge_key: badge_key,
         open_now: open_now_for(shop),
         open_now_label: open_now_for(shop) ? "営業中" : "営業時間外",
         lat: shop.latitude.to_f,

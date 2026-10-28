@@ -1407,7 +1407,7 @@
 
     <div class="shop-show__badges">
       <%= refine_shop_smoking_badges(@shop) %>
-      <% if !@shop.confirmed_non_smoking? && @shop.secondary_smoking_condition? %>
+      <% if !@shop.confirmed_non_smoking? && !@shop.advanced_smoking_schedules? && @shop.secondary_smoking_condition? %>
         <span class="refine-secondary">条件2</span><%= refine_smoking_badges(@shop.smoking_area_2, @shop.smoking_type_2) %>
       <% end %>
 
@@ -1568,6 +1568,17 @@
             <%= confirmed_non_smoking ? "喫煙不可" : (@shop.respond_to?(:smoking_type_label) ? @shop.smoking_type_label : "未設定") %>
           </div>
         </div>
+
+        <% if !confirmed_non_smoking && @shop.advanced_smoking_schedules? %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">条件ごとの喫煙時間</div>
+            <div class="shop-show__infoCell">
+              <% @shop.smoking_condition_rows.each do |condition| %>
+                <div><%= condition[:key] == "primary" ? "条件1" : "条件2" %>：<%= @shop.smoking_condition_time_label(condition[:key]) %></div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
 
         <% if !@shop.confirmed_non_smoking? && @shop.respond_to?(:secondary_smoking_condition?) && @shop.secondary_smoking_condition? %>
           <div class="shop-show__infoRow">

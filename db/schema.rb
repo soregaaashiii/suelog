@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_28_000100) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -262,6 +262,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_000100) do
     t.json "seat_type_tags", default: [], null: false
     t.integer "smoking_area"
     t.integer "smoking_area_2"
+    t.json "smoking_condition_schedules", default: {}, null: false
     t.string "smoking_hours_text"
     t.integer "smoking_type"
     t.integer "smoking_type_2"
