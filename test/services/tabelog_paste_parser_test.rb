@@ -6,11 +6,23 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "all_smoking", result[:smoking_area]
     assert_equal "electronic_only", result[:smoking_type]
     assert_equal "all_smoking", result[:smoking_area_2]
-    assert_equal "paper_only", result[:smoking_type_2]
+    assert_equal "both_ok", result[:smoking_type_2]
     assert_equal "business", result[:smoking_condition_schedules].dig("primary", "mode")
     assert_equal "22:00-04:00", result[:smoking_condition_schedules].dig("secondary", "hours_text")
     assert_nil result[:smoking_hours_text]
     refute_includes result[:opening_hours_text], "喫煙可：22:00"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    travel_to(Time.zone.parse("2026-10-26 21:59")) do
+      assert_equal [{ area: "all_smoking", type: "electronic_only" }], shop.current_smoking_badge_conditions
+    end
+    travel_to(Time.zone.parse("2026-10-26 22:00")) do
+      assert_equal [{ area: "all_smoking", type: "both_ok" }], shop.current_smoking_badge_conditions
+    end
+    travel_to(Time.zone.parse("2026-10-27 03:59")) do
+      assert_equal [{ area: "all_smoking", type: "both_ok" }], shop.current_smoking_badge_conditions
+    end
+    travel_to(Time.zone.parse("2026-10-27 04:00")) { refute shop.smoking_now? }
+
   end
 
   test "smoking permitted only in terrace seat section means seat smoking and both types" do
