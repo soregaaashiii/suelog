@@ -1,6 +1,25 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "weekday nonsmoking with a reason keeps Saturday open but nonsmoking" do
+    raw = "店名\nカフェ ツーボーイ\n営業時間\n月・火・水・木・金\n07:00 - 16:00\n土\n07:00 - 15:00\n日\n定休日\n禁煙・喫煙\n全席喫煙可\n土曜日はお子様連れが来られるので禁煙です\n駐車場\n有"
+    result = TabelogPasteParser.call(raw)
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_includes result[:smoking_hours_text], "月 07:00 - 16:00"
+    assert_includes result[:smoking_hours_text], "土 喫煙不可"
+    assert_includes result[:opening_hours_text], "土 07:00-15:00"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    travel_to(Time.zone.parse("2026-10-30 12:00")) { assert shop.smoking_now? }
+    travel_to(Time.zone.parse("2026-10-31 12:00")) do
+      assert shop.open_now?
+      refute shop.smoking_now?
+    end
+    travel_to(Time.zone.parse("2026-11-01 12:00")) { refute shop.open_now? }
+    partial = TabelogPasteParser.call(raw.sub("お子様連れが来られるので禁煙です", "ランチのお客様が来られるので禁煙です"))
+    refute_includes partial[:smoking_hours_text].to_s, "土 喫煙不可"
+  end
+
   test "explicit range followed by lunch-time wording keeps both smoking windows" do
     result = TabelogPasteParser.call("店名\nカフェ&レストラン マッシュ\n営業時間\n月・水・木・金・土・日\n09:30 - 20:30\nL.O. 20:00\n火\n定休日\n禁煙・喫煙\n全席喫煙可\n12：00〜13：00のランチタイムは禁煙\n駐車場\n無")
     assert_equal "all_smoking", result[:smoking_area]
