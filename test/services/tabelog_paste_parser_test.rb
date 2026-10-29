@@ -1,6 +1,19 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "explicit range followed by lunch-time wording keeps both smoking windows" do
+    result = TabelogPasteParser.call("店名\nカフェ&レストラン マッシュ\n営業時間\n月・水・木・金・土・日\n09:30 - 20:30\nL.O. 20:00\n火\n定休日\n禁煙・喫煙\n全席喫煙可\n12：00〜13：00のランチタイムは禁煙\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_includes result[:smoking_hours_text], "月 09:30 - 12:00, 13:00 - 20:30"
+    assert_equal result[:smoking_hours_text], result.dig(:smoking_condition_schedules, "primary", "hours_text")
+    assert_includes result[:opening_hours_text], "09:30-20:30（L.O. 20:00）（喫煙可：09:30-12:00, 13:00-20:30）"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    { "2026-10-26 09:29" => false, "2026-10-26 09:30" => true, "2026-10-26 12:00" => false, "2026-10-26 12:59" => false, "2026-10-26 13:00" => true, "2026-10-26 20:30" => false, "2026-10-27 14:00" => false }.each do |clock, allowed|
+      travel_to(Time.zone.parse(clock)) { assert_equal allowed, shop.smoking_now?, clock }
+    end
+  end
+
   test "smoking bar floor with nonsmoking dance floor means smoking seats" do
     ["barフロアは喫煙　ダンスフロアは禁煙です", "バーフロアは喫煙可。ダンスフロアは禁煙"].each do |note|
       result = TabelogPasteParser.call("店名\nbar daphnia\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
