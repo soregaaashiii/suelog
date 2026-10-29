@@ -1,6 +1,26 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "counter-only timed ban keeps other seats available throughout business" do
+    result = TabelogPasteParser.call("店名\nカフェ ララカ\n営業時間\n08:00 - 20:00\nL.O. 19:30\n禁煙・喫煙\n全席喫煙可\n8:00～14:00までカウンター席のみ禁煙\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "all_smoking", result[:smoking_area_2]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_equal "both_ok", result[:smoking_type_2]
+    assert_nil result[:smoking_hours_text]
+    assert_equal "non_counter", result.dig(:smoking_condition_schedules, "primary", "seat_location")
+    assert_equal "14:00-20:00", result.dig(:smoking_condition_schedules, "secondary", "hours_text")
+    assert_equal "counter", result.dig(:smoking_condition_schedules, "secondary", "seat_location")
+    refute_includes result[:opening_hours_text], "喫煙可：14:00"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    { "07:59" => [false, false], "08:00" => [true, false], "13:59" => [true, false], "14:00" => [true, true], "19:59" => [true, true], "20:00" => [false, false] }.each do |clock, (other, counter)|
+      travel_to(Time.zone.parse("2026-10-26 #{clock}")) do
+        assert_equal other, shop.smoking_condition_now?("primary"), clock
+        assert_equal counter, shop.smoking_condition_now?("secondary"), clock
+      end
+    end
+  end
+
   test "weekday nonsmoking with a reason keeps Saturday open but nonsmoking" do
     raw = "店名\nカフェ ツーボーイ\n営業時間\n月・火・水・木・金\n07:00 - 16:00\n土\n07:00 - 15:00\n日\n定休日\n禁煙・喫煙\n全席喫煙可\n土曜日はお子様連れが来られるので禁煙です\n駐車場\n有"
     result = TabelogPasteParser.call(raw)
