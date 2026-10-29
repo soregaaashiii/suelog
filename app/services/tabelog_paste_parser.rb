@@ -656,7 +656,40 @@ class TabelogPasteParser
       opening_ranges_by_day.values.any? { |parts| parts.any? { |start, finish| time_to_minutes(start) < ban_start && time_to_minutes(finish) > ban_end } }
   end
 
+  def counter_only_timed_ban
+    return @counter_only_timed_ban if defined?(@counter_only_timed_ban)
+    @counter_only_timed_ban = nil
+    raw = normalized_smoking_rule_text
+    return nil unless raw.match?(/全席喫煙可/)
+    match = raw.match(/(\d{1,2}:\d{2})\s*[～〜~－–—-]\s*(\d{1,2}:\d{2})\s*(?:まで)?\s*カウンター席(?:のみ|だけ)(?:は)?\s*禁煙/)
+    return nil unless match
+    ban_start, ban_end = match[1, 2].map { |time| time_to_minutes(time) }
+    return nil unless ban_start < ban_end && ban_end <= 1440
+    rows = opening_ranges_by_day.map do |day, services|
+      allowed = services.flat_map do |start, finish|
+        from, to = normalized_time_range(start, finish)
+        if ban_end <= from || ban_start >= to
+          ["#{start}-#{finish}"]
+        else
+          parts = []
+          parts << "#{start}-#{match[1]}" if from < ban_start
+          parts << "#{match[2]}-#{finish}" if ban_end < to
+          parts
+        end
+      end
+      "#{day_label(day)} #{allowed.presence&.join(', ') || '喫煙不可'}"
+    end
+    return nil if rows.empty?
+    values = rows.map { |row| row.split(" ", 2).last }.uniq
+    hours = values.size == 1 && values.first != "喫煙不可" ? values.first : rows.join("\n")
+    @counter_only_timed_ban = { schedules: {
+      "primary" => { "mode" => "business", "seat_location" => "non_counter" },
+      "secondary" => { "mode" => "custom", "hours_text" => hours, "seat_location" => "counter" }
+    } }
+  end
+
   def imported_smoking_condition_schedules
+    return counter_only_timed_ban[:schedules] if counter_only_timed_ban
     schedules = if timed_tobacco_switch
       timed_tobacco_switch[:schedules]
     elsif !unknown_night_smoking_time? && multiple_daily_smoking_ranges && extract_smoking_conditions(field_value_with_continuation("禁煙・喫煙")).length == 1
@@ -674,6 +707,7 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
+    return {} if counter_only_timed_ban
     return {} if unknown_night_smoking_time?
     return {} if timed_tobacco_switch
     if (exception_ranges = weekday_nonsmoking_exception_ranges)
@@ -1156,6 +1190,10 @@ class TabelogPasteParser
   end
 
   def extract_smoking_conditions(raw)
+    if counter_only_timed_ban
+      type = extract_smoking_type(raw)
+      return [{ area: "all_smoking", type: type }, { area: "all_smoking", type: type }]
+    end
     if timed_tobacco_switch
       return [{ area: "all_smoking", type: "electronic_only" }, { area: "all_smoking", type: "both_ok" }]
     end
@@ -1398,6 +1436,7 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    return nil if counter_only_timed_ban
     return nil if unknown_night_smoking_time?
     return nil if timed_tobacco_switch
     if (exception_ranges = weekday_nonsmoking_exception_ranges)

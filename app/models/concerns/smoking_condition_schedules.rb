@@ -3,7 +3,7 @@
 module SmokingConditionSchedules
   extend ActiveSupport::Concern
 
-  SMOKING_SEAT_LOCATIONS = { "indoor" => "店内席", "terrace" => "テラス席", "indoor_and_terrace" => "店内席・テラス席", "other" => "その他の席" }.freeze
+  SMOKING_SEAT_LOCATIONS = { "indoor" => "店内席", "terrace" => "テラス席", "indoor_and_terrace" => "店内席・テラス席", "counter" => "カウンター席", "non_counter" => "カウンター以外の席", "other" => "その他の席" }.freeze
 
   included do
     before_validation :normalize_condition_schedules
