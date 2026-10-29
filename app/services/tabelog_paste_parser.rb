@@ -1396,6 +1396,12 @@ class TabelogPasteParser
       text.match?(/#{smoking_facility}[^。\n]{0,40}#{outside_location}/)
   end
 
+  def nonsmoking_seats_available?(raw)
+    text = raw.to_s.tr("０１２３４５６７８９", "0123456789")
+    text.match?(/禁煙席(?:あり|有り|有)/) ||
+      text.match?(/禁煙席\s*[:：]?\s*[1-9]\d*\s*(?:卓|席)\s*(?:あり|有り|有)/)
+  end
+
   def extract_smoking_area(raw)
     text = [raw, @text].compact.join("\n")
 
@@ -1408,7 +1414,7 @@ class TabelogPasteParser
     return "separated" if text.match?(/(?:店外|屋外|外)に?[^。\n]{0,20}(?:灰皿|喫煙所)/)
     return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|喫煙専用室/)
     return "all_smoking" if text.match?(/昼[^。\n]*禁煙/) && text.match?(/夜[^。\n]*喫煙可/)
-    return "all_smoking" if raw.to_s.match?(/分煙/) && raw.to_s.match?(/禁煙席(?:あり|有り|有)/)
+    return "all_smoking" if raw.to_s.match?(/分煙/) && nonsmoking_seats_available?(raw)
     return "unknown" if text.match?(/分煙/)
     return "all_smoking" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "unknown" if text.match?(/全席禁煙|禁煙|不明/)
@@ -1436,7 +1442,7 @@ class TabelogPasteParser
     return "both_ok" if text.match?(/喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム/)
     return "both_ok" if text.match?(/昼[^。\n]*禁煙/) && text.match?(/夜[^。\n]*喫煙可/)
     return "both_ok" if raw.to_s.match?(/紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)/)
-    return "both_ok" if raw.to_s.match?(/分煙/) && raw.to_s.match?(/禁煙席(?:あり|有り|有)/)
+    return "both_ok" if raw.to_s.match?(/分煙/) && nonsmoking_seats_available?(raw)
     return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|分煙/)
     return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "both_ok" if text.match?(/紙タバコ|紙たばこ/)

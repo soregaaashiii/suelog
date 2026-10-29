@@ -1,6 +1,20 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "separated smoking with counted nonsmoking tables imports smoking seats" do
+    ["禁煙席4卓あり", "禁煙席４卓あり", "禁煙席：4卓有り", "禁煙席 16席あり"].each do |note|
+      result = TabelogPasteParser.call("店名\n満腹リッチ\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n有")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "both_ok", result[:smoking_type]
+      assert_nil result[:smoking_area_2]
+      assert_includes result[:public_store_details], note
+    end
+    result = TabelogPasteParser.call("店名\n限定\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n禁煙席4卓あり\n駐車場\n無")
+    assert_equal "electronic_only", result[:smoking_type]
+    result = TabelogPasteParser.call("店名\n禁煙\n禁煙・喫煙\n全席禁煙\n禁煙席4卓あり\n駐車場\n無")
+    refute_equal "all_smoking", result[:smoking_area]
+  end
+
   test "counter-only smoking imports seat permission and counter location" do
     ["カウンター席のみ喫煙可", "カウンター席だけ喫煙可能"].each do |note|
       result = TabelogPasteParser.call("店名\nBistroTege\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
