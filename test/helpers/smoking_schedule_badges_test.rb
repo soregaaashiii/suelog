@@ -29,4 +29,17 @@ class SmokingScheduleBadgesTest < ActionView::TestCase
     refute_includes refine_shop_smoking_badges(shop), "テラス席"
   end
 
+  test "situational note is visible and safely escaped on cards" do
+    shop = Shop.new(name: "状況による禁煙", smoking_area: :all_smoking, smoking_type: :both_ok,
+      opening_hours_text: "月 11:00-23:00",
+      smoking_condition_schedules: { "primary" => { "situation_note" => "お子様がいるときは禁煙 <script>alert(1)</script>" } })
+    travel_to Time.zone.parse("2026-10-26 12:00") do
+      html = refine_shop_smoking_badges(shop)
+      assert_includes html, "状況により禁煙・要確認"
+      assert_includes html, "お子様がいるときは禁煙"
+      refute_includes html, "<script>"
+      refute_includes html, "現在は喫煙不可"
+    end
+  end
+
 end

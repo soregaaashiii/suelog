@@ -20,6 +20,29 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "situational smoking note saves displays and clears independently of time" do
+    note = "お子様がいるときは禁煙。混雑時はスタッフに確認。"
+    patch admin_shop_path(@shop), headers: @headers, params: { shop: {
+      smoking_condition_schedules: { primary: { mode: "", situation_note: note } }
+    } }
+    assert_response :redirect
+    assert_equal note, @shop.reload.smoking_situation_note("primary")
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_select 'details.smoking-advanced-settings[open]', count: 1
+    assert_select '#smoking_situation_primary', text: note
+    get shop_path(@shop)
+    assert_response :success
+    assert_includes response.body, note
+    assert_includes response.body, "状況による喫煙条件"
+    assert_includes response.body, "状況により禁煙・要確認"
+    patch admin_shop_path(@shop), headers: @headers, params: { shop: {
+      smoking_condition_schedules: { primary: { mode: "", situation_note: "" } }
+    } }
+    assert_equal({}, @shop.reload.smoking_condition_schedules)
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_select 'details.smoking-advanced-settings:not([open])', count: 1
+  end
+
   test "lunch-time ban with no lunch hours previews unset smoking time" do
     get new_admin_shop_import_path, headers: @headers, params: { raw_text: "店名\nヤマダ カフェ\n営業時間\n11:30 - 21:00\n禁煙・喫煙\n分煙\nランチ時間は禁煙\n駐車場\n有" }
     assert_response :success

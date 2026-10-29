@@ -35,13 +35,23 @@ module RefineDesignHelper
     conditions = shop.open_now? ? shop.current_smoking_badge_conditions : shop.smoking_condition_rows
     badges = conditions.map { |row| refine_smoking_badges(row[:area], row[:type]) }
     if badges.empty?
-      label = shop.smoking_condition_schedules.values.any? { |rule| rule["mode"] == "unknown" } ? "喫煙時間は要確認" : "現在は喫煙不可"
+      label = if shop.smoking_condition_rows.any? { |row| shop.smoking_situation_note(row[:key]).present? }
+        "状況により禁煙・要確認"
+      elsif shop.smoking_condition_schedules.values.any? { |rule| rule["mode"] == "unknown" }
+        "喫煙時間は要確認"
+      else
+        "現在は喫煙不可"
+      end
       badges << tag.span(label, class: "smoking-badge smoking-badge--unknown")
     end
     labels = { "electronic_only" => "加熱式", "paper_only" => "紙", "both_ok" => "紙・加熱式", "unknown" => "種類不明" }
     notes = shop.smoking_condition_rows.map do |row|
       place = row[:area] == "separated" ? "喫煙所" : (shop.smoking_seat_location_label(row[:key]) || "席")
-      "#{place}・#{labels[row[:type]] || '種類不明'}：#{shop.smoking_condition_time_label(row[:key])}"
+      description = "#{place}・#{labels[row[:type]] || '種類不明'}：#{shop.smoking_condition_time_label(row[:key])}"
+      if (note = shop.smoking_situation_note(row[:key]))
+        description += "（状況により禁煙・要確認：#{note}）"
+      end
+      description
     end
     badges << tag.span(notes.join(" ／ "), class: "smoking-schedule-note", style: "display:block; width:100%; font-size:12px; line-height:1.7; color:inherit; margin-top:4px;")
     safe_join(badges, " ")

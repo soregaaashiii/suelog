@@ -84,4 +84,20 @@ class SmokingConditionSchedulesTest < ActiveSupport::TestCase
     assert shop.errors[:base].any?
   end
 
+  test "situational note does not claim current permission or affect another condition" do
+    shop = shop_with_rules
+    shop.smoking_condition_schedules["primary"]["situation_note"] = " お子様がいるときは禁煙 "
+    shop.valid?
+    assert_equal "お子様がいるときは禁煙", shop.smoking_situation_note("primary")
+    travel_to(Time.zone.parse("2026-10-26 21:00")) { refute shop.smoking_now? }
+    travel_to(Time.zone.parse("2026-10-26 22:00")) do
+      refute shop.smoking_condition_now?("primary")
+      assert shop.smoking_condition_now?("secondary")
+      assert shop.smoking_now?
+    end
+    shop.smoking_condition_schedules["primary"]["situation_note"] = "あ" * 501
+    shop.valid?
+    assert_includes shop.errors[:base], "状況による喫煙条件は500文字以内で入力してください"
+  end
+
 end

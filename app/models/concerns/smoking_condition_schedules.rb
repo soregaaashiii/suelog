@@ -11,7 +11,11 @@ module SmokingConditionSchedules
   end
 
   def advanced_smoking_schedules?
-    smoking_condition_schedules.to_h.values.any? { |rule| rule.to_h["mode"].present? }
+    smoking_condition_schedules.to_h.values.any? { |rule| rule.to_h["mode"].present? || rule.to_h["situation_note"].present? }
+  end
+
+  def smoking_situation_note(key)
+    smoking_condition_schedules.to_h[key.to_s].to_h["situation_note"].presence
   end
 
   def smoking_seat_location_label(key)
@@ -33,6 +37,7 @@ module SmokingConditionSchedules
   def smoking_condition_now?(key)
     return false unless open_now? && !confirmed_non_smoking?
 
+    return false if smoking_situation_note(key).present?
     rule = smoking_condition_schedules.to_h[key.to_s].to_h
     case rule["mode"]
     when "business" then true
@@ -77,10 +82,12 @@ module SmokingConditionSchedules
 
     self.smoking_condition_schedules = smoking_condition_schedules.stringify_keys.filter_map do |key, value|
       next unless %w[primary secondary].include?(key) && value.is_a?(Hash)
-      rule = value.stringify_keys.slice("mode", "hours_text", "seat_location")
+      rule = value.stringify_keys.slice("mode", "hours_text", "seat_location", "situation_note")
       rule["seat_location"] = rule["seat_location"].to_s.strip
       rule.delete("seat_location") if rule["seat_location"].blank?
-      next if rule["mode"].blank? && rule["seat_location"].blank?
+      rule["situation_note"] = rule["situation_note"].to_s.strip
+      rule.delete("situation_note") if rule["situation_note"].blank?
+      next if rule["mode"].blank? && rule["seat_location"].blank? && rule["situation_note"].blank?
       rule["hours_text"] = rule["mode"] == "custom" ? rule["hours_text"].to_s.strip : ""
       [key, rule]
     end.to_h
@@ -92,6 +99,7 @@ module SmokingConditionSchedules
       return
     end
     smoking_condition_schedules.each do |key, rule|
+      errors.add(:base, "状況による喫煙条件は500文字以内で入力してください") if rule["situation_note"].to_s.length > 500
       if rule["seat_location"].present? && !SMOKING_SEAT_LOCATIONS.key?(rule["seat_location"])
         errors.add(:base, "喫煙する席の場所を選択してください")
       end
