@@ -600,6 +600,7 @@ class TabelogPasteParser
 
   def normalized_smoking_rule_text
     raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:").gsub(/喫煙[（(]可[）)]/, "喫煙可").tr("　", " ")
+    raw = raw.gsub(/(\d{1,2}:\d{2}\s*[～〜~－–—-]\s*\d{1,2}:\d{2})\s*の\s*ランチ(?:タイム|時間帯|時間|時)?\s*(?:は|のみ)?\s*禁煙/, '\\1まで禁煙')
     # Normalize a bare time-range ban (including full-width spacing) to the
     # existing cutoff format, shared by opening annotations and smoking hours.
     raw = raw.gsub(/(\d{1,2}:\d{2}\s*[～〜~－–—-]\s*\d{1,2}:\d{2})\s*(?=禁煙)/, '\\1まで')
