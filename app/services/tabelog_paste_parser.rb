@@ -1334,6 +1334,11 @@ class TabelogPasteParser
       return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
     end
 
+    if raw.to_s.match?(/(?:禁煙席(?:と|・|、|及び|および)喫煙席|喫煙席(?:と|・|、|及び|および)禁煙席)(?:の)?(?:エリア|区域|スペース)?(?:が|は|を)?\s*(?:分かれ|分け|別れ|区切)/)
+      type = extract_smoking_type(raw)
+      return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
+    end
+
     smoking_seats = raw.to_s.tr("０１２３４５６７８９", "0123456789").match(/喫煙(?:席|\s*[（(]\s*テラス(?:席)?\s*[）)])\s*[:：]?\s*(\d+)\s*席/)
     if smoking_seats && smoking_seats[1].to_i.positive?
       type = extract_smoking_type(raw)
