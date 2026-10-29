@@ -703,6 +703,10 @@ class TabelogPasteParser
       schedules["primary"] ||= {}
       schedules["primary"]["seat_location"] = raw.match?(/(?:店内|室内)(?:席)?(?:は|で|も)?\s*喫煙(?:可能|可)/) ? "indoor_and_terrace" : "terrace"
     end
+    if conditions.length == 1 && conditions.first[:area] == "all_smoking" && raw.match?(/カウンター席(?:のみ|だけ)(?:は)?\s*喫煙(?:可能|可)/)
+      schedules["primary"] ||= {}
+      schedules["primary"]["seat_location"] = "counter"
+    end
     schedules.presence
   end
 
@@ -1329,7 +1333,7 @@ class TabelogPasteParser
       return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
     end
 
-    if raw.to_s.match?(/(?:テーブル|カウンター)(?:席)?(?:は|が|で)?\s*喫煙(?!不可|禁止|所|ブース|スペース|室)(?:可|可能)?/)
+    if raw.to_s.match?(/(?:テーブル|カウンター)(?:席)?(?:のみ|だけ)?(?:は|が|で)?\s*喫煙(?!不可|禁止|所|ブース|スペース|室)(?:可|可能)?/)
       type = extract_smoking_type(raw)
       return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
     end
