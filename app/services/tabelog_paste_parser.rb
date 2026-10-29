@@ -502,6 +502,12 @@ class TabelogPasteParser
   def weekday_nonsmoking_exception_ranges
     raw = field_value_with_continuation("禁煙・喫煙").to_s
     rules = raw.scan(/(?:\A|[。\n（(])\s*(?:毎週)?((?:[月火水木金土日](?:曜日|曜)?)(?:[・、\s]+[月火水木金土日](?:曜日|曜)?)*)\s*(?:のみ|だけ|は)?\s*(?:全席|全面|完全|終日)?禁煙/)
+    reason_rules = raw.scan(/(?:\A|[。\n（(])\s*(?:毎週)?((?:[月火水木金土日](?:曜日|曜)?)(?:[・、\s]+[月火水木金土日](?:曜日|曜)?)*)\s*(?:のみ|だけ|は)\s*([^。\n]{1,60}?)(?:ので|ため(?:に)?|為)\s*(?:全席|全面|完全|終日)?禁煙(?:です|となります|にします)?\s*(?=[。\n）)]|\z)/)
+    reason_rules.each do |days, reason|
+      # A reason must not turn a lunch-only or timed ban into a whole-day ban.
+      next if reason.match?(/ランチ|昼|夜|朝|時間|時|[0-9０-９]/)
+      rules << [days]
+    end
     return nil unless rules.present? && raw.match?(/全席喫煙可|喫煙可能|喫煙可/)
 
     excluded = rules.flat_map { |rule| expand_days(rule[0].gsub(/曜日|曜/, "")) }.uniq
