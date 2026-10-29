@@ -1580,6 +1580,20 @@
           </div>
         <% end %>
 
+        <% if !@shop.confirmed_non_smoking? && @shop.smoking_condition_rows.any? { |condition| @shop.smoking_situation_note(condition[:key]).present? } %>
+          <div class="shop-show__infoRow">
+            <div class="shop-show__infoHead">状況による喫煙条件</div>
+            <div class="shop-show__infoCell" style="white-space:pre-wrap;">
+              <% @shop.smoking_condition_rows.each do |condition| %>
+                <% if (note = @shop.smoking_situation_note(condition[:key])) %>
+                  <div><%= condition[:key] == "primary" ? "条件1" : "条件2" %>：<%= note %></div>
+                <% end %>
+              <% end %>
+              <div>状況により禁煙となります。ご利用時に店舗へご確認ください。</div>
+            </div>
+          </div>
+        <% end %>
+
         <% if !@shop.confirmed_non_smoking? && @shop.smoking_seat_locations? %>
           <div class="shop-show__infoRow">
             <div class="shop-show__infoHead">喫煙できる席</div>
