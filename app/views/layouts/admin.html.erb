@@ -20,7 +20,7 @@
     <div class="admin-shell" style="max-width:1480px; margin:30px auto; padding:0 20px;">
       <%= render "admin/nav" %>
 
-      <% unless controller_path == "admin/shop_imports" || (controller_path == "admin/shops" && %w[edit update].include?(action_name)) %>
+      <% unless controller_path == "admin/shop_imports" || (controller_path == "admin/shops" && %w[index edit update].include?(action_name)) %>
       <div style="margin:15px 0; padding:12px; background:#fff; border:1px solid #e5e5e5; border-radius:10px;">
         <div style="font-weight:800; margin-bottom:8px;">この端末のアクセス集計</div>
 

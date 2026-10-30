@@ -20,26 +20,6 @@
       style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#eef8f0; color:#137333; border:1px solid #137333; text-decoration:none; font-weight:700;" %>
 </div>
 
-<div style="margin:10px 0; padding:12px; border:1px solid #ddd; border-radius:12px; background:#fafafa;">
-  <div style="font-weight:900; margin-bottom:8px;">CSV一括インポート</div>
-
-  <%= form_with url: import_admin_shops_path,
-      multipart: true,
-      local: true,
-      style: "display:flex; gap:10px; align-items:center; flex-wrap:wrap;" do %>
-
-    <%= file_field_tag :file, accept: ".csv", required: true %>
-
-    <%= submit_tag "インポートする",
-        style: "padding:8px 12px; border:1px solid #111; border-radius:10px; background:#111; color:#fff;" %>
-  <% end %>
-
-  <div style="color:#666; font-size:12px; margin-top:8px; line-height:1.6;">
-    ・phone を数字化して normalized_phone で既存判定 → あれば更新 / なければ新規<br>
-    ・喫煙エリア or 喫煙タイプが空なら自動で承認待ち（noteに「未確認」を追記）<br>
-  </div>
-</div>
-
 <div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
   <div style="margin-bottom:12px;">
     <form action="<%= admin_shops_path %>" method="get" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
@@ -550,3 +530,23 @@
 <% else %>
   <p>該当する店舗はありません。</p>
 <% end %>
+
+<div style="margin:10px 0; padding:12px; border:1px solid #ddd; border-radius:12px; background:#fafafa;">
+  <div style="font-weight:900; margin-bottom:8px;">CSV一括インポート</div>
+
+  <%= form_with url: import_admin_shops_path,
+      multipart: true,
+      local: true,
+      style: "display:flex; gap:10px; align-items:center; flex-wrap:wrap;" do %>
+
+    <%= file_field_tag :file, accept: ".csv", required: true %>
+
+    <%= submit_tag "インポートする",
+        style: "padding:8px 12px; border:1px solid #111; border-radius:10px; background:#111; color:#fff;" %>
+  <% end %>
+
+  <div style="color:#666; font-size:12px; margin-top:8px; line-height:1.6;">
+    ・phone を数字化して normalized_phone で既存判定 → あれば更新 / なければ新規<br>
+    ・喫煙エリア or 喫煙タイプが空なら自動で承認待ち（noteに「未確認」を追記）<br>
+  </div>
+</div>
