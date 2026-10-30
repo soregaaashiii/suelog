@@ -270,6 +270,7 @@
 
                 <%= link_to "Google検索",
                     "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, '食べログ'].compact.join(' '))}",
+                    data: { tabelog_search_shop_id: shop.id },
                     target: "_blank",
                     rel: "noopener",
                     style: "display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:8px; text-decoration:none; font-size:12px; background:#fff;" %>
@@ -417,7 +418,7 @@
                     url: admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     method: :patch,
                     local: true,
-                    data: { turbo: false, inline_tabelog_form: (@status == "tabelog_missing" ? true : nil) },
+                    data: { turbo: false, inline_tabelog_form: (@status == "tabelog_missing" ? true : nil), shop_id: shop.id },
                     style: "display:flex; gap:6px; align-items:center; flex-wrap:wrap;" do |f| %>
                   <%= hidden_field_tag :inline_tabelog_update, "1" %>
                   <span data-url-save-status role="status" style="font-size:12px;"></span>
@@ -535,6 +536,13 @@
         });
       });
 
+      function focusTabelogInput(form) {
+        const input = form?.querySelector('[type="url"]');
+        if (!input || input.readOnly) return;
+        input.focus();
+        input.select();
+      }
+
       document.querySelectorAll("[data-inline-tabelog-form]").forEach((form) => {
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
@@ -560,7 +568,13 @@
             const checkbox = row.querySelector(".shop_checkbox");
             if (checkbox) checkbox.checked = false;
             boxes = boxes.filter(box => box !== checkbox);
+            const forms = Array.from(document.querySelectorAll("[data-inline-tabelog-form]"));
+            const index = forms.indexOf(form);
+            const nextForm = forms.slice(index + 1).concat(forms.slice(0, index))
+              .find(candidate => candidate.dataset.saving !== "true");
+            const advanceFocus = form.contains(document.activeElement);
             row.remove();
+            if (advanceFocus) focusTabelogInput(nextForm);
             update();
             const total = document.querySelector("[data-shop-total]");
             if (total) total.textContent = String(Math.max(0, Number(total.textContent) - 1));
@@ -577,6 +591,29 @@
           }
         });
       });
+
+      const focusStorageKey = "suelog-tabelog-search-shop";
+      function restoreSearchFocus() {
+        if (document.visibilityState !== "visible") return;
+        let shopId;
+        try { shopId = sessionStorage.getItem(focusStorageKey); } catch (_) { return; }
+        if (!shopId || !/^\d+$/.test(shopId)) return;
+        const form = document.querySelector(`[data-inline-tabelog-form][data-shop-id="${shopId}"]`);
+        if (form) focusTabelogInput(form);
+        try { sessionStorage.removeItem(focusStorageKey); } catch (_) {}
+      }
+      document.querySelectorAll("[data-tabelog-search-shop-id]").forEach((link) => {
+        link.addEventListener("click", () => {
+          const shopId = link.dataset.tabelogSearchShopId;
+          const form = document.querySelector(`[data-inline-tabelog-form][data-shop-id="${shopId}"]`);
+          if (!form) return;
+          try { sessionStorage.setItem(focusStorageKey, shopId); } catch (_) {}
+          focusTabelogInput(form);
+        });
+      });
+      window.addEventListener("focus", restoreSearchFocus);
+      document.addEventListener("visibilitychange", restoreSearchFocus);
+      restoreSearchFocus();
 
       update();
     })();
