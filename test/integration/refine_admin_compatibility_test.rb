@@ -210,21 +210,21 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
   end
 
   test "admin tracking defaults to excluded but explicit inclusion persists" do
-    get admin_shops_path, headers: @headers
+    get "/panel_8m4k/analytics", headers: @headers
     assert_response :success
     assert_includes response.body, "現在、この端末のフロント閲覧はアクセス集計から除外されています。"
     assert_no_difference("PageView.count") { get "/", headers: @headers }
 
     delete admin_include_page_view_tracking_path, headers: @headers
-    get admin_shops_path, headers: @headers
+    get "/panel_8m4k/analytics", headers: @headers
     assert_includes response.body, "現在、この端末のフロント閲覧はアクセス集計の対象です。"
     post admin_exclude_page_view_tracking_path, headers: @headers
-    get admin_shops_path, headers: @headers
+    get "/panel_8m4k/analytics", headers: @headers
     assert_includes response.body, "現在、この端末のフロント閲覧はアクセス集計から除外されています。"
   end
 
   test "import and edit screens hide device tracking controls" do
-    [new_admin_shop_import_path, edit_admin_shop_path(@shop)].each do |path|
+    [admin_shops_path, new_admin_shop_import_path, edit_admin_shop_path(@shop)].each do |path|
       get path, headers: @headers
       assert_response :success
       refute_includes response.body, "この端末のアクセス集計"
