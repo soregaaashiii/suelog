@@ -87,6 +87,12 @@
         <%= link_to "アフィリエイト未設定", admin_shops_path(status: "tabelog_missing", source: @source, per: @per, page: 1) %>｜
       <% end %>
 
+      <% if @status == "tabelog_configured" %>
+        <strong>アフィリエイト設定済み</strong>｜
+      <% else %>
+        <%= link_to "アフィリエイト設定済み", admin_shops_path(status: "tabelog_configured", source: @source, per: @per, page: 1) %>｜
+      <% end %>
+
       <% if @status == "hold" %>
         <strong>保留一覧</strong>
       <% else %>
@@ -134,7 +140,7 @@
 </div>
 
 <p style="color:#666; margin:8px 0;">
-  件数：<%= (@total_count || @shops.count) %> 件 ／ ページ：<%= (@page || 1) %> / <%= (@total_pages || 1) %>
+  件数：<span data-shop-total><%= (@total_count || @shops.count) %></span> 件 ／ ページ：<%= (@page || 1) %> / <%= (@total_pages || 1) %>
 </p>
 
 <% if (@total_pages || 1) > 1 %>
@@ -152,6 +158,8 @@
     <% end %>
   </div>
 <% end %>
+
+<div data-url-update-notice role="status" hidden style="margin:12px 0; color:#137333;"></div>
 
 <% if @shops.any? %>
   <%= form_with url: bulk_update_admin_shops_path, method: :patch, local: true, id: "bulk_form" do %>
@@ -413,7 +421,7 @@
                     style: "display:flex; gap:6px; align-items:center; flex-wrap:wrap;" do |f| %>
                   <%= hidden_field_tag :inline_tabelog_update, "1" %>
                   <span data-url-save-status role="status" style="font-size:12px;"></span>
-                  <% if @status == "tabelog_missing" %>
+                  <% if %w[tabelog_missing tabelog_configured].include?(@status) %>
                     <%= f.url_field :tabelog_url,
                         value: shop.tabelog_url.presence,
                         placeholder: "食べログURL",
@@ -469,7 +477,7 @@
   <script>
     (function () {
       const selectAll = document.getElementById("select_all");
-      const boxes = Array.from(document.querySelectorAll(".shop_checkbox"));
+      let boxes = Array.from(document.querySelectorAll(".shop_checkbox"));
       const countEl = document.getElementById("selected_count");
       const csvEl = document.getElementById("shop_ids_csv");
       const bulkForm = document.getElementById("bulk_form");
@@ -548,13 +556,17 @@
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || "更新できませんでした");
             input.value = result.url;
-            const badge = form.closest("tr").querySelector("[data-affiliate-missing]");
-            if (badge) {
-              badge.textContent = "食べログアフィリエイト設定済み";
-              badge.style.color = "#137333";
-            }
-            status.textContent = result.message;
-            status.style.color = "#137333";
+            const row = form.closest("tr");
+            const checkbox = row.querySelector(".shop_checkbox");
+            if (checkbox) checkbox.checked = false;
+            boxes = boxes.filter(box => box !== checkbox);
+            row.remove();
+            update();
+            const total = document.querySelector("[data-shop-total]");
+            if (total) total.textContent = String(Math.max(0, Number(total.textContent) - 1));
+            const notice = document.querySelector("[data-url-update-notice]");
+            notice.hidden = false;
+            notice.textContent = `${result.shop_name || "店舗"}を設定済みへ移動しました。`;
           } catch (error) {
             status.textContent = error.message || "通信に失敗しました。再度更新してください";
             status.style.color = "#b00020";

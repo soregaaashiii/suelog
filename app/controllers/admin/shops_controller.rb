@@ -32,6 +32,8 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where(on_hold: true)
     when "tabelog_suspect"
       scope = scope.where.not(tabelog_candidate_url: [nil, ""])
+    when "tabelog_configured"
+      scope = scope.where(approved: true).where.not(tabelog_affiliate_url: [nil, ""]).reorder(updated_at: :desc, id: :desc)
     when "tabelog_missing"
       scope = scope
         .where(approved: true)
@@ -1182,7 +1184,7 @@ class Admin::ShopsController < Admin::BaseController
     shop.update!(attributes)
 
     if request.format.json?
-      render json: { message: "更新しました", url: url }
+      render json: { message: "更新しました", url: url, shop_name: shop.name }
     else
       redirect_to admin_shops_path(status: params[:status], source: params[:source], per: params[:per], page: params[:page]),
                   flash: { admin_notice: "更新しました" }

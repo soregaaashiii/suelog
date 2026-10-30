@@ -11,19 +11,23 @@ function setup(fetch) {
   const status = { textContent: '', style: {} };
   const button = { disabled: false };
   const input = { value: 'https://tabelog.com/test/', readOnly: false };
-  const badge = { textContent: '食べログアフィリエイト未設定', style: {} };
+  const checkbox = { checked: true };
+  const total = { textContent: '10' };
+  const notice = { hidden: true, textContent: '' };
+  const row = { removed: false, querySelector: () => checkbox, remove() { this.removed = true; } };
   let submit;
   const form = {
     dataset: {}, action: '/panel_8m4k/shops/1',
     querySelector: selector => selector.includes('status') ? status : selector.includes('submit') ? button : input,
-    closest: () => ({ querySelector: () => badge }),
+    closest: () => row,
     addEventListener: (event, handler) => { submit = handler; }
   };
   vm.runInNewContext(script, {
-    document: { querySelectorAll: () => [form] }, fetch,
+    document: { querySelectorAll: () => [form], querySelector: selector => selector.includes('total') ? total : notice }, fetch,
+    boxes: [checkbox], update: () => {},
     FormData: class { constructor(value) { assert.equal(value, form); } }
   });
-  return { status, button, input, badge, submit: () => submit({ preventDefault() {} }) };
+  return { status, button, input, row, checkbox, total, notice, submit: () => submit({ preventDefault() {} }) };
 }
 
 test('Enter saves in place once, waits for persistence, and restores input', async () => {
@@ -42,8 +46,11 @@ test('Enter saves in place once, waits for persistence, and restores input', asy
   assert.equal(requests, 1);
   resolve({ ok: true, json: async () => ({ message: '更新しました', url: 'https://tabelog.com/test/' }) });
   await pending;
-  assert.equal(ui.status.textContent, '更新しました');
-  assert.equal(ui.badge.textContent, '食べログアフィリエイト設定済み');
+  assert.equal(ui.row.removed, true);
+  assert.equal(ui.checkbox.checked, false);
+  assert.equal(ui.total.textContent, '9');
+  assert.equal(ui.notice.hidden, false);
+  assert.match(ui.notice.textContent, /設定済みへ移動/);
   assert.equal(ui.button.disabled, false);
   assert.equal(ui.input.readOnly, false);
 });
@@ -57,7 +64,8 @@ test('failed saves preserve URL, show an error, and allow retry', async () => {
   await ui.submit();
   assert.equal(ui.status.textContent, '保存できませんでした');
   assert.equal(ui.input.value, 'https://tabelog.com/test/');
-  assert.equal(ui.badge.textContent, '食べログアフィリエイト未設定');
+  assert.equal(ui.row.removed, false);
+  assert.equal(ui.total.textContent, '10');
   assert.equal(ui.button.disabled, false);
   await ui.submit();
   assert.equal(attempts, 2);
