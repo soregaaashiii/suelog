@@ -20,6 +20,62 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "inline URL update saves only URL fields without synchronous external delivery" do
+    @shop.update!(opening_hours_text: "月 11:00-20:00")
+    original_name = @shop.name
+    original_hours = @shop.opening_hours_text
+    url = "https://tabelog.com/osaka/A2701/A270406/27080719/"
+      assert_enqueued_with(job: AicooActivityDeliveryJob) do
+        patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
+          inline_tabelog_update: "1", commit_action: "reject", shop: { tabelog_url: url, name: "ignored", opening_hours_text: "ignored" }
+        }
+      end
+    assert_response :success
+    assert_equal "更新しました", response.parsed_body["message"]
+    assert_equal url, response.parsed_body["url"]
+    @shop.reload
+    assert_equal url, @shop.tabelog_url
+    assert_includes @shop.tabelog_affiliate_url, "ck.jp.ap.valuecommerce.com"
+    assert_equal "admin_manual", @shop.tabelog_match_method
+    assert_equal original_name, @shop.name
+    assert_equal original_hours, @shop.opening_hours_text
+    assert @shop.approved?
+    refute @shop.rejected?
+  end
+
+  test "inline candidate update saves affiliate URL and rejects invalid input" do
+    url = "https://tabelog.com/osaka/A2701/A270406/27080719/"
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
+      inline_tabelog_update: "1", shop: { tabelog_candidate_url: url }
+    }
+    assert_response :success
+    assert_equal url, @shop.reload.tabelog_candidate_url
+    assert_includes @shop.tabelog_candidate_affiliate_url, "ck.jp.ap.valuecommerce.com"
+    assert_nil @shop.tabelog_url
+    ["", "javascript:alert(1)", "https://bad url"].each do |bad_url|
+      patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
+        inline_tabelog_update: "1", shop: { tabelog_candidate_url: bad_url }
+      }
+      assert_response :unprocessable_entity
+      assert_equal "正しいURLを入力してください", response.parsed_body["error"]
+      assert_equal url, @shop.reload.tabelog_candidate_url
+    end
+  end
+
+  test "inline URL update supports regular form fallback and model errors" do
+    patch admin_shop_path(@shop), headers: @headers, params: {
+      inline_tabelog_update: "1", status: "tabelog_missing", shop: { tabelog_url: "https://tabelog.com/test/" }
+    }
+    assert_redirected_to admin_shops_path(status: "tabelog_missing")
+    @shop.update_column(:name, "")
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
+      inline_tabelog_update: "1", shop: { tabelog_url: "https://tabelog.com/other/" }
+    }
+    assert_response :unprocessable_entity
+    assert response.parsed_body["error"].present?
+    assert_equal "https://tabelog.com/test/", @shop.reload.tabelog_url
+  end
+
   test "situational smoking note saves displays and clears independently of time" do
     note = "お子様がいるときは禁煙。混雑時はスタッフに確認。"
     patch admin_shop_path(@shop), headers: @headers, params: { shop: {

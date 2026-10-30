@@ -695,6 +695,8 @@ class Admin::ShopsController < Admin::BaseController
   end
 
   def update
+    return update_inline_tabelog_url if params[:inline_tabelog_update] == "1"
+
     @shop = Shop.find(params[:id])
     if params[:from] == "shop_import" && @shop.import_source == "tabelog_paste"
       @shop.defer_aicoo_activity_delivery = true
@@ -1159,6 +1161,35 @@ class Admin::ShopsController < Admin::BaseController
 
   VALUECOMMERCE_SID = "3769275"
   VALUECOMMERCE_PID = "892611116"
+
+  # 一覧のURL欄は店舗全体の再解析や一覧再描画を待たずに保存する。
+  def update_inline_tabelog_url
+    shop = Shop.find(params[:id])
+    fields = params.require(:shop).permit(:tabelog_url, :tabelog_candidate_url)
+    key = fields.key?(:tabelog_url) ? :tabelog_url : :tabelog_candidate_url
+    url = fields[key].to_s.strip
+    unless url.match?(%r{\Ahttps?://[^\s]+\z})
+      return render json: { error: "正しいURLを入力してください" }, status: :unprocessable_entity
+    end
+
+    attributes = if key == :tabelog_url
+      { tabelog_url: url, tabelog_affiliate_url: build_tabelog_affiliate_url(url), tabelog_match_method: "admin_manual" }
+    else
+      { tabelog_candidate_url: url, tabelog_candidate_affiliate_url: build_tabelog_affiliate_url(url), tabelog_candidate_method: "admin_manual_candidate" }
+    end
+    shop.defer_aicoo_activity_delivery = true
+    shop.skip_geocoding_for_url_update = true
+    shop.update!(attributes)
+
+    if request.format.json?
+      render json: { message: "更新しました", url: url }
+    else
+      redirect_to admin_shops_path(status: params[:status], source: params[:source], per: params[:per], page: params[:page]),
+                  flash: { admin_notice: "更新しました" }
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
+  end
 
   def build_tabelog_affiliate_url(url)
     raw_url = url.to_s.strip

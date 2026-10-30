@@ -288,7 +288,7 @@
               <% end %>
 
               <% if @status == "tabelog_missing" %>
-                <div style="color:#b00020; font-size:12px; margin-top:6px; font-weight:700;">
+                <div data-affiliate-missing style="color:#b00020; font-size:12px; margin-top:6px; font-weight:700;">
                   食べログアフィリエイト未設定
                 </div>
               <% end %>
@@ -409,7 +409,10 @@
                     url: admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     method: :patch,
                     local: true,
+                    data: { turbo: false, inline_tabelog_form: (@status == "tabelog_missing" ? true : nil) },
                     style: "display:flex; gap:6px; align-items:center; flex-wrap:wrap;" do |f| %>
+                  <%= hidden_field_tag :inline_tabelog_update, "1" %>
+                  <span data-url-save-status role="status" style="font-size:12px;"></span>
                   <% if @status == "tabelog_missing" %>
                     <%= f.url_field :tabelog_url,
                         value: shop.tabelog_url.presence,
@@ -520,6 +523,45 @@
             }, 1200);
           } catch (error) {
             alert("コピーに失敗しました");
+          }
+        });
+      });
+
+      document.querySelectorAll("[data-inline-tabelog-form]").forEach((form) => {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (form.dataset.saving === "true") return;
+          const status = form.querySelector("[data-url-save-status]");
+          const button = form.querySelector('[type="submit"]');
+          const input = form.querySelector('[type="url"]');
+          const body = new FormData(form);
+          form.dataset.saving = "true";
+          button.disabled = true;
+          input.readOnly = true;
+          status.textContent = "保存中…";
+          status.style.color = "#666";
+          try {
+            const response = await fetch(form.action, {
+              method: "POST", body, credentials: "same-origin",
+              headers: { "Accept": "application/json" }
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "更新できませんでした");
+            input.value = result.url;
+            const badge = form.closest("tr").querySelector("[data-affiliate-missing]");
+            if (badge) {
+              badge.textContent = "食べログアフィリエイト設定済み";
+              badge.style.color = "#137333";
+            }
+            status.textContent = result.message;
+            status.style.color = "#137333";
+          } catch (error) {
+            status.textContent = error.message || "通信に失敗しました。再度更新してください";
+            status.style.color = "#b00020";
+          } finally {
+            form.dataset.saving = "false";
+            button.disabled = false;
+            input.readOnly = false;
           }
         });
       });
