@@ -3,7 +3,7 @@
 
 class Shop < ApplicationRecord
   include SmokingConditionSchedules
-  attr_accessor :defer_aicoo_activity_delivery
+  attr_accessor :defer_aicoo_activity_delivery, :skip_geocoding_for_url_update
 
   # ===== Associations =====
   has_many :reviews, dependent: :destroy
@@ -1284,6 +1284,7 @@ class Shop < ApplicationRecord
   end
 
   def should_geocode?
+    return false if skip_geocoding_for_url_update
     return false unless geocoding_enabled?
     return false if geocode_address.blank?
 
