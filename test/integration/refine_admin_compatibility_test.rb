@@ -20,6 +20,21 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "saved affiliates move from missing list to configured list" do
+    get admin_shops_path(status: "tabelog_missing"), headers: @headers
+    assert_select "form[data-inline-tabelog-form][action*='/shops/#{@shop.id}?']", count: 1
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
+      inline_tabelog_update: "1", shop: { tabelog_url: "https://tabelog.com/test/" }
+    }
+    assert_response :success
+    get admin_shops_path(status: "tabelog_missing"), headers: @headers
+    assert_select "a[href^='/panel_8m4k/shops/#{@shop.id}/edit']", count: 0
+    get admin_shops_path(status: "tabelog_configured"), headers: @headers
+    assert_response :success
+    assert_select "a[href^='/panel_8m4k/shops/#{@shop.id}/edit']", count: 1
+    assert_select "input[name='shop[tabelog_url]'][value='https://tabelog.com/test/']", count: 1
+  end
+
   test "inline URL update saves only URL fields without synchronous external delivery" do
     @shop.update!(opening_hours_text: "月 11:00-20:00")
     original_name = @shop.name
