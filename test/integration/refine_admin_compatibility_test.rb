@@ -22,7 +22,8 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
 
   test "saved affiliates move from missing list to configured list" do
     get admin_shops_path(status: "tabelog_missing"), headers: @headers
-    assert_select "form[data-inline-tabelog-form][action*='/shops/#{@shop.id}?']", count: 1
+    assert_select "form[data-inline-tabelog-form][data-shop-id='#{@shop.id}'][action*='/shops/#{@shop.id}?']", count: 1
+    assert_select "a[data-tabelog-search-shop-id='#{@shop.id}'][target='_blank']", count: 1
     patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
       inline_tabelog_update: "1", shop: { tabelog_url: "https://tabelog.com/test/" }
     }
