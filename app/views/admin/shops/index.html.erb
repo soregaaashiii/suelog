@@ -425,7 +425,7 @@
                   <% if %w[tabelog_missing tabelog_configured].include?(@status) %>
                     <%= f.url_field :tabelog_url,
                         value: shop.tabelog_url.presence,
-                        placeholder: "食べログURL",
+                        placeholder: "食べログURL（空欄でEnter→検索）",
                         style: "width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:10px;" %>
 
                     <%= f.hidden_field :tabelog_match_method, value: "admin_manual" %>
@@ -544,6 +544,14 @@
       }
 
       document.querySelectorAll("[data-inline-tabelog-form]").forEach((form) => {
+        const urlInput = form.querySelector('[type="url"]');
+        urlInput.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" || event.isComposing || urlInput.readOnly || urlInput.value.trim()) return;
+          const searchLink = form.closest("tr").querySelector("[data-tabelog-search-shop-id]");
+          if (!searchLink) return;
+          event.preventDefault();
+          searchLink.click();
+        });
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
           if (form.dataset.saving === "true") return;

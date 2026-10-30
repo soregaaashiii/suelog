@@ -21,11 +21,12 @@ function setup(fetch) {
   const rows = [1, 2].map(id => {
     const status = { textContent: '', style: {} };
     const button = { disabled: false };
-    const input = { value: 'https://tabelog.com/test/', readOnly: false, selections: 0,
+    const inputEvents = {};
+    const input = { addEventListener: (event, handler) => { inputEvents[event] = handler; }, value: 'https://tabelog.com/test/', readOnly: false, selections: 0,
       focus() { document.activeElement = this; }, select() { this.selections++; }
     };
     const checkbox = { checked: true };
-    const row = { removed: false, querySelector: () => checkbox, remove() { this.removed = true; } };
+    const row = { removed: false, querySelector: selector => selector.includes('search-shop') ? link : checkbox, remove() { this.removed = true; } };
     let submit;
     const form = {
       dataset: { shopId: String(id) }, action: `/panel_8m4k/shops/${id}`,
@@ -37,7 +38,7 @@ function setup(fetch) {
       addEventListener(event, handler) { this.click = handler; }
     };
     forms.push(form); links.push(link);
-    return { status, button, input, row, checkbox, submit: () => submit({ preventDefault() {} }) };
+    return { status, button, input, inputEvents, row, checkbox, submit: () => submit({ preventDefault() {} }) };
   });
   document.querySelectorAll = selector => selector.includes('search-shop') ? links : forms.filter((_, i) => !rows[i].row.removed);
   document.querySelector = selector => {
@@ -114,4 +115,20 @@ test('Google search targets that shop, restores it on return, and does not focus
   ui.document.activeElement = ui.input;
   ui.windowEvents.focus();
   assert.equal(ui.document.activeElement, ui.input);
+});
+
+test('empty Enter opens that row search without saving, while nonempty Enter and IME remain unchanged', () => {
+  let requests = 0;
+  const ui = setup(async () => { requests++; });
+  let prevented = 0;
+  ui.next.input.value = '  ';
+  ui.next.inputEvents.keydown({ key: 'Enter', isComposing: false, preventDefault() { prevented++; } });
+  assert.equal(prevented, 1);
+  assert.equal(requests, 0);
+  assert.equal(ui.document.activeElement, ui.next.input);
+  ui.next.input.value = 'https://tabelog.com/test/';
+  ui.next.inputEvents.keydown({ key: 'Enter', isComposing: false, preventDefault() { prevented++; } });
+  ui.next.input.value = '';
+  ui.next.inputEvents.keydown({ key: 'Enter', isComposing: true, preventDefault() { prevented++; } });
+  assert.equal(prevented, 1);
 });
