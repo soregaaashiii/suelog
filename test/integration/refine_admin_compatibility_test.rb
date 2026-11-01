@@ -20,6 +20,55 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "refill supplies the next matching row while preserving the visible rows" do
+    4.times do |n|
+      Shop.create!(name: "補充検証#{n}", address: "大阪市北区梅田#{n}", genre: "居酒屋", last_confirmed_on: Date.current,
+        smoking_area: :all_smoking, smoking_type: :both_ok, approved: true)
+    end
+    candidates = Shop.where("name LIKE ?", "補充検証%").order(created_at: :desc).to_a
+    patch admin_shop_path(candidates[0]), headers: @headers.merge("ACCEPT" => "application/json"), params: {
+      inline_tabelog_update: "1", shop: { tabelog_url: "https://tabelog.com/test/" }
+    }
+    get admin_shops_path, headers: @headers.merge("ACCEPT" => "application/json"), params: {
+      status: "tabelog_missing", q: "補充検証", per: 2, page: 1, visible_ids: [candidates[1].id]
+    }
+    assert_response :success
+    data = response.parsed_body
+    assert_equal 3, data["total_count"]
+    assert_equal 2, data["total_pages"]
+    rows = Nokogiri::HTML.fragment(data["rows_html"])
+    assert_equal [candidates[2].id.to_s], rows.css("[data-shop-row-id]").map { |row| row["data-shop-row-id"] }
+    assert rows.at_css("[data-inline-tabelog-form]")
+    assert rows.at_css("[data-tabelog-search-shop-id]")
+    assert_includes data["pagination_html"], "q="
+    assert_equal "no-store", response.headers["Cache-Control"]
+    assert data["csrf_token"].present?
+  end
+
+  test "stale CSRF tokens return a recoverable error and refreshed tokens allow saving" do
+    previous = ActionController::Base.allow_forgery_protection
+    ActionController::Base.allow_forgery_protection = true
+    url = "https://tabelog.com/test/"
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json", "X-CSRF-Token" => "stale"), params: {
+      inline_tabelog_update: "1", shop: { tabelog_url: url }
+    }
+    assert_response :unprocessable_entity
+    assert_equal "invalid_csrf", response.parsed_body["code"]
+    assert_nil @shop.reload.tabelog_url
+    get refresh_form_token_admin_shops_path, headers: @headers.merge("ACCEPT" => "application/json")
+    assert_response :success
+    token = response.parsed_body["csrf_token"]
+    assert token.present?
+    assert_equal "no-store", response.headers["Cache-Control"]
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json", "X-CSRF-Token" => token), params: {
+      inline_tabelog_update: "1", shop: { tabelog_url: url }
+    }
+    assert_response :success
+    assert_equal url, @shop.reload.tabelog_url
+  ensure
+    ActionController::Base.allow_forgery_protection = previous
+  end
+
   test "inline not found saves without redirect and clears candidate and affiliate fields" do
     @shop.update!(tabelog_candidate_url: "https://tabelog.com/candidate/", tabelog_affiliate_url: "https://example.test/affiliate")
     assert_enqueued_with(job: AicooActivityDeliveryJob) do

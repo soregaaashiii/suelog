@@ -139,25 +139,11 @@
   </div>
 </div>
 
-<p style="color:#666; margin:8px 0;">
+<p data-shop-count style="color:#666; margin:8px 0;">
   件数：<span data-shop-total><%= (@total_count || @shops.count) %></span> 件 ／ ページ：<%= (@page || 1) %> / <%= (@total_pages || 1) %>
 </p>
 
-<% if (@total_pages || 1) > 1 %>
-  <div style="margin:10px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-    <% if (@page || 1) > 1 %>
-      <%= link_to "← 前へ",
-          admin_shops_path(status: @status, source: @source, per: @per, page: (@page - 1)),
-          style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-    <% end %>
-
-    <% if (@page || 1) < (@total_pages || 1) %>
-      <%= link_to "次へ →",
-          admin_shops_path(status: @status, source: @source, per: @per, page: (@page + 1)),
-          style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-    <% end %>
-  </div>
-<% end %>
+<div data-shop-pagination><%= render "pagination" %></div>
 
 <div data-url-update-notice role="status" hidden style="margin:12px 0; color:#137333;"></div>
 
@@ -226,256 +212,13 @@
         </tr>
       </thead>
 
-      <tbody>
-        <% @shops.each do |shop| %>
-          <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
-
-          <% duplicate_state =
-              if @status == "pending"
-                (@duplicate_states || {})[shop.id] || :none
-              else
-                :none
-              end %>
-
-          <% detail_label, detail_style =
-              case duplicate_state
-              when :approved_or_rejected
-                [
-                  "詳細（重複候補あり）",
-                  "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; font-weight:700; border-radius:10px; text-decoration:none;"
-                ]
-              when :pending_only
-                [
-                  "詳細（承認待ち重複）",
-                  "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #9aa0a6; background:#f5f5f5; color:#555; font-weight:700; border-radius:10px; text-decoration:none;"
-                ]
-              else
-                [
-                  "詳細",
-                  "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; font-weight:700; border-radius:10px; text-decoration:none;"
-                ]
-              end %>
-
-          <% click_counts = (@shop_click_counts || {})[shop.id] || {} %>
-          <% candidate_url = shop.respond_to?(:tabelog_candidate_url) ? shop.tabelog_candidate_url : nil %>
-
-          <tr style="border-bottom:1px solid #ddd; vertical-align:top;">
-            <td style="padding:10px 0;">
-              <input type="checkbox" class="shop_checkbox" value="<%= shop.id %>">
-            </td>
-
-            <td style="padding:8px 0;">
-              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                <strong><%= shop.name %></strong>
-
-                <%= link_to "Google検索",
-                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, '食べログ'].compact.join(' '))}",
-                    data: { tabelog_search_shop_id: shop.id },
-                    target: "_blank",
-                    rel: "noopener",
-                    style: "display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:8px; text-decoration:none; font-size:12px; background:#fff;" %>
-              </div>
-
-              <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
-                <div style="margin-top:6px;">
-                  <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#fff6db; color:#8a6500; border:1px solid #f0de9c;">
-                    未確認
-                  </span>
-                </div>
-              <% end %>
-
-              <% if shop.respond_to?(:on_hold?) && shop.on_hold? %>
-                <div style="margin-top:6px;">
-                  <span style="display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#ffe9e9; color:#b00020; border:1px solid #f3b2b2;">
-                    保留：<%= shop.hold_reason_label %>
-                  </span>
-                </div>
-              <% end %>
-
-              <% if Shop.column_names.include?("source") && shop.respond_to?(:source) && shop.source.present? %>
-                <div style="color:#666; font-size:12px; margin-top:4px;">source：<%= shop.source %></div>
-              <% end %>
-
-              <% if @status == "tabelog_missing" %>
-                <div data-affiliate-missing style="color:#b00020; font-size:12px; margin-top:6px; font-weight:700;">
-                  食べログアフィリエイト未設定
-                </div>
-              <% end %>
-            </td>
-
-            <td style="padding:8px 0;">
-              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                <span><%= shop.address.presence || "未設定" %></span>
-
-                <% if shop.address.present? %>
-                  <button type="button"
-                          class="copy-address-button"
-                          data-address="<%= shop.address %>"
-                          style="padding:4px 8px; border:1px solid #ddd; border-radius:8px; background:#fff; font-size:12px; cursor:pointer;">
-                    住所コピー
-                  </button>
-                <% end %>
-              </div>
-            </td>
-
-            <td style="padding:8px 0;">
-              <% if shop.respond_to?(:on_hold?) && shop.on_hold? %>
-                <span style="color:#b00020; font-weight:bold;">保留中</span>
-              <% elsif shop.approved? %>
-                <span style="color:#137333; font-weight:bold;">承認済み</span>
-              <% elsif rejected %>
-                <span style="color:#b00020; font-weight:bold;">却下</span>
-              <% else %>
-                <span style="color:#b00020; font-weight:bold;">承認待ち</span>
-              <% end %>
-
-              <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
-                <div style="margin-top:4px; color:#8a6500; font-size:12px; font-weight:700;">
-                  喫煙情報未確認
-                </div>
-              <% end %>
-            </td>
-
-            <td align="right" style="padding:8px 12px 8px 0; font-weight:700;">
-              <%= click_counts[:total].to_i %>
-            </td>
-
-            <td align="right" style="padding:8px 12px 8px 0;">
-              <%= click_counts[:phone_click].to_i %>
-            </td>
-
-            <td align="right" style="padding:8px 12px 8px 0;">
-              <%= click_counts[:map_click].to_i %>
-            </td>
-
-            <td align="right" style="padding:8px 12px 8px 0;">
-              <%= click_counts[:affiliate_click].to_i %>
-            </td>
-
-            <td style="padding:10px 0; min-width:420px;">
-              <div class="admin-shop-actions" style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-start; min-width:400px;">
-                <% if !shop.approved? && !shop.rejected? %>
-                  <%= button_to "承認",
-                      approve_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                      method: :patch,
-                      data: { turbo: false, turbo_confirm: "承認しますか？" } %>
-
-                  <%= button_to "却下",
-                      reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                      method: :patch,
-                      data: { turbo: false, turbo_confirm: "却下します。よろしいですか？" } %>
-
-                  <% if @status == "pending" && duplicate_state == :approved_or_rejected %>
-                    <%= button_to "重複として却下",
-                        reject_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                        method: :patch,
-                        data: { turbo: false, turbo_confirm: "重複として却下しますか？" },
-                        style: "background:#fff1f1; border:1px solid #b00020; color:#b00020;" %>
-                  <% end %>
-                <% end %>
-
-                <%= link_to detail_label,
-                    admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                    style: detail_style %>
-
-                <%= link_to "編集",
-                    edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                    style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-
-                <% if candidate_url.present? %>
-                  <%= link_to "食べログ候補",
-                      candidate_url,
-                      target: "_blank",
-                      rel: "noopener nofollow",
-                      style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #e0b84f; background:#fff8e1; color:#7a4b00; border-radius:10px; text-decoration:none; font-weight:700;" %>
-
-                  <%= button_to "候補を承認",
-                      approve_tabelog_candidate_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                      method: :patch,
-                      data: { turbo: false, turbo_confirm: "この食べログ候補を公開URLとして承認しますか？" },
-                      style: "padding:6px 10px; border:1px solid #137333; background:#eef8f0; color:#137333; border-radius:10px; font-weight:700;" %>
-
-                  <%= button_to "食べログなし",
-                      mark_tabelog_not_found_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                      method: :patch,
-                      form: { data: { turbo: false, tabelog_not_found_form: true } },
-                      data: { turbo: false },
-                      style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
-                <% elsif @status == "tabelog_missing" %>
-                  <%= button_to "食べログなし",
-                      mark_tabelog_not_found_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                      method: :patch,
-                      form: { data: { turbo: false, tabelog_not_found_form: true } },
-                      data: { turbo: false },
-                      style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
-                <% elsif shop.tabelog_url.present? %>
-                  <%= link_to "食べログ",
-                      shop.tabelog_url,
-                      target: "_blank",
-                      rel: "noopener nofollow",
-                      style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-                <% end %>
-
-                <%= form_with model: [:admin, shop],
-                    url: admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
-                    method: :patch,
-                    local: true,
-                    data: { turbo: false, inline_tabelog_form: (@status == "tabelog_missing" ? true : nil), shop_id: shop.id },
-                    style: "display:flex; gap:6px; align-items:center; flex-wrap:wrap;" do |f| %>
-                  <%= hidden_field_tag :inline_tabelog_update, "1" %>
-                  <span data-url-save-status role="status" style="font-size:12px;"></span>
-                  <% if %w[tabelog_missing tabelog_configured].include?(@status) %>
-                    <%= f.url_field :tabelog_url,
-                        value: shop.tabelog_url.presence,
-                        placeholder: "食べログURL（空欄でEnter→検索）",
-                        style: "width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:10px;" %>
-
-                    <%= f.hidden_field :tabelog_match_method, value: "admin_manual" %>
-
-                    <%= f.submit "URL更新",
-                        style: "padding:6px 10px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; font-weight:700;" %>
-                  <% else %>
-                    <%= f.url_field :tabelog_candidate_url,
-                        value: candidate_url.presence,
-                        placeholder: "食べログ候補URL",
-                        style: "width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:10px;" %>
-
-                    <%= f.hidden_field :tabelog_candidate_affiliate_url, value: candidate_url.presence %>
-                    <%= f.hidden_field :tabelog_candidate_method, value: "admin_manual_candidate" %>
-
-                    <%= f.submit "候補URL更新",
-                        style: "padding:6px 10px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; font-weight:700;" %>
-                  <% end %>
-                <% end %>
-
-                <%= link_to "公開ページ",
-                    shop_path(shop),
-                    target: "_blank",
-                    rel: "noopener",
-                    style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
-              </div>
-            </td>
-          </tr>
-        <% end %>
+      <tbody data-shop-rows>
+        <%= render partial: "row", collection: @shops, as: :shop %>
       </tbody>
     </table>
   </div>
 
-  <% if (@total_pages || 1) > 1 %>
-    <div style="margin:12px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <% if (@page || 1) > 1 %>
-        <%= link_to "← 前へ",
-            admin_shops_path(status: @status, source: @source, per: @per, page: (@page - 1)),
-            style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-      <% end %>
-
-      <% if (@page || 1) < (@total_pages || 1) %>
-        <%= link_to "次へ →",
-            admin_shops_path(status: @status, source: @source, per: @per, page: (@page + 1)),
-            style: "padding:8px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none; display:inline-block;" %>
-      <% end %>
-    </div>
-  <% end %>
+  <div data-shop-pagination><%= render "pagination" %></div>
 
   <script>
     (function () {
@@ -484,7 +227,6 @@
       const countEl = document.getElementById("selected_count");
       const csvEl = document.getElementById("shop_ids_csv");
       const bulkForm = document.getElementById("bulk_form");
-      const copyButtons = Array.from(document.querySelectorAll(".copy-address-button"));
 
       function selectedIds() {
         return boxes.filter(b => b.checked).map(b => b.value);
@@ -508,7 +250,7 @@
         });
       }
 
-      boxes.forEach(b => b.addEventListener("change", update));
+      boxes.forEach(b => { b.dataset.bound = "true"; b.addEventListener("change", update); });
 
       if (bulkForm) {
         bulkForm.addEventListener("submit", (e) => {
@@ -520,7 +262,10 @@
         });
       }
 
-      copyButtons.forEach((button) => {
+      function bindCopyButtons() {
+      document.querySelectorAll(".copy-address-button").forEach((button) => {
+        if (button.dataset.bound) return;
+        button.dataset.bound = "true";
         button.addEventListener("click", async () => {
           const address = button.dataset.address || "";
           if (!address) return;
@@ -538,6 +283,9 @@
         });
       });
 
+      }
+      bindCopyButtons();
+
       function focusTabelogInput(form) {
         const input = form?.querySelector('[type="url"]');
         if (!input || input.readOnly) return;
@@ -545,7 +293,64 @@
         input.select();
       }
 
+      const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+      async function saveTabelogForm(form, retry = true) {
+        const body = new FormData(form);
+        if (csrfMeta?.content) body.set("authenticity_token", csrfMeta.content);
+        const response = await fetch(form.action, {
+          method: "PATCH", body, credentials: "same-origin",
+          headers: { "Accept": "application/json", "X-CSRF-Token": csrfMeta?.content || "" }
+        });
+        const result = await response.json().catch(() => ({ error: "登録できませんでした。画面を再読み込みして再度お試しください。" }));
+        if (result.code === "invalid_csrf" && retry) {
+          const refreshed = await fetch("<%= refresh_form_token_admin_shops_path %>", { credentials: "same-origin", cache: "no-store", headers: { "Accept": "application/json" } });
+          if (refreshed.ok) {
+            const token = await refreshed.json();
+            csrfMeta.content = token.csrf_token;
+            return saveTabelogForm(form, false);
+          }
+        }
+        if (!response.ok) throw new Error(result.error || "登録できませんでした");
+        return result;
+      }
+
+      let refillQueue = Promise.resolve();
+      function refillShopRows() {
+        refillQueue = refillQueue.catch(() => {}).then(async () => {
+          const url = new URL(window.location.href);
+          url.searchParams.set("format", "json");
+          url.searchParams.delete("visible_ids[]");
+          document.querySelectorAll("[data-shop-row-id]").forEach(row => url.searchParams.append("visible_ids[]", row.dataset.shopRowId));
+          const response = await fetch(url, { credentials: "same-origin", cache: "no-store", headers: { "Accept": "application/json" } });
+          if (!response.ok) throw new Error("保存は完了しましたが、次の店舗を補充できませんでした。再読み込みしてください。");
+          const result = await response.json();
+          const tbody = document.querySelector("[data-shop-rows]");
+          const template = document.createElement("template");
+          template.innerHTML = `<table><tbody>${result.rows_html}</tbody></table>`;
+          template.content.querySelectorAll("tr[data-shop-row-id]").forEach(row => {
+            if (!document.querySelector(`[data-shop-row-id="${row.dataset.shopRowId}"]`)) tbody.appendChild(row);
+          });
+          if (csrfMeta && result.csrf_token) csrfMeta.content = result.csrf_token;
+          document.querySelectorAll("[data-shop-pagination]").forEach(container => { container.innerHTML = result.pagination_html; });
+          boxes = Array.from(document.querySelectorAll(".shop_checkbox"));
+          boxes.forEach(box => {
+            if (box.dataset.bound) return;
+            box.dataset.bound = "true";
+            box.addEventListener("change", update);
+          });
+          bindCopyButtons();
+          bindTabelogRows();
+          bindSearchLinks();
+          update();
+          document.querySelector("[data-shop-count]").innerHTML = `件数：<span data-shop-total>${result.total_count}</span> 件 ／ ページ：${result.page} / ${result.total_pages}`;
+        });
+        return refillQueue;
+      }
+
+      function bindTabelogRows() {
       document.querySelectorAll("[data-inline-tabelog-form]").forEach((form) => {
+        if (form.dataset.bound) return;
+        form.dataset.bound = "true";
         const urlInput = form.querySelector('[type="url"]');
         urlInput.addEventListener("keydown", (event) => {
           if (event.key !== "Enter" || event.isComposing || urlInput.readOnly || urlInput.value.trim()) return;
@@ -567,12 +372,7 @@
           status.textContent = "保存中…";
           status.style.color = "#666";
           try {
-            const response = await fetch(form.action, {
-              method: "POST", body, credentials: "same-origin",
-              headers: { "Accept": "application/json" }
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "更新できませんでした");
+            const result = await saveTabelogForm(form);
             input.value = result.url;
             const row = form.closest("tr");
             const checkbox = row.querySelector(".shop_checkbox");
@@ -591,6 +391,11 @@
             const notice = document.querySelector("[data-url-update-notice]");
             notice.hidden = false;
             notice.textContent = `${result.shop_name || "店舗"}を設定済みへ移動しました。`;
+            notice.style.color = "#137333";
+            try {
+              await refillShopRows();
+              if (advanceFocus && !nextForm) focusTabelogInput(document.querySelector("[data-inline-tabelog-form]"));
+            } catch (error) { notice.textContent = error.message; notice.style.color = "#b00020"; }
           } catch (error) {
             status.textContent = error.message || "通信に失敗しました。再度更新してください";
             status.style.color = "#b00020";
@@ -603,6 +408,8 @@
       });
 
       document.querySelectorAll("[data-tabelog-not-found-form]").forEach((form) => {
+        if (form.dataset.bound) return;
+        form.dataset.bound = "true";
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
           if (form.dataset.saving === "true") return;
@@ -614,12 +421,7 @@
           button.disabled = true;
           button.textContent = "保存中…";
           try {
-            const response = await fetch(form.action, {
-              method: "POST", body: new FormData(form), credentials: "same-origin",
-              headers: { "Accept": "application/json" }
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "登録できませんでした");
+            const result = await saveTabelogForm(form);
             const row = form.closest("tr");
             const checkbox = row.querySelector(".shop_checkbox");
             if (checkbox) checkbox.checked = false;
@@ -630,6 +432,7 @@
             if (total) total.textContent = String(Math.max(0, Number(total.textContent) - 1));
             notice.textContent = `${result.shop_name || "店舗"}を食べログなしとして登録しました。`;
             notice.style.color = "#137333";
+            await refillShopRows();
           } catch (error) {
             notice.textContent = error.message || "通信に失敗しました。再度登録してください";
             notice.style.color = "#b00020";
@@ -642,6 +445,9 @@
         });
       });
 
+      }
+      bindTabelogRows();
+
       const focusStorageKey = "suelog-tabelog-search-shop";
       function restoreSearchFocus() {
         if (document.visibilityState !== "visible") return;
@@ -652,7 +458,10 @@
         if (form) focusTabelogInput(form);
         try { sessionStorage.removeItem(focusStorageKey); } catch (_) {}
       }
+      function bindSearchLinks() {
       document.querySelectorAll("[data-tabelog-search-shop-id]").forEach((link) => {
+        if (link.dataset.bound) return;
+        link.dataset.bound = "true";
         link.addEventListener("click", () => {
           const shopId = link.dataset.tabelogSearchShopId;
           const form = document.querySelector(`[data-inline-tabelog-form][data-shop-id="${shopId}"]`);
@@ -661,6 +470,8 @@
           focusTabelogInput(form);
         });
       });
+      }
+      bindSearchLinks();
       window.addEventListener("focus", restoreSearchFocus);
       document.addEventListener("visibilitychange", restoreSearchFocus);
       restoreSearchFocus();

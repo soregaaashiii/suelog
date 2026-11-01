@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const template = readFileSync(new URL('../../app/views/admin/shops/index.html.erb', import.meta.url), 'utf8');
 const start = template.indexOf('      function focusTabelogInput(form)');
-const script = template.slice(start, template.indexOf('\n      update();', start));
+const script = template.slice(start, template.indexOf('      const csrfMeta', start)) + template.slice(template.indexOf('      function bindTabelogRows()'), template.indexOf('\n      update();', template.indexOf('      function bindTabelogRows()')));
 
 function setup(fetch) {
   const total = { textContent: '10' };
@@ -48,7 +48,12 @@ function setup(fetch) {
     return id ? forms.find(form => form.dataset.shopId === id[1]) : forms[0];
   };
   vm.runInNewContext(script, {
-    document, fetch, boxes: rows.map(row => row.checkbox), update: () => {},
+    document, fetch, saveTabelogForm: async form => {
+      const response = await fetch(form.action, { headers: { Accept: 'application/json' } });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      return result;
+    }, refillShopRows: async () => {}, boxes: rows.map(row => row.checkbox), update: () => {},
     window: { addEventListener: (event, handler) => { windowEvents[event] = handler; } },
     sessionStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
     FormData: class { constructor(value) { assert.ok(forms.includes(value)); } }
