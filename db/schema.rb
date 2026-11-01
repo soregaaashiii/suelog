@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_28_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_01_000100) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -236,6 +236,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_000100) do
     t.text "hold_note"
     t.string "hold_reason"
     t.text "holiday_hours_text"
+    t.text "hotpepper_affiliate_url"
     t.string "hotpepper_url"
     t.json "import_metadata", default: {}, null: false
     t.string "import_source"

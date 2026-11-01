@@ -191,8 +191,8 @@
     end
 
   hotpepper_track_url =
-    if @shop.respond_to?(:hotpepper_url) && @shop.hotpepper_url.present?
-      track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.hotpepper_url)
+    if @shop.hotpepper_affiliate_url.present? || @shop.hotpepper_url.present?
+      track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.hotpepper_affiliate_url.presence || @shop.hotpepper_url)
     end
 
   booking_links = []

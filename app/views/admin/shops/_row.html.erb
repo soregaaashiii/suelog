@@ -1,3 +1,4 @@
+<% hotpepper_setup = %w[hotpepper_missing hotpepper_configured].include?(@status) %>
           <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
 
           <% duplicate_state =
@@ -39,7 +40,7 @@
                 <strong><%= shop.name %></strong>
 
                 <%= link_to "Google検索",
-                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, '食べログ'].compact.join(' '))}",
+                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, hotpepper_setup ? 'ホットペッパー' : '食べログ'].compact.join(' '))}",
                     data: { tabelog_search_shop_id: shop.id },
                     target: "_blank",
                     rel: "noopener",
@@ -66,6 +67,9 @@
                 <div style="color:#666; font-size:12px; margin-top:4px;">source：<%= shop.source %></div>
               <% end %>
 
+              <% if @status == "hotpepper_missing" %>
+                <div style="color:#b00020; font-size:12px; margin-top:6px; font-weight:700;">ホットペッパーアフィリエイト未設定</div>
+              <% end %>
               <% if @status == "tabelog_missing" %>
                 <div data-affiliate-missing style="color:#b00020; font-size:12px; margin-top:6px; font-weight:700;">
                   食べログアフィリエイト未設定
@@ -152,7 +156,11 @@
                     edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
-                <% if candidate_url.present? %>
+                <% if hotpepper_setup %>
+                  <% if shop.hotpepper_url.present? %>
+                    <%= link_to "ホットペッパー", shop.hotpepper_url, target: "_blank", rel: "noopener nofollow", style: "display:inline-flex; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+                  <% end %>
+                <% elsif candidate_url.present? %>
                   <%= link_to "食べログ候補",
                       candidate_url,
                       target: "_blank",
@@ -190,11 +198,16 @@
                     url: admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     method: :patch,
                     local: true,
-                    data: { turbo: false, inline_tabelog_form: (@status == "tabelog_missing" ? true : nil), shop_id: shop.id },
+                    data: { turbo: false, inline_tabelog_form: (%w[tabelog_missing hotpepper_missing].include?(@status) ? true : nil), shop_id: shop.id },
                     style: "display:flex; gap:6px; align-items:center; flex-wrap:wrap;" do |f| %>
-                  <%= hidden_field_tag :inline_tabelog_update, "1" %>
+                  <%= hidden_field_tag(hotpepper_setup ? :inline_hotpepper_update : :inline_tabelog_update, "1") %>
                   <span data-url-save-status role="status" style="font-size:12px;"></span>
-                  <% if %w[tabelog_missing tabelog_configured].include?(@status) %>
+                  <% if hotpepper_setup %>
+                    <%= f.url_field :hotpepper_url, value: shop.hotpepper_url.presence,
+                        placeholder: "ホットペッパーURL（空欄でEnter→検索）",
+                        style: "width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:10px;" %>
+                    <%= f.submit "URL更新", style: "padding:6px 10px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; font-weight:700;" %>
+                  <% elsif %w[tabelog_missing tabelog_configured].include?(@status) %>
                     <%= f.url_field :tabelog_url,
                         value: shop.tabelog_url.presence,
                         placeholder: "食べログURL（空欄でEnter→検索）",

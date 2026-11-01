@@ -1,6 +1,10 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/admin/shops/index.html.erb %>
 
-<h1>店舗管理</h1>
+<% hotpepper_setup = %w[hotpepper_missing hotpepper_configured].include?(@status) %>
+<h1><%= hotpepper_setup ? "ホットペッパー アフィリエイト設定" : "店舗管理" %></h1>
+<% if hotpepper_setup %>
+  <p>ホットペッパーの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
+<% end %>
 
 <div style="margin:10px 0; display:flex; gap:10px; flex-wrap:wrap;">
   <%= link_to "＋ 新規店舗を登録",
@@ -18,6 +22,7 @@
   <%= link_to "アフィリエイト未設定",
       admin_shops_path(status: "tabelog_missing", source: @source, per: @per, page: 1),
       style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#eef8f0; color:#137333; border:1px solid #137333; text-decoration:none; font-weight:700;" %>
+  <%= link_to "ホットペッパー アフィリエイト設定", admin_shops_path(status: "hotpepper_missing", per: @per, page: 1), style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#fff0f3; color:#a31545; border:1px solid #a31545; text-decoration:none; font-weight:700;" %>
 </div>
 
 <div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
@@ -91,6 +96,17 @@
         <strong>アフィリエイト設定済み</strong>｜
       <% else %>
         <%= link_to "アフィリエイト設定済み", admin_shops_path(status: "tabelog_configured", source: @source, per: @per, page: 1) %>｜
+      <% end %>
+
+      <% if @status == "hotpepper_missing" %>
+        <strong>ホットペッパー未設定</strong>｜
+      <% else %>
+        <%= link_to "ホットペッパー未設定", admin_shops_path(status: "hotpepper_missing", source: @source, per: @per, page: 1) %>｜
+      <% end %>
+      <% if @status == "hotpepper_configured" %>
+        <strong>ホットペッパー設定済み</strong>｜
+      <% else %>
+        <%= link_to "ホットペッパー設定済み", admin_shops_path(status: "hotpepper_configured", source: @source, per: @per, page: 1) %>｜
       <% end %>
 
       <% if @status == "hold" %>
