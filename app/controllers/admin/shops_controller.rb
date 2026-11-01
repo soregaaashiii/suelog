@@ -34,6 +34,10 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where(on_hold: true)
     when "tabelog_suspect"
       scope = scope.where.not(tabelog_candidate_url: [nil, ""])
+    when "hotpepper_missing"
+      scope = scope.where(approved: true, hotpepper_affiliate_url: [nil, ""])
+    when "hotpepper_configured"
+      scope = scope.where(approved: true).where.not(hotpepper_affiliate_url: [nil, ""]).reorder(updated_at: :desc, id: :desc)
     when "tabelog_configured"
       scope = scope.where(approved: true).where.not(tabelog_affiliate_url: [nil, ""]).reorder(updated_at: :desc, id: :desc)
     when "tabelog_missing"
@@ -727,6 +731,7 @@ class Admin::ShopsController < Admin::BaseController
   end
 
   def update
+    return update_inline_hotpepper_url if params[:inline_hotpepper_update] == "1"
     return update_inline_tabelog_url if params[:inline_tabelog_update] == "1"
 
     @shop = Shop.find(params[:id])
@@ -1223,6 +1228,27 @@ class Admin::ShopsController < Admin::BaseController
       redirect_to admin_shops_path(status: params[:status], source: params[:source], per: params[:per], page: params[:page]),
                   flash: { admin_notice: "更新しました" }
     end
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
+  end
+
+  def update_inline_hotpepper_url
+    shop = Shop.find(params[:id])
+    url = params.require(:shop).permit(:hotpepper_url)[:hotpepper_url].to_s.strip
+    unless url.match?(%r{\Ahttps?://[^\s]+\z})
+      return render json: { error: "正しいURLを入力してください" }, status: :unprocessable_entity
+    end
+    shop.defer_aicoo_activity_delivery = true
+    shop.skip_geocoding_for_url_update = true
+    shop.update!(hotpepper_url: url, hotpepper_affiliate_url: HotpepperAffiliateUrlBuilder.call(url))
+    if request.format.json?
+      render json: { message: "更新しました", url: url, shop_name: shop.name }
+    else
+      redirect_to admin_shops_path(status: params[:status], source: params[:source], per: params[:per], page: params[:page]),
+                  flash: { admin_notice: "ホットペッパーURLを更新しました" }
+    end
+  rescue HotpepperAffiliateUrlBuilder::ConfigurationMissing, ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
   end

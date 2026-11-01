@@ -20,6 +20,60 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "hotpepper setup searches saves generated affiliate and moves to configured independently" do
+    previous = ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"]
+    ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"] = "https://affiliate.example/redirect?target={url_encoded}"
+    @shop.update!(tabelog_affiliate_url: "https://example.test/tabelog")
+    get admin_shops_path(status: "hotpepper_missing"), headers: @headers
+    assert_response :success
+    assert_select "h1", text: "ホットペッパー アフィリエイト設定"
+    assert_select "form[data-inline-tabelog-form] input[name='shop[hotpepper_url]']", count: 1
+    assert_select "input[name='inline_hotpepper_update'][value='1']", count: 1
+    assert_select "a[data-tabelog-search-shop-id]" do |links|
+      assert_includes CGI.unescape(links.first["href"]), "ホットペッパー"
+    end
+    assert_select "form[data-tabelog-not-found-form]", count: 0
+    raw_url = "https://www.hotpepper.jp/strJ001234567/"
+    assert_enqueued_with(job: AicooActivityDeliveryJob) do
+      patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
+        inline_hotpepper_update: "1", shop: { hotpepper_url: raw_url, tabelog_affiliate_url: "https://ignored.test" }
+      }
+    end
+    assert_response :success
+    @shop.reload
+    assert_equal raw_url, @shop.hotpepper_url
+    assert_equal "https://affiliate.example/redirect?target=#{CGI.escape(raw_url)}", @shop.hotpepper_affiliate_url
+    assert_equal "https://example.test/tabelog", @shop.tabelog_affiliate_url
+    get admin_shops_path(status: "hotpepper_missing"), headers: @headers
+    assert_select "a[href^='/panel_8m4k/shops/#{@shop.id}/edit']", count: 0
+    get admin_shops_path(status: "hotpepper_configured"), headers: @headers
+    assert_select "input[name='shop[hotpepper_url]']", count: 1
+    get shop_path(@shop)
+    assert_includes response.body, "affiliate.example"
+    @shop.update!(hotpepper_url: "https://www.hotpepper.jp/strJ009999999/")
+    assert_nil @shop.reload.hotpepper_affiliate_url
+  ensure
+    ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"] = previous
+  end
+
+  test "hotpepper setup rejects unavailable configuration and other providers without saving" do
+    previous = ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"]
+    ENV.delete("HOTPEPPER_AFFILIATE_URL_TEMPLATE")
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
+      inline_hotpepper_update: "1", shop: { hotpepper_url: "https://www.hotpepper.jp/strJ001234567/" }
+    }
+    assert_response :unprocessable_entity
+    assert_includes response.parsed_body["error"], "広告リンク設定"
+    assert_nil @shop.reload.hotpepper_url
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
+      inline_hotpepper_update: "1", shop: { hotpepper_url: "https://tabelog.com/test/" }
+    }
+    assert_response :unprocessable_entity
+    assert_includes response.parsed_body["error"], "ホットペッパー"
+  ensure
+    ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"] = previous
+  end
+
   test "refill supplies the next matching row while preserving the visible rows" do
     4.times do |n|
       Shop.create!(name: "補充検証#{n}", address: "大阪市北区梅田#{n}", genre: "居酒屋", last_confirmed_on: Date.current,
