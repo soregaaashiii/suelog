@@ -40,7 +40,7 @@
                 <strong><%= shop.name %></strong>
 
                 <%= link_to "Google検索",
-                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, hotpepper_setup ? 'ホットペッパー' : '食べログ'].compact.join(' '))}",
+                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, hotpepper_setup ? 'ホットペッパーグルメ' : '食べログ'].compact.join(' '))}",
                     data: { tabelog_search_shop_id: shop.id },
                     target: "_blank",
                     rel: "noopener",

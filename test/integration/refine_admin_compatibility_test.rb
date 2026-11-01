@@ -30,7 +30,7 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_select "form[data-inline-tabelog-form] input[name='shop[hotpepper_url]']", count: 1
     assert_select "input[name='inline_hotpepper_update'][value='1']", count: 1
     assert_select "a[data-tabelog-search-shop-id]" do |links|
-      assert_includes CGI.unescape(links.first["href"]), "ホットペッパー"
+      assert_includes CGI.unescape(links.first["href"]), "ホットペッパーグルメ"
     end
     assert_select "form[data-tabelog-not-found-form]", count: 0
     raw_url = "https://www.hotpepper.jp/strJ001234567/"
