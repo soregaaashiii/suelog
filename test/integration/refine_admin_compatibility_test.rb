@@ -56,20 +56,21 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"] = previous
   end
 
-  test "hotpepper setup rejects unavailable configuration and other providers without saving" do
+  test "hotpepper setup uses the supplied publisher by default and rejects other providers" do
     previous = ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"]
     ENV.delete("HOTPEPPER_AFFILIATE_URL_TEMPLATE")
     patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
       inline_hotpepper_update: "1", shop: { hotpepper_url: "https://www.hotpepper.jp/strJ001234567/" }
     }
-    assert_response :unprocessable_entity
-    assert_includes response.parsed_body["error"], "広告リンク設定"
-    assert_nil @shop.reload.hotpepper_url
+    assert_response :success
+    assert_includes @shop.reload.hotpepper_affiliate_url, "sid=3769275&pid=892606955"
+    saved_url = @shop.hotpepper_url
     patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {
       inline_hotpepper_update: "1", shop: { hotpepper_url: "https://tabelog.com/test/" }
     }
     assert_response :unprocessable_entity
     assert_includes response.parsed_body["error"], "ホットペッパー"
+    assert_equal saved_url, @shop.reload.hotpepper_url
   ensure
     ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"] = previous
   end
