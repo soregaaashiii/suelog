@@ -598,6 +598,8 @@ class Admin::ShopsController < Admin::BaseController
 
     dummy_url = "https://not-found.local/#{Time.zone.today.strftime('%y%m%d')}"
 
+    shop.defer_aicoo_activity_delivery = true
+    shop.skip_geocoding_for_url_update = true
     shop.update!(
       tabelog_url: dummy_url,
       tabelog_affiliate_url: nil,
@@ -609,11 +611,20 @@ class Admin::ShopsController < Admin::BaseController
       tabelog_candidate_method: nil
     )
 
-    redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                flash: { admin_notice: "食べログなしとしてダミーURLを登録しました" }
+    if request.format.json?
+      render json: { message: "食べログなしとして登録しました", shop_name: shop.name }
+    else
+      redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+                  flash: { admin_notice: "食べログなしとしてダミーURLを登録しました" }
+    end
   rescue ActiveRecord::RecordInvalid => e
-    redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
-                flash: { admin_alert: "ダミーURL登録に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
+    message = "登録に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+    if request.format.json?
+      render json: { error: message }, status: :unprocessable_entity
+    else
+      redirect_to admin_shops_path(status: status, source: params[:source], per: params[:per], page: params[:page]),
+                  flash: { admin_alert: message }
+    end
   end
 
   def bulk_update
