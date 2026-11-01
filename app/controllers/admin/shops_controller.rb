@@ -36,6 +36,7 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where.not(tabelog_candidate_url: [nil, ""])
     when "hotpepper_missing"
       scope = scope.where(approved: true, hotpepper_affiliate_url: [nil, ""])
+        .where.not("COALESCE(hotpepper_url, '') LIKE ?", "https://not-found.local/%")
     when "hotpepper_configured"
       scope = scope.where(approved: true).where.not(hotpepper_affiliate_url: [nil, ""]).reorder(updated_at: :desc, id: :desc)
     when "tabelog_configured"
@@ -613,6 +614,26 @@ class Admin::ShopsController < Admin::BaseController
   rescue ActiveRecord::RecordInvalid => e
     redirect_to smoking_unverified_admin_shops_path(per: params[:per], page: params[:page]),
                 flash: { admin_alert: "保留への移動に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
+  end
+
+  def mark_hotpepper_not_found
+    shop = Shop.find(params[:id])
+    shop.defer_aicoo_activity_delivery = true
+    shop.skip_geocoding_for_url_update = true
+    shop.update!(hotpepper_url: "https://not-found.local/#{Time.zone.today.strftime('%y%m%d')}", hotpepper_affiliate_url: nil)
+    if request.format.json?
+      render json: { message: "ホットペッパーなしとして登録しました", shop_name: shop.name }
+    else
+      redirect_to admin_shops_path(status: params[:status].presence || "hotpepper_missing", source: params[:source], per: params[:per], page: params[:page]),
+                  flash: { admin_notice: "ホットペッパーなしとして登録しました" }
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    message = "登録に失敗しました：#{e.record.errors.full_messages.join(' / ')}"
+    if request.format.json?
+      render json: { error: message }, status: :unprocessable_entity
+    else
+      redirect_to admin_shops_path(status: "hotpepper_missing"), flash: { admin_alert: message }
+    end
   end
 
   def mark_tabelog_not_found

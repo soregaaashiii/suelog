@@ -429,7 +429,8 @@
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
           if (form.dataset.saving === "true") return;
-          if (!window.confirm("食べログなしとして登録しますか？")) return;
+          const provider = form.dataset.bookingProvider || "食べログ";
+          if (!window.confirm(`${provider}なしとして登録しますか？`)) return;
           const button = form.querySelector('[type="submit"]');
           const originalLabel = button.textContent;
           const notice = document.querySelector("[data-url-update-notice]");
@@ -446,7 +447,7 @@
             update();
             const total = document.querySelector("[data-shop-total]");
             if (total) total.textContent = String(Math.max(0, Number(total.textContent) - 1));
-            notice.textContent = `${result.shop_name || "店舗"}を食べログなしとして登録しました。`;
+            notice.textContent = `${result.shop_name || "店舗"}を${provider}なしとして登録しました。`;
             notice.style.color = "#137333";
             await refillShopRows();
           } catch (error) {

@@ -20,6 +20,24 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "hotpepper not found leaves the work queue and never creates a public booking link" do
+    @shop.update!(tabelog_url: "https://tabelog.com/test/", hotpepper_url: "https://www.hotpepper.jp/strJ001234567/", hotpepper_affiliate_url: "https://affiliate.example/test")
+    assert_enqueued_with(job: AicooActivityDeliveryJob) do
+      patch mark_hotpepper_not_found_admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json")
+    end
+    assert_response :success
+    assert_equal "ホットペッパーなしとして登録しました", response.parsed_body["message"]
+    @shop.reload
+    assert_match %r{\Ahttps://not-found\.local/}, @shop.hotpepper_url
+    assert_nil @shop.hotpepper_affiliate_url
+    assert_equal "https://tabelog.com/test/", @shop.tabelog_url
+    get admin_shops_path(status: "hotpepper_missing"), headers: @headers
+    assert_select "a[href^='/panel_8m4k/shops/#{@shop.id}/edit']", count: 0
+    get shop_path(@shop)
+    assert_select "a[href*='not-found.local']", count: 0
+    assert_select "a[href*='affiliate.example']", count: 0
+  end
+
   test "hotpepper setup searches saves generated affiliate and moves to configured independently" do
     previous = ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"]
     ENV["HOTPEPPER_AFFILIATE_URL_TEMPLATE"] = "https://affiliate.example/redirect?target={url_encoded}"
@@ -32,7 +50,7 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_select "a[data-tabelog-search-shop-id]" do |links|
       assert_includes CGI.unescape(links.first["href"]), "ホットペッパーグルメ"
     end
-    assert_select "form[data-tabelog-not-found-form]", count: 0
+    assert_select "form[data-tabelog-not-found-form][data-booking-provider='ホットペッパー']", count: 1
     raw_url = "https://www.hotpepper.jp/strJ001234567/"
     assert_enqueued_with(job: AicooActivityDeliveryJob) do
       patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: {

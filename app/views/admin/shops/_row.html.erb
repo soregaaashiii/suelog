@@ -157,7 +157,15 @@
                     style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
                 <% if hotpepper_setup %>
-                  <% if shop.hotpepper_url.present? %>
+                  <% if @status == "hotpepper_missing" %>
+                    <%= button_to "ホットペッパーなし",
+                        mark_hotpepper_not_found_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
+                        method: :patch,
+                        form: { data: { turbo: false, tabelog_not_found_form: true, booking_provider: "ホットペッパー" } },
+                        data: { turbo: false },
+                        style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
+                  <% end %>
+                  <% if shop.hotpepper_url.present? && !shop.hotpepper_url.start_with?("https://not-found.local/") %>
                     <%= link_to "ホットペッパー", shop.hotpepper_url, target: "_blank", rel: "noopener nofollow", style: "display:inline-flex; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
                   <% end %>
                 <% elsif candidate_url.present? %>
