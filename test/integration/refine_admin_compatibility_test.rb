@@ -20,6 +20,34 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "inline not found saves without redirect and clears candidate and affiliate fields" do
+    @shop.update!(tabelog_candidate_url: "https://tabelog.com/candidate/", tabelog_affiliate_url: "https://example.test/affiliate")
+    assert_enqueued_with(job: AicooActivityDeliveryJob) do
+      patch mark_tabelog_not_found_admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json")
+    end
+    assert_response :success
+    assert_equal "食べログなしとして登録しました", response.parsed_body["message"]
+    @shop.reload
+    assert_match %r{\Ahttps://not-found\.local/}, @shop.tabelog_url
+    assert_equal "admin_not_found", @shop.tabelog_match_method
+    assert_nil @shop.tabelog_affiliate_url
+    assert_nil @shop.tabelog_candidate_url
+    assert @shop.approved?
+    get admin_shops_path(status: "tabelog_missing"), headers: @headers
+    assert_select "a[href^='/panel_8m4k/shops/#{@shop.id}/edit']", count: 0
+  end
+
+  test "not found errors keep the record unchanged and ordinary forms still redirect" do
+    @shop.update_column(:name, "")
+    patch mark_tabelog_not_found_admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json")
+    assert_response :unprocessable_entity
+    assert response.parsed_body["error"].present?
+    assert_nil @shop.reload.tabelog_url
+    @shop.update_column(:name, "通常フォーム")
+    patch mark_tabelog_not_found_admin_shop_path(@shop), headers: @headers, params: { status: "tabelog_missing" }
+    assert_redirected_to admin_shops_path(status: "tabelog_missing")
+  end
+
   test "saved affiliates move from missing list to configured list" do
     get admin_shops_path(status: "tabelog_missing"), headers: @headers
     assert_select "form[data-inline-tabelog-form][data-shop-id='#{@shop.id}'][action*='/shops/#{@shop.id}?']", count: 1

@@ -398,13 +398,15 @@
                   <%= button_to "食べログなし",
                       mark_tabelog_not_found_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                       method: :patch,
-                      data: { turbo: false, turbo_confirm: "食べログなしとしてダミーURLを登録しますか？" },
+                      form: { data: { turbo: false, tabelog_not_found_form: true } },
+                      data: { turbo: false },
                       style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
                 <% elsif @status == "tabelog_missing" %>
                   <%= button_to "食べログなし",
                       mark_tabelog_not_found_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                       method: :patch,
-                      data: { turbo: false, turbo_confirm: "食べログなしとしてダミーURLを登録しますか？" },
+                      form: { data: { turbo: false, tabelog_not_found_form: true } },
+                      data: { turbo: false },
                       style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
                 <% elsif shop.tabelog_url.present? %>
                   <%= link_to "食べログ",
@@ -596,6 +598,46 @@
             form.dataset.saving = "false";
             button.disabled = false;
             input.readOnly = false;
+          }
+        });
+      });
+
+      document.querySelectorAll("[data-tabelog-not-found-form]").forEach((form) => {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (form.dataset.saving === "true") return;
+          if (!window.confirm("食べログなしとして登録しますか？")) return;
+          const button = form.querySelector('[type="submit"]');
+          const originalLabel = button.textContent;
+          const notice = document.querySelector("[data-url-update-notice]");
+          form.dataset.saving = "true";
+          button.disabled = true;
+          button.textContent = "保存中…";
+          try {
+            const response = await fetch(form.action, {
+              method: "POST", body: new FormData(form), credentials: "same-origin",
+              headers: { "Accept": "application/json" }
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "登録できませんでした");
+            const row = form.closest("tr");
+            const checkbox = row.querySelector(".shop_checkbox");
+            if (checkbox) checkbox.checked = false;
+            boxes = boxes.filter(box => box !== checkbox);
+            row.remove();
+            update();
+            const total = document.querySelector("[data-shop-total]");
+            if (total) total.textContent = String(Math.max(0, Number(total.textContent) - 1));
+            notice.textContent = `${result.shop_name || "店舗"}を食べログなしとして登録しました。`;
+            notice.style.color = "#137333";
+          } catch (error) {
+            notice.textContent = error.message || "通信に失敗しました。再度登録してください";
+            notice.style.color = "#b00020";
+          } finally {
+            notice.hidden = false;
+            form.dataset.saving = "false";
+            button.disabled = false;
+            button.textContent = originalLabel;
           }
         });
       });
