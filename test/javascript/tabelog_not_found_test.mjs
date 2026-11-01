@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 const source = readFileSync(new URL('../../app/views/admin/shops/index.html.erb', import.meta.url), 'utf8');
-const script = source.slice(source.indexOf('      document.querySelectorAll("[data-tabelog-not-found-form]")'), source.indexOf('      const focusStorageKey'));
+const start = source.indexOf('      document.querySelectorAll("[data-tabelog-not-found-form]")');
+const script = source.slice(start, source.indexOf('      }\n      bindTabelogRows();', start));
 function setup(fetch, confirmed = true) {
   const button = { textContent: '食べログなし', disabled: false };
   const notice = { hidden: true, style: {} };
@@ -15,7 +16,12 @@ function setup(fetch, confirmed = true) {
     addEventListener: (_, fn) => { handler = fn; } };
   vm.runInNewContext(script, {
     document: { querySelectorAll: () => [form], querySelector: selector => selector.includes('total') ? total : notice },
-    window: { confirm: () => confirmed }, boxes: [checkbox], update() {}, fetch,
+    saveTabelogForm: async form => {
+      const response = await fetch(form.action, { headers: { Accept: 'application/json' } });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      return result;
+    }, refillShopRows: async () => {}, window: { confirm: () => confirmed }, boxes: [checkbox], update() {}, fetch,
     FormData: class { constructor(target) { assert.equal(target, form); } }
   });
   return { button, notice, total, row, checkbox, submit: () => handler({ preventDefault() {} }) };

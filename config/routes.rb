@@ -141,6 +141,7 @@ Rails.application.routes.draw do
       end
 
       collection do
+        get :refresh_form_token
         get :holds
         get :smoking_unverified
         get :phone_check_holds

@@ -7,7 +7,9 @@ require "digest"
 require "cgi"
 
 class Admin::ShopsController < Admin::BaseController
+  rescue_from ActionController::InvalidAuthenticityToken, with: :invalid_form_token
   def index
+    response.headers["Cache-Control"] = "no-store"
     @status = params[:status].presence || "pending"
     @source = params[:source].to_s.presence
     @q = params[:q].to_s.strip
@@ -71,7 +73,24 @@ class Admin::ShopsController < Admin::BaseController
     offset = (@page - 1) * @per
     @shops = scope.offset(offset).limit(@per)
 
+    if request.format.json?
+      visible_ids = Array(params[:visible_ids]).first(500).map(&:to_i)
+      @shops = @shops.to_a.reject { |shop| visible_ids.include?(shop.id) }.first([@per - visible_ids.size, 0].max)
+      @duplicate_states = build_duplicate_states_for(@shops)
+      response.headers["Cache-Control"] = "no-store"
+      return render json: {
+        rows_html: render_to_string(partial: "admin/shops/row", collection: @shops, as: :shop, formats: [:html]),
+        total_count: @total_count, total_pages: @total_pages, page: @page,
+        csrf_token: form_authenticity_token,
+        pagination_html: render_to_string(partial: "admin/shops/pagination", formats: [:html])
+      }
+    end
     @duplicate_states = build_duplicate_states_for(@shops)
+  end
+
+  def refresh_form_token
+    response.headers["Cache-Control"] = "no-store"
+    render json: { csrf_token: form_authenticity_token }
   end
 
   def clicks
@@ -1176,6 +1195,10 @@ class Admin::ShopsController < Admin::BaseController
   VALUECOMMERCE_PID = "892611116"
 
   # 一覧のURL欄は店舗全体の再解析や一覧再描画を待たずに保存する。
+  def invalid_form_token
+    render json: { error: "画面の認証情報が古くなっています。再読み込みして再度保存してください。", code: "invalid_csrf" }, status: :unprocessable_entity
+  end
+
   def update_inline_tabelog_url
     shop = Shop.find(params[:id])
     fields = params.require(:shop).permit(:tabelog_url, :tabelog_candidate_url)
