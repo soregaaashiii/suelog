@@ -34,6 +34,9 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where(on_hold: true)
     when "tabelog_suspect"
       scope = scope.where.not(tabelog_candidate_url: [nil, ""])
+    when "tabelog_not_found", "hotpepper_not_found", "gurunavi_not_found"
+      provider = @status.delete_suffix("_not_found")
+      scope = scope.where(approved: true).where("#{provider}_url LIKE ?", "https://not-found.local/%")
     when "gurunavi_missing"
       scope = scope.where(approved: true, gurunavi_url: [nil, ""])
     when "gurunavi_configured"
@@ -56,7 +59,7 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
     end
 
-    @affiliate_setup = %w[tabelog_missing tabelog_configured hotpepper_missing hotpepper_configured gurunavi_missing gurunavi_configured].include?(@status)
+    @affiliate_setup = %w[tabelog_missing tabelog_configured hotpepper_missing hotpepper_configured gurunavi_missing gurunavi_configured tabelog_not_found hotpepper_not_found gurunavi_not_found].include?(@status)
     if @affiliate_setup
       access_counts = PageView.where(is_bot: [false, nil]).where.not(shop_id: nil).group(:shop_id).select("shop_id, COUNT(*) AS views_count")
       scope = scope.joins("LEFT JOIN (#{access_counts.to_sql}) affiliate_access ON affiliate_access.shop_id = shops.id")
@@ -653,6 +656,33 @@ class Admin::ShopsController < Admin::BaseController
     end
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
+  end
+
+  def restore_affiliate_not_found
+    provider = params[:provider].to_s
+    unless %w[tabelog hotpepper gurunavi].include?(provider)
+      return render plain: "サービスが正しくありません", status: :unprocessable_entity
+    end
+    shop = Shop.find(params[:id])
+    restored = false
+    shop.with_lock do
+      if shop.public_send("#{provider}_url").to_s.start_with?("https://not-found.local/")
+        shop.defer_aicoo_activity_delivery = true
+        shop.skip_geocoding_for_url_update = true
+        attrs = { "#{provider}_url" => nil, "#{provider}_affiliate_url" => nil }
+        attrs.merge!(tabelog_matched_at: nil, tabelog_match_method: nil) if provider == "tabelog"
+        shop.update!(attrs)
+        restored = true
+      end
+    end
+    unless restored
+      return render plain: "なし登録はすでに解除されています。画面を更新してください。", status: :unprocessable_entity
+    end
+    label = BookingProviderSetting::PROVIDERS.fetch(provider)
+    redirect_to admin_shops_path(status: "#{provider}_not_found", source: params[:source], q: params[:q], per: params[:per], page: params[:page]),
+      status: :see_other, flash: { admin_notice: "#{shop.name}の#{label}なしを解除しました。未設定一覧から再設定できます。" }
+  rescue ActiveRecord::RecordInvalid => e
+    render plain: e.record.errors.full_messages.join(" / "), status: :unprocessable_entity
   end
 
   def mark_gurunavi_not_found

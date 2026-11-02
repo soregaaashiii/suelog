@@ -20,6 +20,43 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "not found provider lists restore shops to the missing queue without changing other providers" do
+    %w[tabelog hotpepper gurunavi].each do |provider|
+      @shop.update!(tabelog_url: "https://tabelog.com/test/", tabelog_affiliate_url: "https://affiliate.example/tabelog", hotpepper_url: "https://www.hotpepper.jp/strJ001234567/", hotpepper_affiliate_url: "https://affiliate.example/hotpepper", gurunavi_url: "https://r.gnavi.co.jp/abcd123/", gurunavi_affiliate_url: "https://affiliate.example/gurunavi", "hide_#{provider}_booking_button" => true)
+      patch public_send("mark_#{provider}_not_found_admin_shop_path", @shop), headers: @headers.merge("ACCEPT" => "application/json")
+      assert_response :success
+      get admin_shops_path(status: "#{provider}_not_found", q: @shop.name), headers: @headers
+      assert_response :success
+      assert_select "[data-shop-row-id='#{@shop.id}'] button", text: "未設定に戻す", count: 1
+      assert_select "input[type='url']", count: 0
+      before = @shop.reload.attributes
+      patch restore_affiliate_not_found_admin_shop_path(@shop), headers: @headers, params: { provider: provider, q: @shop.name, per: 50, page: 1 }
+      assert_response :see_other
+      @shop.reload
+      assert_nil @shop.public_send("#{provider}_url")
+      assert_nil @shop.public_send("#{provider}_affiliate_url")
+      assert @shop.public_send("hide_#{provider}_booking_button?")
+      (%w[tabelog hotpepper gurunavi] - [provider]).each do |other|
+        assert_equal before["#{other}_url"], @shop.public_send("#{other}_url")
+        assert_equal before["#{other}_affiliate_url"], @shop.public_send("#{other}_affiliate_url")
+      end
+      if provider == "tabelog"
+        assert_nil @shop.tabelog_match_method
+        assert_nil @shop.tabelog_matched_at
+      end
+      get admin_shops_path(status: "#{provider}_not_found", q: @shop.name, format: :json), headers: @headers
+      assert_equal 0, response.parsed_body["total_count"]
+      get admin_shops_path(status: "#{provider}_missing", q: @shop.name, format: :json), headers: @headers
+      assert_equal 1, response.parsed_body["total_count"]
+      @shop.update!("#{provider}_url" => "https://example.test/new-value/")
+      patch restore_affiliate_not_found_admin_shop_path(@shop), headers: @headers, params: { provider: provider }
+      assert_response :unprocessable_entity
+      assert_equal "https://example.test/new-value/", @shop.reload.public_send("#{provider}_url")
+    end
+    patch restore_affiliate_not_found_admin_shop_path(@shop), headers: @headers, params: { provider: "unknown" }
+    assert_response :unprocessable_entity
+  end
+
   test "affiliate queues and configured lists sort by human page views rather than click count" do
     high = @shop.dup
     high.name = "アクセス順検証 多"
