@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_000300) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -74,6 +74,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_000200) do
     t.string "title"
     t.boolean "toc_enabled", default: false, null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "booking_provider_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "hidden", default: false, null: false
+    t.string "provider", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider"], name: "index_booking_provider_settings_on_provider", unique: true
   end
 
   create_table "contact_messages", force: :cascade do |t|

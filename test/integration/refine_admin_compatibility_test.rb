@@ -20,6 +20,43 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "global provider stop overrides every shop while preserving individual preferences" do
+    BookingProviderSetting.delete_all
+    @shop.update!(tabelog_url: "https://tabelog.com/test/", tabelog_affiliate_url: "https://affiliate.example/tabelog", hotpepper_url: "https://www.hotpepper.jp/strJ001234567/", hotpepper_affiliate_url: "https://affiliate.example/hotpepper")
+    other = @shop.dup
+    other.name = "一括表示確認店舗"
+    other.save!
+    get admin_shops_path(status: "tabelog_missing"), headers: @headers
+    assert_select "[data-global-booking-provider='tabelog'] input[type='submit'][value='食べログを全店舗で非表示']", count: 1
+    patch global_booking_visibility_admin_shops_path, headers: @headers, params: { provider: "tabelog", hidden: "1" }
+    assert_response :see_other
+    [@shop, other].each do |shop|
+      get shop_path(shop)
+      assert_select "a.shop-show__cvPrimary--tabelog", count: 0
+      assert_select "a.shop-show__cvPrimary--hotpepper", minimum: 1
+      assert_equal "no-store", response.headers["Cache-Control"]
+    end
+    get track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.tabelog_affiliate_url)
+    assert_redirected_to shop_path(@shop)
+    assert_not @shop.reload.hide_tabelog_booking_button?
+    assert_equal "https://affiliate.example/tabelog", @shop.tabelog_affiliate_url
+    other.update!(hide_tabelog_booking_button: true)
+    patch global_booking_visibility_admin_shops_path, headers: @headers, params: { provider: "tabelog", hidden: "0" }
+    get shop_path(@shop)
+    assert_select "a.shop-show__cvPrimary--tabelog", minimum: 1
+    get shop_path(other)
+    assert_select "a.shop-show__cvPrimary--tabelog", count: 0
+    patch global_booking_visibility_admin_shops_path, headers: @headers, params: { provider: "all", hidden: "1" }
+    get shop_path(@shop)
+    assert_select "a.shop-show__cvPrimary--hotpepper", count: 0
+    assert_select "a.shop-show__cvPrimary--tabelog", count: 0
+    patch global_booking_visibility_admin_shops_path, headers: @headers, params: { provider: "invalid", hidden: "1" }
+    assert_response :unprocessable_entity
+    patch global_booking_visibility_admin_shops_path, headers: @headers, params: { provider: "all", hidden: "0" }
+    get shop_path(@shop)
+    assert_select "a.shop-show__cvPrimary--hotpepper", minimum: 1
+  end
+
   test "gurunavi saves source URLs separately and refills the unregistered queue" do
     get admin_shops_path(status: "gurunavi_missing", q: @shop.name), headers: @headers
     assert_response :success

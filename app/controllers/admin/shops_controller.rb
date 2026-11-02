@@ -621,6 +621,18 @@ class Admin::ShopsController < Admin::BaseController
                 flash: { admin_alert: "保留への移動に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   end
 
+  def global_booking_visibility
+    provider = params[:provider].to_s
+    unless BookingProviderSetting::PROVIDERS.key?(provider) && %w[0 1].include?(params[:hidden].to_s)
+      return render plain: "表示設定が正しくありません", status: :unprocessable_entity
+    end
+    hidden = params[:hidden].to_s == "1"
+    BookingProviderSetting.upsert({ provider: provider, hidden: hidden, created_at: Time.current, updated_at: Time.current }, unique_by: :provider)
+    label = BookingProviderSetting::PROVIDERS.fetch(provider)
+    redirect_to admin_shops_path(status: params[:status], per: params[:per]), status: :see_other,
+      flash: { admin_notice: "#{label}の予約ボタンを全店舗で#{hidden ? '非表示' : '表示'}にしました" }
+  end
+
   def booking_visibility
     shop = Shop.find(params[:id])
     provider = params[:provider].to_s

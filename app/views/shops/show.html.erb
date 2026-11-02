@@ -233,7 +233,9 @@
     }
   end
 
-  booking_links = [] if confirmed_non_smoking
+  hidden_booking_providers = BookingProviderSetting.hidden_providers
+  booking_links.reject! { |link| hidden_booking_providers.include?(link[:provider]) }
+  booking_links = [] if confirmed_non_smoking || hidden_booking_providers.include?("all")
   primary_booking_url = booking_links.first&.dig(:url)
 
   related_area_links = []

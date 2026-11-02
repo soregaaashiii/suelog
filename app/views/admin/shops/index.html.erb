@@ -10,6 +10,8 @@
   <p>ホットペッパーの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
 <% end %>
 
+<%= render "global_booking_visibility" %>
+
 <div style="margin:10px 0; display:flex; gap:10px; flex-wrap:wrap;">
   <%= link_to "＋ 新規店舗を登録",
       new_admin_shop_path,

@@ -144,6 +144,7 @@ Rails.application.routes.draw do
       end
 
       collection do
+        patch :global_booking_visibility
         get :refresh_form_token
         get :holds
         get :smoking_unverified
