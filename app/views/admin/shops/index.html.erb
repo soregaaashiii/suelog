@@ -1,13 +1,17 @@
 <%# /Users/kawamuratakuya/dev/suelog/app/views/admin/shops/index.html.erb %>
 
-<% hotpepper_setup = %w[hotpepper_missing hotpepper_configured].include?(@status) %>
-<% gurunavi_setup = %w[gurunavi_missing gurunavi_configured].include?(@status) %>
+<% hotpepper_setup = %w[hotpepper_missing hotpepper_configured hotpepper_not_found].include?(@status) %>
+<% gurunavi_setup = %w[gurunavi_missing gurunavi_configured gurunavi_not_found].include?(@status) %>
 <h1><%= gurunavi_setup ? "ぐるなび アフィリエイト設定" : hotpepper_setup ? "ホットペッパー アフィリエイト設定" : "店舗管理" %></h1>
 <% if gurunavi_setup %>
   <p>ぐるなびの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
 <% end %>
 <% if hotpepper_setup %>
   <p>ホットペッパーの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
+<% end %>
+
+<% if %w[tabelog_not_found hotpepper_not_found gurunavi_not_found].include?(@status) %>
+  <p>「なし」にした店舗の一覧です。「未設定に戻す」で解除すると、未設定一覧からURLを再登録できます。</p>
 <% end %>
 
 <%= render "global_booking_visibility" %>
@@ -119,6 +123,10 @@
 
       <%= link_to "ぐるなび未登録", admin_shops_path(status: "gurunavi_missing", per: @per, page: 1) %>｜
       <%= link_to "ぐるなび設定済み", admin_shops_path(status: "gurunavi_configured", per: @per, page: 1) %>｜
+
+      <% { "tabelog" => "食べログ", "hotpepper" => "ホットペッパー", "gurunavi" => "ぐるなび" }.each do |provider, label| %>
+        <%= link_to "#{label}なし一覧", admin_shops_path(status: "#{provider}_not_found", per: @per, page: 1) %>｜
+      <% end %>
 
       <% if @status == "hold" %>
         <strong>保留一覧</strong>

@@ -1,5 +1,6 @@
-<% gurunavi_setup = %w[gurunavi_missing gurunavi_configured].include?(@status) %>
-<% hotpepper_setup = %w[hotpepper_missing hotpepper_configured].include?(@status) %>
+<% affiliate_not_found = %w[tabelog_not_found hotpepper_not_found gurunavi_not_found].include?(@status) %>
+<% gurunavi_setup = %w[gurunavi_missing gurunavi_configured gurunavi_not_found].include?(@status) %>
+<% hotpepper_setup = %w[hotpepper_missing hotpepper_configured hotpepper_not_found].include?(@status) %>
           <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
 
           <% duplicate_state =
@@ -161,7 +162,12 @@
                     edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
-                <% if gurunavi_setup %>
+                <% if affiliate_not_found %>
+                  <% restore_provider = @status.delete_suffix("_not_found") %>
+                  <strong>なし登録中</strong>
+                  <%= button_to "未設定に戻す", restore_affiliate_not_found_admin_shop_path(shop, provider: restore_provider, source: @source, q: @q, per: @per, page: @page), method: :patch,
+                      form: { data: { turbo: false } }, style: "padding:8px 12px; border:1px solid #137333; border-radius:10px; background:#eef8f0; color:#137333; font-weight:700;" %>
+                <% elsif gurunavi_setup %>
                   <% if @status == "gurunavi_missing" %>
                     <%= button_to "ぐるなびなし", mark_gurunavi_not_found_admin_shop_path(shop, status: @status, per: @per, page: @page), method: :patch, form: { data: { turbo: false, tabelog_not_found_form: true, booking_provider: "ぐるなび" } }, style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
                   <% end %>
@@ -215,6 +221,7 @@
                       style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
                 <% end %>
 
+                <% unless affiliate_not_found %>
                 <%= form_with model: [:admin, shop],
                     url: admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     method: :patch,
@@ -253,6 +260,8 @@
                     <%= f.submit "候補URL更新",
                         style: "padding:6px 10px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; font-weight:700;" %>
                   <% end %>
+                <% end %>
+
                 <% end %>
 
                 <% if gurunavi_setup || hotpepper_setup || %w[tabelog_missing tabelog_configured].include?(@status) %>
