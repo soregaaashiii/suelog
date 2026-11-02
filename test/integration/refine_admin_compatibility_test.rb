@@ -20,6 +20,43 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "provider booking buttons hide independently without deleting URLs and can be restored" do
+    @shop.update!(tabelog_url: "https://tabelog.com/test/", tabelog_affiliate_url: "https://affiliate.example/tabelog", hotpepper_url: "https://www.hotpepper.jp/strJ001234567/", hotpepper_affiliate_url: "https://affiliate.example/hotpepper")
+    get shop_path(@shop)
+    assert_select "a.shop-show__cvPrimary--tabelog", minimum: 1
+    assert_select "a.shop-show__cvPrimary--hotpepper", minimum: 1
+    patch booking_visibility_admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: { provider: "tabelog", hidden: "1" }
+    assert_response :success
+    assert_equal true, response.parsed_body["hidden"]
+    get shop_path(@shop)
+    assert_select "a.shop-show__cvPrimary--tabelog", count: 0
+    assert_select "a.shop-show__cvPrimary--hotpepper", minimum: 1
+    patch booking_visibility_admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: { provider: "hotpepper", hidden: "1" }
+    assert_response :success
+    get shop_path(@shop)
+    assert_select "a.shop-show__cvPrimary--hotpepper", count: 0
+    @shop.reload
+    assert_equal "https://affiliate.example/tabelog", @shop.tabelog_affiliate_url
+    assert_equal "https://affiliate.example/hotpepper", @shop.hotpepper_affiliate_url
+    patch booking_visibility_admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: { provider: "tabelog", hidden: "0" }
+    get shop_path(@shop)
+    assert_select "a.shop-show__cvPrimary--tabelog", minimum: 1
+    assert_select "a.shop-show__cvPrimary--hotpepper", count: 0
+  end
+
+  test "admin editing persists booking visibility and rejects unknown providers" do
+    get edit_admin_shop_path(@shop), headers: @headers
+    assert_select "input[type='checkbox'][name='shop[hide_tabelog_booking_button]']", count: 1
+    assert_select "input[type='checkbox'][name='shop[hide_hotpepper_booking_button]']", count: 1
+    patch admin_shop_path(@shop), headers: @headers, params: { shop: { hide_tabelog_booking_button: "1", hide_hotpepper_booking_button: "1" } }
+    assert_response :redirect
+    assert @shop.reload.hide_tabelog_booking_button?
+    assert @shop.hide_hotpepper_booking_button?
+    patch booking_visibility_admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: { provider: "custom", hidden: "0" }
+    assert_response :unprocessable_entity
+    assert @shop.reload.hide_tabelog_booking_button?
+  end
+
   test "hotpepper not found leaves the work queue and never creates a public booking link" do
     @shop.update!(tabelog_url: "https://tabelog.com/test/", hotpepper_url: "https://www.hotpepper.jp/strJ001234567/", hotpepper_affiliate_url: "https://affiliate.example/test")
     assert_enqueued_with(job: AicooActivityDeliveryJob) do

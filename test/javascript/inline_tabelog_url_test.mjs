@@ -40,7 +40,7 @@ function setup(fetch) {
     forms.push(form); links.push(link);
     return { status, button, input, inputEvents, row, checkbox, submit: () => submit({ preventDefault() {} }) };
   });
-  document.querySelectorAll = selector => selector.includes('not-found-form') ? [] : selector.includes('search-shop') ? links : forms.filter((_, i) => !rows[i].row.removed);
+  document.querySelectorAll = selector => (selector.includes('not-found-form') || selector.includes('booking-visibility-form')) ? [] : selector.includes('search-shop') ? links : forms.filter((_, i) => !rows[i].row.removed);
   document.querySelector = selector => {
     if (selector.includes('data-shop-total')) return total;
     if (selector.includes('data-url-update-notice')) return notice;

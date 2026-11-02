@@ -239,6 +239,18 @@
                   <% end %>
                 <% end %>
 
+                <% if hotpepper_setup || %w[tabelog_missing tabelog_configured].include?(@status) %>
+                  <% provider = hotpepper_setup ? "hotpepper" : "tabelog" %>
+                  <% hidden = shop.public_send("hide_#{provider}_booking_button?") %>
+                  <%= form_with url: booking_visibility_admin_shop_path(shop, status: @status, per: @per, page: @page), method: :patch,
+                      local: true, data: { turbo: false, booking_visibility_form: true }, style: "display:flex; align-items:center; gap:6px;" do %>
+                    <%= hidden_field_tag :provider, provider %>
+                    <%= hidden_field_tag :hidden, hidden ? "0" : "1" %>
+                    <%= submit_tag(hidden ? "予約ボタンを表示" : "予約ボタンを非表示", style: "padding:6px 10px; border:1px solid #777; border-radius:10px; background:#fff; color:#333;") %>
+                    <span data-booking-visibility-status role="status" style="font-size:12px;"><%= "非表示中" if hidden %></span>
+                  <% end %>
+                <% end %>
+
                 <%= link_to "公開ページ",
                     shop_path(shop),
                     target: "_blank",

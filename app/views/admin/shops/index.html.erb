@@ -423,6 +423,33 @@
         });
       });
 
+      document.querySelectorAll("[data-booking-visibility-form]").forEach((form) => {
+        if (form.dataset.bound) return;
+        form.dataset.bound = "true";
+        form.addEventListener("submit", async event => {
+          event.preventDefault();
+          if (form.dataset.saving === "true") return;
+          form.dataset.saving = "true";
+          const button = form.querySelector('[type="submit"]');
+          const status = form.querySelector("[data-booking-visibility-status]");
+          button.disabled = true;
+          status.textContent = "保存中…";
+          try {
+            const result = await saveTabelogForm(form);
+            form.querySelector('[name="hidden"]').value = result.hidden ? "0" : "1";
+            button.value = result.hidden ? "予約ボタンを表示" : "予約ボタンを非表示";
+            status.textContent = result.hidden ? "非表示中" : "表示中";
+            status.style.color = "#137333";
+          } catch (error) {
+            status.textContent = error.message;
+            status.style.color = "#b00020";
+          } finally {
+            form.dataset.saving = "false";
+            button.disabled = false;
+          }
+        });
+      });
+
       document.querySelectorAll("[data-tabelog-not-found-form]").forEach((form) => {
         if (form.dataset.bound) return;
         form.dataset.bound = "true";
