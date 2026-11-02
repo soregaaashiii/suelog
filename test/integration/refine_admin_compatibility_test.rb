@@ -20,6 +20,37 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "affiliate queues and configured lists sort by human page views rather than click count" do
+    high = @shop.dup
+    high.name = "アクセス順検証 多"
+    high.save!
+    @shop.update!(name: "アクセス順検証 少")
+    zero = @shop.dup
+    zero.name = "アクセス順検証 ゼロ"
+    zero.save!
+    3.times { PageView.create!(shop: high, path: "/shops/#{high.id}", is_bot: false) }
+    PageView.create!(shop: @shop, path: "/shops/#{@shop.id}", is_bot: nil)
+    6.times { PageView.create!(shop: zero, path: "/shops/#{zero.id}", is_bot: true) }
+    5.times { @shop.shop_clicks.create!(kind: "affiliate_click") }
+    %w[tabelog hotpepper gurunavi].each do |provider|
+      %w[missing configured].each do |state|
+        attrs = state == "missing" ? { "#{provider}_url" => nil, "#{provider}_affiliate_url" => nil } : { "#{provider}_url" => "https://example.test/store/", "#{provider}_affiliate_url" => "https://affiliate.example/store" }
+        Shop.where(id: [high.id, @shop.id, zero.id]).update_all(attrs)
+        get admin_shops_path(status: "#{provider}_#{state}", q: "アクセス順検証", per: 2), headers: @headers
+        assert_response :success
+        assert_equal [high.id.to_s, @shop.id.to_s], css_select("[data-shop-row-id]").map { |row| row["data-shop-row-id"] }
+        assert_equal ["3", "1"], css_select("[data-affiliate-access-count]").map { |cell| cell.text.strip }
+        get admin_shops_path(status: "#{provider}_#{state}", q: "アクセス順検証", per: 2, format: :json, visible_ids: [high.id]), headers: @headers
+        assert_response :success
+        assert_equal 3, response.parsed_body["total_count"]
+        rows = Nokogiri::HTML.fragment(response.parsed_body["rows_html"])
+        assert_equal [@shop.id.to_s], rows.css("[data-shop-row-id]").map { |row| row["data-shop-row-id"] }
+        get admin_shops_path(status: "#{provider}_#{state}", q: "アクセス順検証", per: 2, page: 2), headers: @headers
+        assert_equal [zero.id.to_s], css_select("[data-shop-row-id]").map { |row| row["data-shop-row-id"] }
+      end
+    end
+  end
+
   test "global provider stop overrides every shop while preserving individual preferences" do
     BookingProviderSetting.delete_all
     @shop.update!(tabelog_url: "https://tabelog.com/test/", tabelog_affiliate_url: "https://affiliate.example/tabelog", hotpepper_url: "https://www.hotpepper.jp/strJ001234567/", hotpepper_affiliate_url: "https://affiliate.example/hotpepper")
