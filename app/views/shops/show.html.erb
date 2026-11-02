@@ -206,7 +206,7 @@
     }
   end
 
-  if hotpepper_track_url.present?
+  if hotpepper_track_url.present? && !@shop.hide_hotpepper_booking_button?
     booking_links << {
       url: hotpepper_track_url,
       provider: "hotpepper",
@@ -215,7 +215,7 @@
     }
   end
 
-  if tabelog_track_url.present?
+  if tabelog_track_url.present? && !@shop.hide_tabelog_booking_button?
     booking_links << {
       url: tabelog_track_url,
       provider: "tabelog",

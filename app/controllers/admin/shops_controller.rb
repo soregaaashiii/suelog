@@ -616,6 +616,27 @@ class Admin::ShopsController < Admin::BaseController
                 flash: { admin_alert: "保留への移動に失敗しました：#{e.record.errors.full_messages.join(' / ')}" }
   end
 
+  def booking_visibility
+    shop = Shop.find(params[:id])
+    provider = params[:provider].to_s
+    unless %w[tabelog hotpepper].include?(provider) && %w[0 1].include?(params[:hidden].to_s)
+      return render json: { error: "表示設定が正しくありません" }, status: :unprocessable_entity
+    end
+    hidden = params[:hidden].to_s == "1"
+    shop.defer_aicoo_activity_delivery = true
+    shop.skip_geocoding_for_url_update = true
+    shop.update!("hide_#{provider}_booking_button" => hidden)
+    label = provider == "hotpepper" ? "ホットペッパー" : "食べログ"
+    message = "#{label}の予約ボタンを#{hidden ? '非表示' : '表示'}にしました"
+    if request.format.json?
+      render json: { message: message, hidden: hidden }
+    else
+      redirect_to admin_shops_path(status: params[:status], per: params[:per], page: params[:page]), flash: { admin_notice: message }
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
+  end
+
   def mark_hotpepper_not_found
     shop = Shop.find(params[:id])
     shop.defer_aicoo_activity_delivery = true
@@ -1460,6 +1481,8 @@ class Admin::ShopsController < Admin::BaseController
       :tabelog_candidate_affiliate_url,
       :tabelog_candidate_method,
       :hotpepper_url,
+      :hide_tabelog_booking_button,
+      :hide_hotpepper_booking_button,
       :custom_affiliate_url,
       :custom_affiliate_label,
       :thumbnail_kind,
