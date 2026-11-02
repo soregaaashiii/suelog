@@ -224,6 +224,15 @@
     }
   end
 
+  if @shop.gurunavi_affiliate_url.present? && !@shop.hide_gurunavi_booking_button?
+    booking_links << {
+      url: track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.gurunavi_affiliate_url),
+      provider: "gurunavi",
+      provider_label: "ぐるなび",
+      label: "空席を確認"
+    }
+  end
+
   booking_links = [] if confirmed_non_smoking
   primary_booking_url = booking_links.first&.dig(:url)
 

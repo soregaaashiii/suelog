@@ -133,6 +133,7 @@ Rails.application.routes.draw do
         patch :hold
         patch :approve_tabelog_candidate
         patch :booking_visibility
+        patch :mark_gurunavi_not_found
         patch :mark_hotpepper_not_found
         patch :mark_tabelog_not_found
         patch :confirm_smoking_info

@@ -20,6 +20,45 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "gurunavi saves source URLs separately and refills the unregistered queue" do
+    get admin_shops_path(status: "gurunavi_missing", q: @shop.name), headers: @headers
+    assert_response :success
+    assert_select "input[name='shop[gurunavi_url]']", count: 1
+    assert_includes response.body, "ぐるなびなし"
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: { inline_gurunavi_update: "1", shop: { gurunavi_url: "https://r.gnavi.co.jp/abcd1234/" } }
+    assert_response :success
+    assert_equal "https://r.gnavi.co.jp/abcd1234/", @shop.reload.gurunavi_url
+    assert_nil @shop.gurunavi_affiliate_url
+    get admin_shops_path(status: "gurunavi_missing", q: @shop.name, format: :json), headers: @headers
+    assert_response :success
+    assert_equal 0, response.parsed_body["total_count"]
+    get admin_shops_path(status: "gurunavi_configured", q: @shop.name), headers: @headers
+    assert_response :success
+    assert_includes response.body, "店舗URL登録済み（変換設定待ち）"
+    get shop_path(@shop)
+    assert_select "a[href*='gnavi.co.jp']", count: 0
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: { inline_gurunavi_update: "1", shop: { gurunavi_url: "https://r.gnavi.co.jp.evil.test/abcd/" } }
+    assert_response :unprocessable_entity
+    assert_equal "https://r.gnavi.co.jp/abcd1234/", @shop.reload.gurunavi_url
+    patch booking_visibility_admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: { provider: "gurunavi", hidden: "1" }
+    assert_response :success
+    assert @shop.reload.hide_gurunavi_booking_button?
+    @shop.update!(gurunavi_affiliate_url: "https://affiliate.example/gurunavi")
+    get shop_path(@shop)
+    assert_select "a.shop-show__cvPrimary--gurunavi", count: 0
+    @shop.update!(hide_gurunavi_booking_button: false)
+    get shop_path(@shop)
+    assert_select "a.shop-show__cvPrimary--gurunavi", minimum: 1
+    @shop.update!(gurunavi_url: "https://r.gnavi.co.jp/next123/")
+    assert_nil @shop.reload.gurunavi_affiliate_url
+    patch mark_gurunavi_not_found_admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json")
+    assert_response :success
+    get admin_shops_path(status: "gurunavi_missing", q: @shop.name, format: :json), headers: @headers
+    assert_equal 0, response.parsed_body["total_count"]
+    get admin_shops_path(status: "gurunavi_configured", q: @shop.name, format: :json), headers: @headers
+    assert_equal 0, response.parsed_body["total_count"]
+  end
+
   test "provider booking buttons hide independently without deleting URLs and can be restored" do
     @shop.update!(tabelog_url: "https://tabelog.com/test/", tabelog_affiliate_url: "https://affiliate.example/tabelog", hotpepper_url: "https://www.hotpepper.jp/strJ001234567/", hotpepper_affiliate_url: "https://affiliate.example/hotpepper")
     get shop_path(@shop)

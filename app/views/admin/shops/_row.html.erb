@@ -1,3 +1,4 @@
+<% gurunavi_setup = %w[gurunavi_missing gurunavi_configured].include?(@status) %>
 <% hotpepper_setup = %w[hotpepper_missing hotpepper_configured].include?(@status) %>
           <% rejected = (shop.respond_to?(:rejected?) && shop.rejected?) %>
 
@@ -40,7 +41,7 @@
                 <strong><%= shop.name %></strong>
 
                 <%= link_to "Google検索",
-                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, hotpepper_setup ? 'ホットペッパーグルメ' : '食べログ'].compact.join(' '))}",
+                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, gurunavi_setup ? 'ぐるなび' : hotpepper_setup ? 'ホットペッパーグルメ' : '食べログ'].compact.join(' '))}",
                     data: { tabelog_search_shop_id: shop.id },
                     target: "_blank",
                     rel: "noopener",
@@ -156,7 +157,15 @@
                     edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
 
-                <% if hotpepper_setup %>
+                <% if gurunavi_setup %>
+                  <% if @status == "gurunavi_missing" %>
+                    <%= button_to "ぐるなびなし", mark_gurunavi_not_found_admin_shop_path(shop, status: @status, per: @per, page: @page), method: :patch, form: { data: { turbo: false, tabelog_not_found_form: true, booking_provider: "ぐるなび" } }, style: "padding:6px 10px; border:1px solid #b00020; background:#fff1f1; color:#b00020; border-radius:10px; font-weight:700;" %>
+                  <% end %>
+                  <% if shop.gurunavi_url.present? && !shop.gurunavi_url.start_with?("https://not-found.local/") %>
+                    <%= link_to "ぐるなび", shop.gurunavi_url, target: "_blank", rel: "noopener nofollow" %>
+                    <span><%= shop.gurunavi_affiliate_url.present? ? "アフィリエイト設定済み" : "店舗URL登録済み（変換設定待ち）" %></span>
+                  <% end %>
+                <% elsif hotpepper_setup %>
                   <% if @status == "hotpepper_missing" %>
                     <%= button_to "ホットペッパーなし",
                         mark_hotpepper_not_found_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
@@ -206,11 +215,14 @@
                     url: admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     method: :patch,
                     local: true,
-                    data: { turbo: false, inline_tabelog_form: (%w[tabelog_missing hotpepper_missing].include?(@status) ? true : nil), shop_id: shop.id },
+                    data: { turbo: false, inline_tabelog_form: (%w[tabelog_missing hotpepper_missing gurunavi_missing].include?(@status) ? true : nil), shop_id: shop.id },
                     style: "display:flex; gap:6px; align-items:center; flex-wrap:wrap;" do |f| %>
-                  <%= hidden_field_tag(hotpepper_setup ? :inline_hotpepper_update : :inline_tabelog_update, "1") %>
+                  <%= hidden_field_tag(gurunavi_setup ? :inline_gurunavi_update : hotpepper_setup ? :inline_hotpepper_update : :inline_tabelog_update, "1") %>
                   <span data-url-save-status role="status" style="font-size:12px;"></span>
-                  <% if hotpepper_setup %>
+                  <% if gurunavi_setup %>
+                    <%= f.url_field :gurunavi_url, placeholder: "ぐるなびURL（空欄でEnter→検索）", style: "width:260px; padding:6px 8px;" %>
+                    <%= f.submit "URL更新", style: "padding:6px 10px; border:1px solid #111; border-radius:10px; background:#111; color:#fff; font-weight:700;" %>
+                  <% elsif hotpepper_setup %>
                     <%= f.url_field :hotpepper_url, value: shop.hotpepper_url.presence,
                         placeholder: "ホットペッパーURL（空欄でEnter→検索）",
                         style: "width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:10px;" %>
@@ -239,8 +251,8 @@
                   <% end %>
                 <% end %>
 
-                <% if hotpepper_setup || %w[tabelog_missing tabelog_configured].include?(@status) %>
-                  <% provider = hotpepper_setup ? "hotpepper" : "tabelog" %>
+                <% if gurunavi_setup || hotpepper_setup || %w[tabelog_missing tabelog_configured].include?(@status) %>
+                  <% provider = gurunavi_setup ? "gurunavi" : hotpepper_setup ? "hotpepper" : "tabelog" %>
                   <% hidden = shop.public_send("hide_#{provider}_booking_button?") %>
                   <%= form_with url: booking_visibility_admin_shop_path(shop, status: @status, per: @per, page: @page), method: :patch,
                       local: true, data: { turbo: false, booking_visibility_form: true }, style: "display:flex; align-items:center; gap:6px;" do %>

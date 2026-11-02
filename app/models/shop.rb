@@ -302,6 +302,7 @@ class Shop < ApplicationRecord
   validate :last_confirmed_on_cannot_be_future
 
   # 電話番号の重複防止（digitsのみ）
+  before_validation :clear_stale_gurunavi_affiliate_url
   before_validation :clear_stale_hotpepper_affiliate_url
   before_validation :set_normalized_phone
   before_validation :set_duplicate_normalized_fields
@@ -1304,6 +1305,12 @@ class Shop < ApplicationRecord
     return if last_confirmed_on.blank?
 
     errors.add(:last_confirmed_on, "は未来の日付にできません") if last_confirmed_on > Date.current
+  end
+
+  def clear_stale_gurunavi_affiliate_url
+    if will_save_change_to_gurunavi_url? && !will_save_change_to_gurunavi_affiliate_url?
+      self.gurunavi_affiliate_url = nil
+    end
   end
 
   def clear_stale_hotpepper_affiliate_url

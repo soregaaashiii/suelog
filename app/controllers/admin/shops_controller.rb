@@ -34,6 +34,11 @@ class Admin::ShopsController < Admin::BaseController
       scope = scope.where(on_hold: true)
     when "tabelog_suspect"
       scope = scope.where.not(tabelog_candidate_url: [nil, ""])
+    when "gurunavi_missing"
+      scope = scope.where(approved: true, gurunavi_url: [nil, ""])
+    when "gurunavi_configured"
+      scope = scope.where(approved: true).where.not(gurunavi_url: [nil, ""])
+        .where.not("gurunavi_url LIKE ?", "https://not-found.local/%").reorder(updated_at: :desc, id: :desc)
     when "hotpepper_missing"
       scope = scope.where(approved: true, hotpepper_affiliate_url: [nil, ""])
         .where.not("COALESCE(hotpepper_url, '') LIKE ?", "https://not-found.local/%")
@@ -619,19 +624,32 @@ class Admin::ShopsController < Admin::BaseController
   def booking_visibility
     shop = Shop.find(params[:id])
     provider = params[:provider].to_s
-    unless %w[tabelog hotpepper].include?(provider) && %w[0 1].include?(params[:hidden].to_s)
+    unless %w[tabelog hotpepper gurunavi].include?(provider) && %w[0 1].include?(params[:hidden].to_s)
       return render json: { error: "表示設定が正しくありません" }, status: :unprocessable_entity
     end
     hidden = params[:hidden].to_s == "1"
     shop.defer_aicoo_activity_delivery = true
     shop.skip_geocoding_for_url_update = true
     shop.update!("hide_#{provider}_booking_button" => hidden)
-    label = provider == "hotpepper" ? "ホットペッパー" : "食べログ"
+    label = { "hotpepper" => "ホットペッパー", "tabelog" => "食べログ", "gurunavi" => "ぐるなび" }.fetch(provider)
     message = "#{label}の予約ボタンを#{hidden ? '非表示' : '表示'}にしました"
     if request.format.json?
       render json: { message: message, hidden: hidden }
     else
       redirect_to admin_shops_path(status: params[:status], per: params[:per], page: params[:page]), flash: { admin_notice: message }
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
+  end
+
+  def mark_gurunavi_not_found
+    shop = Shop.find(params[:id])
+    shop.defer_aicoo_activity_delivery = true
+    shop.skip_geocoding_for_url_update = true
+    shop.update!(gurunavi_url: "https://not-found.local/#{Time.zone.today.strftime('%y%m%d')}", gurunavi_affiliate_url: nil)
+    respond_to do |format|
+      format.json { render json: { message: "ぐるなびなしとして登録しました", shop_name: shop.name } }
+      format.html { redirect_to admin_shops_path(status: "gurunavi_missing"), flash: { admin_notice: "ぐるなびなしとして登録しました" } }
     end
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
@@ -773,6 +791,7 @@ class Admin::ShopsController < Admin::BaseController
   end
 
   def update
+    return update_inline_gurunavi_url if params[:inline_gurunavi_update] == "1"
     return update_inline_hotpepper_url if params[:inline_hotpepper_update] == "1"
     return update_inline_tabelog_url if params[:inline_tabelog_update] == "1"
 
@@ -1274,6 +1293,26 @@ class Admin::ShopsController < Admin::BaseController
     render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
   end
 
+  def update_inline_gurunavi_url
+    shop = Shop.find(params[:id])
+    url = params.require(:shop).permit(:gurunavi_url)[:gurunavi_url].to_s.strip
+    uri = URI.parse(url)
+    unless uri.is_a?(URI::HTTP) && uri.host == "r.gnavi.co.jp" && uri.path.match?(%r{\A/[a-zA-Z0-9]+/?\z}) && uri.userinfo.nil?
+      return render json: { error: "ぐるなびの店舗URL（https://r.gnavi.co.jp/店舗ID/）を入力してください" }, status: :unprocessable_entity
+    end
+    shop.defer_aicoo_activity_delivery = true
+    shop.skip_geocoding_for_url_update = true
+    shop.update!(gurunavi_url: url)
+    respond_to do |format|
+      format.json { render json: { message: "店舗URLを登録しました（アフィリエイト変換設定待ち）", completion_message: "ぐるなびURL登録済みへ移動しました（変換設定待ち）", url: url, shop_name: shop.name } }
+      format.html { redirect_to admin_shops_path(status: "gurunavi_configured"), flash: { admin_notice: "店舗URLを登録しました（アフィリエイト変換設定待ち）" } }
+    end
+  rescue URI::InvalidURIError
+    render json: { error: "正しいぐるなび店舗URLを入力してください" }, status: :unprocessable_entity
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
+  end
+
   def update_inline_hotpepper_url
     shop = Shop.find(params[:id])
     url = params.require(:shop).permit(:hotpepper_url)[:hotpepper_url].to_s.strip
@@ -1483,6 +1522,7 @@ class Admin::ShopsController < Admin::BaseController
       :hotpepper_url,
       :hide_tabelog_booking_button,
       :hide_hotpepper_booking_button,
+      :hide_gurunavi_booking_button,
       :custom_affiliate_url,
       :custom_affiliate_label,
       :thumbnail_kind,
