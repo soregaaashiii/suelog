@@ -1308,19 +1308,16 @@ class Admin::ShopsController < Admin::BaseController
   def update_inline_gurunavi_url
     shop = Shop.find(params[:id])
     url = params.require(:shop).permit(:gurunavi_url)[:gurunavi_url].to_s.strip
-    uri = URI.parse(url)
-    unless uri.is_a?(URI::HTTP) && uri.host == "r.gnavi.co.jp" && uri.path.match?(%r{\A/[a-zA-Z0-9]+/?\z}) && uri.userinfo.nil?
-      return render json: { error: "ぐるなびの店舗URL（https://r.gnavi.co.jp/店舗ID/）を入力してください" }, status: :unprocessable_entity
-    end
+    affiliate_url = GurunaviAffiliateUrlBuilder.call(url)
     shop.defer_aicoo_activity_delivery = true
     shop.skip_geocoding_for_url_update = true
-    shop.update!(gurunavi_url: url)
+    shop.update!(gurunavi_url: url, gurunavi_affiliate_url: affiliate_url)
     respond_to do |format|
-      format.json { render json: { message: "店舗URLを登録しました（アフィリエイト変換設定待ち）", completion_message: "ぐるなびURL登録済みへ移動しました（変換設定待ち）", url: url, shop_name: shop.name } }
-      format.html { redirect_to admin_shops_path(status: "gurunavi_configured"), flash: { admin_notice: "店舗URLを登録しました（アフィリエイト変換設定待ち）" } }
+      format.json { render json: { message: "ぐるなびアフィリエイトURLを設定しました", completion_message: "ぐるなび設定済みへ移動しました", url: url, shop_name: shop.name } }
+      format.html { redirect_to admin_shops_path(status: "gurunavi_configured"), flash: { admin_notice: "ぐるなびアフィリエイトURLを設定しました" } }
     end
-  rescue URI::InvalidURIError
-    render json: { error: "正しいぐるなび店舗URLを入力してください" }, status: :unprocessable_entity
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
   end
