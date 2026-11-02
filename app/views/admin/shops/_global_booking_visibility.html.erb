@@ -1,0 +1,22 @@
+<% hidden_providers = BookingProviderSetting.hidden_providers %>
+<section style="margin:16px 0; padding:16px; border:2px solid #b00020; border-radius:12px;" aria-label="全店舗の予約ボタン表示設定">
+  <h2 style="margin:0 0 8px; font-size:18px;">全店舗の予約ボタンを一括で切り替える</h2>
+  <p>アフィリエイト終了・停止時はここから全店舗をまとめて非表示にできます。URLと店舗ごとの設定は残ります。全体で非表示にしている間は、個別の表示設定より優先されます。</p>
+  <% BookingProviderSetting::PROVIDERS.each do |provider, label| %>
+    <% hidden = hidden_providers.include?(provider) %>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin:10px 0;" data-global-booking-provider="<%= provider %>">
+      <strong style="min-width:180px;"><%= label %></strong>
+      <span><%= hidden ? "全店舗で非表示中" : "表示を許可（個別設定に従う）" %></span>
+      <%= form_with url: global_booking_visibility_admin_shops_path, method: :patch, local: true, data: { turbo: false } do %>
+        <%= hidden_field_tag :provider, provider %>
+        <%= hidden_field_tag :hidden, hidden ? "0" : "1" %>
+        <%= hidden_field_tag :status, @status %>
+        <%= hidden_field_tag :per, @per %>
+        <%= submit_tag(hidden ? "#{label}を全店舗で再表示" : "#{label}を全店舗で非表示", style: "padding:8px 12px; border:1px solid #b00020; color:#{hidden ? '#137333' : '#b00020'}; background:#fff; border-radius:8px; font-weight:700;") %>
+      <% end %>
+    </div>
+  <% end %>
+  <% if hidden_providers.include?("all") %>
+    <p style="color:#b00020; font-weight:700;">全サービスの予約ボタンを停止中です。再開するには「すべてのサービスを全店舗で再表示」を押してください。</p>
+  <% end %>
+</section>

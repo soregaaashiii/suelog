@@ -54,6 +54,7 @@ class ShopsController < ApplicationController
   end
 
   def show
+    response.headers["Cache-Control"] = "no-store"
     @shop = Shop.find(params[:id])
 
     track_page_view(shop: @shop)
@@ -154,6 +155,20 @@ class ShopsController < ApplicationController
     unless safe_redirect_target?(target_url, kind: kind)
       redirect_to shop_path(@shop), alert: "遷移先URLが不正です"
       return
+    end
+
+    if kind == "affiliate_click"
+      hidden_providers = BookingProviderSetting.hidden_providers
+      provider_urls = {
+        "tabelog" => [@shop.tabelog_url, @shop.tabelog_affiliate_url],
+        "hotpepper" => [@shop.hotpepper_url, @shop.hotpepper_affiliate_url],
+        "gurunavi" => [@shop.gurunavi_url, @shop.gurunavi_affiliate_url],
+        "custom" => [@shop.custom_affiliate_url]
+      }
+      if hidden_providers.include?("all") || provider_urls.any? { |provider, urls| hidden_providers.include?(provider) && urls.compact.include?(target_url) }
+        redirect_to shop_path(@shop), alert: "この予約サービスへの案内は停止しています"
+        return
+      end
     end
 
     @shop.shop_clicks.create!(kind: kind)
