@@ -4,7 +4,7 @@
 <% gurunavi_setup = %w[gurunavi_missing gurunavi_configured].include?(@status) %>
 <h1><%= gurunavi_setup ? "ぐるなび アフィリエイト設定" : hotpepper_setup ? "ホットペッパー アフィリエイト設定" : "店舗管理" %></h1>
 <% if gurunavi_setup %>
-  <p>店舗URLを先に登録できます。アフィリエイト変換設定待ちのため、予約ボタンはまだ公開されません。空欄でEnterを押すと店舗を検索できます。</p>
+  <p>ぐるなびの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
 <% end %>
 <% if hotpepper_setup %>
   <p>ホットペッパーの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
@@ -117,7 +117,7 @@
       <% end %>
 
       <%= link_to "ぐるなび未登録", admin_shops_path(status: "gurunavi_missing", per: @per, page: 1) %>｜
-      <%= link_to "ぐるなびURL登録済み", admin_shops_path(status: "gurunavi_configured", per: @per, page: 1) %>｜
+      <%= link_to "ぐるなび設定済み", admin_shops_path(status: "gurunavi_configured", per: @per, page: 1) %>｜
 
       <% if @status == "hold" %>
         <strong>保留一覧</strong>

@@ -65,15 +65,17 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: { inline_gurunavi_update: "1", shop: { gurunavi_url: "https://r.gnavi.co.jp/abcd1234/" } }
     assert_response :success
     assert_equal "https://r.gnavi.co.jp/abcd1234/", @shop.reload.gurunavi_url
-    assert_nil @shop.gurunavi_affiliate_url
+    assert_equal GurunaviAffiliateUrlBuilder.call(@shop.gurunavi_url), @shop.gurunavi_affiliate_url
     get admin_shops_path(status: "gurunavi_missing", q: @shop.name, format: :json), headers: @headers
     assert_response :success
     assert_equal 0, response.parsed_body["total_count"]
     get admin_shops_path(status: "gurunavi_configured", q: @shop.name), headers: @headers
     assert_response :success
-    assert_includes response.body, "店舗URL登録済み（変換設定待ち）"
+    assert_includes response.body, "アフィリエイト設定済み"
     get shop_path(@shop)
-    assert_select "a[href*='gnavi.co.jp']", count: 0
+    assert_select "a.shop-show__cvPrimary--gurunavi", minimum: 1
+    get track_click_shop_path(@shop, kind: "affiliate_click", target_url: @shop.gurunavi_affiliate_url)
+    assert_redirected_to @shop.gurunavi_affiliate_url
     patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT" => "application/json"), params: { inline_gurunavi_update: "1", shop: { gurunavi_url: "https://r.gnavi.co.jp.evil.test/abcd/" } }
     assert_response :unprocessable_entity
     assert_equal "https://r.gnavi.co.jp/abcd1234/", @shop.reload.gurunavi_url

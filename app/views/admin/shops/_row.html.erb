@@ -163,7 +163,7 @@
                   <% end %>
                   <% if shop.gurunavi_url.present? && !shop.gurunavi_url.start_with?("https://not-found.local/") %>
                     <%= link_to "ぐるなび", shop.gurunavi_url, target: "_blank", rel: "noopener nofollow" %>
-                    <span><%= shop.gurunavi_affiliate_url.present? ? "アフィリエイト設定済み" : "店舗URL登録済み（変換設定待ち）" %></span>
+                    <span><%= shop.gurunavi_affiliate_url.present? ? "アフィリエイト設定済み" : "URL要確認（アフィリエイト未生成）" %></span>
                   <% end %>
                 <% elsif hotpepper_setup %>
                   <% if @status == "hotpepper_missing" %>
