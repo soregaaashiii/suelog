@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_000200) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -232,7 +232,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_000100) do
     t.string "duplicate_normalized_name"
     t.string "genre"
     t.string "genre_other"
+    t.text "gurunavi_affiliate_url"
+    t.text "gurunavi_url"
     t.datetime "held_at"
+    t.boolean "hide_gurunavi_booking_button", default: false, null: false
     t.boolean "hide_hotpepper_booking_button", default: false, null: false
     t.boolean "hide_tabelog_booking_button", default: false, null: false
     t.text "hold_note"
