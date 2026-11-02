@@ -111,6 +111,10 @@
               <% end %>
             </td>
 
+            <% if @affiliate_setup %>
+              <td align="right" style="padding:8px 12px 8px 0; font-weight:700;" data-affiliate-access-count><%= shop.affiliate_access_count.to_i %></td>
+            <% end %>
+
             <td align="right" style="padding:8px 12px 8px 0; font-weight:700;">
               <%= click_counts[:total].to_i %>
             </td>

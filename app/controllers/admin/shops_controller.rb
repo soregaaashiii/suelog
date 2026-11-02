@@ -51,11 +51,16 @@ class Admin::ShopsController < Admin::BaseController
         .where(approved: true)
         .where(tabelog_affiliate_url: [nil, ""])
         .where.not("COALESCE(tabelog_url, '') LIKE ?", "https://not-found.local/%")
-        .joins("LEFT JOIN shop_clicks ON shop_clicks.shop_id = shops.id")
-        .group("shops.id")
-        .reorder(Arel.sql("COUNT(shop_clicks.id) DESC, shops.created_at DESC"))
+
     else
       scope = scope.where(approved: false).where(rejected: [false, nil]).where(on_hold: [false, nil])
+    end
+
+    @affiliate_setup = %w[tabelog_missing tabelog_configured hotpepper_missing hotpepper_configured gurunavi_missing gurunavi_configured].include?(@status)
+    if @affiliate_setup
+      access_counts = PageView.where(is_bot: [false, nil]).where.not(shop_id: nil).group(:shop_id).select("shop_id, COUNT(*) AS views_count")
+      scope = scope.joins("LEFT JOIN (#{access_counts.to_sql}) affiliate_access ON affiliate_access.shop_id = shops.id")
+        .reorder(Arel.sql("COALESCE(affiliate_access.views_count, 0) DESC, shops.created_at DESC, shops.id DESC"))
     end
 
     if @source.present? && Shop.column_names.include?("source")
@@ -70,17 +75,13 @@ class Admin::ShopsController < Admin::BaseController
       )
     end
 
-    @total_count =
-      if @status == "tabelog_missing"
-        scope.except(:select, :group, :order).distinct.count(:id)
-      else
-        scope.count
-      end
+    @total_count = scope.count
 
     @total_pages = (@total_count.to_f / @per).ceil
     @total_pages = 1 if @total_pages <= 0
 
     offset = (@page - 1) * @per
+    scope = scope.select("shops.*", "COALESCE(affiliate_access.views_count, 0) AS affiliate_access_count") if @affiliate_setup
     @shops = scope.offset(offset).limit(@per)
 
     if request.format.json?

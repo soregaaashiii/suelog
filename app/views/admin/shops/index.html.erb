@@ -11,6 +11,7 @@
 <% end %>
 
 <%= render "global_booking_visibility" %>
+<% if @affiliate_setup %><p>店舗ページのアクセス数が多い順（累計PV・ボット除外）で表示しています。</p><% end %>
 
 <div style="margin:10px 0; display:flex; gap:10px; flex-wrap:wrap;">
   <%= link_to "＋ 新規店舗を登録",
@@ -230,6 +231,7 @@
           <th align="left">店名</th>
           <th align="left">住所</th>
           <th align="left">状態</th>
+          <% if @affiliate_setup %><th align="right">アクセス（累計PV）</th><% end %>
           <th align="right">合計</th>
           <th align="right">電話</th>
           <th align="right">地図</th>
