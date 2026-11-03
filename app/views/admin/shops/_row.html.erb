@@ -42,7 +42,7 @@
                 <strong><%= shop.name %></strong>
 
                 <%= link_to "Google検索",
-                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, gurunavi_setup ? 'ぐるなび site:r.gnavi.co.jp' : hotpepper_setup ? 'ホットペッパーグルメ site:www.hotpepper.jp/str' : '食べログ site:tabelog.com'].compact.join(' '))}",
+                    "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, gurunavi_setup ? 'ぐるなび -site:tabelog.com -site:lemon8-app.com -site:hotpepper.jp -site:instagram.com -site:tiktok.com' : hotpepper_setup ? 'ホットペッパーグルメ site:www.hotpepper.jp/str' : '食べログ site:tabelog.com'].compact.join(' '))}",
                     data: { tabelog_search_shop_id: shop.id },
                     target: "_blank",
                     rel: "noopener",
