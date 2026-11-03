@@ -1,0 +1,27 @@
+<div style="flex-basis:100%; padding:8px; border:1px solid #ccc; border-radius:8px;">
+  <% run = (@provider_search_runs || {})[[shop.id, provider.key]] %>
+  <% if shop.public_send("#{provider.key}_url").blank? && shop.public_send("#{provider.key}_affiliate_url").blank? %>
+    <%= button_to "段階検索・店舗照合", search_provider_url_admin_shop_path(shop, provider: provider.key, q: @q, per: @per, page: @page), method: :post, form: { data: { turbo: false } }, style: "padding:6px 10px;" %>
+    <small>店名＋市区町村 → 電話番号（表記違いも確認）。サイト内検索は連携がある場合のみ実行します。</small>
+  <% end %>
+  <% if run && run.input_digest != RestaurantUrlSearchRun.input_digest(shop, provider.key) %>
+    <p>店舗情報またはURLが変わっています。以前の照合結果を使わず再確認してください。</p>
+  <% elsif run %>
+    <p style="margin:6px 0;"><strong><%= { "pending" => "検索中", "matched" => "照合済み", "review" => "未確認・要確認", "unavailable" => "未確認・検索できませんでした" }.fetch(run.state, "未確認") %></strong>：<%= run.payload.to_h["reason"] %></p>
+    <% if run.payload.to_h["queries"].present? %>
+      <details><summary>実行した検索の順序を見る</summary>
+        <ol><% run.payload["queries"].each do |step| %><li><%= step["query"] %></li><% end %></ol>
+      </details>
+    <% end %>
+    <% if run.payload.to_h["candidates"].present? %>
+      <details><summary>候補と照合結果を見る（未確認候補は自動登録しません）</summary>
+        <% run.payload["candidates"].each do |candidate| %>
+          <% candidate_url = provider.canonical_url(candidate["url"]) %>
+          <% if candidate_url %>
+            <p><%= link_to candidate_url, candidate_url, target: "_blank", rel: "noopener nofollow" %>：<%= candidate["reason"] %><br><%= candidate["evidence"].to_h.slice("name", "address", "phone").values.join(" ／ ") %></p>
+          <% end %>
+        <% end %>
+      </details>
+    <% end %>
+  <% end %>
+</div>

@@ -20,6 +20,34 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     @user = SubAdminUser.create!(name: "\u30ED\u30FC\u30AB\u30EB\u78BA\u8A8D\u8005", login_id: "refine-local-admin", password: "local-test-only-12345", active: true, permissions: [ "smoking_check" ])
   end
 
+  test "non tabelog staged search queues work protects URLs and rejects listing URLs" do
+    %w[hotpepper gurunavi].each do |provider|
+      assert_enqueued_with(job: RestaurantUrlSearchJob) do
+        post search_provider_url_admin_shop_path(@shop), headers: @headers, params: { provider: provider }
+      end
+      assert_response :see_other
+      run = RestaurantUrlSearchRun.find_by!(shop: @shop, provider: provider)
+      assert_equal "pending", run.state
+      assert_no_enqueued_jobs(only: RestaurantUrlSearchJob) do
+        post search_provider_url_admin_shop_path(@shop), headers: @headers, params: { provider: provider }
+      end
+      @shop.update!("#{provider}_url" => "https://example.test/confirmed/")
+      assert_no_enqueued_jobs(only: RestaurantUrlSearchJob) do
+        post search_provider_url_admin_shop_path(@shop), headers: @headers, params: { provider: provider }
+      end
+      assert_equal "https://example.test/confirmed/", @shop.reload.public_send("#{provider}_url")
+    end
+    post search_provider_url_admin_shop_path(@shop), headers: @headers, params: { provider: "tabelog" }
+    assert_response :unprocessable_entity
+    patch admin_shop_path(@shop), headers: @headers.merge("ACCEPT"=>"application/json"), params: { inline_hotpepper_update: "1", shop: { hotpepper_url: "https://www.hotpepper.jp/SA23/" } }
+    assert_response :unprocessable_entity
+    assert_equal "https://example.test/confirmed/", @shop.reload.hotpepper_url
+    get admin_shops_path(status: "tabelog_missing", q: @shop.name), headers: @headers
+    assert_select "button", text: "段階検索・店舗照合", count: 0
+    query = URI.decode_www_form(URI.parse(css_select("a[data-tabelog-search-shop-id]").first["href"]).query).to_h["q"]
+    assert_equal [@shop.name, @shop.address, "食べログ site:tabelog.com"].join(" "), query
+  end
+
   test "not found provider lists restore shops to the missing queue without changing other providers" do
     %w[tabelog hotpepper gurunavi].each do |provider|
       @shop.update!(tabelog_url: "https://tabelog.com/test/", tabelog_affiliate_url: "https://affiliate.example/tabelog", hotpepper_url: "https://www.hotpepper.jp/strJ001234567/", hotpepper_affiliate_url: "https://affiliate.example/hotpepper", gurunavi_url: "https://r.gnavi.co.jp/abcd123/", gurunavi_affiliate_url: "https://affiliate.example/gurunavi", "hide_#{provider}_booking_button" => true)
@@ -231,7 +259,7 @@ class RefineAdminCompatibilityTest < ActionDispatch::IntegrationTest
     assert_select "form[data-inline-tabelog-form] input[name='shop[hotpepper_url]']", count: 1
     assert_select "input[name='inline_hotpepper_update'][value='1']", count: 1
     assert_select "a[data-tabelog-search-shop-id]" do |links|
-      assert_includes CGI.unescape(links.first["href"]), "ホットペッパーグルメ"
+      assert_includes CGI.unescape(links.first["href"]), "site:www.hotpepper.jp"
     end
     assert_select "form[data-tabelog-not-found-form][data-booking-provider='ホットペッパー']", count: 1
     raw_url = "https://www.hotpepper.jp/strJ001234567/"

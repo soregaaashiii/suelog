@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_000400) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_03_000100) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -107,6 +107,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_000400) do
     t.string "utm_source"
     t.index ["path", "ip_hash", "created_at"], name: "index_page_views_on_daily_identity_without_shop", where: "shop_id IS NULL"
     t.index ["shop_id"], name: "index_page_views_on_shop_id"
+  end
+
+  create_table "restaurant_url_search_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "input_digest"
+    t.text "payload"
+    t.string "provider", null: false
+    t.string "run_token"
+    t.integer "shop_id", null: false
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_id", "provider"], name: "index_restaurant_url_search_runs_on_shop_id_and_provider", unique: true
+    t.index ["shop_id"], name: "index_restaurant_url_search_runs_on_shop_id"
   end
 
   create_table "review_reports", force: :cascade do |t|
@@ -325,6 +338,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_000400) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "page_views", "shops"
+  add_foreign_key "restaurant_url_search_runs", "shops"
   add_foreign_key "review_reports", "reviews"
   add_foreign_key "reviews", "shops"
   add_foreign_key "shop_business_hour_windows", "shops"
