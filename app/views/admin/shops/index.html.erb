@@ -10,6 +10,14 @@
   <p>ホットペッパーの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
 <% end %>
 
+<% if gurunavi_setup || hotpepper_setup %>
+  <p>Google検索は店名＋市区町村で開始します。見つからない場合は電話番号で検索してください。「段階検索・店舗照合」は一致を確認できた店舗詳細URLだけを自動登録します。検索できない店舗は未確認のまま残します。</p>
+  <% unless RestaurantUrlSearch::SerpApi.new.available? %>
+    <p style="color:#8a6500;">現在は自動検索のAPI設定（SERPAPI_KEY）がありません。Google検索・電話番号での手動確認は利用できます。</p>
+  <% end %>
+  <%= link_to "検索結果を更新", admin_shops_path(status: @status, q: @q, source: @source, page: @page, per: @per), data: { turbo: false } %>
+<% end %>
+
 <% if %w[tabelog_not_found hotpepper_not_found gurunavi_not_found].include?(@status) %>
   <p>「なし」にした店舗の一覧です。「未設定に戻す」で解除すると、未設定一覧からURLを再登録できます。</p>
 <% end %>

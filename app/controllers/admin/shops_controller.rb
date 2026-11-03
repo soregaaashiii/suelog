@@ -90,6 +90,7 @@ class Admin::ShopsController < Admin::BaseController
     if request.format.json?
       visible_ids = Array(params[:visible_ids]).first(500).map(&:to_i)
       @shops = @shops.to_a.reject { |shop| visible_ids.include?(shop.id) }.first([@per - visible_ids.size, 0].max)
+      @provider_search_runs = RestaurantUrlSearchRun.where(shop_id: @shops.map(&:id)).index_by { |run| [run.shop_id, run.provider] } if @status.start_with?("gurunavi_", "hotpepper_")
       @duplicate_states = build_duplicate_states_for(@shops)
       response.headers["Cache-Control"] = "no-store"
       return render json: {
@@ -99,6 +100,7 @@ class Admin::ShopsController < Admin::BaseController
         pagination_html: render_to_string(partial: "admin/shops/pagination", formats: [:html])
       }
     end
+    @provider_search_runs = RestaurantUrlSearchRun.where(shop_id: @shops.map(&:id)).index_by { |run| [run.shop_id, run.provider] } if @status.start_with?("gurunavi_", "hotpepper_")
     @duplicate_states = build_duplicate_states_for(@shops)
   end
 
@@ -656,6 +658,27 @@ class Admin::ShopsController < Admin::BaseController
     end
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.record.errors.full_messages.join(" / ") }, status: :unprocessable_entity
+  end
+
+  def search_provider_url
+    provider = RestaurantUrlSearch::Provider.new(params[:provider])
+    shop = Shop.find(params[:id])
+    if shop.public_send("#{provider.key}_url").present? || shop.public_send("#{provider.key}_affiliate_url").present?
+      return redirect_to admin_shops_path(status: "#{provider.key}_configured"), status: :see_other, flash: { admin_alert: "既存URLは上書きしません。なし登録の場合は、なし一覧から解除してください。" }
+    end
+    run = RestaurantUrlSearchRun.create_or_find_by!(shop: shop, provider: provider.key)
+    token = nil
+    run.with_lock do
+      unless run.state == "pending" && run.run_token.present? && run.updated_at > 10.minutes.ago
+        token = SecureRandom.uuid
+        run.update!(state: "pending", run_token: token, input_digest: RestaurantUrlSearchRun.input_digest(shop, provider.key), payload: { reason: "段階検索・店舗照合中です。完了後にこの一覧を更新してください。" })
+      end
+    end
+    RestaurantUrlSearchJob.perform_later(run.id, token) if token
+    redirect_to admin_shops_path(status: "#{provider.key}_missing", q: params[:q], per: params[:per], page: params[:page]), status: :see_other,
+      flash: { admin_notice: "段階検索を受け付けました。完了後に一覧を更新してください。10分以上変わらない場合は再実行できます。" }
+  rescue ArgumentError => e
+    render plain: e.message, status: :unprocessable_entity
   end
 
   def restore_affiliate_not_found
@@ -1339,6 +1362,7 @@ class Admin::ShopsController < Admin::BaseController
   def update_inline_gurunavi_url
     shop = Shop.find(params[:id])
     url = params.require(:shop).permit(:gurunavi_url)[:gurunavi_url].to_s.strip
+    raise ArgumentError, "ぐるなびの店舗詳細URLを入力してください" unless RestaurantUrlSearch::Provider.new("gurunavi").canonical_url(url)
     affiliate_url = GurunaviAffiliateUrlBuilder.call(url)
     shop.defer_aicoo_activity_delivery = true
     shop.skip_geocoding_for_url_update = true
@@ -1361,6 +1385,7 @@ class Admin::ShopsController < Admin::BaseController
     end
     shop.defer_aicoo_activity_delivery = true
     shop.skip_geocoding_for_url_update = true
+    raise ArgumentError, "ホットペッパーの店舗詳細URLを入力してください" unless RestaurantUrlSearch::Provider.new("hotpepper").canonical_url(url)
     shop.update!(hotpepper_url: url, hotpepper_affiliate_url: HotpepperAffiliateUrlBuilder.call(url))
     if request.format.json?
       render json: { message: "更新しました", url: url, shop_name: shop.name }

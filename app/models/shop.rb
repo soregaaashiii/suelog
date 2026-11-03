@@ -6,6 +6,7 @@ class Shop < ApplicationRecord
   attr_accessor :defer_aicoo_activity_delivery, :skip_geocoding_for_url_update
 
   # ===== Associations =====
+  has_many :restaurant_url_search_runs, dependent: :destroy
   has_many :reviews, dependent: :destroy
   has_many :shop_edit_requests, dependent: :destroy
   has_many :shop_reports, dependent: :destroy

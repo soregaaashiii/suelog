@@ -41,12 +41,21 @@
               <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <strong><%= shop.name %></strong>
 
+                <% if gurunavi_setup || hotpepper_setup %>
+                  <% search_provider = RestaurantUrlSearch::Provider.new(gurunavi_setup ? "gurunavi" : "hotpepper") %>
+                  <% search_steps = RestaurantUrlSearch::Normalization.queries(shop, search_provider) %>
+                  <% search_steps.each_with_index do |step, step_index| %>
+                    <%= link_to(step_index.zero? ? "Google検索" : "電話番号で検索#{step_index}", RestaurantUrlSearch::Normalization.google_url(step[:query]),
+                        data: { tabelog_search_shop_id: shop.id }, target: "_blank", rel: "noopener", style: "display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:8px; text-decoration:none; font-size:12px;") %>
+                  <% end %>
+                <% else %>
                 <%= link_to "Google検索",
                     "https://www.google.com/search?q=#{ERB::Util.url_encode([shop.name, shop.address, gurunavi_setup ? 'ぐるなび -site:tabelog.com -site:lemon8-app.com -site:hotpepper.jp -site:instagram.com -site:tiktok.com' : hotpepper_setup ? 'ホットペッパーグルメ site:www.hotpepper.jp/str' : '食べログ site:tabelog.com'].compact.join(' '))}",
                     data: { tabelog_search_shop_id: shop.id },
                     target: "_blank",
                     rel: "noopener",
                     style: "display:inline-block; padding:4px 8px; border:1px solid #ddd; border-radius:8px; text-decoration:none; font-size:12px; background:#fff;" %>
+                <% end %>
               </div>
 
               <% if shop.respond_to?(:smoking_unverified?) && shop.smoking_unverified? %>
@@ -161,6 +170,10 @@
                 <%= link_to "編集",
                     edit_admin_shop_path(shop, status: @status, source: @source, per: @per, page: @page),
                     style: "display:inline-flex; align-items:center; white-space:nowrap; padding:6px 10px; border:1px solid #ddd; border-radius:10px; text-decoration:none;" %>
+
+                <% if (gurunavi_setup || hotpepper_setup) && !affiliate_not_found %>
+                  <%= render "provider_url_search", shop: shop, provider: search_provider %>
+                <% end %>
 
                 <% if affiliate_not_found %>
                   <% restore_provider = @status.delete_suffix("_not_found") %>
