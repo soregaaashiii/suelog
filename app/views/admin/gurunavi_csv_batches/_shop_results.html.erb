@@ -16,7 +16,8 @@
   </details>
 </div>
 <p>登録済みの店舗は作業一覧から外れ、「登録済み」に移ります。取り消すと未登録へ戻ります。</p>
-<p>表示順：CSV候補がある店舗を優先し、それぞれアクセス数の多い順（ボットを除く累計）です。</p>
+<%= button_to "候補を追加照合・確度順に更新", refresh_candidates_admin_gurunavi_csv_batch_path(@batch), method: :post, form: { data: { turbo: false } } if @batch.state == "ready" %>
+<p>表示順：候補あり → 照合の確度が高い順 → 同じ確度ではアクセス数の多い順です。</p>
 <p>参照CSVの検証：<%= link_to "不正・欠損行（#{@invalid_count}行）", admin_gurunavi_csv_batch_path(@batch, classification: "invalid") %>（店舗の判定件数とは別集計）</p>
 <%= form_with url: admin_gurunavi_csv_batch_path(@batch), method: :get, local: true do %>
   <%= hidden_field_tag :classification, @classification %>
@@ -54,10 +55,10 @@
   <% end %>
 <% else %>
   <% @targets.each do |target| %>
-    <% candidates = target.matches.to_a; snapshot = target.shop_snapshot; current = @shops[target.shop_id]; applied = candidates.any? { |m| %w[applied rollback_conflict].include?(m.state) } %>
+    <% candidates = target.matches.to_a.sort_by { |m| [-m.confidence.to_i, m.id] }; snapshot = target.shop_snapshot; current = @shops[target.shop_id]; applied = candidates.any? { |m| %w[applied rollback_conflict].include?(m.state) } %>
     <section id="shop-<%= target.shop_id %>" data-target-shop="<%= target.shop_id %>" style="border:1px solid #aaa; border-radius:8px; margin:18px 0; padding:12px;">
       <h2 style="font-size:18px;">吸えログ 店舗ID <%= target.shop_id %>：<%= snapshot["name"] %></h2>
-      <p><strong><%= target.state == "applied" ? "登録済み" : target.state == "confirmed" ? "登録待ち" : GurunaviCsvTarget::CLASSIFICATIONS.fetch(target.classification, target.classification) %></strong> ／ アクセス数：<%= number_with_delimiter(target.access_count.to_i) %></p>
+      <p><strong><%= target.state == "applied" ? "登録済み" : target.state == "confirmed" ? "登録待ち" : GurunaviCsvTarget::CLASSIFICATIONS.fetch(target.classification, target.classification) %></strong> ／ <%= GurunaviCsv::Confidence.label(target.confidence) %> ／ アクセス数：<%= number_with_delimiter(target.access_count.to_i) %></p>
       <% if @batch.state == "ready" && !applied && @classification != "registered" %>
         <%= form_with url: review_target_admin_gurunavi_csv_batch_path(@batch, target_id: target.id), local: true, data: { turbo: false } do %>
           <%= hidden_field_tag :classification, @classification %><%= hidden_field_tag :q, @q %><%= hidden_field_tag :page, @page %>
@@ -96,6 +97,7 @@
             </td>
             <td style="min-width:270px;">
               <% if match %>
+                <p><%= GurunaviCsv::Confidence.label(match.confidence) %></p>
                 <% if @batch.state == "ready" %>
                   <% eligible = (target.classification == "bulk" && match.classification == "bulk" && match.state == "pending" && target.state == "pending") || (match.state == "confirmed" && target.state == "confirmed" && target.selected_match_id == match.id) %>
                   <% if %w[applied rollback_conflict].include?(match.state) %>

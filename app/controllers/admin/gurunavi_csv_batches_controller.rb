@@ -1,6 +1,6 @@
 require "digest"
 class Admin::GurunaviCsvBatchesController < Admin::BaseController
-  before_action :load_batch, only: [ :show, :apply, :rollback, :review, :resume, :review_target, :rematch ]
+  before_action :load_batch, only: [ :show, :apply, :rollback, :review, :resume, :review_target, :rematch, :refresh_candidates ]
   MAX_BYTES = 25 * 1024 * 1024
   def index
     @batches = GurunaviCsvBatch.metadata.order(id: :desc).limit(50)
@@ -93,6 +93,18 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     return render json: { success: false, message: e.message }, status: :unprocessable_entity if request.format.json?
     redirect_to admin_gurunavi_csv_batch_path(@batch), status: :see_other, flash: { admin_alert: e.message }
   end
+  def refresh_candidates
+    execution = nil
+    @batch.with_lock do
+      raise GurunaviCsv::Review::Conflict, "照合完了後に実行してください" unless @batch.shop_first? && @batch.state == "ready"
+      raise GurunaviCsv::Review::Conflict, "別の処理が実行中です" if @batch.executions.where(state: %w[queued running]).exists?
+      execution = @batch.executions.create!(kind: "confidence", total_count: @batch.targets.count, run_token: SecureRandom.uuid, heartbeat_at: Time.current)
+    end
+    GurunaviCsvJob.perform_later(execution.id, execution.run_token)
+    redirect_to admin_gurunavi_csv_batch_path(@batch), status: :see_other, flash: { admin_notice: "登録・除外・保留などの判断を保持し、未処理の店舗に候補を追加します。" }
+  rescue GurunaviCsv::Review::Conflict => e
+    redirect_to admin_gurunavi_csv_batch_path(@batch), status: :see_other, flash: { admin_alert: e.message }
+  end
   def rematch
     source = GurunaviCsvBatch.find(@batch.id)
     batch = GurunaviCsvBatch.create!(filename: source.filename, sha256: source.sha256, source_bytes: source.source_bytes, matching_basis: "shop", trial_mode: source.trial_mode, area_filter: source.area_filter)
@@ -151,7 +163,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
         .group(:shop_id).select("shop_id, COUNT(*) AS views_count")
       scope = scope.joins("LEFT JOIN (#{access_counts.to_sql}) csv_access ON csv_access.shop_id = gurunavi_csv_targets.shop_id")
         .select("gurunavi_csv_targets.*", "COALESCE(csv_access.views_count, 0) AS access_count")
-        .order(Arel.sql("CASE WHEN EXISTS (SELECT 1 FROM gurunavi_csv_matches WHERE gurunavi_csv_matches.gurunavi_csv_target_id = gurunavi_csv_targets.id) THEN 0 ELSE 1 END ASC, COALESCE(csv_access.views_count, 0) DESC, gurunavi_csv_targets.shop_id ASC"))
+        .order(Arel.sql("CASE WHEN EXISTS (SELECT 1 FROM gurunavi_csv_matches WHERE gurunavi_csv_matches.gurunavi_csv_target_id = gurunavi_csv_targets.id) THEN 0 ELSE 1 END ASC, gurunavi_csv_targets.confidence DESC, COALESCE(csv_access.views_count, 0) DESC, gurunavi_csv_targets.shop_id ASC"))
       @targets = scope.offset((@page - 1) * 50).limit(50).includes(matches: :gurunavi_csv_row).to_a
       @shops = Shop.where(id: @targets.map(&:shop_id)).select(:id, :name, :address, :gurunavi_url, :gurunavi_affiliate_url, :updated_at).index_by(&:id)
     end

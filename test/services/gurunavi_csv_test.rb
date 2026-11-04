@@ -27,6 +27,63 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     execution.reload
   end
 
+  test "confidence stages recover promotional names and aliases without automatic confirmation" do
+    examples = [
+      ["おでんと串 大衆酒場 だるま商店", "大阪府大阪市北区堂山町5-9 8階", "生付き750円飲み放題 おでんと串 個室酒場 だるま商店 梅田店", "大阪府大阪市北区堂山町5-9 扇会館8F"],
+      ["プロント 東本町店 （PRONTO）", "大阪府大阪市中央区久太郎町1-9-29 東本町ビル", "プロント東本町店", "大阪府大阪市中央区久太郎町1-9-29"]
+    ]
+    examples.each do |name, address, csv_name, csv_address|
+      @shop.update!(name: name, address: address)
+      batch = batch_for([entry(csv_name, csv_address)], basis: "shop")
+      target = batch.targets.sole
+      assert_equal "review", target.classification
+      assert_equal 200, target.confidence
+      assert_equal 1, target.matches.count
+      assert_nil @shop.reload.gurunavi_url
+    end
+    scorer = GurunaviCsv::Confidence
+    assert_equal 400, scorer.score("プロント東本町店", @address, "プロント東本町店", @address)
+    assert_equal 300, scorer.score("プロント東本町店（PRONTO）", @address, "プロント東本町店", @address)
+    assert_equal 100, scorer.score("カフェA梅田店", @address, "カフェA梅田店", @address.sub("2F", "3F"))
+    assert_equal 100, scorer.score("カフェA梅田店", @address, "カフェA梅田店", @address.sub("1-2-3", "1-2-9"))
+    assert_equal 0, scorer.score("皆様酒場 昭和ゴールデン 大阪駅前第4ビル店", @address, "鶴亀八番 大阪駅前第4ビル店", @address)
+    assert_equal 0, scorer.score("", @address, "カフェ", @address)
+    assert_equal 0, scorer.score("居酒屋イロハ", @address, "全く別の焼肉屋", @address)
+  end
+  test "confidence refresh adds missed candidates and preserves registered excluded held and confirmed decisions" do
+    batch = batch_for([entry], basis: "shop")
+    target = batch.targets.sole
+    original = target.matches.sole
+    # Simulate a historical unmatched preview without deleting other audit records.
+    original.destroy!
+    target.update!(classification: "unmatched", confidence: 0)
+    run = batch.executions.create!(kind: "confidence", run_token: SecureRandom.uuid)
+    GurunaviCsv::RefreshCandidates.new(run, run.run_token).call
+    assert_equal "completed", run.reload.state
+    assert_equal 400, target.reload.confidence
+    assert_equal 1, target.matches.count
+    match = target.matches.sole
+    GurunaviCsv::TargetReview.call(target, "exclude")
+    run = batch.executions.create!(kind: "confidence", run_token: SecureRandom.uuid)
+    GurunaviCsv::RefreshCandidates.new(run, run.run_token).call
+    assert_equal "excluded", target.reload.state
+    assert_equal [match.id], target.matches.pluck(:id)
+    assert_equal "excluded", match.reload.state
+    GurunaviCsv::TargetReview.call(target, "restore")
+    GurunaviCsv::TargetReview.call(target, "confirm", match: match)
+    run = batch.executions.create!(kind: "confidence", run_token: SecureRandom.uuid)
+    GurunaviCsv::RefreshCandidates.new(run, run.run_token).call
+    assert_equal "confirmed", target.reload.state
+    assert_equal match.id, target.selected_match_id
+    execution = batch.executions.create!(kind: "apply", selection: [match.id], run_token: SecureRandom.uuid)
+    GurunaviCsv::Operations.new(execution, execution.run_token).call
+    values = GurunaviCsv::Snapshot.url_values(@shop.reload)
+    run = batch.executions.create!(kind: "confidence", run_token: SecureRandom.uuid)
+    GurunaviCsv::RefreshCandidates.new(run, run.run_token).call
+    assert_equal "applied", match.reload.state
+    assert_equal values, GurunaviCsv::Snapshot.url_values(@shop.reload)
+    assert_equal "applied", target.reload.state
+  end
   test "shop first results contain published shops only and search the entire CSV" do
     other = @shop.dup
     other.name, other.address = "公開中でCSVにない店舗", @address.sub("1-2-3", "1-2-9")

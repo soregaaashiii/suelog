@@ -122,7 +122,7 @@ module GurunaviCsv
         shops.each do |shop|
           classification, reason, found = matcher.call(shop)
           now = Time.current
-          targets << { gurunavi_csv_batch_id: @batch.id, shop_id: shop.id, shop_snapshot: Snapshot.call(shop), classification: classification, state: classification == "registered" ? "skipped" : "pending", reason: reason, created_at: now, updated_at: now }
+          targets << { gurunavi_csv_batch_id: @batch.id, shop_id: shop.id, shop_snapshot: Snapshot.call(shop), confidence: found.map { |m| m[:confidence].to_i }.max.to_i, classification: classification, state: classification == "registered" ? "skipped" : "pending", reason: reason, created_at: now, updated_at: now }
           matches.concat(found.map { |m| m.merge(created_at: now, updated_at: now) })
         end
         processed += shops.size

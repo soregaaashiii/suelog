@@ -250,6 +250,22 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
       assert_select "[data-csv-shortcut-button]", count: 0
     end
   end
+  test "confidence outranks access count and refresh uses a background job" do
+    other = Shop.create!(name: "高アクセス店", address: "大阪府大阪市北区中津5-3-2", genre: "居酒屋", last_confirmed_on: Date.current, approved: true)
+    batch = upload([[@shop.name, "https://r.gnavi.co.jp/exactconf/", @shop.address, "", "", ""], [other.name, "https://r.gnavi.co.jp/lowconf/", other.address.sub("5-3-2", "5-3-3"), "", "", ""]])
+    5.times { PageView.create!(shop: other, path: "/shops/#{other.id}", is_bot: false) }
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "section[data-target-shop]" do |sections|
+      assert_equal [@shop.id, other.id].map(&:to_s), sections.map { |node| node["data-target-shop"] }
+    end
+    post refresh_candidates_admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_response :see_other
+    execution = batch.executions.order(:id).last
+    assert_equal "confidence", execution.kind
+    GurunaviCsvJob.perform_now(execution.id, execution.run_token)
+    assert_equal "completed", execution.reload.state
+    assert_nil @shop.reload.gurunavi_url
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")

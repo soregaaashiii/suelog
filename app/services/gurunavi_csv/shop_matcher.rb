@@ -29,9 +29,11 @@ module GurunaviCsv
           blocks = Normalizer.grams(shop.name).map { |gram| @grams.fetch([ city, gram ], []) }.reject(&:empty?).sort_by(&:size)
           blocks.first(2).each { |block| pool.concat(block.first(200)) }
           pool.uniq!(&:id)
-          pool.select! { |row| row.normalized_name == name || row.normalized_address == address || (row.municipality == city && Normalizer.similarity(row.csv_name, shop.name) >= 0.7) }
+          pool.select! { |row| Confidence.score(shop.name, shop.address, row.csv_name, row.csv_address).positive? }
         end
       end
+      scores = pool.to_h { |row| [ row.id, Confidence.score(shop.name, shop.address, row.csv_name, row.csv_address) ] }
+      pool.sort_by! { |row| [ -scores.fetch(row.id), row.id ] }
       more = pool.size > MAX_CANDIDATES
       found = pool.first(MAX_CANDIDATES).map do |row|
         exact = row.normalized_name == name && row.normalized_address == address
@@ -55,7 +57,9 @@ module GurunaviCsv
         else
           "review"
         end
-        { gurunavi_csv_row_id: row.id, shop_id: shop.id, classification: classification, state: classification == "registered" ? "skipped" : "pending", reason: reasons.join(" / "), shop_snapshot: snapshot }
+        confidence = scores.fetch(row.id)
+        confidence = [ confidence, 200 ].min if pool.size > 1 || @duplicates[[ row.normalized_name, row.normalized_address ]].to_i > 1 || identity_count > 1
+        { confidence: confidence, gurunavi_csv_row_id: row.id, shop_id: shop.id, classification: classification, state: classification == "registered" ? "skipped" : "pending", reason: reasons.join(" / "), shop_snapshot: snapshot }
       end
       classification = if found.empty?
         if shop.gurunavi_url.present? || shop.gurunavi_affiliate_url.present?

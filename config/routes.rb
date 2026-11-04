@@ -134,6 +134,7 @@ Rails.application.routes.draw do
         post "rows/:row_id/review", action: :review, as: :review_row
         post "targets/:target_id/review", action: :review_target, as: :review_target
         post :rematch
+        post :refresh_candidates
       end
     end
 
