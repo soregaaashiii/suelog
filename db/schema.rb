@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_04_000300) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_110000) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -145,6 +145,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000300) do
     t.string "applied_version"
     t.text "before_values"
     t.string "classification", null: false
+    t.integer "confidence", default: 0, null: false
     t.datetime "created_at", null: false
     t.integer "gurunavi_csv_row_id", null: false
     t.integer "gurunavi_csv_target_id"
@@ -186,6 +187,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000300) do
 
   create_table "gurunavi_csv_targets", force: :cascade do |t|
     t.string "classification", default: "pending", null: false
+    t.integer "confidence", default: 0, null: false
     t.datetime "created_at", null: false
     t.integer "gurunavi_csv_batch_id", null: false
     t.text "reason"
