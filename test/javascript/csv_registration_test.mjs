@@ -15,7 +15,7 @@ function setup(responses) {
   });
   vm.runInContext(source, context);
   const controller = new context.CsvController();
-  controller.element = { querySelector: selector => selector.includes("status") ? status : null };
+  controller.element = { querySelector: selector => selector.includes("status") ? status : null, querySelectorAll: () => [] };
   let prevented = false;
   const event = { submitter: { name: 'decision', value: 'register' }, preventDefault() { prevented = true; }, target: { action: '/review', closest: () => card } };
   return { controller, event, card, status, calls, controls, scrolls, prevented: () => prevented };
@@ -62,7 +62,7 @@ test('refill replaces counts and appends new cards without replacing remaining e
       if (selector === '[data-target-shop="3"]') return null;
       return { replaceWith: node => replaced.push(node) };
     },
-    querySelectorAll: () => [existing]
+    querySelectorAll: selector => selector.includes('button') ? [] : [existing]
   };
   // The HTML parser stub returns a normal refreshed page; existing cards must be kept.
   const parsed = { querySelector: () => ({}), querySelectorAll: () => [existing, next] };
@@ -91,7 +91,7 @@ function shortcutSetup() {
   const ui = setup([]);
   let submitted = 0;
   const button = { disabled: false, form: { requestSubmit: value => { assert.equal(value, button); submitted++; } } };
-  ui.controller.element = { querySelector: selector => selector.includes('shortcut-button') ? {} : button };
+  ui.controller.element = { querySelector: selector => selector.includes('shortcut-button') ? {} : button, querySelectorAll: () => [button] };
   const event = { type: 'keydown', key: 'Enter', target: { closest: () => null }, preventDefault() { this.prevented = true; } };
   return { ...ui, event, button, submitted: () => submitted };
 }
@@ -112,4 +112,19 @@ test('Enter ignores editing, IME, repeats, modifiers and concurrent registration
 test('fixed shortcut button uses the same first candidate submission', () => {
   const ui = shortcutSetup(); ui.event.type = 'click';
   ui.controller.registerFirst(ui.event); assert.equal(ui.submitted(), 1);
+});
+
+test('Enter skips a conflicting first candidate and submits the next enabled candidate', () => {
+  const ui = shortcutSetup(); const blocked = { disabled: true };
+  ui.controller.element.querySelectorAll = () => [blocked, ui.button];
+  ui.controller.registerFirst(ui.event);
+  assert.equal(ui.submitted(), 1);
+});
+test('replacement buttons stay disabled until their explicit checkbox is checked', () => {
+  const ui = shortcutSetup(); const checkbox = { checked: false };
+  const button = { disabled: false, form: { querySelector: () => checkbox }, closest: () => ({ dataset: {} }) };
+  ui.controller.element.querySelectorAll = () => [button];
+  ui.controller.element.querySelector = () => null;
+  ui.controller.refreshShortcut(); assert.equal(button.disabled, true);
+  checkbox.checked = true; ui.controller.refreshShortcut(); assert.equal(button.disabled, false);
 });
