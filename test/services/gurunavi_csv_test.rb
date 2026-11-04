@@ -63,6 +63,15 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     assert_nil @shop.reload.gurunavi_url
   end
 
+  test "short custom Gurunavi detail paths use the existing affiliate builder" do
+    batch = batch_for([ entry(@shop.name, @address, "http://r.gnavi.co.jp/ton/") ])
+    assert_equal "bulk", batch.rows.sole.classification
+    execute(batch, "apply")
+    assert_equal "https://r.gnavi.co.jp/ton/", @shop.reload.gurunavi_url
+    assert_equal GurunaviAffiliateUrlBuilder.call(@shop.gurunavi_url), @shop.gurunavi_affiliate_url
+    assert_nil RestaurantUrlSearch::Provider.new("gurunavi").canonical_url("https://r.gnavi.co.jp/help/")
+  end
+
   test "normalization preserves branch building long vowels numeric building names floors and rooms" do
     n = GurunaviCsv::Normalizer
     assert_equal n.address(@address), n.address("〒530-0001 大阪府大阪市北区梅田１丁目２番３号 サンパーク２Ｆ")

@@ -3,7 +3,7 @@ require "uri"
 module RestaurantUrlSearch
   class Provider
     CONFIG = {
-      "gurunavi" => { label: "ぐるなび", domain: "r.gnavi.co.jp", path: %r{\A/[a-z0-9]{6,32}/?\z}i, builder: "GurunaviAffiliateUrlBuilder" },
+      "gurunavi" => { label: "ぐるなび", domain: "r.gnavi.co.jp", path: %r{\A/[a-z0-9]{1,32}/?\z}i, builder: "GurunaviAffiliateUrlBuilder" },
       "hotpepper" => { label: "ホットペッパー", domain: "www.hotpepper.jp", path: %r{\A/strJ\d{9}/?\z}, builder: "HotpepperAffiliateUrlBuilder" }
     }.freeze
 
@@ -23,7 +23,7 @@ module RestaurantUrlSearch
       host = uri.host.to_s.downcase
       host = "www.hotpepper.jp" if key == "hotpepper" && host == "hotpepper.jp"
       return unless host == domain && uri.path.match?(@config[:path])
-      return if key == "gurunavi" && %w[search category restaurant restaurants index ranking].include?(uri.path.delete("/"))
+      return if key == "gurunavi" && %w[search category restaurant restaurants index ranking about help privacy terms contact area coupon login signup guide].include?(uri.path.delete("/"))
       "https://#{domain}#{uri.path.sub(%r{/?$}, '/')}"
     rescue URI::InvalidURIError
       nil
