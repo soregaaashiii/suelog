@@ -90,7 +90,7 @@ test('exclude and restore use inline submission without navigation', async () =>
 function shortcutSetup() {
   const ui = setup([]);
   let submitted = 0;
-  const button = { disabled: false, form: { requestSubmit: value => { assert.equal(value, button); submitted++; } } };
+  const button = { disabled: false, form: { querySelector: () => null, requestSubmit: value => { assert.equal(value, button); submitted++; } } };
   ui.controller.element = { querySelector: selector => selector.includes('shortcut-button') ? {} : button, querySelectorAll: () => [button] };
   const event = { type: 'keydown', key: 'Enter', target: { closest: () => null }, preventDefault() { this.prevented = true; } };
   return { ...ui, event, button, submitted: () => submitted };
@@ -114,11 +114,13 @@ test('fixed shortcut button uses the same first candidate submission', () => {
   ui.controller.registerFirst(ui.event); assert.equal(ui.submitted(), 1);
 });
 
-test('Enter skips a conflicting first candidate and submits the next enabled candidate', () => {
-  const ui = shortcutSetup(); const blocked = { disabled: true };
-  ui.controller.element.querySelectorAll = () => [blocked, ui.button];
+test('Enter registers the actual first candidate including an existing URL replacement', () => {
+  const ui = shortcutSetup(); const checkbox = { checked: false }; let firstSubmitted = false;
+  const first = { disabled: true, form: { querySelector: () => checkbox, requestSubmit: button => { assert.equal(button, first); firstSubmitted = true; } } };
+  ui.controller.element.querySelectorAll = () => [first, ui.button];
   ui.controller.registerFirst(ui.event);
-  assert.equal(ui.submitted(), 1);
+  assert.equal(checkbox.checked, true); assert.equal(first.disabled, false);
+  assert.equal(firstSubmitted, true); assert.equal(ui.submitted(), 0);
 });
 test('replacement buttons stay disabled until their explicit checkbox is checked', () => {
   const ui = shortcutSetup(); const checkbox = { checked: false };

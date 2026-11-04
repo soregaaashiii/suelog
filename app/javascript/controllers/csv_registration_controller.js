@@ -6,7 +6,7 @@ export default class extends Controller {
   }
 
   firstRegistrableButton() {
-    return [...this.element.querySelectorAll('button[name="decision"][value="register"]')].find(button => !button.disabled)
+    return [...this.element.querySelectorAll('button[name="decision"][value="register"]')][0]
   }
 
   refreshShortcut() {
@@ -31,7 +31,13 @@ export default class extends Controller {
     event.preventDefault()
     if (this.saving) return
     const button = this.firstRegistrableButton()
-    if (button && !button.disabled) button.form.requestSubmit(button)
+    if (!button) return
+    const replacement = button.form.querySelector('input[name="allow_replace"]')
+    if (replacement) {
+      replacement.checked = true
+      button.disabled = false
+    }
+    if (!button.disabled) button.form.requestSubmit(button)
   }
 
   async submit(event) {
