@@ -27,6 +27,19 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     execution.reload
   end
 
+  test "broader candidates stay low confidence and never qualify for bulk registration" do
+    @shop.update!(name: "カフェアオゾラ梅田")
+    batch = batch_for([entry("こだわりの個室ダイニングアオゾラ梅田店")], basis: "shop")
+    target = batch.targets.sole
+    assert_equal "review", target.classification
+    assert_equal 50, target.confidence
+    assert_equal 1, target.matches.count
+    assert_nil @shop.reload.gurunavi_url
+    scorer = GurunaviCsv::Confidence
+    assert_equal 50, scorer.score("洋食アオゾラ梅田", @address, "カフェアオゾラ梅田", @address.sub("1-2-3", "1-2-8"))
+    assert_equal 0, scorer.score("洋食アオゾラ梅田", @address, "カフェアオゾラ梅田", "東京都新宿区新宿1-2-3")
+    assert_equal "参考候補（低確度・要確認）", scorer.label(50)
+  end
   test "confidence stages recover promotional names and aliases without automatic confirmation" do
     examples = [
       ["おでんと串 大衆酒場 だるま商店", "大阪府大阪市北区堂山町5-9 8階", "生付き750円飲み放題 おでんと串 個室酒場 だるま商店 梅田店", "大阪府大阪市北区堂山町5-9 扇会館8F"],
