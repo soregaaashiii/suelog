@@ -1,6 +1,6 @@
 require "digest"
 class Admin::GurunaviCsvBatchesController < Admin::BaseController
-  before_action :load_batch, only: [:show, :apply, :rollback, :review, :resume]
+  before_action :load_batch, only: [ :show, :apply, :rollback, :review, :resume ]
   MAX_BYTES = 25 * 1024 * 1024
   def index
     @batches = GurunaviCsvBatch.metadata.order(id: :desc).limit(50)
@@ -26,7 +26,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     @counts = @batch.rows.group(:classification).count
     @states = @batch.rows.group(:state).count
     @classification, @state, @q = params[:classification].to_s, params[:state].to_s, params[:q].to_s.strip
-    @page = [params[:page].to_i, 1].max
+    @page = [ params[:page].to_i, 1 ].max
     scope = @batch.rows.order(:line_number)
     scope = @classification.present? ? scope.where(classification: @classification) : scope.where.not(classification: "out_of_scope")
     scope = scope.where(state: @state) if @state.present?
@@ -37,7 +37,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       scope = scope.where("csv_name LIKE :q OR csv_address LIKE :q OR id IN (#{row_ids.to_sql})", q: like)
     end
     @total = scope.count
-    @pages = [(@total / 50.0).ceil, 1].max
+    @pages = [ (@total / 50.0).ceil, 1 ].max
     @rows = scope.offset((@page - 1) * 50).limit(50).includes(:matches).to_a
     @shops = Shop.where(id: @rows.flat_map { |r| r.matches.map(&:shop_id) }).select(:id, :name, :address, :gurunavi_url, :gurunavi_affiliate_url, :updated_at).index_by(&:id)
     @executions = @batch.executions.order(id: :desc).limit(20)

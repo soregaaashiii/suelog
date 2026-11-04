@@ -11,9 +11,9 @@ class GurunaviCsvAdminTest < ActionDispatch::IntegrationTest
     @shop = Shop.create!(name: "CSV確認カフェ", address: "大阪府大阪市北区梅田1-2-3 第1ビル2F", genre: "居酒屋", last_confirmed_on: Date.current)
   end
   def create_upload(entries = nil, trial: "1")
-    entries ||= [[@shop.name, "https://r.gnavi.co.jp/admin0001/", @shop.address, "17:00", "飲食", "カフェ"]]
+    entries ||= [ [ @shop.name, "https://r.gnavi.co.jp/admin0001/", @shop.address, "17:00", "飲食", "カフェ" ] ]
     bytes = CSV.generate { |csv| csv << GurunaviCsv::Importer::HEADERS; entries.each { |entry| csv << entry } }.encode(Encoding::Windows_31J)
-    Tempfile.create(["shoplist", ".csv"]) do |file|
+    Tempfile.create([ "shoplist", ".csv" ]) do |file|
       file.binmode
       file.write(bytes)
       file.flush
@@ -56,7 +56,7 @@ class GurunaviCsvAdminTest < ActionDispatch::IntegrationTest
   end
 
   test "review candidates persist hold exclusion confirmation and show escaped differences" do
-    batch = create_upload([[@shop.name + "<script>alert(1)</script>", "https://r.gnavi.co.jp/admin0001/", @shop.address, "17:00", "飲食", "カフェ"]])
+    batch = create_upload([ [ @shop.name + "<script>alert(1)</script>", "https://r.gnavi.co.jp/admin0001/", @shop.address, "17:00", "飲食", "カフェ" ] ])
     row, match = batch.rows.sole, batch.rows.sole.matches.sole
     assert_equal "review", row.classification
     get admin_gurunavi_csv_batch_path(batch, classification: "review", q: "CSV確認"), headers: @headers
@@ -76,7 +76,7 @@ class GurunaviCsvAdminTest < ActionDispatch::IntegrationTest
   end
 
   test "pagination filtering and unmatched manual candidates use only the selected batch" do
-    entries = 55.times.map { |i| ["架空CSV#{i}", "https://r.gnavi.co.jp/admin#{i.to_s.rjust(6,'0')}/", "大阪府大阪市北区中津1-#{i + 1}-1", "17:00", "飲食", "カフェ"] }
+    entries = 55.times.map { |i| [ "架空CSV#{i}", "https://r.gnavi.co.jp/admin#{i.to_s.rjust(6, '0')}/", "大阪府大阪市北区中津1-#{i + 1}-1", "17:00", "飲食", "カフェ" ] }
     batch = create_upload(entries, trial: "0")
     get admin_gurunavi_csv_batch_path(batch, classification: "unmatched", page: 1), headers: @headers
     assert_response :success

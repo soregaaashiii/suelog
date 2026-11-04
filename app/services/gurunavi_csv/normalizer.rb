@@ -12,7 +12,7 @@ module GurunaviCsv
     end
     def number(value)
       return value if value.match?(/\A\d+\z/)
-      digits = {"一"=>1,"二"=>2,"三"=>3,"四"=>4,"五"=>5,"六"=>6,"七"=>7,"八"=>8,"九"=>9}
+      digits = { "一"=>1, "二"=>2, "三"=>3, "四"=>4, "五"=>5, "六"=>6, "七"=>7, "八"=>8, "九"=>9 }
       return digits[value].to_s if digits.key?(value)
       parts = value.split("十", -1)
       return value unless parts.size == 2 && (parts[0].empty? || digits.key?(parts[0])) && (parts[1].empty? || digits.key?(parts[1]))
@@ -21,7 +21,7 @@ module GurunaviCsv
     def parts(value)
       value = clean_address(value)
       start = value.match(/\A(.*?)(#{NUMBER})(?:\s*)(丁目|番地|番|号|[#{Regexp.escape(DASHES)}])/)
-      return [name(value), "", false] unless start
+      return [ name(value), "", false ] unless start
       prefix = name(start[1])
       rest = value[start[1].length..]
       numbers = []
@@ -32,7 +32,7 @@ module GurunaviCsv
         rest = rest[token[0].length..]
         break if token[2].nil? || token[2] == "号"
       end
-      [prefix + numbers.join("-"), name(rest), numbers.present?]
+      [ prefix + numbers.join("-"), name(rest), numbers.present? ]
     end
     def address(value)
       street, building, = parts(value)
@@ -41,7 +41,7 @@ module GurunaviCsv
     end
     def identity(store_name, store_address)
       return nil if name(store_name).blank? || clean_address(store_address).blank?
-      Digest::SHA256.hexdigest([name(store_name), address(store_address)].to_json)
+      Digest::SHA256.hexdigest([ name(store_name), address(store_address) ].to_json)
     end
     def street(value) = parts(value).first
     def municipality(value) = RestaurantUrlSearch::Normalization.municipality(clean_address(value)).to_s

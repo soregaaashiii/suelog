@@ -2,7 +2,7 @@ require "csv"
 require "stringio"
 module GurunaviCsv
   class Importer
-    HEADERS = ["店舗名", "店舗URL", "住所", "営業時間", "ジャンル（大）", "ジャンル（小）"].freeze
+    HEADERS = [ "店舗名", "店舗URL", "住所", "営業時間", "ジャンル（大）", "ジャンル（小）" ].freeze
     MAX_ROWS = 100_000
     class InvalidCsv < StandardError; end
     class Superseded < StandardError; end
@@ -110,8 +110,8 @@ module GurunaviCsv
       begin
         parser.each do |fields|
           raw = parser.line
-          records << [fields, raw, physical, nil]
-          physical += [raw.count("\n"), 1].max
+          records << [ fields, raw, physical, nil ]
+          physical += [ raw.count("\n"), 1 ].max
         end
         records
       rescue CSV::MalformedCSVError => original
@@ -122,9 +122,9 @@ module GurunaviCsv
         end
         lines.each_with_index.map do |raw, index|
           begin
-            [CSV.parse_line(raw, liberal_parsing: false), raw, index + 1, nil]
+            [ CSV.parse_line(raw, liberal_parsing: false), raw, index + 1, nil ]
           rescue CSV::MalformedCSVError => error
-            [[], raw, index + 1, error.message]
+            [ [], raw, index + 1, error.message ]
           end
         end
       end
