@@ -239,6 +239,17 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     assert_select "input[name='classification'][value='excluded']", count: 1
     assert_select "a[aria-current='page']", text: /除外済み/
   end
+  test "keyboard shortcut is visible for work lists only" do
+    batch = upload
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "[data-csv-shortcut-button]", count: 1
+    assert_select "[data-action*='keydown@window->csv-registration#registerFirst']", count: 1
+    %w[registered excluded invalid].each do |classification|
+      get admin_gurunavi_csv_batch_path(batch, classification: classification), headers: @headers
+      assert_response :success
+      assert_select "[data-csv-shortcut-button]", count: 0
+    end
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")

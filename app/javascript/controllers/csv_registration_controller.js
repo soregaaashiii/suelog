@@ -1,6 +1,31 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
+  connect() {
+    this.refreshShortcut()
+  }
+
+  refreshShortcut() {
+    const shortcut = this.element.querySelector("[data-csv-shortcut-button]")
+    if (!shortcut) return
+    const button = this.element.querySelector('button[name="decision"][value="register"]')
+    shortcut.disabled = !!this.saving || !button
+    const label = this.element.querySelector("[data-csv-shortcut-name]")
+    label.textContent = button?.closest("[data-target-shop]")?.querySelector("h2")?.textContent || "登録できる候補はありません"
+  }
+
+  registerFirst(event) {
+    if (!this.element.querySelector("[data-csv-shortcut-button]")) return
+    if (event.type === "keydown") {
+      if (event.key !== "Enter" || event.isComposing || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.defaultPrevented) return
+      if (event.target.closest('input, textarea, select, button, a, summary, [contenteditable]:not([contenteditable="false"]), [role="textbox"], dialog')) return
+    }
+    event.preventDefault()
+    if (this.saving) return
+    const button = this.element.querySelector('button[name="decision"][value="register"]')
+    if (button && !button.disabled) button.form.requestSubmit(button)
+  }
+
   async submit(event) {
     const button = event.submitter
     if (!button || button.name !== "decision" || !["register", "undo", "exclude", "restore"].includes(button.value)) return
@@ -11,6 +36,7 @@ export default class extends Controller {
     if (!card || card.dataset.saving === "true") return
     this.saving = true
     card.dataset.saving = "true"
+    this.refreshShortcut()
     const data = new FormData(form)
     data.set(button.name, button.value)
     const controls = [...card.querySelectorAll("button, input, select")]
@@ -60,6 +86,7 @@ export default class extends Controller {
       this.saving = false
       delete card.dataset.saving
       controls.forEach((control, i) => { control.disabled = disabled[i] })
+      this.refreshShortcut()
     }
   }
 }

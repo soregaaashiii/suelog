@@ -15,7 +15,7 @@ function setup(responses) {
   });
   vm.runInContext(source, context);
   const controller = new context.CsvController();
-  controller.element = { querySelector: () => status };
+  controller.element = { querySelector: selector => selector.includes("status") ? status : null };
   let prevented = false;
   const event = { submitter: { name: 'decision', value: 'register' }, preventDefault() { prevented = true; }, target: { action: '/review', closest: () => card } };
   return { controller, event, card, status, calls, controls, scrolls, prevented: () => prevented };
@@ -57,6 +57,7 @@ test('refill replaces counts and appends new cards without replacing remaining e
   ui.controller.element = {
     querySelector(selector) {
       if (selector.includes('status')) return ui.status;
+      if (selector.includes('shortcut')) return null;
       if (selector === '[data-target-shop="2"]') return existing;
       if (selector === '[data-target-shop="3"]') return null;
       return { replaceWith: node => replaced.push(node) };
@@ -84,4 +85,31 @@ test('exclude and restore use inline submission without navigation', async () =>
     assert.ok(ui.prevented()); assert.ok(ui.card.removed);
     assert.equal(ui.calls[0].options.body.data.decision, decision);
   }
+});
+
+function shortcutSetup() {
+  const ui = setup([]);
+  let submitted = 0;
+  const button = { disabled: false, form: { requestSubmit: value => { assert.equal(value, button); submitted++; } } };
+  ui.controller.element = { querySelector: selector => selector.includes('shortcut-button') ? {} : button };
+  const event = { type: 'keydown', key: 'Enter', target: { closest: () => null }, preventDefault() { this.prevented = true; } };
+  return { ...ui, event, button, submitted: () => submitted };
+}
+test('Enter registers the first available candidate without moving the cursor', () => {
+  const ui = shortcutSetup(); ui.controller.registerFirst(ui.event);
+  assert.equal(ui.submitted(), 1); assert.ok(ui.event.prevented);
+});
+test('Enter ignores editing, IME, repeats, modifiers and concurrent registration', () => {
+  for (const attributes of [{ isComposing: true }, { repeat: true }, { ctrlKey: true }, { metaKey: true }, { altKey: true }, { shiftKey: true }, { key: 'Escape' }, { defaultPrevented: true }]) {
+    const ui = shortcutSetup(); Object.assign(ui.event, attributes);
+    ui.controller.registerFirst(ui.event); assert.equal(ui.submitted(), 0);
+  }
+  const editing = shortcutSetup(); editing.event.target.closest = () => ({});
+  editing.controller.registerFirst(editing.event); assert.equal(editing.submitted(), 0);
+  const busy = shortcutSetup(); busy.controller.saving = true;
+  busy.controller.registerFirst(busy.event); assert.equal(busy.submitted(), 0);
+});
+test('fixed shortcut button uses the same first candidate submission', () => {
+  const ui = shortcutSetup(); ui.event.type = 'click';
+  ui.controller.registerFirst(ui.event); assert.equal(ui.submitted(), 1);
 });
