@@ -110,7 +110,9 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
   def show_shop_targets
     @classification, @state, @q = params[:classification].to_s, params[:state].to_s, params[:q].to_s.strip
     @page = [ params[:page].to_i, 1 ].max
-    @counts = @batch.targets.group(:classification).count
+    @counts = @batch.targets.unregistered.group(:classification).count
+    @counts["registered"] = @batch.targets.registered.count
+    @unregistered_count = @batch.targets.unregistered.count
     @invalid_count = @batch.rows.where(classification: "invalid").count
     @executions = @batch.executions.order(id: :desc).limit(20)
     @events = @batch.events.order(id: :desc).limit(50)
@@ -122,8 +124,8 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       @targets = []
       @shops = {}
     else
-      scope = @batch.targets
-      scope = scope.where(classification: @classification) if @classification.present?
+      scope = @classification == "registered" ? @batch.targets.registered : @batch.targets.unregistered
+      scope = scope.where(classification: @classification) if @classification.present? && @classification != "registered"
       scope = scope.where(state: @state) if @state.present?
       if @q.present?
         like = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
@@ -133,6 +135,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
         scope = scope.where("gurunavi_csv_targets.shop_id IN (#{shop_ids.to_sql}) OR gurunavi_csv_targets.shop_snapshot LIKE :q OR gurunavi_csv_targets.id IN (#{target_ids.to_sql})", q: like)
       end
       @total = scope.count
+      @page = [ @page, [ (@total / 50.0).ceil, 1 ].max ].min
       access_counts = PageView.where(is_bot: [ false, nil ]).where.not(shop_id: nil)
         .group(:shop_id).select("shop_id, COUNT(*) AS views_count")
       scope = scope.joins("LEFT JOIN (#{access_counts.to_sql}) csv_access ON csv_access.shop_id = gurunavi_csv_targets.shop_id")

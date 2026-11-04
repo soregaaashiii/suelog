@@ -63,6 +63,7 @@ module GurunaviCsv
         return conflict(match, "同じぐるなびURLが他店舗に登録済みです") if Shop.where(gurunavi_csv_url_key: url).where.not(id: shop.id).exists?
         if RestaurantUrlSearch::Provider.new("gurunavi").canonical_url(shop.gurunavi_url) == url
           match.update!(state: "skipped", reason: "同じ店舗URLが登録済みのためスキップ")
+          subject.update!(state: "skipped", selected_match_id: match.id)
           return
         end
         if (shop.gurunavi_url.present? || shop.gurunavi_affiliate_url.present?) && !match.allow_replace?

@@ -6,15 +6,16 @@
 <p>対象は吸えログの公開中店舗（承認済み・保留ではない店舗）です。各店舗について<strong>CSV全体</strong>からぐるなび候補を探します。CSVにしか存在しない店舗は通常一覧と判定件数に含めません。</p>
 <p><strong>一覧を表示しただけではURLを更新しません。</strong>候補の「登録する」で確認と登録が完了し、間違えた場合は「取り消す」で戻せます。「CSV内に候補なし」は、このCSVから候補が見つからなかった意味です。ぐるなび未掲載とは断定しません。</p>
 <div style="display:flex; gap:12px; flex-wrap:wrap; margin:12px 0;">
-  <%= link_to "対象の吸えログ店舗すべて", admin_gurunavi_csv_batch_path(@batch) %>
+  <%= link_to "未登録（#{@unregistered_count}店舗）", admin_gurunavi_csv_batch_path(@batch) %>
   <% GurunaviCsvTarget::CLASSIFICATIONS.each do |key, label| %>
     <%= link_to "#{label}（#{@counts[key].to_i}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: key) %>
   <% end %>
 </div>
+<p>登録済みの店舗は作業一覧から外れ、「登録済み」に移ります。取り消すと未登録へ戻ります。</p>
 <p>表示順：CSV候補がある店舗を優先し、それぞれアクセス数の多い順（ボットを除く累計）です。</p>
 <p>参照CSVの検証：<%= link_to "不正・欠損行（#{@invalid_count}行）", admin_gurunavi_csv_batch_path(@batch, classification: "invalid") %>（店舗の判定件数とは別集計）</p>
 <%= form_with url: admin_gurunavi_csv_batch_path(@batch), method: :get, local: true do %>
-  <%= select_tag :classification, options_for_select([["吸えログ店舗の判定すべて", ""]] + GurunaviCsvTarget::CLASSIFICATIONS.map { |k,v| [v,k] } + [["CSVの不正・欠損行", "invalid"]], @classification) %>
+  <%= select_tag :classification, options_for_select([["未登録すべて", ""]] + GurunaviCsvTarget::CLASSIFICATIONS.map { |k,v| [v,k] } + [["CSVの不正・欠損行", "invalid"]], @classification) %>
   <%= select_tag :state, options_for_select([["確認状態すべて", ""]] + GurunaviCsvMatch::STATES.map { |k,v| [v,k] }, @state) %>
   <%= text_field_tag :q, @q, placeholder: "吸えログ・候補CSVの店名や住所", aria: { label: "店舗名・住所を検索" } %>
   <%= submit_tag "絞り込む" %>
