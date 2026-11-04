@@ -7,7 +7,7 @@ module GurunaviCsv
         GurunaviCsvWriteLock.where(id: mutex.id).update_all(name: "registration")
         target.with_lock do
           raise Review::Conflict, "照合完了後に操作してください" unless batch.shop_first? && batch.state == "ready"
-          raise Review::Conflict, "登録履歴のある店舗は取り消し機能を利用してください" if target.matches.where.not(applied_at: nil).exists?
+          raise Review::Conflict, "登録履歴のある店舗は取り消し機能を利用してください" if target.matches.where(state: %w[applied rollback_conflict]).exists?
           shop = Shop.approved.find_by(id: target.shop_id)
           raise Review::Conflict, "店舗が削除・非公開・保留になっています" unless shop
           before = { target_state: target.state, selected_match_id: target.selected_match_id, match_state: match&.state }

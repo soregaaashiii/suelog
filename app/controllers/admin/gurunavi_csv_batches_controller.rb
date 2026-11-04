@@ -73,6 +73,14 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
   def review_target
     target = @batch.targets.find(params[:target_id])
     match = target.matches.find(params[:match_id]) if params[:match_id].present?
+    if params[:decision] == "register"
+      raise GurunaviCsv::Review::Conflict, "候補を選択してください" unless match
+      GurunaviCsv::TargetReview.call(target, "confirm", match: match, allow_replace: params[:allow_replace] == "1")
+      return enqueue("apply", [ match.id ], inline: true, target: target)
+    elsif params[:decision] == "undo"
+      raise GurunaviCsv::Review::Conflict, "登録済みの候補を選択してください" unless match && %w[applied rollback_conflict].include?(match.state)
+      return enqueue("rollback", [ match.id ], inline: true, target: target)
+    end
     GurunaviCsv::TargetReview.call(target, params[:decision].to_s, match: match, line_number: params[:line_number], allow_replace: params[:allow_replace] == "1")
     redirect_to admin_gurunavi_csv_batch_path(@batch, classification: params[:classification], q: params[:q], page: params[:page]), status: :see_other, flash: { admin_notice: "吸えログ店舗の確認状態を保存しました。URLはまだ更新していません。" }
   rescue GurunaviCsv::Review::Conflict => e
@@ -145,7 +153,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     end
     batch_matches.joins(:gurunavi_csv_row).where("(gurunavi_csv_matches.classification = 'bulk' AND gurunavi_csv_matches.state = 'pending' AND gurunavi_csv_rows.state = 'pending') OR (gurunavi_csv_matches.state = 'confirmed' AND gurunavi_csv_rows.state = 'confirmed' AND gurunavi_csv_rows.selected_match_id = gurunavi_csv_matches.id)")
   end
-  def enqueue(kind, ids)
+  def enqueue(kind, ids, inline: false, target: nil)
     raise GurunaviCsv::Review::Conflict, "対象候補を選択してください" if ids.empty?
     execution = nil
     GurunaviCsvBatch.transaction do
@@ -155,7 +163,15 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       execution = batch.executions.create!(kind: kind, selection: ids, total_count: ids.size, run_token: SecureRandom.uuid, heartbeat_at: Time.current)
       batch.events.create!(gurunavi_csv_execution_id: execution.id, action: "#{kind}_requested", payload: { selected_match_ids: ids })
     end
-    GurunaviCsvJob.perform_later(execution.id, execution.run_token)
-    redirect_to admin_gurunavi_csv_batch_path(@batch), status: :see_other, flash: { admin_notice: "#{ids.size}件の#{kind == 'apply' ? '登録' : '取り消し'}を受け付けました。" }
+    if inline
+      GurunaviCsvJob.perform_now(execution.id, execution.run_token)
+      match = batch_matches.find(ids.sole)
+      success = match.state == (kind == "apply" ? "applied" : "rolled_back") || (kind == "apply" && match.state == "skipped")
+      message = success ? (kind == "apply" ? "登録しました。間違えた場合は「取り消す」で戻せます。" : "登録を取り消しました。別の候補を選んで登録できます。") : (execution.reload.message.presence if execution.state == "failed") || match.reason
+      redirect_to admin_gurunavi_csv_batch_path(@batch, classification: params[:classification], state: params[:state], q: params[:q], page: params[:page], anchor: "shop-#{target.shop_id}"), status: :see_other, flash: { (success ? :admin_notice : :admin_alert) => message }
+    else
+      GurunaviCsvJob.perform_later(execution.id, execution.run_token)
+      redirect_to admin_gurunavi_csv_batch_path(@batch), status: :see_other, flash: { admin_notice: "#{ids.size}件の#{kind == 'apply' ? '登録' : '取り消し'}を受け付けました。" }
+    end
   end
 end
