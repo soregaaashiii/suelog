@@ -10,7 +10,7 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     @url = "https://r.gnavi.co.jp/csv000001/"
   end
   def entry(name = @shop.name, address = @address, url = @url)
-    [name, url, address, "17:00-23:00", "飲食", "カフェ"]
+    [ name, url, address, "17:00-23:00", "飲食", "カフェ" ]
   end
   def batch_for(entries, trial: false, area: nil, bytes: nil)
     bytes ||= CSV.generate { |csv| csv << GurunaviCsv::Importer::HEADERS; entries.each { |row| csv << row } }.encode(Encoding::Windows_31J)
@@ -31,7 +31,7 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     name = " ｶﾌｪ　Ａ　梅田店 "
     address = "〒530-0001 大阪府大阪市北区梅田一丁目２番３号 サンパーク２Ｆ"
     count = Shop.count
-    batch = batch_for([entry(name, address)])
+    batch = batch_for([ entry(name, address) ])
     row = batch.rows.sole
     assert_equal "ready", batch.state
     assert_equal "completed", batch.executions.sole.state
@@ -75,7 +75,7 @@ class GurunaviCsvTest < ActiveSupport::TestCase
   end
 
   test "name only address only other branch and different parcels or floors are not bulk" do
-    samples = [entry(@shop.name, @address.sub("1-2-3", "1-2-4")), entry("別の飲食店", @address), entry("カフェ A 難波店", @address), entry(@shop.name, @address.sub("2F", "3F")), entry(@shop.name, "大阪府大阪市北区梅田1-2-3")]
+    samples = [ entry(@shop.name, @address.sub("1-2-3", "1-2-4")), entry("別の飲食店", @address), entry("カフェ A 難波店", @address), entry(@shop.name, @address.sub("2F", "3F")), entry(@shop.name, "大阪府大阪市北区梅田1-2-3") ]
     samples.each_with_index { |e, index| e[1] = "https://r.gnavi.co.jp/check#{index}001/" }
     batch = batch_for(samples)
     assert_empty batch.rows.where(classification: "bulk")
@@ -84,12 +84,12 @@ class GurunaviCsvTest < ActiveSupport::TestCase
   end
 
   test "duplicate CSV identities duplicate shop keys and duplicate CSV URLs require review" do
-    batch = batch_for([entry, entry("ｶﾌｪ A 梅田店", "〒530-0001 " + @address, "https://r.gnavi.co.jp/csv000002/")])
-    assert_equal ["review"], batch.rows.distinct.pluck(:classification)
+    batch = batch_for([ entry, entry("ｶﾌｪ A 梅田店", "〒530-0001 " + @address, "https://r.gnavi.co.jp/csv000002/") ])
+    assert_equal [ "review" ], batch.rows.distinct.pluck(:classification)
     duplicate = @shop.dup
     duplicate.name = "ｶﾌｪ　Ａ　梅田店"
     duplicate.save!
-    batch = batch_for([entry])
+    batch = batch_for([ entry ])
     assert_equal "review", batch.rows.sole.classification
     assert_equal 2, batch.rows.sole.matches.size
     assert_empty batch.rows.sole.matches.where(classification: "bulk")
@@ -97,21 +97,21 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     other = @shop.dup
     other.name, other.address = "別の店舗", @address.sub("1-2-3", "1-2-8")
     other.save!
-    batch = batch_for([entry, entry(other.name, other.address, @url)])
+    batch = batch_for([ entry, entry(other.name, other.address, @url) ])
     assert_empty batch.rows.where(classification: "bulk")
   end
 
   test "registered same URLs skip different URLs and existing affiliate-only values conflict" do
     @shop.update!(gurunavi_url: "http://r.gnavi.co.jp/csv000001/?x=1", gurunavi_affiliate_url: "https://affiliate.example/old")
-    batch = batch_for([entry])
+    batch = batch_for([ entry ])
     assert_equal "registered", batch.rows.sole.classification
     assert_equal "skipped", batch.rows.sole.matches.sole.state
     execute(batch, "apply")
     assert_equal "http://r.gnavi.co.jp/csv000001/?x=1", @shop.reload.gurunavi_url
-    batch = batch_for([entry(@shop.name, @address, "https://r.gnavi.co.jp/other0001/")])
+    batch = batch_for([ entry(@shop.name, @address, "https://r.gnavi.co.jp/other0001/") ])
     assert_equal "conflict", batch.rows.sole.classification
     @shop.update!(gurunavi_url: nil, gurunavi_affiliate_url: "https://affiliate.example/keep")
-    assert_equal "conflict", batch_for([entry]).rows.sole.classification
+    assert_equal "conflict", batch_for([ entry ]).rows.sole.classification
   end
 
   test "same URL owned by another shop is a conflict before matching and immediately before apply" do
@@ -120,10 +120,10 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     owner.gurunavi_url = @url
     owner.save!
     assert_equal @url, owner.gurunavi_csv_url_key
-    batch = batch_for([entry])
+    batch = batch_for([ entry ])
     assert_equal "conflict", batch.rows.sole.classification
     owner.update!(gurunavi_url: nil)
-    batch = batch_for([entry])
+    batch = batch_for([ entry ])
     assert_equal "bulk", batch.rows.sole.classification
     owner.update!(gurunavi_url: @url)
     execute(batch, "apply")
@@ -133,7 +133,7 @@ class GurunaviCsvTest < ActiveSupport::TestCase
 
   test "confirmed registration uses existing converter and repeated jobs or uploads are idempotent" do
     @shop.update!(tabelog_url: "https://tabelog.com/test/", tabelog_affiliate_url: "https://affiliate.example/tabelog", hotpepper_url: "https://www.hotpepper.jp/strJ001234567/", hotpepper_affiliate_url: "https://affiliate.example/hp", hide_gurunavi_booking_button: true)
-    batch = batch_for([entry])
+    batch = batch_for([ entry ])
     match = batch.rows.sole.matches.sole
     execution = execute(batch, "apply")
     assert_equal "completed", execution.state
@@ -150,18 +150,18 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     execute(batch, "apply")
     assert_equal version, @shop.reload.updated_at
     assert_equal 1, batch.events.where(action: "applied").count
-    assert_equal "registered", batch_for([entry]).rows.sole.classification
+    assert_equal "registered", batch_for([ entry ]).rows.sole.classification
   end
 
   test "data changed after preview or registered by another batch cannot be overwritten" do
-    batch1, batch2 = batch_for([entry]), batch_for([entry])
+    batch1, batch2 = batch_for([ entry ]), batch_for([ entry ])
     execute(batch1, "apply")
     execute(batch2, "apply")
     assert_equal "conflict", batch2.rows.sole.matches.sole.state
     assert_nil batch2.rows.sole.matches.sole.applied_at
     assert_equal @url, @shop.reload.gurunavi_url
     @shop.update!(gurunavi_url: nil, gurunavi_affiliate_url: nil)
-    batch3 = batch_for([entry])
+    batch3 = batch_for([ entry ])
     @shop.update!(address: @address.sub("2F", "4F"))
     execute(batch3, "apply")
     assert_equal "conflict", batch3.rows.sole.matches.sole.state
@@ -169,7 +169,7 @@ class GurunaviCsvTest < ActiveSupport::TestCase
   end
 
   test "a new duplicate identity after preview becomes a conflict at registration" do
-    batch = batch_for([entry])
+    batch = batch_for([ entry ])
     duplicate = @shop.dup
     duplicate.name = "ｶﾌｪ　Ａ　梅田店"
     duplicate.save!
@@ -180,7 +180,7 @@ class GurunaviCsvTest < ActiveSupport::TestCase
 
   test "manual confirmation exclusion hold and explicit conflict replacement preserve review history" do
     @shop.update!(gurunavi_url: "https://r.gnavi.co.jp/before001/", gurunavi_affiliate_url: "https://affiliate.example/before")
-    batch = batch_for([entry])
+    batch = batch_for([ entry ])
     row, match = batch.rows.sole, batch.rows.sole.matches.sole
     GurunaviCsv::Review.call(row, "hold", match: match)
     assert_equal "held", row.reload.state
@@ -200,14 +200,14 @@ class GurunaviCsvTest < ActiveSupport::TestCase
   end
 
   test "rollback restores only this import and refuses subsequent changes even when values return" do
-    batch = batch_for([entry])
+    batch = batch_for([ entry ])
     execute(batch, "apply")
     execute(batch, "rollback")
     assert_nil @shop.reload.gurunavi_url
     assert_nil @shop.gurunavi_affiliate_url
     execute(batch, "rollback")
     assert_equal 1, batch.events.where(action: "rolled_back").count
-    batch2 = batch_for([entry])
+    batch2 = batch_for([ entry ])
     execute(batch2, "apply")
     value = @shop.reload.gurunavi_affiliate_url
     travel 1.second do
@@ -221,7 +221,7 @@ class GurunaviCsvTest < ActiveSupport::TestCase
   end
 
   test "audit failure after shop update rolls back values before marking a conflict" do
-    batch = batch_for([entry])
+    batch = batch_for([ entry ])
     original = GurunaviCsv::Operations.instance_method(:event)
     GurunaviCsv::Operations.define_method(:event) do |match, action, payload|
       if action == "applied"
@@ -257,16 +257,16 @@ class GurunaviCsvTest < ActiveSupport::TestCase
   end
 
   test "invalid missing and quoted multiline rows retain physical line numbers" do
-    rows = [entry("カフェ\n改行", @address), entry("", @address), entry(@shop.name, "〒530-0001"), entry(@shop.name, @address, "https://r.gnavi.co.jp/area/osaka/")]
+    rows = [ entry("カフェ\n改行", @address), entry("", @address), entry(@shop.name, "〒530-0001"), entry(@shop.name, @address, "https://r.gnavi.co.jp/area/osaka/") ]
     batch = batch_for(rows)
-    assert_equal [2, 4, 5, 6], batch.rows.order(:line_number).pluck(:line_number)
+    assert_equal [ 2, 4, 5, 6 ], batch.rows.order(:line_number).pluck(:line_number)
     assert_equal 3, batch.rows.where(classification: "invalid").count
     assert_nil @shop.reload.gurunavi_url
   end
 
   test "bad CP932 bytes and malformed CSV fail without replacement or shop writes" do
     good = CSV.generate { |csv| csv << GurunaviCsv::Importer::HEADERS; csv << entry }.encode(Encoding::Windows_31J).b
-    [good + "\x81\x00\n".b, good + '"unclosed'.b].each do |bytes|
+    [ good + "\x81\x00\n".b, good + '"unclosed'.b ].each do |bytes|
       batch = GurunaviCsvBatch.create!(filename: "shoplist.csv", sha256: Digest::SHA256.hexdigest(bytes), source_bytes: bytes)
       execution = batch.executions.create!(kind: "match", run_token: SecureRandom.uuid)
       GurunaviCsvJob.perform_now(execution.id, execution.run_token)

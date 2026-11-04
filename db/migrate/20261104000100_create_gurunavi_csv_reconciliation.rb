@@ -41,10 +41,10 @@ class CreateGurunaviCsvReconciliation < ActiveRecord::Migration[8.1]
       t.bigint :selected_match_id
       t.timestamps
     end
-    add_index :gurunavi_csv_rows, [:gurunavi_csv_batch_id, :line_number], unique: true, name: "index_gcsv_rows_line"
-    add_index :gurunavi_csv_rows, [:gurunavi_csv_batch_id, :classification], name: "index_gcsv_rows_class"
-    add_index :gurunavi_csv_rows, [:gurunavi_csv_batch_id, :normalized_name, :normalized_address], name: "index_gcsv_rows_identity"
-    add_index :gurunavi_csv_rows, [:gurunavi_csv_batch_id, :canonical_url], name: "index_gcsv_rows_url"
+    add_index :gurunavi_csv_rows, [ :gurunavi_csv_batch_id, :line_number ], unique: true, name: "index_gcsv_rows_line"
+    add_index :gurunavi_csv_rows, [ :gurunavi_csv_batch_id, :classification ], name: "index_gcsv_rows_class"
+    add_index :gurunavi_csv_rows, [ :gurunavi_csv_batch_id, :normalized_name, :normalized_address ], name: "index_gcsv_rows_identity"
+    add_index :gurunavi_csv_rows, [ :gurunavi_csv_batch_id, :canonical_url ], name: "index_gcsv_rows_url"
     create_table :gurunavi_csv_matches do |t|
       t.references :gurunavi_csv_row, null: false, foreign_key: true
       t.bigint :shop_id, null: false
@@ -61,7 +61,7 @@ class CreateGurunaviCsvReconciliation < ActiveRecord::Migration[8.1]
       t.timestamps
     end
     add_index :gurunavi_csv_matches, :shop_id
-    add_index :gurunavi_csv_matches, [:gurunavi_csv_row_id, :shop_id], unique: true, name: "index_gcsv_match_identity"
+    add_index :gurunavi_csv_matches, [ :gurunavi_csv_row_id, :shop_id ], unique: true, name: "index_gcsv_match_identity"
     create_table :gurunavi_csv_executions do |t|
       t.references :gurunavi_csv_batch, null: false, foreign_key: true
       t.string :kind, null: false
