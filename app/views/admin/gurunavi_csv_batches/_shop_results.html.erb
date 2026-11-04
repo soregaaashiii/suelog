@@ -11,6 +11,7 @@
     <%= link_to "#{label}（#{@counts[key].to_i}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: key) %>
   <% end %>
 </div>
+<p>表示順：CSV候補がある店舗を優先し、それぞれアクセス数の多い順（ボットを除く累計）です。</p>
 <p>参照CSVの検証：<%= link_to "不正・欠損行（#{@invalid_count}行）", admin_gurunavi_csv_batch_path(@batch, classification: "invalid") %>（店舗の判定件数とは別集計）</p>
 <%= form_with url: admin_gurunavi_csv_batch_path(@batch), method: :get, local: true do %>
   <%= select_tag :classification, options_for_select([["吸えログ店舗の判定すべて", ""]] + GurunaviCsvTarget::CLASSIFICATIONS.map { |k,v| [v,k] } + [["CSVの不正・欠損行", "invalid"]], @classification) %>
@@ -50,7 +51,7 @@
     <% candidates = target.matches.to_a; snapshot = target.shop_snapshot; current = @shops[target.shop_id]; applied = candidates.any? { |m| m.applied_at.present? } %>
     <section data-target-shop="<%= target.shop_id %>" style="border:1px solid #aaa; border-radius:8px; margin:18px 0; padding:12px;">
       <h2 style="font-size:18px;">吸えログ 店舗ID <%= target.shop_id %>：<%= snapshot["name"] %></h2>
-      <p><strong><%= GurunaviCsvTarget::CLASSIFICATIONS.fetch(target.classification, target.classification) %></strong> ／ <%= GurunaviCsvMatch::STATES.fetch(target.state, target.state) %><br><%= target.reason %></p>
+      <p><strong><%= GurunaviCsvTarget::CLASSIFICATIONS.fetch(target.classification, target.classification) %></strong> ／ <%= GurunaviCsvMatch::STATES.fetch(target.state, target.state) %><br><%= target.reason %><br>アクセス数：<%= number_with_delimiter(target.access_count.to_i) %></p>
       <% if current && GurunaviCsv::Snapshot.call(current) != snapshot %><p style="color:#b00020;">照合後に現在の店舗データが変更されています。登録・取り消し時に再確認します。</p><% end %>
       <div style="overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse;" border="1" cellpadding="8">
