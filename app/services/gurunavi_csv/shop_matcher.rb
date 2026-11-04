@@ -27,7 +27,7 @@ module GurunaviCsv
           pool.concat(@name_city.fetch([ name, city ], []))
           pool.concat(@street.fetch(Normalizer.street(shop.address), []))
           blocks = Normalizer.grams(shop.name).map { |gram| @grams.fetch([ city, gram ], []) }.reject(&:empty?).sort_by(&:size)
-          blocks.first(2).each { |block| pool.concat(block.first(200)) }
+          blocks.first(6).each { |block| pool.concat(block.first(200)) }
           pool.uniq!(&:id)
           pool.select! { |row| Confidence.score(shop.name, shop.address, row.csv_name, row.csv_address).positive? }
         end

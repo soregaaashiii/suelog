@@ -1,7 +1,7 @@
 module GurunaviCsv
   module Confidence
     module_function
-    LABELS = { 400 => "店名・住所が完全一致", 300 => "店名の別名表記・住所が一致", 200 => "番地一致・店名が類似", 100 => "店名類似・住所などを要確認", 0 => "候補なし" }.freeze
+    LABELS = { 400 => "店名・住所が完全一致", 300 => "店名の別名表記・住所が一致", 200 => "番地一致・店名が類似", 100 => "店名類似・住所などを要確認", 50 => "参考候補（低確度・要確認）", 0 => "候補なし" }.freeze
     def variants(value)
       full = Normalizer.name(value)
       base = Normalizer.name(value.to_s.sub(/\s*[（(](?:【旧店名】[^）)]*|[a-zA-Z][a-zA-Z\s&.-]*)[）)]\s*\z/, ""))
@@ -11,7 +11,7 @@ module GurunaviCsv
       return 1.0 if a == b
       suffix = a.chars.reverse.zip(b.chars.reverse).take_while { |x, y| x == y }.size
       # A shared building/branch suffix alone is not evidence of the same restaurant.
-      if suffix >= 4
+      if suffix >= 4 && a.end_with?("店", "ビル")
         left, right = a.chars[0...-suffix].join, b.chars[0...-suffix].join
         return Normalizer.similarity(left, right) if left.present? && right.present?
       end
@@ -30,6 +30,8 @@ module GurunaviCsv
       elsif alias_name && same_address then 300
       elsif same_street && (alias_name || similarity >= 0.45) then 200
       elsif same_city && (alias_name || similarity >= 0.7) then 100
+      elsif same_street && similarity >= 0.3 then 50
+      elsif same_city && similarity >= 0.55 then 50
       else 0
       end
       # Missing floors remain a confirmation candidate; explicit different floors never rank highly.
