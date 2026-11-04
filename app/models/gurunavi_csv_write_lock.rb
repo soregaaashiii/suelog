@@ -1,0 +1,2 @@
+class GurunaviCsvWriteLock < ApplicationRecord
+end

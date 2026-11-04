@@ -303,6 +303,7 @@ class Shop < ApplicationRecord
   validate :last_confirmed_on_cannot_be_future
 
   # 電話番号の重複防止（digitsのみ）
+  before_validation :set_gurunavi_csv_url_key
   before_validation :clear_stale_gurunavi_affiliate_url
   before_validation :clear_stale_hotpepper_affiliate_url
   before_validation :set_normalized_phone
@@ -1306,6 +1307,11 @@ class Shop < ApplicationRecord
     return if last_confirmed_on.blank?
 
     errors.add(:last_confirmed_on, "は未来の日付にできません") if last_confirmed_on > Date.current
+  end
+
+  def set_gurunavi_csv_url_key
+    self.gurunavi_csv_url_key = RestaurantUrlSearch::Provider.new("gurunavi").canonical_url(gurunavi_url)
+    self.gurunavi_csv_identity_key = GurunaviCsv::Normalizer.identity(name, address)
   end
 
   def clear_stale_gurunavi_affiliate_url

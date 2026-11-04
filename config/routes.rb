@@ -126,6 +126,15 @@ Rails.application.routes.draw do
     post "page_view_tracking/exclude", to: "page_view_settings#exclude", as: :exclude_page_view_tracking
     delete "page_view_tracking/include", to: "page_view_settings#include", as: :include_page_view_tracking
 
+    resources :gurunavi_csv_batches, only: [:index, :new, :create, :show] do
+      member do
+        post :apply
+        post :rollback
+        post :resume
+        post "rows/:row_id/review", action: :review, as: :review_row
+      end
+    end
+
     resources :shops, only: [ :index, :show, :new, :create, :edit, :update ] do
       member do
         patch :approve

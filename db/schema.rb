@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_03_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_000100) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -91,6 +91,99 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_000100) do
     t.string "name", null: false
     t.string "subject", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "gurunavi_csv_batches", force: :cascade do |t|
+    t.string "area_filter"
+    t.datetime "created_at", null: false
+    t.string "filename", null: false
+    t.text "message"
+    t.string "phase", default: "queued", null: false
+    t.integer "processed_rows", default: 0, null: false
+    t.string "sha256", null: false
+    t.binary "source_bytes", null: false
+    t.string "state", default: "queued", null: false
+    t.integer "target_rows", default: 0, null: false
+    t.integer "total_rows", default: 0, null: false
+    t.boolean "trial_mode", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.index ["sha256"], name: "index_gurunavi_csv_batches_on_sha256"
+  end
+
+  create_table "gurunavi_csv_events", force: :cascade do |t|
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.integer "gurunavi_csv_batch_id", null: false
+    t.bigint "gurunavi_csv_execution_id"
+    t.bigint "gurunavi_csv_match_id"
+    t.bigint "gurunavi_csv_row_id"
+    t.text "payload"
+    t.datetime "updated_at", null: false
+    t.index ["gurunavi_csv_batch_id"], name: "index_gurunavi_csv_events_on_gurunavi_csv_batch_id"
+  end
+
+  create_table "gurunavi_csv_executions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "gurunavi_csv_batch_id", null: false
+    t.datetime "heartbeat_at"
+    t.string "kind", null: false
+    t.text "message"
+    t.integer "processed_count", default: 0, null: false
+    t.string "run_token", null: false
+    t.text "selection"
+    t.string "state", default: "queued", null: false
+    t.integer "total_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["gurunavi_csv_batch_id"], name: "index_gurunavi_csv_executions_on_gurunavi_csv_batch_id"
+  end
+
+  create_table "gurunavi_csv_matches", force: :cascade do |t|
+    t.text "after_values"
+    t.boolean "allow_replace", default: false, null: false
+    t.datetime "applied_at"
+    t.string "applied_version"
+    t.text "before_values"
+    t.string "classification", null: false
+    t.datetime "created_at", null: false
+    t.integer "gurunavi_csv_row_id", null: false
+    t.text "reason"
+    t.datetime "rolled_back_at"
+    t.bigint "shop_id", null: false
+    t.text "shop_snapshot"
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["gurunavi_csv_row_id", "shop_id"], name: "index_gcsv_match_identity", unique: true
+    t.index ["gurunavi_csv_row_id"], name: "index_gurunavi_csv_matches_on_gurunavi_csv_row_id"
+    t.index ["shop_id"], name: "index_gurunavi_csv_matches_on_shop_id"
+  end
+
+  create_table "gurunavi_csv_rows", force: :cascade do |t|
+    t.text "canonical_url"
+    t.string "classification", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.text "csv_address"
+    t.string "csv_name"
+    t.text "csv_url"
+    t.integer "gurunavi_csv_batch_id", null: false
+    t.integer "line_number", null: false
+    t.string "municipality"
+    t.text "normalized_address"
+    t.string "normalized_name"
+    t.text "raw_fields"
+    t.text "raw_row"
+    t.text "reason"
+    t.bigint "selected_match_id"
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["gurunavi_csv_batch_id", "canonical_url"], name: "index_gcsv_rows_url"
+    t.index ["gurunavi_csv_batch_id", "classification"], name: "index_gcsv_rows_class"
+    t.index ["gurunavi_csv_batch_id", "line_number"], name: "index_gcsv_rows_line", unique: true
+    t.index ["gurunavi_csv_batch_id", "normalized_name", "normalized_address"], name: "index_gcsv_rows_identity"
+  end
+
+  create_table "gurunavi_csv_write_locks", force: :cascade do |t|
+    t.string "name", null: false
+    t.index ["name"], name: "index_gurunavi_csv_write_locks_on_name", unique: true
   end
 
   create_table "page_views", force: :cascade do |t|
@@ -254,6 +347,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_000100) do
     t.string "genre"
     t.string "genre_other"
     t.text "gurunavi_affiliate_url"
+    t.string "gurunavi_csv_identity_key"
+    t.string "gurunavi_csv_url_key"
     t.text "gurunavi_url"
     t.datetime "held_at"
     t.boolean "hide_gurunavi_booking_button", default: false, null: false
@@ -313,6 +408,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_000100) do
     t.index ["created_at", "id", "duplicate_normalized_name", "duplicate_normalized_address"], name: "index_shops_on_registration_duplicate_candidates"
     t.index ["duplicate_normalized_address"], name: "index_shops_on_duplicate_normalized_address"
     t.index ["duplicate_normalized_name"], name: "index_shops_on_duplicate_normalized_name"
+    t.index ["gurunavi_csv_identity_key"], name: "index_shops_on_gurunavi_csv_identity_key"
+    t.index ["gurunavi_csv_url_key"], name: "index_shops_on_gurunavi_csv_url_key"
     t.index ["hold_reason"], name: "index_shops_on_hold_reason"
     t.index ["name", "address", "approved"], name: "index_shops_on_name_address_approved"
     t.index ["normalized_phone"], name: "index_shops_on_normalized_phone"
@@ -337,6 +434,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_000100) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "gurunavi_csv_events", "gurunavi_csv_batches"
+  add_foreign_key "gurunavi_csv_executions", "gurunavi_csv_batches"
+  add_foreign_key "gurunavi_csv_matches", "gurunavi_csv_rows"
+  add_foreign_key "gurunavi_csv_rows", "gurunavi_csv_batches"
   add_foreign_key "page_views", "shops"
   add_foreign_key "restaurant_url_search_runs", "shops"
   add_foreign_key "review_reports", "reviews"
