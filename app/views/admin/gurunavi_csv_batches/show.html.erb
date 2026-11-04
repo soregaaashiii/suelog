@@ -1,5 +1,8 @@
 <% if @batch.shop_first? %>
-  <%= render "shop_results" %>
+  <div data-controller="csv-registration" data-action="submit->csv-registration#submit">
+    <div data-csv-registration-status role="status" aria-live="polite" style="position:fixed;bottom:16px;right:16px;z-index:1000;background:white;padding:12px;border:1px solid #aaa;" hidden></div>
+    <%= render "shop_results" %>
+  </div>
 <% else %>
 <p><strong>旧仕様の履歴（CSV店舗が起点）です。</strong>現在の照合は吸えログの公開中店舗を起点にします。過去の件数は設定率を示しません。</p>
 <%= button_to "同じCSVで吸えログ店舗を起点に再照合", rematch_admin_gurunavi_csv_batch_path(@batch), method: :post, form: { data: { turbo: false } } %>

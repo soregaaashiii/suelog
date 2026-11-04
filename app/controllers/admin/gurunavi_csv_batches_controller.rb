@@ -84,6 +84,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     GurunaviCsv::TargetReview.call(target, params[:decision].to_s, match: match, line_number: params[:line_number], allow_replace: params[:allow_replace] == "1")
     redirect_to admin_gurunavi_csv_batch_path(@batch, classification: params[:classification], q: params[:q], page: params[:page]), status: :see_other, flash: { admin_notice: "吸えログ店舗の確認状態を保存しました。URLはまだ更新していません。" }
   rescue GurunaviCsv::Review::Conflict => e
+    return render json: { success: false, message: e.message }, status: :unprocessable_entity if request.format.json?
     redirect_to admin_gurunavi_csv_batch_path(@batch), status: :see_other, flash: { admin_alert: e.message }
   end
   def rematch
@@ -171,6 +172,9 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       match = batch_matches.find(ids.sole)
       success = match.state == (kind == "apply" ? "applied" : "rolled_back") || (kind == "apply" && match.state == "skipped")
       message = success ? (kind == "apply" ? "登録しました。間違えた場合は「取り消す」で戻せます。" : "登録を取り消しました。別の候補を選んで登録できます。") : (execution.reload.message.presence if execution.state == "failed") || match.reason
+      if request.format.json?
+        return render json: { success: success, message: message, shop_id: target.shop_id }, status: success ? :ok : :unprocessable_entity
+      end
       redirect_to admin_gurunavi_csv_batch_path(@batch, classification: params[:classification], state: params[:state], q: params[:q], page: params[:page], anchor: "shop-#{target.shop_id}"), status: :see_other, flash: { (success ? :admin_notice : :admin_alert) => message }
     else
       GurunaviCsvJob.perform_later(execution.id, execution.run_token)
