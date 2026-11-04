@@ -10,8 +10,22 @@ module GurunaviCsv
           raise Review::Conflict, "登録履歴のある店舗は取り消し機能を利用してください" if target.matches.where(state: %w[applied rollback_conflict]).exists?
           shop = Shop.approved.find_by(id: target.shop_id)
           raise Review::Conflict, "店舗が削除・非公開・保留になっています" unless shop
-          before = { target_state: target.state, selected_match_id: target.selected_match_id, match_state: match&.state }
-          if action == "add"
+          before = { target_state: target.state, selected_match_id: target.selected_match_id, match_state: match&.state, candidate_states: target.matches.pluck(:id, :state).to_h }
+          if %w[exclude restore].include?(action)
+            raise Review::Conflict, "登録済みの店舗は除外できません" if GurunaviCsvTarget.registered.where(id: target.id).exists?
+            if match && (match.gurunavi_csv_target_id != target.id || match.shop_id != target.shop_id)
+              raise Review::Conflict, "この吸えログ店舗の候補ではありません"
+            end
+            if action == "exclude"
+              target.matches.update_all(state: "excluded", allow_replace: false, updated_at: Time.current)
+              target.update!(state: "excluded", selected_match_id: nil)
+            else
+              raise Review::Conflict, "除外済みの店舗ではありません" unless target.state == "excluded"
+              target.matches.where(state: "excluded").update_all(state: "pending", allow_replace: false, updated_at: Time.current)
+              target.update!(state: "pending", selected_match_id: nil)
+            end
+            match&.reload
+          elsif action == "add"
             row = batch.rows.find_by(line_number: line_number)
             raise Review::Conflict, "有効なCSV行番号を指定してください" unless row && row.classification != "invalid" && RestaurantUrlSearch::Provider.new("gurunavi").canonical_url(row.csv_url)
             match = target.matches.create_or_find_by!(gurunavi_csv_row_id: row.id, shop_id: target.shop_id) do |m|
@@ -41,16 +55,15 @@ module GurunaviCsv
                 target.matches.where(state: "confirmed").where.not(id: match.id).update_all(state: "pending", allow_replace: false)
                 match.update!(state: "confirmed", allow_replace: allow_replace)
                 target.update!(state: "confirmed", selected_match_id: match.id)
-              when "exclude", "hold"
-                match.update!(state: action == "exclude" ? "excluded" : "held", allow_replace: false)
-                target.update!(state: action == "hold" ? "held" : "pending", selected_match_id: nil)
-                target.update!(state: "excluded") unless target.matches.where.not(state: "excluded").exists?
+              when "hold"
+                match.update!(state: "held", allow_replace: false)
+                target.update!(state: "held", selected_match_id: nil)
               else
                 raise Review::Conflict, "操作が正しくありません"
               end
             end
           end
-          batch.events.create!(gurunavi_csv_match_id: match&.id, gurunavi_csv_row_id: match&.gurunavi_csv_row_id, action: action, payload: { target_id: target.id, shop_id: target.shop_id, before: before, after: { target_state: target.state, selected_match_id: target.selected_match_id, match_state: match&.state } })
+          batch.events.create!(gurunavi_csv_match_id: match&.id, gurunavi_csv_row_id: match&.gurunavi_csv_row_id, action: action, payload: { target_id: target.id, shop_id: target.shop_id, before: before, after: { target_state: target.state, selected_match_id: target.selected_match_id, match_state: match&.state, candidate_states: target.matches.pluck(:id, :state).to_h } })
         end
       end
     end

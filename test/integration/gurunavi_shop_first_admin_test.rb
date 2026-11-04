@@ -189,6 +189,40 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     assert_includes response.parsed_body["message"], "更新"
     assert_nil response.headers["Location"]
   end
+  test "exclude means every candidate for this shop and restore returns the whole shop" do
+    other_shop = Shop.create!(name: "別の公開店", address: "大阪府大阪市北区中津5-3-2", genre: "居酒屋", last_confirmed_on: Date.current, approved: true)
+    batch = upload([
+      [@shop.name, "https://r.gnavi.co.jp/excludeone/", @shop.address, "", "", ""],
+      [@shop.name, "https://r.gnavi.co.jp/excludetwo/", @shop.address, "", "", ""],
+      [other_shop.name, "https://r.gnavi.co.jp/excludeother/", other_shop.address, "", "", ""]
+    ])
+    target = batch.targets.find_by!(shop_id: @shop.id)
+    other = batch.targets.find_by!(shop_id: other_shop.id)
+    original = other.matches.pluck(:id, :state).to_h
+    assert_operator target.matches.count, :>=, 2
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers.merge("ACCEPT" => "application/json"), params: { decision: "exclude", match_id: target.matches.first.id }
+    assert_response :success
+    assert response.parsed_body["success"]
+    assert_equal ["excluded"], target.matches.distinct.pluck(:state)
+    assert_equal "excluded", target.reload.state
+    assert_nil target.selected_match_id
+    assert_equal original, other.matches.pluck(:id, :state).to_h
+    assert_nil @shop.reload.gurunavi_url
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "section[data-target-shop='#{@shop.id}']", count: 0
+    assert_includes response.body, "除外済み（1店舗）"
+    get admin_gurunavi_csv_batch_path(batch, classification: "excluded"), headers: @headers
+    assert_select "section[data-target-shop='#{@shop.id}']", count: 1
+    assert_select "button[value='restore']", count: 1
+    assert_select "button[value='register']", count: 0
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers.merge("ACCEPT" => "application/json"), params: { decision: "restore" }
+    assert_response :success
+    assert_equal ["pending"], target.matches.distinct.pluck(:state)
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "section[data-target-shop='#{@shop.id}']", count: 1
+    assert_equal 1, batch.events.where(action: "exclude").count
+    assert_equal 1, batch.events.where(action: "restore").count
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")

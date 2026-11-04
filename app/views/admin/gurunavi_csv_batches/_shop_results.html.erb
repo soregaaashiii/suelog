@@ -7,6 +7,7 @@
 <p><strong>一覧を表示しただけではURLを更新しません。</strong>候補の「登録する」で確認と登録が完了し、間違えた場合は「取り消す」で戻せます。「CSV内に候補なし」は、このCSVから候補が見つからなかった意味です。ぐるなび未掲載とは断定しません。</p>
 <div data-csv-registration-counts style="display:flex; gap:12px; flex-wrap:wrap; margin:12px 0;">
   <%= link_to "未登録（#{@unregistered_count}店舗）", admin_gurunavi_csv_batch_path(@batch) %>
+  <%= link_to "除外済み（#{@counts['excluded'].to_i}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: "excluded") %>
   <% GurunaviCsvTarget::CLASSIFICATIONS.each do |key, label| %>
     <%= link_to "#{label}（#{@counts[key].to_i}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: key) %>
   <% end %>
@@ -15,7 +16,7 @@
 <p>表示順：CSV候補がある店舗を優先し、それぞれアクセス数の多い順（ボットを除く累計）です。</p>
 <p>参照CSVの検証：<%= link_to "不正・欠損行（#{@invalid_count}行）", admin_gurunavi_csv_batch_path(@batch, classification: "invalid") %>（店舗の判定件数とは別集計）</p>
 <%= form_with url: admin_gurunavi_csv_batch_path(@batch), method: :get, local: true do %>
-  <%= select_tag :classification, options_for_select([["未登録すべて", ""]] + GurunaviCsvTarget::CLASSIFICATIONS.map { |k,v| [v,k] } + [["CSVの不正・欠損行", "invalid"]], @classification) %>
+  <%= select_tag :classification, options_for_select([["未登録すべて", ""]] + GurunaviCsvTarget::CLASSIFICATIONS.map { |k,v| [v,k] } + [["除外済み", "excluded"], ["CSVの不正・欠損行", "invalid"]], @classification) %>
   <%= select_tag :state, options_for_select([["確認状態すべて", ""]] + GurunaviCsvMatch::STATES.map { |k,v| [v,k] }, @state) %>
   <%= text_field_tag :q, @q, placeholder: "吸えログ・候補CSVの店名や住所", aria: { label: "店舗名・住所を検索" } %>
   <%= submit_tag "絞り込む" %>
@@ -54,6 +55,16 @@
     <section id="shop-<%= target.shop_id %>" data-target-shop="<%= target.shop_id %>" style="border:1px solid #aaa; border-radius:8px; margin:18px 0; padding:12px;">
       <h2 style="font-size:18px;">吸えログ 店舗ID <%= target.shop_id %>：<%= snapshot["name"] %></h2>
       <p><strong><%= target.state == "applied" ? "登録済み" : target.state == "confirmed" ? "登録待ち" : GurunaviCsvTarget::CLASSIFICATIONS.fetch(target.classification, target.classification) %></strong> ／ アクセス数：<%= number_with_delimiter(target.access_count.to_i) %></p>
+      <% if @batch.state == "ready" && !applied && @classification != "registered" %>
+        <%= form_with url: review_target_admin_gurunavi_csv_batch_path(@batch, target_id: target.id), local: true, data: { turbo: false } do %>
+          <%= hidden_field_tag :classification, @classification %><%= hidden_field_tag :state, @state %><%= hidden_field_tag :q, @q %><%= hidden_field_tag :page, @page %>
+          <% if target.state == "excluded" %>
+            <%= button_tag "未登録に戻す", name: "decision", value: "restore" %>
+          <% elsif candidates.any? %>
+            <%= button_tag "どの候補も違う（すべて外す）", name: "decision", value: "exclude" %>
+          <% end %>
+        <% end %>
+      <% end %>
       <details><summary>照合の詳細</summary><p><%= GurunaviCsvMatch::STATES.fetch(target.state, target.state) %>：<%= target.reason %></p></details>
       <% if current && !applied && GurunaviCsv::Snapshot.call(current) != snapshot %><p style="color:#b00020;">照合後に現在の店舗データが変更されています。登録・取り消し時に再確認します。</p><% end %>
       <div style="overflow-x:auto;">
@@ -89,12 +100,13 @@
                     <%= button_to "取り消す", review_target_admin_gurunavi_csv_batch_path(@batch, target_id: target.id), params: { match_id: match.id, decision: "undo", classification: @classification, state: @state, q: @q, page: @page }, form: { data: { turbo: false } } %>
                   <% elsif match.state == "skipped" %>
                     <strong>登録済み</strong>
+                  <% elsif target.state == "excluded" %>
+                    <p>すべての候補を除外済みです。</p>
                   <% elsif !applied %>
                     <%= form_with url: review_target_admin_gurunavi_csv_batch_path(@batch, target_id: target.id), local: true, data: { turbo: false } do %>
                       <%= hidden_field_tag :match_id, match.id %><%= hidden_field_tag :classification, @classification %><%= hidden_field_tag :state, @state %><%= hidden_field_tag :q, @q %><%= hidden_field_tag :page, @page %>
                       <% if compared["gurunavi_url"].present? || compared["gurunavi_affiliate_url"].present? || match.classification == "conflict" %><label><%= check_box_tag :allow_replace, "1" %> 既存URLの置き換えを確認</label><br><% end %>
                       <%= button_tag "登録する", name: "decision", value: "register" %>
-                      <%= button_tag "候補から外す", name: "decision", value: "exclude" %>
                       <details><summary>その他の操作・照合理由</summary>
                         <p><%= GurunaviCsvMatch::STATES.fetch(match.state, match.state) %>：<%= match.reason %></p>
                         <%= button_tag "保留", name: "decision", value: "hold" %>
@@ -115,7 +127,7 @@
         </tbody>
       </table>
       </div>
-      <% if @batch.state == "ready" && !applied %>
+      <% if @batch.state == "ready" && !applied && @classification != "registered" %>
         <details><summary>別のCSV候補を追加</summary>
         <%= form_with url: review_target_admin_gurunavi_csv_batch_path(@batch, target_id: target.id), local: true, data: { turbo: false } do %>
           <%= hidden_field_tag :decision, "add" %><%= hidden_field_tag :classification, @classification %><%= hidden_field_tag :q, @q %><%= hidden_field_tag :page, @page %>

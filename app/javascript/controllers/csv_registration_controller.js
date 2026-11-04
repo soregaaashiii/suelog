@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   async submit(event) {
     const button = event.submitter
-    if (!button || button.name !== "decision" || !["register", "undo"].includes(button.value)) return
+    if (!button || button.name !== "decision" || !["register", "undo", "exclude", "restore"].includes(button.value)) return
     event.preventDefault()
     if (this.saving) return
     const form = event.target
@@ -18,7 +18,7 @@ export default class extends Controller {
     controls.forEach(control => { control.disabled = true })
     const status = this.element.querySelector("[data-csv-registration-status]")
     const notify = message => { status.textContent = message; status.hidden = false }
-    notify(button.value === "register" ? "登録中…" : "取り消し中…")
+    notify({ register: "登録中…", undo: "取り消し中…", exclude: "候補をすべて外しています…", restore: "未登録に戻しています…" }[button.value])
     try {
       const response = await fetch(form.action, {
         method: "POST", body: data, credentials: "same-origin",

@@ -75,3 +75,13 @@ test('refill replaces counts and appends new cards without replacing remaining e
   assert.deepEqual(ui.scrolls, [420, 420]);
   assert.equal(ui.status.textContent, '登録しました');
 });
+
+test('exclude and restore use inline submission without navigation', async () => {
+  for (const decision of ['exclude', 'restore']) {
+    const ui = setup([json(), new Error('offline')]);
+    ui.event.submitter.value = decision;
+    await ui.controller.submit(ui.event);
+    assert.ok(ui.prevented()); assert.ok(ui.card.removed);
+    assert.equal(ui.calls[0].options.body.data.decision, decision);
+  }
+});
