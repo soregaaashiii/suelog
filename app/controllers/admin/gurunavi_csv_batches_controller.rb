@@ -98,7 +98,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     @batch.with_lock do
       raise GurunaviCsv::Review::Conflict, "照合完了後に実行してください" unless @batch.shop_first? && @batch.state == "ready"
       raise GurunaviCsv::Review::Conflict, "別の処理が実行中です" if @batch.executions.where(state: %w[queued running]).exists?
-      execution = @batch.executions.create!(kind: "confidence", total_count: @batch.targets.count, run_token: SecureRandom.uuid, heartbeat_at: Time.current)
+      execution = @batch.executions.create!(kind: params[:all_shops] == "1" ? "expand" : "confidence", total_count: @batch.targets.count, run_token: SecureRandom.uuid, heartbeat_at: Time.current)
     end
     GurunaviCsvJob.perform_later(execution.id, execution.run_token)
     redirect_to admin_gurunavi_csv_batch_path(@batch), status: :see_other, flash: { admin_notice: "登録・除外・保留などの判断を保持し、未処理の店舗に候補を追加します。" }

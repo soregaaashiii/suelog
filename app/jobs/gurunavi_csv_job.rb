@@ -4,7 +4,7 @@ class GurunaviCsvJob < ApplicationJob
     return unless execution && %w[queued running].include?(execution.state)
     if execution.kind == "match"
       GurunaviCsv::Importer.new(execution.gurunavi_csv_batch, execution, token).call
-    elsif execution.kind == "confidence"
+    elsif %w[confidence expand].include?(execution.kind)
       GurunaviCsv::RefreshCandidates.new(execution, token).call
     else
       GurunaviCsv::Operations.new(execution, token).call

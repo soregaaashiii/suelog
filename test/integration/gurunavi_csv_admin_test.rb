@@ -62,7 +62,7 @@ class GurunaviCsvAdminTest < ActionDispatch::IntegrationTest
     assert_equal "review", row.classification
     get admin_gurunavi_csv_batch_path(batch, classification: "review", q: "CSV確認"), headers: @headers
     assert_response :success
-    assert_select "mark", minimum: 1
+    assert_select "span.csv-difference", minimum: 1
     assert_not_includes response.body, "<script>alert(1)</script>"
     assert_includes response.body, "&lt;script&gt;"
     %w[hold exclude confirm].each do |decision|

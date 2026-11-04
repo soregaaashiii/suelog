@@ -16,6 +16,9 @@
   </details>
 </div>
 <p>登録済みの店舗は作業一覧から外れ、「登録済み」に移ります。取り消すと未登録へ戻ります。</p>
+<% if @batch.state == "ready" && (@batch.trial_mode? || @batch.area_filter.present?) %>
+  <%= button_to "100店舗・エリア制限を外して全店舗を照合", refresh_candidates_admin_gurunavi_csv_batch_path(@batch), params: { all_shops: "1" }, method: :post, form: { data: { turbo: false } } %>
+<% end %>
 <%= button_to "候補を追加照合・確度順に更新", refresh_candidates_admin_gurunavi_csv_batch_path(@batch), method: :post, form: { data: { turbo: false } } if @batch.state == "ready" %>
 <p><span style="color:#b42318;border-bottom:2px solid #b42318;">赤い下線</span>は双方の表記が異なる部分です。一致箇所や同じ店舗であることを示す印ではありません。</p>
 <p>表示順：候補あり → 照合の確度が高い順 → 同じ確度ではアクセス数の多い順です。</p>

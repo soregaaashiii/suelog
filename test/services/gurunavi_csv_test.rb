@@ -27,6 +27,36 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     execution.reload
   end
 
+  test "expand scans all areas beyond trial limit while preserving decisions and avoiding duplicates" do
+    101.times { |i| Shop.create!(name: "全件対象#{i}", address: "大阪府大阪市北区中津#{i + 10}-1-1", genre: "居酒屋", last_confirmed_on: Date.current, approved: true) }
+    tokyo = Shop.create!(name: "別エリア対象", address: "東京都新宿区新宿1-2-3", genre: "居酒屋", last_confirmed_on: Date.current, approved: true)
+    Shop.create!(name: "未承認除外", address: "大阪府大阪市北区中津9-1-1", genre: "居酒屋", last_confirmed_on: Date.current, approved: false)
+    batch = batch_for([entry], trial: true, area: "大阪市", basis: "shop")
+    assert_equal 100, batch.targets.count
+    first = batch.targets.find_by!(shop_id: @shop.id)
+    match = first.matches.sole
+    GurunaviCsv::TargetReview.call(first, "confirm", match: match)
+    execution = batch.executions.create!(kind: "apply", selection: [match.id], run_token: SecureRandom.uuid)
+    GurunaviCsv::Operations.new(execution, execution.run_token).call
+    excluded = batch.targets.where.not(id: first.id).first
+    GurunaviCsv::TargetReview.call(excluded, "exclude")
+    2.times do
+      execution = batch.executions.create!(kind: "expand", run_token: SecureRandom.uuid)
+      GurunaviCsv::RefreshCandidates.new(execution, execution.run_token).call
+      assert_equal "completed", execution.reload.state
+      assert_equal 103, batch.targets.count
+      assert_equal 103, execution.processed_count
+      assert_equal "applied", first.reload.state
+      assert_equal "excluded", excluded.reload.state
+      assert_equal @url, @shop.reload.gurunavi_url
+      assert batch.targets.exists?(shop_id: tokyo.id)
+      assert_equal [match.id], first.matches.pluck(:id)
+    end
+    assert_not batch.reload.trial_mode?
+    assert_nil batch.area_filter
+    assert_equal 103, batch.target_rows
+    assert_equal 1, batch.rows.count
+  end
   test "broader candidates stay low confidence and never qualify for bulk registration" do
     @shop.update!(name: "カフェアオゾラ梅田")
     batch = batch_for([entry("こだわりの個室ダイニングアオゾラ梅田店")], basis: "shop")
