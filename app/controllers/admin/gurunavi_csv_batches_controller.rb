@@ -82,7 +82,13 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       return enqueue("rollback", [ match.id ], inline: true, target: target)
     end
     GurunaviCsv::TargetReview.call(target, params[:decision].to_s, match: match, line_number: params[:line_number], allow_replace: params[:allow_replace] == "1")
-    redirect_to admin_gurunavi_csv_batch_path(@batch, classification: params[:classification], q: params[:q], page: params[:page]), status: :see_other, flash: { admin_notice: "吸えログ店舗の確認状態を保存しました。URLはまだ更新していません。" }
+    message = case params[:decision]
+    when "exclude" then "この店舗の候補をすべて外しました。「除外済み」から戻せます。"
+    when "restore" then "未登録一覧に戻しました。"
+    else "吸えログ店舗の確認状態を保存しました。URLはまだ更新していません。"
+    end
+    return render json: { success: true, message: message, shop_id: target.shop_id } if request.format.json?
+    redirect_to admin_gurunavi_csv_batch_path(@batch, classification: params[:classification], q: params[:q], page: params[:page]), status: :see_other, flash: { admin_notice: message }
   rescue GurunaviCsv::Review::Conflict => e
     return render json: { success: false, message: e.message }, status: :unprocessable_entity if request.format.json?
     redirect_to admin_gurunavi_csv_batch_path(@batch), status: :see_other, flash: { admin_alert: e.message }
@@ -113,6 +119,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     @page = [ params[:page].to_i, 1 ].max
     @counts = @batch.targets.unregistered.group(:classification).count
     @counts["registered"] = @batch.targets.registered.count
+    @counts["excluded"] = @batch.targets.excluded.count
     @unregistered_count = @batch.targets.unregistered.count
     @invalid_count = @batch.rows.where(classification: "invalid").count
     @executions = @batch.executions.order(id: :desc).limit(20)
@@ -125,8 +132,12 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       @targets = []
       @shops = {}
     else
-      scope = @classification == "registered" ? @batch.targets.registered : @batch.targets.unregistered
-      scope = scope.where(classification: @classification) if @classification.present? && @classification != "registered"
+      scope = case @classification
+      when "registered" then @batch.targets.registered
+      when "excluded" then @batch.targets.excluded
+      else @batch.targets.unregistered
+      end
+      scope = scope.where(classification: @classification) if @classification.present? && !%w[registered excluded].include?(@classification)
       scope = scope.where(state: @state) if @state.present?
       if @q.present?
         like = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
