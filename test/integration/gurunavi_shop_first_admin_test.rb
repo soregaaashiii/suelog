@@ -266,6 +266,14 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     assert_equal "completed", execution.reload.state
     assert_nil @shop.reload.gurunavi_url
   end
+  test "full scan action queues expansion and upload defaults to all shops" do
+    batch = upload
+    post refresh_candidates_admin_gurunavi_csv_batch_path(batch), headers: @headers, params: { all_shops: "1" }
+    assert_response :see_other
+    assert_equal "expand", batch.executions.order(:id).last.kind
+    get new_admin_gurunavi_csv_batch_path, headers: @headers
+    assert_select "input[name='trial_mode'][checked]", count: 0
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")

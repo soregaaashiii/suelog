@@ -4,8 +4,8 @@
 <p><strong>取り込み・照合だけでは店舗URLを更新しません。</strong>確認後に登録する操作が必要です。</p>
 <%= form_with url: admin_gurunavi_csv_batches_path, multipart: true, local: true, data: { turbo: false } do %>
   <p><%= file_field_tag :file, accept: ".csv", required: true %>（25MB・最大10万行）</p>
-  <p><label>対象の市区町村（前方一致、空欄で全エリア）：<%= text_field_tag :area_filter, "大阪市", placeholder: "例：大阪市北区" %></label></p>
-  <p><label><%= check_box_tag :trial_mode, "1", true %> 試行モード：吸えログの公開中店舗をエリア内で先頭100店舗まで照合する</label></p>
+  <p><label>対象の市区町村（前方一致、空欄で全エリア）：<%= text_field_tag :area_filter, "", placeholder: "例：大阪市北区" %></label></p>
+  <p><label><%= check_box_tag :trial_mode, "1", false %> 試行モード：吸えログの公開中店舗をエリア内で先頭100店舗まで照合する</label></p>
   <%= submit_tag "アップロードして照合する", style: "padding:10px 16px;" %>
 <% end %>
 <p>一覧・件数の単位は吸えログの公開中店舗（承認済み・保留除外）です。CSVにしかない店舗は通常一覧に出しません。試行でもCSV全体から候補を探し、重複を調べます。確認済みの作業状態と履歴は取り込み単位で保存されます。</p>
