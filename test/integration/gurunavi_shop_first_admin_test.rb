@@ -112,10 +112,20 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     assert_equal "https://r.gnavi.co.jp/quickone/", @shop.reload.gurunavi_url
     assert_equal "applied", first.reload.state
     get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "section[data-target-shop]", count: 0
+    assert_includes response.body, "登録済み（1店舗）"
+    get admin_gurunavi_csv_batch_path(batch, classification: "review"), headers: @headers
+    assert_select "section[data-target-shop]", count: 0
+    get admin_gurunavi_csv_batch_path(batch, classification: "registered"), headers: @headers
+    assert_select "section[data-target-shop]", count: 1
     assert_select "button", text: "取り消す", count: 1
     post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: first.id, decision: "undo" }
     assert_nil @shop.reload.gurunavi_url
     assert_equal "rolled_back", first.reload.state
+    get admin_gurunavi_csv_batch_path(batch, classification: "registered"), headers: @headers
+    assert_select "section[data-target-shop]", count: 0
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "section[data-target-shop]", count: 1
     post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: second.id, decision: "register" }
     assert_equal "https://r.gnavi.co.jp/quicktwo/", @shop.reload.gurunavi_url
     assert_equal "applied", second.reload.state
@@ -139,6 +149,22 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     other = upload
     post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: other.targets.sole.matches.sole.id, decision: "register" }
     assert_response :not_found
+  end
+  test "historical registered and skipped targets leave the work list and pages clamp" do
+    batch = upload
+    target = batch.targets.sole
+    target.matches.sole.update!(state: "skipped")
+    assert_equal [target.id], batch.targets.registered.pluck(:id)
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "section[data-target-shop]", count: 0
+    get admin_gurunavi_csv_batch_path(batch, classification: "registered", page: 99), headers: @headers
+    assert_select "section[data-target-shop]", count: 1
+    assert_includes response.body, "1 / 1ページ"
+    target.matches.sole.update!(state: "pending")
+    target.update!(classification: "registered")
+    assert_equal [target.id], batch.targets.registered.pluck(:id)
+    target.update!(classification: "review", state: "rollback_conflict")
+    assert_equal [target.id], batch.targets.registered.pluck(:id)
   end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
