@@ -115,7 +115,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
   end
   private
   def show_shop_targets
-    @classification, @state, @q = params[:classification].to_s, params[:state].to_s, params[:q].to_s.strip
+    @classification, @state, @q = params[:classification].to_s, "", params[:q].to_s.strip
     @page = [ params[:page].to_i, 1 ].max
     @counts = @batch.targets.unregistered.group(:classification).count
     @counts["registered"] = @batch.targets.registered.count
@@ -138,7 +138,6 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       else @batch.targets.unregistered
       end
       scope = scope.where(classification: @classification) if @classification.present? && !%w[registered excluded].include?(@classification)
-      scope = scope.where(state: @state) if @state.present?
       if @q.present?
         like = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
         shop_ids = Shop.where("name LIKE :q OR address LIKE :q", q: like).select(:id)

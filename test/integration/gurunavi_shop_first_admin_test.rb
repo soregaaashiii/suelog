@@ -223,6 +223,22 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     assert_equal 1, batch.events.where(action: "exclude").count
     assert_equal 1, batch.events.where(action: "restore").count
   end
+  test "work list only has three main tabs and a name address search with no state filter" do
+    batch = upload
+    get admin_gurunavi_csv_batch_path(batch, state: "excluded", q: @shop.name), headers: @headers
+    assert_response :success
+    assert_select "select[name='state']", count: 0
+    assert_select "select[name='classification']", count: 0
+    assert_select "input[name='state']", count: 0
+    assert_select "form[method='get'] input[name='classification'][value='']", count: 1
+    assert_select "form[method='get'] input[name='q']", count: 1
+    assert_select "[data-csv-registration-counts] > a", count: 3
+    assert_select "section[data-target-shop='#{@shop.id}']", count: 1
+    assert_select "a[aria-current='page']", text: /未登録/
+    get admin_gurunavi_csv_batch_path(batch, classification: "excluded", q: "店"), headers: @headers
+    assert_select "input[name='classification'][value='excluded']", count: 1
+    assert_select "a[aria-current='page']", text: /除外済み/
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")

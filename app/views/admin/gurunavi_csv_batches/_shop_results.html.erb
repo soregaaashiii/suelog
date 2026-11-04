@@ -6,20 +6,23 @@
 <p>対象は吸えログの公開中店舗（承認済み・保留ではない店舗）です。各店舗について<strong>CSV全体</strong>からぐるなび候補を探します。CSVにしか存在しない店舗は通常一覧と判定件数に含めません。</p>
 <p><strong>一覧を表示しただけではURLを更新しません。</strong>候補の「登録する」で確認と登録が完了し、間違えた場合は「取り消す」で戻せます。「CSV内に候補なし」は、このCSVから候補が見つからなかった意味です。ぐるなび未掲載とは断定しません。</p>
 <div data-csv-registration-counts style="display:flex; gap:12px; flex-wrap:wrap; margin:12px 0;">
-  <%= link_to "未登録（#{@unregistered_count}店舗）", admin_gurunavi_csv_batch_path(@batch) %>
-  <%= link_to "除外済み（#{@counts['excluded'].to_i}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: "excluded") %>
-  <% GurunaviCsvTarget::CLASSIFICATIONS.each do |key, label| %>
-    <%= link_to "#{label}（#{@counts[key].to_i}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: key) %>
+  <% [["", "未登録", @unregistered_count], ["registered", "登録済み", @counts["registered"]], ["excluded", "除外済み", @counts["excluded"]]].each do |key, label, count| %>
+    <%= link_to "#{label}（#{count.to_i}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: key.presence, q: @q.presence), aria: { current: @classification == key ? "page" : nil }, style: "padding:8px 14px;border:1px solid #aaa;border-radius:6px;#{@classification == key ? 'background:#111;color:white;font-weight:bold;' : ''}" %>
   <% end %>
+  <details><summary>照合の内訳</summary>
+    <% GurunaviCsvTarget::CLASSIFICATIONS.except("registered").each do |key, label| %>
+      <p><%= "#{label}（#{@counts[key].to_i}店舗）" %></p>
+    <% end %>
+  </details>
 </div>
 <p>登録済みの店舗は作業一覧から外れ、「登録済み」に移ります。取り消すと未登録へ戻ります。</p>
 <p>表示順：CSV候補がある店舗を優先し、それぞれアクセス数の多い順（ボットを除く累計）です。</p>
 <p>参照CSVの検証：<%= link_to "不正・欠損行（#{@invalid_count}行）", admin_gurunavi_csv_batch_path(@batch, classification: "invalid") %>（店舗の判定件数とは別集計）</p>
 <%= form_with url: admin_gurunavi_csv_batch_path(@batch), method: :get, local: true do %>
-  <%= select_tag :classification, options_for_select([["未登録すべて", ""]] + GurunaviCsvTarget::CLASSIFICATIONS.map { |k,v| [v,k] } + [["除外済み", "excluded"], ["CSVの不正・欠損行", "invalid"]], @classification) %>
-  <%= select_tag :state, options_for_select([["確認状態すべて", ""]] + GurunaviCsvMatch::STATES.map { |k,v| [v,k] }, @state) %>
+  <%= hidden_field_tag :classification, @classification %>
   <%= text_field_tag :q, @q, placeholder: "吸えログ・候補CSVの店名や住所", aria: { label: "店舗名・住所を検索" } %>
-  <%= submit_tag "絞り込む" %>
+  <%= submit_tag "検索" %>
+  <% if @q.present? %><%= link_to "検索をクリア", admin_gurunavi_csv_batch_path(@batch, classification: @classification.presence) %><% end %>
 <% end %>
 <% if @batch.state == "ready" %>
   <details style="margin:14px 0; padding:12px; border:1px solid #137333; border-radius:8px;">
@@ -57,7 +60,7 @@
       <p><strong><%= target.state == "applied" ? "登録済み" : target.state == "confirmed" ? "登録待ち" : GurunaviCsvTarget::CLASSIFICATIONS.fetch(target.classification, target.classification) %></strong> ／ アクセス数：<%= number_with_delimiter(target.access_count.to_i) %></p>
       <% if @batch.state == "ready" && !applied && @classification != "registered" %>
         <%= form_with url: review_target_admin_gurunavi_csv_batch_path(@batch, target_id: target.id), local: true, data: { turbo: false } do %>
-          <%= hidden_field_tag :classification, @classification %><%= hidden_field_tag :state, @state %><%= hidden_field_tag :q, @q %><%= hidden_field_tag :page, @page %>
+          <%= hidden_field_tag :classification, @classification %><%= hidden_field_tag :q, @q %><%= hidden_field_tag :page, @page %>
           <% if target.state == "excluded" %>
             <%= button_tag "未登録に戻す", name: "decision", value: "restore" %>
           <% elsif candidates.any? %>
@@ -104,7 +107,7 @@
                     <p>すべての候補を除外済みです。</p>
                   <% elsif !applied %>
                     <%= form_with url: review_target_admin_gurunavi_csv_batch_path(@batch, target_id: target.id), local: true, data: { turbo: false } do %>
-                      <%= hidden_field_tag :match_id, match.id %><%= hidden_field_tag :classification, @classification %><%= hidden_field_tag :state, @state %><%= hidden_field_tag :q, @q %><%= hidden_field_tag :page, @page %>
+                      <%= hidden_field_tag :match_id, match.id %><%= hidden_field_tag :classification, @classification %><%= hidden_field_tag :q, @q %><%= hidden_field_tag :page, @page %>
                       <% if compared["gurunavi_url"].present? || compared["gurunavi_affiliate_url"].present? || match.classification == "conflict" %><label><%= check_box_tag :allow_replace, "1" %> 既存URLの置き換えを確認</label><br><% end %>
                       <%= button_tag "登録する", name: "decision", value: "register" %>
                       <details><summary>その他の操作・照合理由</summary>
