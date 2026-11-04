@@ -115,7 +115,9 @@
                     <%= form_with url: review_target_admin_gurunavi_csv_batch_path(@batch, target_id: target.id), local: true, data: { turbo: false } do %>
                       <%= hidden_field_tag :match_id, match.id %><%= hidden_field_tag :classification, @classification %><%= hidden_field_tag :q, @q %><%= hidden_field_tag :page, @page %>
                       <% if compared["gurunavi_url"].present? || compared["gurunavi_affiliate_url"].present? || match.classification == "conflict" %><label><%= check_box_tag :allow_replace, "1" %> 既存URLの置き換えを確認</label><br><% end %>
-                      <%= button_tag "登録する", name: "decision", value: "register" %>
+                      <% needs_replace = compared["gurunavi_url"].present? || compared["gurunavi_affiliate_url"].present? || match.classification == "conflict" %>
+                      <%= button_tag(needs_replace ? "確認して置き換え登録" : "登録する", name: "decision", value: "register", data: { replacement_required: needs_replace }) %>
+                      <% if needs_replace %><p>既存の設定があるため、上の「既存URLの置き換えを確認」をチェックすると登録できます。Enterでは確認前の候補を飛ばします。</p><% end %>
                       <details><summary>その他の操作・照合理由</summary>
                         <p><%= GurunaviCsvMatch::STATES.fetch(match.state, match.state) %>：<%= match.reason %></p>
                         <%= button_tag "保留", name: "decision", value: "hold" %>

@@ -274,6 +274,23 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     get new_admin_gurunavi_csv_batch_path, headers: @headers
     assert_select "input[name='trial_mode'][checked]", count: 0
   end
+  test "replacement registration is explicit while ordinary registrations remain available" do
+    @shop.update!(gurunavi_url: "https://r.gnavi.co.jp/oldsetting/")
+    batch = upload
+    target = batch.targets.sole
+    match = target.matches.sole
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "button[data-replacement-required='true']", text: "確認して置き換え登録", count: 1
+    assert_select "[data-action*='change->csv-registration#refreshShortcut']", count: 1
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers.merge("ACCEPT" => "application/json"), params: { decision: "register", match_id: match.id }
+    assert_response :unprocessable_entity
+    assert_includes response.parsed_body["message"], "チェック"
+    assert_equal "https://r.gnavi.co.jp/oldsetting/", @shop.reload.gurunavi_url
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers.merge("ACCEPT" => "application/json"), params: { decision: "register", match_id: match.id, allow_replace: "1" }
+    assert_response :success
+    assert response.parsed_body["success"]
+    assert_equal "https://r.gnavi.co.jp/store0001/", @shop.reload.gurunavi_url
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")

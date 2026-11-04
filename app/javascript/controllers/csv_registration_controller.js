@@ -5,10 +5,18 @@ export default class extends Controller {
     this.refreshShortcut()
   }
 
+  firstRegistrableButton() {
+    return [...this.element.querySelectorAll('button[name="decision"][value="register"]')].find(button => !button.disabled)
+  }
+
   refreshShortcut() {
+    for (const button of this.element.querySelectorAll('button[name="decision"][value="register"]')) {
+      const replacement = button.form.querySelector('input[name="allow_replace"]')
+      if (button.closest("[data-target-shop]")?.dataset.saving !== "true") button.disabled = !!replacement && !replacement.checked
+    }
     const shortcut = this.element.querySelector("[data-csv-shortcut-button]")
     if (!shortcut) return
-    const button = this.element.querySelector('button[name="decision"][value="register"]')
+    const button = this.firstRegistrableButton()
     shortcut.disabled = !!this.saving || !button
     const label = this.element.querySelector("[data-csv-shortcut-name]")
     label.textContent = button?.closest("[data-target-shop]")?.querySelector("h2")?.textContent || "登録できる候補はありません"
@@ -22,7 +30,7 @@ export default class extends Controller {
     }
     event.preventDefault()
     if (this.saving) return
-    const button = this.element.querySelector('button[name="decision"][value="register"]')
+    const button = this.firstRegistrableButton()
     if (button && !button.disabled) button.form.requestSubmit(button)
   }
 
