@@ -95,6 +95,51 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     assert_select "section[data-target-shop]", count: 1
     assert_nil @shop.reload.gurunavi_url
   end
+  test "one click registration undo and switching candidates keep an audit trail" do
+    batch = upload([
+      [@shop.name, "https://r.gnavi.co.jp/quickone/", @shop.address, "", "", ""],
+      [@shop.name, "https://r.gnavi.co.jp/quicktwo/", @shop.address, "", "", ""]
+    ])
+    target = batch.targets.sole
+    first, second = target.matches.order(:id).to_a
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "button[name='decision'][value='register']", count: 2
+    assert_select "input[disabled]", count: 0
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: first.id, decision: "register", page: 2, q: "test" }
+    assert_response :see_other
+    assert_includes response.location, "#shop-#{@shop.id}"
+    assert_includes response.location, "page=2"
+    assert_equal "https://r.gnavi.co.jp/quickone/", @shop.reload.gurunavi_url
+    assert_equal "applied", first.reload.state
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "button", text: "取り消す", count: 1
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: first.id, decision: "undo" }
+    assert_nil @shop.reload.gurunavi_url
+    assert_equal "rolled_back", first.reload.state
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: second.id, decision: "register" }
+    assert_equal "https://r.gnavi.co.jp/quicktwo/", @shop.reload.gurunavi_url
+    assert_equal "applied", second.reload.state
+    assert_equal 2, batch.events.where(action: "applied").count
+    assert_equal 1, batch.events.where(action: "rolled_back").count
+  end
+  test "quick operations reject stale data and protect subsequent changes" do
+    batch = upload
+    target = batch.targets.sole
+    match = target.matches.sole
+    @shop.update!(name: "変更された店名")
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: match.id, decision: "register" }
+    assert_nil @shop.reload.gurunavi_url
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: match.id, decision: "refresh" }
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: match.id, decision: "register" }
+    assert_equal "applied", match.reload.state
+    @shop.update!(gurunavi_url: "https://r.gnavi.co.jp/laterchange/")
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: match.id, decision: "undo" }
+    assert_equal "https://r.gnavi.co.jp/laterchange/", @shop.reload.gurunavi_url
+    assert_equal "rollback_conflict", match.reload.state
+    other = upload
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: other.targets.sole.matches.sole.id, decision: "register" }
+    assert_response :not_found
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")

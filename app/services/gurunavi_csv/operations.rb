@@ -90,7 +90,12 @@ module GurunaviCsv
         shop.skip_geocoding_for_url_update = true
         shop.update!(match.before_values)
         match.update!(state: "rolled_back", rolled_back_at: Time.current, reason: "今回の登録前のURL値へ取り消しました")
-        (match.gurunavi_csv_target || match.gurunavi_csv_row).update!(state: "rolled_back")
+        subject = match.gurunavi_csv_target || match.gurunavi_csv_row
+        subject.update!(state: "rolled_back", shop_snapshot: Snapshot.call(shop)) if match.gurunavi_csv_target
+        subject.update!(state: "rolled_back") unless match.gurunavi_csv_target
+        if match.gurunavi_csv_target
+          subject.matches.each { |candidate| candidate.update!(shop_snapshot: Snapshot.call(shop)) }
+        end
         event(match, "rolled_back", before: match.after_values, after: Snapshot.url_values(shop))
       end
     end
