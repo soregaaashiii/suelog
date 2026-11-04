@@ -114,7 +114,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       @targets = []
       @shops = {}
     else
-      scope = @batch.targets.order(:shop_id)
+      scope = @batch.targets
       scope = scope.where(classification: @classification) if @classification.present?
       scope = scope.where(state: @state) if @state.present?
       if @q.present?
@@ -122,9 +122,14 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
         shop_ids = Shop.where("name LIKE :q OR address LIKE :q", q: like).select(:id)
         source_rows = @batch.rows.where("csv_name LIKE :q OR csv_address LIKE :q", q: like).select(:id)
         target_ids = batch_matches.where(gurunavi_csv_row_id: source_rows).select(:gurunavi_csv_target_id)
-        scope = scope.where("shop_id IN (#{shop_ids.to_sql}) OR shop_snapshot LIKE :q OR id IN (#{target_ids.to_sql})", q: like)
+        scope = scope.where("gurunavi_csv_targets.shop_id IN (#{shop_ids.to_sql}) OR gurunavi_csv_targets.shop_snapshot LIKE :q OR gurunavi_csv_targets.id IN (#{target_ids.to_sql})", q: like)
       end
       @total = scope.count
+      access_counts = PageView.where(is_bot: [ false, nil ]).where.not(shop_id: nil)
+        .group(:shop_id).select("shop_id, COUNT(*) AS views_count")
+      scope = scope.joins("LEFT JOIN (#{access_counts.to_sql}) csv_access ON csv_access.shop_id = gurunavi_csv_targets.shop_id")
+        .select("gurunavi_csv_targets.*", "COALESCE(csv_access.views_count, 0) AS access_count")
+        .order(Arel.sql("CASE WHEN EXISTS (SELECT 1 FROM gurunavi_csv_matches WHERE gurunavi_csv_matches.gurunavi_csv_target_id = gurunavi_csv_targets.id) THEN 0 ELSE 1 END ASC, COALESCE(csv_access.views_count, 0) DESC, gurunavi_csv_targets.shop_id ASC"))
       @targets = scope.offset((@page - 1) * 50).limit(50).includes(matches: :gurunavi_csv_row).to_a
       @shops = Shop.where(id: @targets.map(&:shop_id)).select(:id, :name, :address, :gurunavi_url, :gurunavi_affiliate_url, :updated_at).index_by(&:id)
     end

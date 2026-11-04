@@ -77,6 +77,24 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     get admin_gurunavi_csv_batch_path(batch, q: @shop.name), headers: @headers
     assert_select "section[data-target-shop]", count: 1
   end
+  test "CSV candidates precede missing candidates and each group sorts by non bot accesses" do
+    shops = 3.times.map { |i| Shop.create!(name: "順序確認店#{i}", address: "大阪府大阪市北区中津#{i + 5}-1-1", genre: "居酒屋", last_confirmed_on: Date.current, approved: true) }
+    batch = upload([@shop, shops[0]].map.with_index { |shop, i| [shop.name, "https://r.gnavi.co.jp/order#{i}/", shop.address, "", "", ""] })
+    batch.targets.where(shop_id: shops.drop(1).map(&:id)).each { |target| target.matches.destroy_all }
+    [ [@shop, 1], [shops[0], 3], [shops[1], 10], [shops[2], 5] ].each do |shop, count|
+      count.times { PageView.create!(shop: shop, path: "/shops/#{shop.id}", is_bot: nil) }
+    end
+    20.times { PageView.create!(shop: @shop, path: "/shops/#{@shop.id}", is_bot: true) }
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_response :success
+    assert_select "section[data-target-shop]" do |sections|
+      assert_equal [shops[0].id, @shop.id, shops[1].id, shops[2].id].map(&:to_s), sections.map { |node| node["data-target-shop"] }
+    end
+    get admin_gurunavi_csv_batch_path(batch, q: @shop.name), headers: @headers
+    assert_response :success
+    assert_select "section[data-target-shop]", count: 1
+    assert_nil @shop.reload.gurunavi_url
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")
