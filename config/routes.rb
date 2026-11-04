@@ -132,6 +132,8 @@ Rails.application.routes.draw do
         post :rollback
         post :resume
         post "rows/:row_id/review", action: :review, as: :review_row
+        post "targets/:target_id/review", action: :review_target, as: :review_target
+        post :rematch
       end
     end
 

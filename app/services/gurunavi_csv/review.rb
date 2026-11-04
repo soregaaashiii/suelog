@@ -3,6 +3,7 @@ module GurunaviCsv
     class Conflict < StandardError; end
     def self.call(row, action, match: nil, shop_id: nil, allow_replace: false)
       batch = GurunaviCsvBatch.metadata.find(row.gurunavi_csv_batch_id)
+      raise Conflict, "吸えログ店舗を起点にした確認画面から操作してください" if batch.shop_first?
       mutex = GurunaviCsvWriteLock.create_or_find_by!(name: "registration")
       mutex.with_lock do
         GurunaviCsvWriteLock.where(id: mutex.id).update_all(name: "registration")

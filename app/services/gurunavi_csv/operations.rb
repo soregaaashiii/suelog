@@ -15,7 +15,8 @@ module GurunaviCsv
           @mutex.with_lock do
             GurunaviCsvWriteLock.where(id: @mutex.id).update_all(name: "registration")
             match.with_lock do
-              match.gurunavi_csv_row.with_lock do
+              subject = match.gurunavi_csv_target || match.gurunavi_csv_row
+              subject.with_lock do
                 dispatch(match)
               end
             end
@@ -38,16 +39,20 @@ module GurunaviCsv
     rescue ActiveRecord::RecordInvalid => e
       match.reload
       match.gurunavi_csv_row.reload
+      match.gurunavi_csv_target&.reload
       conflict(match, "モデル検証で停止しました：#{e.record.errors.full_messages.join(' / ')}", rollback: @execution.kind == "rollback")
     end
     def apply(match)
       return if %w[applied skipped rolled_back rollback_conflict].include?(match.state)
       row = match.gurunavi_csv_row
-      eligible = (match.classification == "bulk" && match.state == "pending" && row.state == "pending") || (match.state == "confirmed" && row.selected_match_id == match.id && row.state == "confirmed")
+      subject = match.gurunavi_csv_target || row
+      return conflict(match, "照合対象の店舗情報が一致しません") if @batch.shop_first? && (!match.gurunavi_csv_target || subject.gurunavi_csv_batch_id != @batch.id || subject.shop_id != match.shop_id)
+      eligible = (match.classification == "bulk" && match.state == "pending" && subject.classification == "bulk" && subject.state == "pending") || (match.state == "confirmed" && subject.selected_match_id == match.id && subject.state == "confirmed")
       return conflict(match, "確認状態が変更されています。再確認してください。") unless eligible
       shop = Shop.find_by(id: match.shop_id)
       return conflict(match, "店舗が削除されています") unless shop
       shop.with_lock do
+        return conflict(match, "吸えログ店舗が非公開・保留になりました") if @batch.shop_first? && !Shop.approved.where(id: shop.id).exists?
         return conflict(match, "照合後に店舗データが変更されました。登録せず競合として残します。") unless Snapshot.call(shop) == match.shop_snapshot
         if match.classification == "bulk" && match.state == "pending"
           identity = Normalizer.identity(row.csv_name, row.csv_address)
@@ -69,7 +74,7 @@ module GurunaviCsv
         shop.update!(gurunavi_url: url, gurunavi_affiliate_url: GurunaviAffiliateUrlBuilder.call(url))
         after = Snapshot.url_values(shop)
         match.update!(state: "applied", before_values: before, after_values: after, applied_version: Snapshot.version(shop), applied_at: Time.current, reason: "管理者確認後に登録しました")
-        row.update!(state: "applied", selected_match_id: match.id)
+        subject.update!(state: "applied", selected_match_id: match.id)
         event(match, "applied", before: before, after: after, shop_version: match.applied_version)
       end
     end
@@ -85,13 +90,13 @@ module GurunaviCsv
         shop.skip_geocoding_for_url_update = true
         shop.update!(match.before_values)
         match.update!(state: "rolled_back", rolled_back_at: Time.current, reason: "今回の登録前のURL値へ取り消しました")
-        match.gurunavi_csv_row.update!(state: "rolled_back")
+        (match.gurunavi_csv_target || match.gurunavi_csv_row).update!(state: "rolled_back")
         event(match, "rolled_back", before: match.after_values, after: Snapshot.url_values(shop))
       end
     end
     def conflict(match, reason, rollback: false)
       match.update!(state: rollback ? "rollback_conflict" : "conflict", reason: reason)
-      match.gurunavi_csv_row.update!(state: rollback ? "rollback_conflict" : "conflict")
+      (match.gurunavi_csv_target || match.gurunavi_csv_row).update!(state: rollback ? "rollback_conflict" : "conflict")
       event(match, rollback ? "rollback_conflict" : "conflict", reason: reason)
     end
     def event(match, action, payload)

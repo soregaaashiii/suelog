@@ -1,9 +1,9 @@
 <h1>ぐるなびCSV照合・一括登録</h1>
-<p>CSVと既存店舗を照合し、確認してからぐるなびURLを紐付けます。店舗は新規作成しません。</p>
+<p>吸えログの公開中店舗を起点に、CSV全体からぐるなびの店舗候補を探します。確認後にURLを紐付けます。店舗は新規作成しません。</p>
 <p><%= link_to "CSVを取り込む", new_admin_gurunavi_csv_batch_path %> ｜ <%= link_to "店舗管理へ", admin_shops_path(status: "gurunavi_missing") %></p>
 <table style="width:100%; border-collapse:collapse;" border="1" cellpadding="8">
   <tr><th>取込ID・日時</th><th>ファイル</th><th>状態・進捗</th><th>対象</th><th>操作</th></tr>
   <% @batches.each do |batch| %>
-    <tr><td>#<%= batch.id %><br><%= batch.created_at.in_time_zone("Asia/Tokyo").strftime("%Y/%m/%d %H:%M") %></td><td><%= batch.filename %><br><small>SHA256: <%= batch.sha256.first(12) %>…</small></td><td><%= batch.state %> / <%= batch.phase %><br><%= batch.processed_rows %>件 / CSV全体<%= batch.total_rows %>件<br><%= batch.message %></td><td><%= batch.trial_mode? ? "試行：最大100件" : "全件" %><br><%= batch.area_filter.presence || "エリア指定なし" %></td><td><%= link_to "照合結果・作業を再開", admin_gurunavi_csv_batch_path(batch) %></td></tr>
+    <tr><td>#<%= batch.id %><br><%= batch.created_at.in_time_zone("Asia/Tokyo").strftime("%Y/%m/%d %H:%M") %></td><td><%= batch.filename %><br><small>SHA256: <%= batch.sha256.first(12) %>…</small></td><td><%= batch.state %> / <%= batch.phase %><br><%= batch.shop_first? ? "吸えログ店舗が起点" : "旧仕様：CSV店舗が起点" %><br><%= batch.phase == "parse" ? "CSV読込 #{batch.processed_rows}行" : "照合 #{batch.processed_rows} / #{batch.target_rows}#{batch.shop_first? ? '店舗' : '行'}" %> ／ CSV全体 <%= batch.total_rows %>行<br><%= batch.message %></td><td><%= batch.trial_mode? ? (batch.shop_first? ? "試行：吸えログ100店舗まで" : "旧試行：CSV100行まで") : "全件" %><br><%= batch.area_filter.presence || "エリア指定なし" %></td><td><%= link_to "照合結果・作業を再開", admin_gurunavi_csv_batch_path(batch) %></td></tr>
   <% end %>
 </table>
