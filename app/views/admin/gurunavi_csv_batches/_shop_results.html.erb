@@ -5,7 +5,7 @@
 <%= @batch.trial_mode? ? "試行：吸えログ側の先頭100店舗まで" : "全件：吸えログ側の対象店舗すべて" %> ／ エリア：<%= @batch.area_filter.presence || "全エリア" %></p>
 <p>対象は吸えログの公開中店舗（承認済み・保留ではない店舗）です。各店舗について<strong>CSV全体</strong>からぐるなび候補を探します。CSVにしか存在しない店舗は通常一覧と判定件数に含めません。</p>
 <p><strong>一覧を表示しただけではURLを更新しません。</strong>候補の「登録する」で確認と登録が完了し、間違えた場合は「取り消す」で戻せます。「CSV内に候補なし」は、このCSVから候補が見つからなかった意味です。ぐるなび未掲載とは断定しません。</p>
-<div style="display:flex; gap:12px; flex-wrap:wrap; margin:12px 0;">
+<div data-csv-registration-counts style="display:flex; gap:12px; flex-wrap:wrap; margin:12px 0;">
   <%= link_to "未登録（#{@unregistered_count}店舗）", admin_gurunavi_csv_batch_path(@batch) %>
   <% GurunaviCsvTarget::CLASSIFICATIONS.each do |key, label| %>
     <%= link_to "#{label}（#{@counts[key].to_i}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: key) %>
@@ -22,7 +22,7 @@
 <% end %>
 <% if @batch.state == "ready" %>
   <details style="margin:14px 0; padding:12px; border:1px solid #137333; border-radius:8px;">
-    <summary>まとめて登録する（登録可能 <%= @ready_count %>店舗）</summary>
+    <summary data-csv-registration-ready>まとめて登録する（登録可能 <%= @ready_count %>店舗）</summary>
     <p>登録可能：<strong><%= @ready_count %>店舗</strong>。一括登録候補と、同一店舗と確定した候補が対象です。</p>
     <%= form_with url: apply_admin_gurunavi_csv_batch_path(@batch), id: "bulk-apply", local: true, data: { turbo: false } do %>
       <label><%= check_box_tag :reviewed, "1", false, required: true %> 店舗名・住所・URLと判定理由を確認しました</label><br>
@@ -40,7 +40,7 @@
     <% end %>
   </details>
 <% end %>
-<p><%= @total %><%= @classification == "invalid" ? "行" : "店舗" %> ／ <%= @page %> / <%= @pages %>ページ（50<%= @classification == "invalid" ? "行" : "店舗" %>ずつ）</p>
+<p data-csv-registration-pagination><%= @total %><%= @classification == "invalid" ? "行" : "店舗" %> ／ <%= @page %> / <%= @pages %>ページ（50<%= @classification == "invalid" ? "行" : "店舗" %>ずつ）</p>
 <% if @page > 1 %><%= link_to "← 前へ", admin_gurunavi_csv_batch_path(@batch, classification: @classification, state: @state, q: @q, page: @page - 1) %><% end %>
 <% if @page < @pages %><%= link_to "次へ →", admin_gurunavi_csv_batch_path(@batch, classification: @classification, state: @state, q: @q, page: @page + 1) %><% end %>
 <% if @classification == "invalid" %>

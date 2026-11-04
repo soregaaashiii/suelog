@@ -166,6 +166,29 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     target.update!(classification: "review", state: "rollback_conflict")
     assert_equal [target.id], batch.targets.registered.pluck(:id)
   end
+  test "inline JSON registration and undo return results without redirects" do
+    batch = upload
+    target = batch.targets.sole
+    match = target.matches.sole
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "[data-controller='csv-registration']", count: 1
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers.merge("ACCEPT" => "application/json"), params: { match_id: match.id, decision: "register" }
+    assert_response :success
+    assert response.parsed_body["success"]
+    assert_equal target.shop_id, response.parsed_body["shop_id"]
+    assert_nil response.headers["Location"]
+    assert_equal "applied", match.reload.state
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers.merge("ACCEPT" => "application/json"), params: { match_id: match.id, decision: "undo" }
+    assert_response :success
+    assert response.parsed_body["success"]
+    assert_nil @shop.reload.gurunavi_url
+    @shop.update!(name: "更新された店舗")
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers.merge("ACCEPT" => "application/json"), params: { match_id: match.id, decision: "register" }
+    assert_response :unprocessable_entity
+    assert_equal false, response.parsed_body["success"]
+    assert_includes response.parsed_body["message"], "更新"
+    assert_nil response.headers["Location"]
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")
