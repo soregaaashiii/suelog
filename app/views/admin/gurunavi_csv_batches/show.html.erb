@@ -1,3 +1,8 @@
+<% if @batch.shop_first? %>
+  <%= render "shop_results" %>
+<% else %>
+<p><strong>旧仕様の履歴（CSV店舗が起点）です。</strong>現在の照合は吸えログの公開中店舗を起点にします。過去の件数は設定率を示しません。</p>
+<%= button_to "同じCSVで吸えログ店舗を起点に再照合", rematch_admin_gurunavi_csv_batch_path(@batch), method: :post, form: { data: { turbo: false } } %>
 <h1>ぐるなびCSV照合 #<%= @batch.id %> — <%= @batch.filename %></h1>
 <p><%= link_to "取り込み履歴", admin_gurunavi_csv_batches_path %> ｜ <%= link_to "別のCSVを取り込む", new_admin_gurunavi_csv_batch_path %> ｜ <%= link_to "進捗・結果を更新", admin_gurunavi_csv_batch_path(@batch, classification: @classification, state: @state, q: @q, page: @page) %></p>
 <p><strong><%= @batch.state %> / <%= @batch.phase %></strong>：<%= @batch.message %><br>
@@ -110,14 +115,5 @@ CSV全体 <%= @batch.total_rows %>行 ／ 照合対象 <%= @batch.target_rows %>
   </tbody>
 </table>
 </div>
-<h2>実行履歴・進捗</h2>
-<% @executions.each do |execution| %>
-  <div style="border:1px solid #ccc; padding:8px; margin:8px 0;">
-    #<%= execution.id %> <%= {"match"=>"照合", "apply"=>"登録", "rollback"=>"取り消し"}[execution.kind] %>：<strong><%= execution.state %></strong> <%= execution.processed_count %> / <%= execution.total_count %>件<br><%= execution.message %>
-    <% if execution.restartable? %><%= button_to "この処理を再開する", resume_admin_gurunavi_csv_batch_path(@batch, execution_id: execution.id), method: :post, form: { data: { turbo: false } } %><% end %>
-  </div>
-<% end %>
-<h2>操作記録（直近50件）</h2>
-<% @events.each do |event| %>
-  <details><summary><%= event.created_at.in_time_zone("Asia/Tokyo").strftime("%m/%d %H:%M:%S") %> <%= event.action %> 行ID:<%= event.gurunavi_csv_row_id %> 候補ID:<%= event.gurunavi_csv_match_id %></summary><pre style="white-space:pre-wrap;"><%= JSON.pretty_generate(event.payload) %></pre></details>
+<%= render "execution_history" %>
 <% end %>

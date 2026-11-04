@@ -22,6 +22,7 @@ class GurunaviCsvAdminTest < ActionDispatch::IntegrationTest
     end
     assert_response :see_other
     batch = GurunaviCsvBatch.order(:id).last
+    batch.update!(matching_basis: "csv") # Preserve regression coverage for historical imports.
     execution = batch.executions.sole
     GurunaviCsvJob.perform_now(execution.id, execution.run_token)
     assert_equal "ready", batch.reload.state, batch.message

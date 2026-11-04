@@ -12,9 +12,9 @@ class GurunaviCsvTest < ActiveSupport::TestCase
   def entry(name = @shop.name, address = @address, url = @url)
     [ name, url, address, "17:00-23:00", "飲食", "カフェ" ]
   end
-  def batch_for(entries, trial: false, area: nil, bytes: nil)
+  def batch_for(entries, trial: false, area: nil, bytes: nil, basis: "csv")
     bytes ||= CSV.generate { |csv| csv << GurunaviCsv::Importer::HEADERS; entries.each { |row| csv << row } }.encode(Encoding::Windows_31J)
-    batch = GurunaviCsvBatch.create!(filename: "shoplist.csv", source_bytes: bytes, sha256: Digest::SHA256.hexdigest(bytes), trial_mode: trial, area_filter: area)
+    batch = GurunaviCsvBatch.create!(filename: "shoplist.csv", source_bytes: bytes, sha256: Digest::SHA256.hexdigest(bytes), trial_mode: trial, area_filter: area, matching_basis: basis)
     execution = batch.executions.create!(kind: "match", run_token: SecureRandom.uuid)
     GurunaviCsv::Importer.new(batch, execution, execution.run_token).call
     batch.reload
@@ -25,6 +25,142 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     # Call the service directly so unexpected failures are visible in tests.
     GurunaviCsv::Operations.new(execution, execution.run_token).call
     execution.reload
+  end
+
+  test "shop first results contain published shops only and search the entire CSV" do
+    other = @shop.dup
+    other.name, other.address = "公開中でCSVにない店舗", @address.sub("1-2-3", "1-2-9")
+    other.save!
+    pending = @shop.dup
+    pending.name, pending.address, pending.approved = "未承認店舗", @address.sub("1-2-3", "1-2-8"), false
+    pending.save!
+    held = @shop.dup
+    held.name, held.address, held.on_hold = "保留店舗", @address.sub("1-2-3", "1-2-7"), true
+    held.save!
+    entries = 120.times.map { |i| entry("CSVだけの店舗#{i}", "大阪府大阪市北区中津2-#{i + 1}-1", "https://r.gnavi.co.jp/onlycsv#{i}/") }
+    entries += [ entry(pending.name, pending.address, "https://r.gnavi.co.jp/pending01/"), entry(held.name, held.address, "https://r.gnavi.co.jp/held0001/"), entry ]
+    batch = batch_for(entries, trial: true, area: "大阪市", basis: "shop")
+    assert_equal "shop", batch.matching_basis
+    assert_equal 123, batch.total_rows
+    assert_equal 2, batch.target_rows
+    assert_equal 2, batch.processed_rows
+    assert_equal [ @shop.id, other.id ].sort, batch.targets.pluck(:shop_id).sort
+    assert_equal "bulk", batch.targets.find_by!(shop_id: @shop.id).classification
+    missing = batch.targets.find_by!(shop_id: other.id)
+    assert_equal "unmatched", missing.classification
+    assert_empty missing.matches
+    assert_includes missing.reason, "CSV内に見つかりません"
+    assert_nil @shop.reload.gurunavi_url
+    assert_equal 124, batch.targets.find_by!(shop_id: @shop.id).matches.sole.gurunavi_csv_row.line_number
+  end
+
+  test "shop first trial limits shops instead of CSV rows and keeps global duplicates conservative" do
+    104.times do |i|
+      Shop.create!(name: "公開店舗#{i}", address: "大阪府大阪市北区梅田2-#{i + 1}-1", genre: "居酒屋", last_confirmed_on: Date.current, approved: true)
+    end
+    entries = 110.times.map { |i| entry("CSV専用#{i}", "大阪府大阪市北区中津9-#{i + 1}-1", "https://r.gnavi.co.jp/source#{i}/") }
+    entries += [ entry, entry(@shop.name, @address, "https://r.gnavi.co.jp/duplicate01/") ]
+    batch = batch_for(entries, trial: true, area: "大阪市北区", basis: "shop")
+    assert_equal 100, batch.targets.count
+    assert_equal 100, batch.target_rows
+    assert_equal 112, batch.total_rows
+    target = batch.targets.find_by!(shop_id: @shop.id)
+    assert_equal "review", target.classification
+    assert_equal 2, target.matches.count
+    assert_empty target.matches.where(classification: "bulk")
+    assert_equal 100, batch.targets.group(:classification).count.values.sum
+  end
+
+  test "shop first candidates confirm one CSV row per shop and apply rollback safely" do
+    batch = batch_for([ entry(@shop.name, @address.sub("2F", "3F")), entry(@shop.name, @address.sub("2F", "4F"), "https://r.gnavi.co.jp/alternate01/") ], basis: "shop")
+    target = batch.targets.sole
+    assert_equal "review", target.classification
+    first, second = target.matches.order(:id).to_a
+    GurunaviCsv::TargetReview.call(target, "confirm", match: first)
+    GurunaviCsv::TargetReview.call(target, "confirm", match: second)
+    assert_equal "pending", first.reload.state
+    assert_equal second.id, target.reload.selected_match_id
+    execute(batch, "apply", [ second.id ])
+    assert_equal "applied", target.reload.state
+    assert_equal "https://r.gnavi.co.jp/alternate01/", @shop.reload.gurunavi_url
+    execute(batch, "rollback", [ second.id ])
+    assert_equal "rolled_back", target.reload.state
+    assert_nil @shop.reload.gurunavi_url
+  end
+
+  test "shop first manual CSV candidates cannot bypass confirmation and reject legacy review paths" do
+    batch = batch_for([ entry, entry("別店舗", @address.sub("1-2-3", "8-9-1"), "https://r.gnavi.co.jp/manual0001/") ], basis: "shop")
+    target = batch.targets.sole
+    original = target.matches.sole
+    GurunaviCsv::TargetReview.call(target, "add", line_number: 3)
+    execute(batch, "apply", [ original.id ])
+    assert_nil @shop.reload.gurunavi_url
+    assert_equal "conflict", target.reload.state
+    assert_raises(GurunaviCsv::Review::Conflict) { GurunaviCsv::Review.call(batch.rows.first, "confirm", match: original) }
+    manual = target.matches.find_by!(gurunavi_csv_row_id: batch.rows.find_by!(line_number: 3).id)
+    GurunaviCsv::TargetReview.call(target, "confirm", match: manual)
+    execute(batch, "apply", [ manual.id ])
+    assert_equal "https://r.gnavi.co.jp/manual0001/", @shop.reload.gurunavi_url
+  end
+
+  test "shop first publication changes stale snapshots existing URLs and rollback conflicts are protected" do
+    batch = batch_for([ entry ], basis: "shop")
+    @shop.update!(on_hold: true)
+    execute(batch, "apply")
+    assert_nil @shop.reload.gurunavi_url
+    assert_equal "conflict", batch.targets.sole.reload.state
+    @shop.update!(on_hold: false, gurunavi_url: @url, gurunavi_affiliate_url: GurunaviAffiliateUrlBuilder.call(@url))
+    existing = batch_for([], basis: "shop")
+    assert_equal "registered", existing.targets.sole.classification
+    assert_equal @url, @shop.reload.gurunavi_url
+    @shop.update!(gurunavi_url: nil, gurunavi_affiliate_url: nil)
+    batch = batch_for([ entry ], basis: "shop")
+    execute(batch, "apply")
+    @shop.update!(name: "照合後に店名を更新")
+    execute(batch, "rollback")
+    assert_equal "rollback_conflict", batch.targets.sole.reload.state
+    assert_equal @url, @shop.reload.gurunavi_url
+  end
+
+  test "shop first matching never promotes name only address only branch floor or incomplete data to bulk" do
+    samples = [ entry(@shop.name, @address.sub("1-2-3", "1-2-4")), entry("別店舗", @address), entry("カフェ A 難波店", @address), entry(@shop.name, @address.sub("2F", "3F")), entry(@shop.name, "大阪府大阪市北区梅田1-2-3"), entry("", @address) ]
+    samples.each_with_index { |row, index| row[1] = "https://r.gnavi.co.jp/shopfirst#{index}/" }
+    batch = batch_for(samples, basis: "shop")
+    assert_equal "review", batch.targets.sole.classification
+    assert_empty batch.targets.sole.matches.where(classification: "bulk")
+    assert_equal 1, batch.rows.where(classification: "invalid").count
+    assert_nil @shop.reload.gurunavi_url
+  end
+
+  test "shop first reviews remain independent for a shared CSV candidate and URL ownership is rechecked" do
+    other = @shop.dup
+    other.name = "カフェ A 梅田店 別館"
+    other.save!
+    batch = batch_for([ entry("カフェ A", @address) ], basis: "shop")
+    assert_equal 2, batch.targets.count
+    batch.targets.each do |target|
+      assert_equal "review", target.classification
+      GurunaviCsv::TargetReview.call(target, "confirm", match: target.matches.sole)
+    end
+    assert_equal 2, batch.targets.where(state: "confirmed").count
+    execute(batch, "apply")
+    assert_equal 1, batch.targets.where(state: "applied").count
+    assert_equal 1, batch.targets.where(state: "conflict").count
+    assert_equal 1, Shop.where(gurunavi_csv_url_key: @url).count
+  end
+
+  test "shop first matching reads CSV and shops in batches rather than per target" do
+    entries = 200.times.map do |i|
+      store = Shop.create!(name: "照合性能店舗#{i}", address: "大阪府大阪市北区梅田8-#{i + 1}-1", genre: "居酒屋", last_confirmed_on: Date.current, approved: true)
+      entry(store.name, store.address, "https://r.gnavi.co.jp/batchcsv#{i}/")
+    end
+    queries = []
+    callback = ->(*args) { sql = args.last[:sql]; queries << sql if sql.match?(/SELECT.*FROM ["`]?(shops|gurunavi_csv_rows)["`]?/i) }
+    batch = nil
+    ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { batch = batch_for(entries, basis: "shop") }
+    assert_equal 201, batch.targets.count
+    assert_equal 200, batch.targets.where(classification: "bulk").count
+    assert_operator queries.size, :<, 20
   end
 
   test "CP932 postal and width parcel differences match but leave shop untouched before confirmation" do

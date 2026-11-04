@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_04_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_000300) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -97,6 +97,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000200) do
     t.string "area_filter"
     t.datetime "created_at", null: false
     t.string "filename", null: false
+    t.string "matching_basis", default: "csv", null: false
     t.text "message"
     t.string "phase", default: "queued", null: false
     t.integer "processed_rows", default: 0, null: false
@@ -146,6 +147,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000200) do
     t.string "classification", null: false
     t.datetime "created_at", null: false
     t.integer "gurunavi_csv_row_id", null: false
+    t.integer "gurunavi_csv_target_id"
     t.text "reason"
     t.datetime "rolled_back_at"
     t.bigint "shop_id", null: false
@@ -154,6 +156,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000200) do
     t.datetime "updated_at", null: false
     t.index ["gurunavi_csv_row_id", "shop_id"], name: "index_gcsv_match_identity", unique: true
     t.index ["gurunavi_csv_row_id"], name: "index_gurunavi_csv_matches_on_gurunavi_csv_row_id"
+    t.index ["gurunavi_csv_target_id"], name: "index_gurunavi_csv_matches_on_gurunavi_csv_target_id"
     t.index ["shop_id"], name: "index_gurunavi_csv_matches_on_shop_id"
   end
 
@@ -179,6 +182,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000200) do
     t.index ["gurunavi_csv_batch_id", "classification"], name: "index_gcsv_rows_class"
     t.index ["gurunavi_csv_batch_id", "line_number"], name: "index_gcsv_rows_line", unique: true
     t.index ["gurunavi_csv_batch_id", "normalized_name", "normalized_address"], name: "index_gcsv_rows_identity"
+  end
+
+  create_table "gurunavi_csv_targets", force: :cascade do |t|
+    t.string "classification", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.integer "gurunavi_csv_batch_id", null: false
+    t.text "reason"
+    t.bigint "selected_match_id"
+    t.bigint "shop_id", null: false
+    t.text "shop_snapshot"
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["gurunavi_csv_batch_id", "classification"], name: "index_gcsv_target_class"
+    t.index ["gurunavi_csv_batch_id", "shop_id"], name: "index_gcsv_target_shop", unique: true
+    t.index ["gurunavi_csv_batch_id"], name: "index_gurunavi_csv_targets_on_gurunavi_csv_batch_id"
   end
 
   create_table "gurunavi_csv_write_locks", force: :cascade do |t|
@@ -437,7 +455,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000200) do
   add_foreign_key "gurunavi_csv_events", "gurunavi_csv_batches"
   add_foreign_key "gurunavi_csv_executions", "gurunavi_csv_batches"
   add_foreign_key "gurunavi_csv_matches", "gurunavi_csv_rows"
+  add_foreign_key "gurunavi_csv_matches", "gurunavi_csv_targets"
   add_foreign_key "gurunavi_csv_rows", "gurunavi_csv_batches"
+  add_foreign_key "gurunavi_csv_targets", "gurunavi_csv_batches"
   add_foreign_key "page_views", "shops"
   add_foreign_key "restaurant_url_search_runs", "shops"
   add_foreign_key "review_reports", "reviews"

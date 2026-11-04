@@ -1,4 +1,5 @@
 class GurunaviCsvMatch < ApplicationRecord
+  belongs_to :gurunavi_csv_target, optional: true
   belongs_to :gurunavi_csv_row
   serialize :shop_snapshot, coder: JSON
   serialize :before_values, coder: JSON

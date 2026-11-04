@@ -21,6 +21,7 @@ module GurunaviCsv
         raise InvalidCsv, "すでに登録履歴があるため再照合できません" if @batch.rows.joins(:matches).where.not(gurunavi_csv_matches: { applied_at: nil }).exists?
         ids = @batch.rows.select(:id)
         GurunaviCsvMatch.where(gurunavi_csv_row_id: ids).delete_all
+        @batch.targets.delete_all
         @batch.rows.delete_all
         @batch.update!(state: "processing", phase: "decode", processed_rows: 0, message: "CP932を検証中")
       end
@@ -68,6 +69,7 @@ module GurunaviCsv
       end
       save_rows(buffer, total) if buffer.any?
       checkpoint { @batch.update!(total_rows: total, phase: "match", processed_rows: 0, message: "照合用の索引を作成中") }
+      return match_shops(total) if @batch.shop_first?
       matcher = Matcher.new(@batch.rows)
       scoped = @batch.rows.where.not(classification: "invalid")
       scoped = scoped.where("municipality LIKE ?", "#{ActiveRecord::Base.sanitize_sql_like(Normalizer.name(@batch.area_filter))}%") if @batch.area_filter.present?
@@ -101,6 +103,43 @@ module GurunaviCsv
       end
     rescue CSV::MalformedCSVError => e
       raise InvalidCsv, "行#{(physical_line || 0) + 1}: CSVの構造が不正です。#{e.message}"
+    end
+    def match_shops(total)
+      area = Normalizer.name(@batch.area_filter)
+      ids = Shop.approved.order(:id).pluck(:id, :address).filter_map do |id, address|
+        id if area.blank? || Normalizer.municipality(address).start_with?(area)
+      end
+      ids = ids.first(100) if @batch.trial_mode?
+      checkpoint do
+        @batch.rows.where.not(classification: "invalid").update_all(classification: "out_of_scope", reason: "照合用CSVデータ。CSVだけにある店舗は通常一覧に表示しません。")
+        @batch.update!(target_rows: ids.size, processed_rows: 0, message: "公開中の吸えログ#{ids.size}店舗に対してCSV全体の索引を作成中")
+        @execution.update!(total_count: ids.size, processed_count: 0)
+      end
+      matcher = ShopMatcher.new(@batch.rows)
+      processed = 0
+      Shop.where(id: ids).select(:id, :name, :address, :gurunavi_url, :gurunavi_affiliate_url, :updated_at).find_in_batches(batch_size: 250) do |shops|
+        targets, matches = [], []
+        shops.each do |shop|
+          classification, reason, found = matcher.call(shop)
+          now = Time.current
+          targets << { gurunavi_csv_batch_id: @batch.id, shop_id: shop.id, shop_snapshot: Snapshot.call(shop), classification: classification, state: classification == "registered" ? "skipped" : "pending", reason: reason, created_at: now, updated_at: now }
+          matches.concat(found.map { |m| m.merge(created_at: now, updated_at: now) })
+        end
+        processed += shops.size
+        checkpoint do
+          GurunaviCsvTarget.insert_all!(targets)
+          target_ids = @batch.targets.where(shop_id: shops.map(&:id)).pluck(:shop_id, :id).to_h
+          matches.each { |m| m[:gurunavi_csv_target_id] = target_ids.fetch(m[:shop_id]) }
+          GurunaviCsvMatch.insert_all!(matches) if matches.any?
+          @batch.update!(processed_rows: processed, message: "吸えログ店舗の照合 #{processed}/#{ids.size}店舗")
+          @execution.update!(processed_count: processed)
+        end
+      end
+      checkpoint do
+        @batch.update!(state: "ready", phase: "complete", message: "公開中の吸えログ店舗を起点に照合完了。店舗URLはまだ変更していません。")
+        @execution.update!(state: "completed", message: "吸えログ店舗を起点に照合完了")
+        @batch.events.create!(gurunavi_csv_execution_id: @execution.id, action: "matched", payload: { matching_basis: "shop", total_csv_rows: total, target_shops: ids.size })
+      end
     end
     # Recover only independently bounded physical records. Never repair or infer fields.
     def parse_records(text)
