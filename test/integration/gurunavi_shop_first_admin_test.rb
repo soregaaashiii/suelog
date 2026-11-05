@@ -312,6 +312,22 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     target.update!(state: "conflict")
     assert batch.targets.url_conflicts.exists?(id: target.id), "historical errors are archived too"
   end
+  test "progress header counts candidates by confidence once per shop" do
+    batch = upload([
+      [@shop.name, "https://r.gnavi.co.jp/countone/", @shop.address, "", "", ""],
+      [@shop.name, "https://r.gnavi.co.jp/counttwo/", @shop.address, "", "", ""]
+    ])
+    target = batch.targets.sole
+    assert_equal 2, target.matches.count
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "[data-csv-confidence-summary]", count: 1
+    assert_select "[data-csv-confidence-remaining-total]", text: "1"
+    assert_select "[data-csv-confidence-remaining='200']", text: "1"
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers, params: { decision: "exclude" }
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "[data-csv-confidence-remaining-total]", text: "0"
+    assert_select "[data-csv-confidence-summary] strong", text: /全体 1店舗/
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")

@@ -58,6 +58,7 @@ test('refill replaces counts and appends new cards without replacing remaining e
     querySelector(selector) {
       if (selector.includes('status')) return ui.status;
       if (selector.includes('shortcut')) return null;
+      if (selector.includes('confidence-remaining')) return null;
       if (selector === '[data-target-shop="2"]') return existing;
       if (selector === '[data-target-shop="3"]') return null;
       return { replaceWith: node => replaced.push(node) };
@@ -71,7 +72,7 @@ test('refill replaces counts and appends new cards without replacing remaining e
   vm.runInContext(sourceWithParser, context);
   const controller = new context.CsvController(); controller.element = ui.controller.element;
   await controller.submit(ui.event);
-  assert.deepEqual(appended, [next]); assert.equal(replaced.length, 3);
+  assert.deepEqual(appended, [next]); assert.equal(replaced.length, 4);
   assert.equal(existing.unsavedInput, 'keep me');
   assert.deepEqual(ui.scrolls, [420, 420]);
   assert.equal(ui.status.textContent, '登録しました');
@@ -199,4 +200,14 @@ test('URL ownership errors move the card away and allow held registration to con
   assert.equal(ui.controller.enterHeld, true);
   assert.equal(ui.controller.saving, false);
   assert.match(ui.status.textContent, /競合一覧/);
+});
+test('confidence remaining counts decrease immediately without fetching the whole page', async () => {
+  const ui = setup([json()]); const total = { textContent: '1,005' }, grade = { textContent: '10' };
+  ui.card.dataset.confidence = '50';
+  ui.controller.element.dataset = { csvRegistrationGroup: 'unregistered' };
+  ui.controller.element.querySelectorAll = selector => selector === '[data-target-shop]' ? Array(40).fill({}) : [];
+  ui.controller.element.querySelector = selector => selector.includes('status') ? ui.status : selector === '[data-csv-confidence-remaining-total]' ? total : selector === '[data-csv-confidence-remaining="50"]' ? grade : null;
+  await ui.controller.submit(ui.event);
+  assert.equal(total.textContent, '1,004'); assert.equal(grade.textContent, '9');
+  assert.equal(ui.calls.length, 1);
 });

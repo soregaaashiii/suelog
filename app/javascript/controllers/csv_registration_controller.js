@@ -116,6 +116,13 @@ export default class extends Controller {
       this.revision = (this.revision || 0) + 1
       this.completedSinceRefill = (this.completedSinceRefill || 0) + 1
       this.updateCounts(result.destination === "conflict" ? "conflict" : button.value)
+      const sourceGroup = this.element.dataset?.csvRegistrationGroup || "unregistered"
+      const destinationGroup = result.destination || { register: "registered", undo: "unregistered", exclude: "excluded", restore: "unregistered" }[button.value]
+      const remainingDelta = (destinationGroup === "unregistered" ? 1 : 0) - (sourceGroup === "unregistered" ? 1 : 0)
+      for (const selector of ["[data-csv-confidence-remaining-total]", `[data-csv-confidence-remaining="${card.dataset.confidence}"]`]) {
+        const counter = this.element.querySelector(selector)
+        if (counter) counter.textContent = Math.max(0, Number(counter.textContent.replaceAll(",", "")) + remainingDelta).toLocaleString("en-US")
+      }
       release()
       this.scheduleHeldEnter()
       if (this.completedSinceRefill >= 5 || this.element.querySelectorAll("[data-target-shop]").length <= 10) {
@@ -151,7 +158,7 @@ export default class extends Controller {
       if (!html.querySelector('[data-controller="csv-registration"]')) throw new Error("refresh failed")
       const y = window.scrollY
       if (revision === this.revision) {
-        for (const selector of ["[data-csv-registration-counts]", "[data-csv-registration-pagination]", "[data-csv-registration-ready]"]) {
+        for (const selector of ["[data-csv-registration-counts]", "[data-csv-registration-pagination]", "[data-csv-registration-ready]", "[data-csv-confidence-summary]"]) {
           const current = this.element.querySelector(selector)
           const replacement = html.querySelector(selector)
           if (current && replacement) current.replaceWith(replacement)

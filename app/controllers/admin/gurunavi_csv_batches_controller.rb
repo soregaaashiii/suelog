@@ -138,6 +138,9 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     @executions = @batch.executions.order(id: :desc).limit(20)
     @events = @batch.events.order(id: :desc).limit(50)
     @ready_count = ready_matches.count
+    candidate_ids = GurunaviCsvMatch.where(gurunavi_csv_target_id: @batch.targets.select(:id)).select(:gurunavi_csv_target_id)
+    @candidate_confidence_counts = @batch.targets.where(id: candidate_ids).group(:confidence).count
+    @remaining_confidence_counts = @batch.targets.unregistered.where(id: candidate_ids).group(:confidence).count
     if @classification == "invalid"
       scope = @batch.rows.where(classification: "invalid").order(:line_number)
       @total = scope.count
