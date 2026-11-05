@@ -130,3 +130,38 @@ test('replacement buttons stay disabled until their explicit checkbox is checked
   ui.controller.refreshShortcut(); assert.equal(button.disabled, true);
   checkbox.checked = true; ui.controller.refreshShortcut(); assert.equal(button.disabled, false);
 });
+
+test('saving releases the next Enter before a slow list refill completes', async () => {
+  const ui = setup([json()]);
+  let finishRefill;
+  ui.controller.refill = () => new Promise(resolve => { finishRefill = resolve; });
+  const pending = ui.controller.submit(ui.event);
+  while (!finishRefill) await Promise.resolve();
+  assert.equal(ui.controller.saving, false);
+  assert.equal(ui.card.removed, true);
+  assert.equal(ui.controls[0].disabled, false);
+  finishRefill(); await pending;
+});
+test('full work pages do not fetch the entire list after every registration', async () => {
+  const ui = setup([json()]);
+  ui.controller.element.querySelectorAll = selector => selector === '[data-target-shop]' ? Array(40).fill({}) : [];
+  await ui.controller.submit(ui.event);
+  assert.equal(ui.calls.length, 1);
+  assert.equal(ui.controller.saving, false);
+});
+test('a stale refill cannot reinsert a completed shop or overwrite updated counts', async () => {
+  const ui = setup([]);
+  const candidate = { dataset: { targetShop: '9' } };
+  const parsed = { querySelector: () => ({}), querySelectorAll: () => [candidate] };
+  let finishFetch, replacements = 0, inserted = 0;
+  const context = vm.createContext({ Controller: class {}, refreshedPage: parsed, window: { scrollY: 123, scrollTo() {}, location: { href: '/csv/2' } }, fetch: () => new Promise(resolve => { finishFetch = resolve; }) });
+  vm.runInContext(source.replace('new DOMParser().parseFromString(await fresh.text(), "text/html")', 'globalThis.refreshedPage'), context);
+  const controller = new context.CsvController();
+  controller.revision = 1; controller.removedShopIds = new Set(['9']);
+  controller.element = { querySelector: () => ({ replaceWith() { replacements++; }, after() { inserted++; } }), querySelectorAll: () => Array(40).fill({}) };
+  controller.refreshShortcut = () => {};
+  const refill = controller.refill();
+  controller.revision = 2;
+  finishFetch({ ok: true }); await refill;
+  assert.equal(replacements, 0); assert.equal(inserted, 0);
+});

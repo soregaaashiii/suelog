@@ -58,6 +58,15 @@ export default class extends Controller {
     controls.forEach(control => { control.disabled = true })
     const status = this.element.querySelector("[data-csv-registration-status]")
     const notify = message => { status.textContent = message; status.hidden = false }
+    let released = false
+    const release = () => {
+      if (released) return
+      released = true
+      this.saving = false
+      delete card.dataset.saving
+      controls.forEach((control, i) => { control.disabled = disabled[i] })
+      this.refreshShortcut()
+    }
     notify({ register: "登録中…", undo: "取り消し中…", exclude: "候補をすべて外しています…", restore: "未登録に戻しています…" }[button.value])
     try {
       const response = await fetch(form.action, {
@@ -71,36 +80,69 @@ export default class extends Controller {
       card.remove()
       window.scrollTo({ top: y, behavior: "instant" })
       notify(result.message)
-      // Refresh counts and append the next candidates without replacing forms being edited.
-      try {
-        const fresh = await fetch(window.location.href, { credentials: "same-origin", headers: { Accept: "text/html" } })
-        if (!fresh.ok) throw new Error("refresh failed")
-        const html = new DOMParser().parseFromString(await fresh.text(), "text/html")
-        if (!html.querySelector('[data-controller="csv-registration"]')) throw new Error("refresh failed")
+      this.removedShopIds ||= new Set()
+      this.removedShopIds.add(card.dataset.targetShop)
+      this.revision = (this.revision || 0) + 1
+      this.completedSinceRefill = (this.completedSinceRefill || 0) + 1
+      this.updateCounts(button.value)
+      release()
+      if (this.completedSinceRefill >= 5 || this.element.querySelectorAll("[data-target-shop]").length <= 10) {
+        await this.refill()
+      }
+
+    } catch (error) {
+      notify(error.message || "通信に失敗しました。再登録する前に結果を確認してください。")
+    } finally {
+      release()
+    }
+  }
+
+  updateCounts(decision) {
+    const source = this.element.dataset?.csvRegistrationGroup || "unregistered"
+    const destination = { register: "registered", undo: "unregistered", exclude: "excluded", restore: "unregistered" }[decision]
+    for (const link of this.element.querySelectorAll("[data-csv-group]")) {
+      const delta = (link.dataset?.csvGroup === destination ? 1 : 0) - (link.dataset?.csvGroup === source ? 1 : 0)
+      if (delta) link.textContent = link.textContent.replace(/（(\d+)店舗）/, (_, count) => `（${Math.max(0, Number(count) + delta)}店舗）`)
+    }
+  }
+
+  async refill() {
+    if (this.refilling) return
+    this.refilling = true
+    const revision = this.revision
+    this.completedSinceRefill = 0
+    try {
+      const fresh = await fetch(window.location.href, { credentials: "same-origin", headers: { Accept: "text/html" } })
+      if (!fresh.ok) throw new Error("refresh failed")
+      const html = new DOMParser().parseFromString(await fresh.text(), "text/html")
+      if (!html.querySelector('[data-controller="csv-registration"]')) throw new Error("refresh failed")
+      const y = window.scrollY
+      if (revision === this.revision) {
         for (const selector of ["[data-csv-registration-counts]", "[data-csv-registration-pagination]", "[data-csv-registration-ready]"]) {
           const current = this.element.querySelector(selector)
           const replacement = html.querySelector(selector)
           if (current && replacement) current.replaceWith(replacement)
         }
-        for (const candidate of html.querySelectorAll("[data-target-shop]")) {
-          const id = candidate.dataset.targetShop
-          if (!this.element.querySelector(`[data-target-shop="${id}"]`)) {
-            const last = [...this.element.querySelectorAll("[data-target-shop]")].at(-1)
-            if (last) last.after(candidate)
-            else this.element.querySelector("[data-csv-registration-pagination]").after(candidate)
-          }
-        }
-        window.scrollTo({ top: y, behavior: "instant" })
-      } catch {
-        notify(`${result.message} 件数・次の候補の更新に失敗しました。「進捗・結果を更新」で確認できます。`)
       }
-    } catch (error) {
-      notify(error.message || "通信に失敗しました。再登録する前に結果を確認してください。")
-    } finally {
-      this.saving = false
-      delete card.dataset.saving
-      controls.forEach((control, i) => { control.disabled = disabled[i] })
+      for (const candidate of html.querySelectorAll("[data-target-shop]")) {
+        const id = candidate.dataset.targetShop
+        if (this.removedShopIds?.has(id)) continue
+        if (!this.element.querySelector(`[data-target-shop="${id}"]`)) {
+          const last = [...this.element.querySelectorAll("[data-target-shop]")].at(-1)
+          if (last) last.after(candidate)
+          else this.element.querySelector("[data-csv-registration-pagination]").after(candidate)
+        }
+      }
+      window.scrollTo({ top: y, behavior: "instant" })
       this.refreshShortcut()
+    } catch {
+      const status = this.element.querySelector("[data-csv-registration-status]")
+      status.textContent += " 件数・次の候補の更新に失敗しました。「進捗・結果を更新」で確認できます。"
+      status.hidden = false
+    } finally {
+      this.refilling = false
+      if (revision !== this.revision && (this.completedSinceRefill >= 5 || this.element.querySelectorAll("[data-target-shop]").length <= 10)) this.refill()
     }
   }
+
 }
