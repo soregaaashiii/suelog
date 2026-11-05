@@ -8,7 +8,7 @@ function setup(responses) {
   const controls = [{ disabled: false }, { disabled: true }];
   const card = { dataset: {}, querySelectorAll: () => controls, removed: false, remove() { this.removed = true; } };
   const status = { textContent: '', hidden: true };
-  const context = vm.createContext({ Controller: class {}, document: { querySelector: () => ({ content: 'csrf' }) }, window: { scrollY: 420, scrollTo: value => scrolls.push(value.top), location: { href: 'https://example.test/csv/2?page=2' } },
+  const context = vm.createContext({ setTimeout, clearTimeout, Controller: class {}, document: { querySelector: () => ({ content: 'csrf' }) }, window: { scrollY: 420, scrollTo: value => scrolls.push(value.top), location: { href: 'https://example.test/csv/2?page=2' } },
     FormData: class { constructor() { this.data = {}; } set(k, v) { this.data[k] = v; } },
     fetch: async (url, options) => { calls.push({ url, options }); const response = responses.shift(); if (response instanceof Error) throw response; return response; },
     DOMParser: class { parseFromString() { return { querySelector: () => null }; } }
@@ -67,7 +67,7 @@ test('refill replaces counts and appends new cards without replacing remaining e
   // The HTML parser stub returns a normal refreshed page; existing cards must be kept.
   const parsed = { querySelector: () => ({}), querySelectorAll: () => [existing, next] };
   const sourceWithParser = source.replace('new DOMParser().parseFromString(await fresh.text(), "text/html")', 'globalThis.refreshedPage');
-  const context = vm.createContext({ Controller: class {}, refreshedPage: parsed, document: { querySelector: () => ({ content: 'csrf' }) }, window: { scrollY: 420, scrollTo: value => ui.scrolls.push(value.top), location: { href: '/csv/2' } }, FormData: class { set() {} }, fetch: async () => ui.calls.length++ === 0 ? json() : { ok: true } });
+  const context = vm.createContext({ setTimeout, clearTimeout, Controller: class {}, refreshedPage: parsed, document: { querySelector: () => ({ content: 'csrf' }) }, window: { scrollY: 420, scrollTo: value => ui.scrolls.push(value.top), location: { href: '/csv/2' } }, FormData: class { set() {} }, fetch: async () => ui.calls.length++ === 0 ? json() : { ok: true } });
   vm.runInContext(sourceWithParser, context);
   const controller = new context.CsvController(); controller.element = ui.controller.element;
   await controller.submit(ui.event);
@@ -154,7 +154,7 @@ test('a stale refill cannot reinsert a completed shop or overwrite updated count
   const candidate = { dataset: { targetShop: '9' } };
   const parsed = { querySelector: () => ({}), querySelectorAll: () => [candidate] };
   let finishFetch, replacements = 0, inserted = 0;
-  const context = vm.createContext({ Controller: class {}, refreshedPage: parsed, window: { scrollY: 123, scrollTo() {}, location: { href: '/csv/2' } }, fetch: () => new Promise(resolve => { finishFetch = resolve; }) });
+  const context = vm.createContext({ setTimeout, clearTimeout, Controller: class {}, refreshedPage: parsed, window: { scrollY: 123, scrollTo() {}, location: { href: '/csv/2' } }, fetch: () => new Promise(resolve => { finishFetch = resolve; }) });
   vm.runInContext(source.replace('new DOMParser().parseFromString(await fresh.text(), "text/html")', 'globalThis.refreshedPage'), context);
   const controller = new context.CsvController();
   controller.revision = 1; controller.removedShopIds = new Set(['9']);
@@ -164,4 +164,28 @@ test('a stale refill cannot reinsert a completed shop or overwrite updated count
   controller.revision = 2;
   finishFetch({ ok: true }); await refill;
   assert.equal(replacements, 0); assert.equal(inserted, 0);
+});
+
+test('held Enter sends one registration at a time and releasing it cancels the next', () => {
+  const timers = new Map(); let nextTimer = 0, submitted = 0, controller;
+  const button = { disabled: false, form: { querySelector: () => null, requestSubmit() { assert.equal(!!controller.saving, false); controller.saving = true; submitted++; } } };
+  const context = vm.createContext({ Controller: class {}, document: { visibilityState: 'visible' }, setTimeout(fn) { timers.set(++nextTimer, fn); return nextTimer; }, clearTimeout(id) { timers.delete(id); } });
+  vm.runInContext(source, context); controller = new context.CsvController();
+  controller.element = { querySelector: () => ({}), querySelectorAll: () => [button] };
+  const event = { type: 'keydown', key: 'Enter', target: { closest: () => null }, preventDefault() {} };
+  controller.registerFirst(event); assert.equal(submitted, 1);
+  controller.scheduleHeldEnter(); assert.equal(timers.size, 0);
+  controller.saving = false; controller.scheduleHeldEnter(); assert.equal(timers.size, 1);
+  const callback = [...timers.values()][0]; timers.clear(); callback();
+  assert.equal(submitted, 2); assert.equal(controller.saving, true);
+  controller.saving = false; controller.scheduleHeldEnter();
+  controller.stopHeldEnter({ type: 'keyup', key: 'Enter' });
+  assert.equal(timers.size, 0); assert.equal(controller.enterHeld, false);
+});
+test('registration errors stop held Enter and blur or editing stop it too', async () => {
+  const ui = setup([json(false, '競合')]); ui.controller.enterHeld = true;
+  await ui.controller.submit(ui.event); assert.equal(ui.controller.enterHeld, false);
+  ui.controller.enterHeld = true; ui.controller.stopHeldEnter({ type: 'blur' }); assert.equal(ui.controller.enterHeld, false);
+  ui.controller.enterHeld = true; ui.controller.stopOnEditing({ target: { closest: () => ({}) } }); assert.equal(ui.controller.enterHeld, false);
+  ui.controller.enterHeld = true; ui.controller.disconnect(); assert.equal(ui.controller.enterHeld, false);
 });

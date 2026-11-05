@@ -5,6 +5,32 @@ export default class extends Controller {
     this.refreshShortcut()
   }
 
+  disconnect() {
+    this.stopHeldEnter()
+  }
+
+  stopHeldEnter(event) {
+    if (event?.type === "keyup" && event.key !== "Enter") return
+    if (event?.type === "visibilitychange" && document.visibilityState !== "hidden") return
+    this.enterHeld = false
+    clearTimeout(this.enterTimer)
+    this.enterTimer = null
+  }
+
+  stopOnEditing(event) {
+    if (event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], dialog')) this.stopHeldEnter()
+  }
+
+  scheduleHeldEnter() {
+    if (!this.enterHeld || this.saving || this.enterTimer || document.visibilityState === "hidden") return
+    if (!this.firstRegistrableButton()) return
+    this.enterTimer = setTimeout(() => {
+      this.enterTimer = null
+      if (!this.enterHeld || this.saving) return
+      this.registerFirst({ type: "held", preventDefault() {} })
+    }, 80)
+  }
+
   firstRegistrableButton() {
     return [...this.element.querySelectorAll('button[name="decision"][value="register"]')][0]
   }
@@ -25,8 +51,13 @@ export default class extends Controller {
   registerFirst(event) {
     if (!this.element.querySelector("[data-csv-shortcut-button]")) return
     if (event.type === "keydown") {
-      if (event.key !== "Enter" || event.isComposing || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.defaultPrevented) return
-      if (event.target.closest('input, textarea, select, button, a, summary, [contenteditable]:not([contenteditable="false"]), [role="textbox"], dialog')) return
+      if (event.key !== "Enter" || event.isComposing || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.defaultPrevented) return
+      if (event.repeat) {
+        if (this.enterHeld) event.preventDefault()
+        return
+      }
+      if (event.target.closest('input, textarea, select, button:not([data-csv-shortcut-button]), a, summary, [contenteditable]:not([contenteditable="false"]), [role="textbox"], dialog')) return
+      this.enterHeld = true
     }
     event.preventDefault()
     if (this.saving) return
@@ -86,11 +117,13 @@ export default class extends Controller {
       this.completedSinceRefill = (this.completedSinceRefill || 0) + 1
       this.updateCounts(button.value)
       release()
+      this.scheduleHeldEnter()
       if (this.completedSinceRefill >= 5 || this.element.querySelectorAll("[data-target-shop]").length <= 10) {
         await this.refill()
       }
 
     } catch (error) {
+      this.stopHeldEnter()
       notify(error.message || "通信に失敗しました。再登録する前に結果を確認してください。")
     } finally {
       release()
@@ -137,10 +170,12 @@ export default class extends Controller {
       this.refreshShortcut()
     } catch {
       const status = this.element.querySelector("[data-csv-registration-status]")
+      this.stopHeldEnter()
       status.textContent += " 件数・次の候補の更新に失敗しました。「進捗・結果を更新」で確認できます。"
       status.hidden = false
     } finally {
       this.refilling = false
+      this.scheduleHeldEnter()
       if (revision !== this.revision && (this.completedSinceRefill >= 5 || this.element.querySelectorAll("[data-target-shop]").length <= 10)) this.refill()
     }
   }
