@@ -60,7 +60,7 @@ module GurunaviCsv
         end
         url = RestaurantUrlSearch::Provider.new("gurunavi").canonical_url(row.csv_url)
         return conflict(match, "ぐるなび店舗詳細URLが不正です") unless url
-        return conflict(match, "同じぐるなびURLが他店舗に登録済みです") if Shop.where(gurunavi_csv_url_key: url).where.not(id: shop.id).exists?
+        return conflict(match, "同じぐるなびURLが他店舗に登録済みです", url_taken: true) if Shop.where(gurunavi_csv_url_key: url).where.not(id: shop.id).exists?
         if RestaurantUrlSearch::Provider.new("gurunavi").canonical_url(shop.gurunavi_url) == url
           match.update!(state: "skipped", reason: "同じ店舗URLが登録済みのためスキップ")
           subject.update!(state: "skipped", selected_match_id: match.id)
@@ -100,9 +100,9 @@ module GurunaviCsv
         event(match, "rolled_back", before: match.after_values, after: Snapshot.url_values(shop))
       end
     end
-    def conflict(match, reason, rollback: false)
+    def conflict(match, reason, rollback: false, url_taken: false)
       match.update!(state: rollback ? "rollback_conflict" : "conflict", reason: reason)
-      (match.gurunavi_csv_target || match.gurunavi_csv_row).update!(state: rollback ? "rollback_conflict" : "conflict")
+      (match.gurunavi_csv_target || match.gurunavi_csv_row).update!(state: rollback ? "rollback_conflict" : url_taken && match.gurunavi_csv_target ? "url_conflict" : "conflict")
       event(match, rollback ? "rollback_conflict" : "conflict", reason: reason)
     end
     def event(match, action, payload)

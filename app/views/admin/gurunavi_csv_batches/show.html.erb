@@ -1,7 +1,7 @@
 <% if @batch.shop_first? %>
   <div data-controller="csv-registration" data-csv-registration-group="<%= %w[registered excluded].include?(@classification) ? @classification : 'unregistered' %>" data-action="submit->csv-registration#submit change->csv-registration#refreshShortcut keydown@window->csv-registration#registerFirst keyup@window->csv-registration#stopHeldEnter blur@window->csv-registration#stopHeldEnter visibilitychange@document->csv-registration#stopHeldEnter focusin@window->csv-registration#stopOnEditing">
     <div data-csv-registration-status role="status" aria-live="polite" style="position:fixed;bottom:16px;right:16px;z-index:1000;background:white;padding:12px;border:1px solid #aaa;" hidden></div>
-    <% unless %w[registered excluded invalid].include?(@classification) %>
+    <% unless %w[registered excluded invalid url_conflict].include?(@classification) %>
       <div style="position:sticky;top:8px;z-index:900;background:white;border:1px solid #aaa;padding:10px;" data-csv-shortcut>
         <button type="button" data-csv-shortcut-button data-action="click->csv-registration#registerFirst">Enterで先頭を登録・長押しで連続登録</button>
         <span data-csv-shortcut-name></span>
