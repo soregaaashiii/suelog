@@ -3,6 +3,19 @@
 <p><strong><%= @batch.state %> / <%= @batch.phase %></strong>：<%= @batch.message %><br>
 参照CSV：<%= @batch.filename %>・全<%= @batch.total_rows %>行 ／ <strong>対象：吸えログ <%= @batch.target_rows %>店舗</strong> ／ <%= @batch.phase == "parse" ? "CSV読込済み #{@batch.processed_rows}行" : "照合済み #{@batch.processed_rows}店舗" %><br>
 <%= @batch.trial_mode? ? "試行：吸えログ側の先頭100店舗まで" : "全件：吸えログ側の対象店舗すべて" %> ／ エリア：<%= @batch.area_filter.presence || "全エリア" %></p>
+<div data-csv-confidence-summary style="padding:10px;border:1px solid #ddd;background:#fff;margin:10px 0;">
+  <strong>候補：全体 <%= number_with_delimiter(@candidate_confidence_counts.values.sum) %>店舗 ／ 未登録 <span data-csv-confidence-remaining-total><%= number_with_delimiter(@remaining_confidence_counts.values.sum) %></span>店舗</strong>
+  <table style="margin-top:8px;border-collapse:collapse;" cellpadding="5">
+    <thead><tr><th style="text-align:left;">確度</th><th>候補全体</th><th>未登録</th></tr></thead>
+    <tbody>
+      <% [400, 300, 200, 100, 50, 0].each do |score| %>
+        <% next if score.zero? && @candidate_confidence_counts[score].to_i.zero? %>
+        <tr><td><%= score.zero? ? "未評価" : GurunaviCsv::Confidence.label(score) %></td><td><%= number_with_delimiter(@candidate_confidence_counts[score].to_i) %>店舗</td><td><span data-csv-confidence-remaining="<%= score %>"><%= number_with_delimiter(@remaining_confidence_counts[score].to_i) %></span>店舗</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+  <small>店舗単位で集計。複数候補は最も高い確度で1店舗と数えます。候補全体には登録・除外・競合済みも含みます。</small>
+</div>
 <p>対象は吸えログの公開中店舗（承認済み・保留ではない店舗）です。各店舗について<strong>CSV全体</strong>からぐるなび候補を探します。CSVにしか存在しない店舗は通常一覧と判定件数に含めません。</p>
 <p><strong>一覧を表示しただけではURLを更新しません。</strong>候補の「登録する」で確認と登録が完了し、間違えた場合は「取り消す」で戻せます。「CSV内に候補なし」は、このCSVから候補が見つからなかった意味です。ぐるなび未掲載とは断定しません。</p>
 <div data-csv-registration-counts style="display:flex; gap:12px; flex-wrap:wrap; margin:12px 0;">
@@ -61,7 +74,7 @@
 <% else %>
   <% @targets.each do |target| %>
     <% candidates = target.matches.to_a.sort_by { |m| [-m.confidence.to_i, m.id] }; snapshot = target.shop_snapshot; current = @shops[target.shop_id]; applied = candidates.any? { |m| %w[applied rollback_conflict].include?(m.state) } %>
-    <section id="shop-<%= target.shop_id %>" data-target-shop="<%= target.shop_id %>" style="border:1px solid #aaa; border-radius:8px; margin:18px 0; padding:12px;">
+    <section id="shop-<%= target.shop_id %>" data-target-shop="<%= target.shop_id %>" data-confidence="<%= target.confidence %>" style="border:1px solid #aaa; border-radius:8px; margin:18px 0; padding:12px;">
       <h2 style="font-size:18px;">吸えログ 店舗ID <%= target.shop_id %>：<%= snapshot["name"] %></h2>
       <p><strong><%= target.state == "applied" ? "登録済み" : target.state == "confirmed" ? "登録待ち" : GurunaviCsvTarget::CLASSIFICATIONS.fetch(target.classification, target.classification) %></strong> ／ <%= GurunaviCsv::Confidence.label(target.confidence) %> ／ アクセス数：<%= number_with_delimiter(target.access_count.to_i) %></p>
       <% if @batch.state == "ready" && !applied && @classification != "registered" %>
