@@ -245,7 +245,7 @@ class GurunaviCsvTest < ActiveSupport::TestCase
     assert_equal 2, batch.targets.where(state: "confirmed").count
     execute(batch, "apply")
     assert_equal 1, batch.targets.where(state: "applied").count
-    assert_equal 1, batch.targets.where(state: "conflict").count
+    assert_equal 1, batch.targets.where(state: "url_conflict").count
     assert_equal 1, Shop.where(gurunavi_csv_url_key: @url).count
   end
 

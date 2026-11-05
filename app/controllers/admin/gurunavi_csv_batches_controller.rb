@@ -132,6 +132,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     @counts = @batch.targets.unregistered.group(:classification).count
     @counts["registered"] = @batch.targets.registered.count
     @counts["excluded"] = @batch.targets.excluded.count
+    @url_conflict_count = @batch.targets.url_conflicts.count
     @unregistered_count = @batch.targets.unregistered.count
     @invalid_count = @batch.rows.where(classification: "invalid").count
     @executions = @batch.executions.order(id: :desc).limit(20)
@@ -147,9 +148,10 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       scope = case @classification
       when "registered" then @batch.targets.registered
       when "excluded" then @batch.targets.excluded
+      when "url_conflict" then @batch.targets.url_conflicts
       else @batch.targets.unregistered
       end
-      scope = scope.where(classification: @classification) if @classification.present? && !%w[registered excluded].include?(@classification)
+      scope = scope.where(classification: @classification) if @classification.present? && !%w[registered excluded url_conflict].include?(@classification)
       if @q.present?
         like = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
         shop_ids = Shop.where("name LIKE :q OR address LIKE :q", q: like).select(:id)
@@ -195,7 +197,8 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       success = match.state == (kind == "apply" ? "applied" : "rolled_back") || (kind == "apply" && match.state == "skipped")
       message = success ? (kind == "apply" ? "登録しました。間違えた場合は「取り消す」で戻せます。" : "登録を取り消しました。別の候補を選んで登録できます。") : (execution.reload.message.presence if execution.state == "failed") || match.reason
       if request.format.json?
-        return render json: { success: success, message: message, shop_id: target.shop_id }, status: success ? :ok : :unprocessable_entity
+        url_conflict = target.reload.state == "url_conflict"
+        return render json: { success: success, remove_from_list: url_conflict, destination: url_conflict ? "conflict" : nil, message: url_conflict ? "他店舗に登録済みのため、競合一覧へ移しました。" : message, shop_id: target.shop_id }, status: success ? :ok : :unprocessable_entity
       end
       redirect_to admin_gurunavi_csv_batch_path(@batch, classification: params[:classification], state: params[:state], q: params[:q], page: params[:page], anchor: "shop-#{target.shop_id}"), status: :see_other, flash: { (success ? :admin_notice : :admin_alert) => message }
     else

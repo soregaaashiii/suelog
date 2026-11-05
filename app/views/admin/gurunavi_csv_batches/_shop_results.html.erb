@@ -9,7 +9,8 @@
   <% [["", "未登録", @unregistered_count], ["registered", "登録済み", @counts["registered"]], ["excluded", "除外済み", @counts["excluded"]]].each do |key, label, count| %>
     <%= link_to "#{label}（#{count.to_i}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: key.presence, q: @q.presence), data: { csv_group: key.presence || "unregistered" }, aria: { current: @classification == key ? "page" : nil }, style: "padding:8px 14px;border:1px solid #aaa;border-radius:6px;#{@classification == key ? 'background:#111;color:white;font-weight:bold;' : ''}" %>
   <% end %>
-  <details><summary>照合の内訳</summary>
+  <details><summary>照合の内訳・競合の確認</summary>
+    <%= link_to "他店舗URLとの競合（#{@url_conflict_count}店舗）", admin_gurunavi_csv_batch_path(@batch, classification: "url_conflict") %>
     <% GurunaviCsvTarget::CLASSIFICATIONS.except("registered").each do |key, label| %>
       <p><%= "#{label}（#{@counts[key].to_i}店舗）" %></p>
     <% end %>

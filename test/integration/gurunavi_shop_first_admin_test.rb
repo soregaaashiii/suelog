@@ -291,6 +291,27 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     assert response.parsed_body["success"]
     assert_equal "https://r.gnavi.co.jp/store0001/", @shop.reload.gurunavi_url
   end
+  test "URL ownership errors leave the work list and remain in the conflict archive" do
+    owner = Shop.create!(name: "登録先の別店舗", address: "大阪府大阪市北区中津8-3-2", genre: "居酒屋", last_confirmed_on: Date.current, approved: true, gurunavi_url: "https://r.gnavi.co.jp/store0001/")
+    batch = upload
+    target = batch.targets.find_by!(shop_id: @shop.id)
+    match = target.matches.sole
+    post review_target_admin_gurunavi_csv_batch_path(batch, target_id: target.id), headers: @headers.merge("ACCEPT" => "application/json"), params: { decision: "register", match_id: match.id }
+    assert_response :unprocessable_entity
+    assert_equal true, response.parsed_body["remove_from_list"]
+    assert_equal false, response.parsed_body["success"]
+    assert_equal "conflict", response.parsed_body["destination"]
+    assert_equal "url_conflict", target.reload.state
+    assert_nil @shop.reload.gurunavi_url
+    assert_equal "https://r.gnavi.co.jp/store0001/", owner.reload.gurunavi_url
+    get admin_gurunavi_csv_batch_path(batch), headers: @headers
+    assert_select "section[data-target-shop='#{@shop.id}']", count: 0
+    get admin_gurunavi_csv_batch_path(batch, classification: "url_conflict"), headers: @headers
+    assert_select "section[data-target-shop='#{@shop.id}']", count: 1
+    assert_select "[data-csv-shortcut-button]", count: 0
+    target.update!(state: "conflict")
+    assert batch.targets.url_conflicts.exists?(id: target.id), "historical errors are archived too"
+  end
   test "reusing a historical CSV preserves old audit and confirmation data" do
     batch = upload
     batch.update!(matching_basis: "csv")

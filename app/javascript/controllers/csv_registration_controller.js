@@ -106,7 +106,7 @@ export default class extends Controller {
       }).catch(() => { throw new Error("通信に失敗しました。再登録する前に「進捗・結果を更新」で結果を確認してください。") })
       if (!response.headers.get("content-type")?.includes("application/json")) throw new Error("結果を確認できませんでした。再登録する前に「進捗・結果を更新」で確認してください。")
       const result = await response.json()
-      if (!response.ok || !result.success) throw new Error(result.message || "処理できませんでした。")
+      if ((!response.ok || !result.success) && !result.remove_from_list) throw new Error(result.message || "処理できませんでした。")
       const y = window.scrollY
       card.remove()
       window.scrollTo({ top: y, behavior: "instant" })
@@ -115,7 +115,7 @@ export default class extends Controller {
       this.removedShopIds.add(card.dataset.targetShop)
       this.revision = (this.revision || 0) + 1
       this.completedSinceRefill = (this.completedSinceRefill || 0) + 1
-      this.updateCounts(button.value)
+      this.updateCounts(result.destination === "conflict" ? "conflict" : button.value)
       release()
       this.scheduleHeldEnter()
       if (this.completedSinceRefill >= 5 || this.element.querySelectorAll("[data-target-shop]").length <= 10) {
@@ -132,7 +132,7 @@ export default class extends Controller {
 
   updateCounts(decision) {
     const source = this.element.dataset?.csvRegistrationGroup || "unregistered"
-    const destination = { register: "registered", undo: "unregistered", exclude: "excluded", restore: "unregistered" }[decision]
+    const destination = { register: "registered", undo: "unregistered", exclude: "excluded", restore: "unregistered", conflict: "conflict" }[decision]
     for (const link of this.element.querySelectorAll("[data-csv-group]")) {
       const delta = (link.dataset?.csvGroup === destination ? 1 : 0) - (link.dataset?.csvGroup === source ? 1 : 0)
       if (delta) link.textContent = link.textContent.replace(/（(\d+)店舗）/, (_, count) => `（${Math.max(0, Number(count) + delta)}店舗）`)

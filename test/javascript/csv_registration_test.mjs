@@ -189,3 +189,14 @@ test('registration errors stop held Enter and blur or editing stop it too', asyn
   ui.controller.enterHeld = true; ui.controller.stopOnEditing({ target: { closest: () => ({}) } }); assert.equal(ui.controller.enterHeld, false);
   ui.controller.enterHeld = true; ui.controller.disconnect(); assert.equal(ui.controller.enterHeld, false);
 });
+
+test('URL ownership errors move the card away and allow held registration to continue', async () => {
+  const ui = setup([{ ok: false, headers: { get: () => 'application/json' }, json: async () => ({ success: false, remove_from_list: true, destination: 'conflict', message: '競合一覧へ移しました' }) }, new Error('offline')]);
+  ui.controller.element.querySelectorAll = selector => selector === '[data-target-shop]' ? Array(40).fill({}) : [];
+  ui.controller.enterHeld = true;
+  await ui.controller.submit(ui.event);
+  assert.equal(ui.card.removed, true);
+  assert.equal(ui.controller.enterHeld, true);
+  assert.equal(ui.controller.saving, false);
+  assert.match(ui.status.textContent, /競合一覧/);
+});
