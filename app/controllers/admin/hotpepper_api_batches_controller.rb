@@ -123,13 +123,7 @@ class Admin::HotpepperApiBatchesController < Admin::BaseController
       @page = [ @page, [ (@total / 50.0).ceil, 1 ].max ].min
       access_counts = PageView.where(is_bot: [ false, nil ]).where.not(shop_id: nil)
         .group(:shop_id).select("shop_id, COUNT(*) AS views_count")
-      ordering = if @classification == "excluded"
-        "COALESCE(hotpepper_api_targets.excluded_at, hotpepper_api_targets.updated_at) DESC, hotpepper_api_targets.id DESC"
-      elsif @classification == "registered"
-        "COALESCE((SELECT MAX(recent.applied_at) FROM hotpepper_api_matches recent WHERE recent.hotpepper_api_target_id = hotpepper_api_targets.id AND recent.state IN ('applied', 'rollback_conflict')), hotpepper_api_targets.created_at) DESC, hotpepper_api_targets.id DESC"
-      else
-        "CASE WHEN EXISTS (SELECT 1 FROM hotpepper_api_matches WHERE hotpepper_api_matches.hotpepper_api_target_id = hotpepper_api_targets.id) THEN 0 ELSE 1 END ASC, hotpepper_api_targets.confidence DESC, COALESCE(csv_access.views_count, 0) DESC, hotpepper_api_targets.shop_id ASC"
-      end
+      ordering = AffiliateRegistration::Ordering.call("hotpepper_api", @classification)
       scope = scope.joins("LEFT JOIN (#{access_counts.to_sql}) csv_access ON csv_access.shop_id = hotpepper_api_targets.shop_id")
         .select("hotpepper_api_targets.*", "COALESCE(csv_access.views_count, 0) AS access_count")
         .order(Arel.sql(ordering))
