@@ -44,4 +44,32 @@ class HotpepperApiTest < ActiveSupport::TestCase
   test "no results remain unconfirmed" do
     assert_equal "review", Client.new(shop, []).call[:state]
   end
+  class PagedClient < RestaurantUrlSearch::HotpepperApi
+    attr_reader :requests
+    def initialize(shop, pages)
+      super(shop)
+      @pages, @requests = pages, []
+    end
+    def fetch_page(params)
+      @requests << params
+      @pages.fetch(params.fetch(:start, 1))
+    end
+  end
+
+  test "bulk candidate search retrieves later API pages before matching" do
+    pages = {
+      1 => { "results_available" => 101, "shop" => [{ "id" => "J000000001", "name" => "別店", "address" => "大阪府大阪市北区梅田9-9-9" }] },
+      101 => { "results_available" => 101, "shop" => records.map { |row| row.merge("id" => "J003451218") } }
+    }
+    client = PagedClient.new(shop, pages)
+    found = client.records_for_matching
+    assert_equal 2, found.size
+    assert_equal [1, 101], client.requests.map { |params| params[:start] }
+  end
+
+  test "truncated broad query is never treated as an exhaustive candidate set" do
+    client = PagedClient.new(shop, {1 => { "results_available" => 1001, "shop" => records }})
+    assert_raises(RestaurantUrlSearch::HotpepperApi::TooManyCandidates) { client.records_for_matching }
+  end
+
 end

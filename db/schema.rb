@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_04_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_06_000100) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -206,6 +206,119 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_110000) do
     t.index ["name"], name: "index_gurunavi_csv_write_locks_on_name", unique: true
   end
 
+  create_table "hotpepper_api_batches", force: :cascade do |t|
+    t.string "area_filter"
+    t.datetime "created_at", null: false
+    t.string "filename", null: false
+    t.string "matching_basis", default: "shop", null: false
+    t.text "message"
+    t.string "phase", default: "queued", null: false
+    t.integer "processed_rows", default: 0, null: false
+    t.string "sha256", null: false
+    t.binary "source_bytes", null: false
+    t.string "state", default: "queued", null: false
+    t.integer "target_rows", default: 0, null: false
+    t.integer "total_rows", default: 0, null: false
+    t.boolean "trial_mode", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.index ["sha256"], name: "index_hotpepper_api_batches_on_sha256"
+  end
+
+  create_table "hotpepper_api_events", force: :cascade do |t|
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.integer "hotpepper_api_batch_id", null: false
+    t.bigint "hotpepper_api_execution_id"
+    t.bigint "hotpepper_api_match_id"
+    t.bigint "hotpepper_api_row_id"
+    t.text "payload"
+    t.datetime "updated_at", null: false
+    t.index ["hotpepper_api_batch_id"], name: "index_hotpepper_api_events_on_hotpepper_api_batch_id"
+  end
+
+  create_table "hotpepper_api_executions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "heartbeat_at"
+    t.integer "hotpepper_api_batch_id", null: false
+    t.string "kind", null: false
+    t.text "message"
+    t.integer "processed_count", default: 0, null: false
+    t.string "run_token", null: false
+    t.text "selection"
+    t.string "state", default: "queued", null: false
+    t.integer "total_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["hotpepper_api_batch_id"], name: "index_hotpepper_api_executions_on_hotpepper_api_batch_id"
+  end
+
+  create_table "hotpepper_api_matches", force: :cascade do |t|
+    t.text "after_values"
+    t.boolean "allow_replace", default: false, null: false
+    t.datetime "applied_at"
+    t.string "applied_version"
+    t.text "before_values"
+    t.string "classification", null: false
+    t.integer "confidence", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "hotpepper_api_row_id", null: false
+    t.integer "hotpepper_api_target_id"
+    t.text "reason"
+    t.datetime "rolled_back_at"
+    t.bigint "shop_id", null: false
+    t.text "shop_snapshot"
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["hotpepper_api_row_id", "shop_id"], name: "index_hapi_match_identity", unique: true
+    t.index ["hotpepper_api_row_id"], name: "index_hotpepper_api_matches_on_hotpepper_api_row_id"
+    t.index ["hotpepper_api_target_id"], name: "index_hotpepper_api_matches_on_hotpepper_api_target_id"
+    t.index ["shop_id"], name: "index_hotpepper_api_matches_on_shop_id"
+  end
+
+  create_table "hotpepper_api_rows", force: :cascade do |t|
+    t.text "canonical_url"
+    t.string "classification", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.text "csv_address"
+    t.string "csv_name"
+    t.text "csv_url"
+    t.integer "hotpepper_api_batch_id", null: false
+    t.integer "line_number", null: false
+    t.string "municipality"
+    t.text "normalized_address"
+    t.string "normalized_name"
+    t.text "raw_fields"
+    t.text "raw_row"
+    t.text "reason"
+    t.bigint "selected_match_id"
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["hotpepper_api_batch_id", "canonical_url"], name: "index_hapi_rows_url", unique: true
+    t.index ["hotpepper_api_batch_id", "classification"], name: "index_hapi_rows_class"
+    t.index ["hotpepper_api_batch_id", "line_number"], name: "index_hapi_rows_line", unique: true
+    t.index ["hotpepper_api_batch_id", "normalized_name", "normalized_address"], name: "index_hapi_rows_identity"
+  end
+
+  create_table "hotpepper_api_targets", force: :cascade do |t|
+    t.string "classification", default: "pending", null: false
+    t.integer "confidence", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "hotpepper_api_batch_id", null: false
+    t.text "reason"
+    t.bigint "selected_match_id"
+    t.bigint "shop_id", null: false
+    t.text "shop_snapshot"
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["hotpepper_api_batch_id", "classification"], name: "index_hapi_target_class"
+    t.index ["hotpepper_api_batch_id", "shop_id"], name: "index_hapi_target_shop", unique: true
+    t.index ["hotpepper_api_batch_id"], name: "index_hotpepper_api_targets_on_hotpepper_api_batch_id"
+  end
+
+  create_table "hotpepper_api_write_locks", force: :cascade do |t|
+    t.string "name", null: false
+    t.index ["name"], name: "index_hotpepper_api_write_locks_on_name", unique: true
+  end
+
   create_table "page_views", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_hash"
@@ -378,6 +491,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_110000) do
     t.string "hold_reason"
     t.text "holiday_hours_text"
     t.text "hotpepper_affiliate_url"
+    t.string "hotpepper_api_identity_key"
+    t.string "hotpepper_api_url_key"
     t.string "hotpepper_url"
     t.json "import_metadata", default: {}, null: false
     t.string "import_source"
@@ -431,6 +546,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_110000) do
     t.index ["gurunavi_csv_identity_key"], name: "index_shops_on_gurunavi_csv_identity_key"
     t.index ["gurunavi_csv_url_key"], name: "index_shops_on_gurunavi_csv_url_key"
     t.index ["hold_reason"], name: "index_shops_on_hold_reason"
+    t.index ["hotpepper_api_identity_key"], name: "index_shops_on_hotpepper_api_identity_key"
+    t.index ["hotpepper_api_url_key"], name: "index_shops_on_hotpepper_api_url_key"
     t.index ["name", "address", "approved"], name: "index_shops_on_name_address_approved"
     t.index ["normalized_phone"], name: "index_shops_on_normalized_phone"
     t.index ["on_hold"], name: "index_shops_on_on_hold"
@@ -460,6 +577,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_110000) do
   add_foreign_key "gurunavi_csv_matches", "gurunavi_csv_targets"
   add_foreign_key "gurunavi_csv_rows", "gurunavi_csv_batches"
   add_foreign_key "gurunavi_csv_targets", "gurunavi_csv_batches"
+  add_foreign_key "hotpepper_api_events", "hotpepper_api_batches"
+  add_foreign_key "hotpepper_api_executions", "hotpepper_api_batches"
+  add_foreign_key "hotpepper_api_matches", "hotpepper_api_rows"
+  add_foreign_key "hotpepper_api_matches", "hotpepper_api_targets"
+  add_foreign_key "hotpepper_api_rows", "hotpepper_api_batches"
+  add_foreign_key "hotpepper_api_targets", "hotpepper_api_batches"
   add_foreign_key "page_views", "shops"
   add_foreign_key "restaurant_url_search_runs", "shops"
   add_foreign_key "review_reports", "reviews"

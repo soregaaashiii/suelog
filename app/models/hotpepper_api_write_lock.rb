@@ -1,0 +1,2 @@
+class HotpepperApiWriteLock < ApplicationRecord
+end
