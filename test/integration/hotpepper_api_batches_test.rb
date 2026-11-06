@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
   setup do
@@ -139,6 +140,25 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     assert_equal "rollback_conflict", target.reload.state
     assert_equal "登録後の編集", @shop.reload.name
     assert @shop.hotpepper_url.present?
+  end
+
+  test "API wait releases database connection lease outside a transaction" do
+    batch = collect([])
+    execution = batch.executions.sole
+    importer = HotpepperApi::Importer.new(batch, execution, execution.run_token)
+    pool = ActiveRecord::Base.connection_pool
+    released = false
+    lease = Struct.new(:transaction_open?).new(false)
+    pool.stub(:active_connection?, lease) do
+      pool.stub(:release_connection, -> { released = true }) { importer.release_connection }
+    end
+    assert released
+    released = false
+    lease = Struct.new(:transaction_open?).new(true)
+    pool.stub(:active_connection?, lease) do
+      pool.stub(:release_connection, -> { released = true }) { importer.release_connection }
+    end
+    assert_not released, "caller transaction must stay pinned"
   end
 
 end
