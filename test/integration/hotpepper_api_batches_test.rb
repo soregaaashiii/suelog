@@ -157,4 +157,20 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     assert_not pool.released, "caller transaction must stay pinned"
   end
 
+  test "active scan can safely restart with a new token while retaining completed stores" do
+    batch = collect([])
+    execution = batch.executions.sole
+    old_token = execution.run_token
+    execution.update!(state: "running")
+    post resume_admin_hotpepper_api_batch_path(batch, execution_id: execution.id), headers: @headers
+    assert_response :see_other
+    assert_not_equal old_token, execution.reload.run_token
+    assert_equal "queued", execution.state
+    assert_equal 1, batch.targets.where(shop_id: @shop.id).count
+    assert_equal "unmatched", batch.targets.find_by!(shop_id: @shop.id).classification
+    assert_raises(HotpepperApi::Importer::Superseded) do
+      HotpepperApi::Importer.new(batch, execution, old_token).checkpoint { flunk "old scan must not write" }
+    end
+  end
+
 end
