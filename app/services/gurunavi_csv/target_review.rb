@@ -20,8 +20,8 @@ module GurunaviCsv
               target.matches.update_all(state: "excluded", allow_replace: false, updated_at: Time.current)
               target.update!(state: "excluded", selected_match_id: nil, excluded_at: Time.current)
             else
-              raise Review::Conflict, "除外済みの店舗ではありません" unless target.state == "excluded"
-              target.matches.where(state: "excluded").update_all(state: "pending", allow_replace: false, updated_at: Time.current)
+              raise Review::Conflict, "除外済みの店舗ではありません" unless %w[excluded held].include?(target.state)
+              target.matches.where(state: %w[excluded held]).update_all(state: "pending", allow_replace: false, updated_at: Time.current)
               target.update!(state: "pending", selected_match_id: nil, excluded_at: nil)
             end
             match&.reload

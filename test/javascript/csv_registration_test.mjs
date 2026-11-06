@@ -45,7 +45,7 @@ test('duplicate submission while saving does not send another request', async ()
   assert.ok(ui.prevented()); assert.equal(ui.calls.length, 0);
 });
 test('unrelated forms keep their normal submission', async () => {
-  const ui = setup([]); ui.event.submitter.value = 'hold';
+  const ui = setup([]); ui.event.submitter.value = 'refresh';
   await ui.controller.submit(ui.event);
   assert.equal(ui.prevented(), false); assert.equal(ui.calls.length, 0);
 });

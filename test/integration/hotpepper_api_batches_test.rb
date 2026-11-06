@@ -206,4 +206,25 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "hold moves the whole store out of work and restore returns it" do
+    batch = collect
+    target = batch.targets.find_by!(shop_id: @shop.id)
+    get admin_hotpepper_api_batch_path(batch), headers: @headers
+    assert_select "section[data-target-shop='#{@shop.id}'] button[name='decision'][value='hold']"
+    post review_target_admin_hotpepper_api_batch_path(batch, target_id: target.id, format: :json), headers: @headers, params: { decision: "hold" }
+    assert_response :success
+    assert_equal "held", target.reload.state
+    assert_not HotpepperApiTarget.unregistered.exists?(target.id)
+    assert_nil @shop.reload.hotpepper_url
+    get admin_hotpepper_api_batch_path(batch), headers: @headers
+    assert_select "section[data-target-shop='#{@shop.id}']", count: 0
+    get admin_hotpepper_api_batch_path(batch, classification: "held"), headers: @headers
+    assert_response :success
+    assert_select "section[data-target-shop='#{@shop.id}'] button[value='restore']"
+    assert_select "button[value='register']", count: 0
+    post review_target_admin_hotpepper_api_batch_path(batch, target_id: target.id, format: :json), headers: @headers, params: { decision: "restore" }
+    assert_response :success
+    assert HotpepperApiTarget.unregistered.exists?(target.id)
+  end
+
 end

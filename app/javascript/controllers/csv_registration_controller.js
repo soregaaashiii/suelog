@@ -73,7 +73,7 @@ export default class extends Controller {
 
   async submit(event) {
     const button = event.submitter
-    if (!button || button.name !== "decision" || !["register", "undo", "exclude", "restore"].includes(button.value)) return
+    if (!button || button.name !== "decision" || !["register", "undo", "exclude", "restore", "hold"].includes(button.value)) return
     event.preventDefault()
     if (this.saving) return
     const form = event.target
@@ -98,7 +98,7 @@ export default class extends Controller {
       controls.forEach((control, i) => { control.disabled = disabled[i] })
       this.refreshShortcut()
     }
-    notify({ register: "登録中…", undo: "取り消し中…", exclude: "候補をすべて外しています…", restore: "未登録に戻しています…" }[button.value])
+    notify({ register: "登録中…", undo: "取り消し中…", exclude: "候補をすべて外しています…", restore: "未登録に戻しています…", hold: "保留中に移しています…" }[button.value])
     try {
       const response = await fetch(form.action, {
         method: "POST", body: data, credentials: "same-origin",
@@ -117,7 +117,7 @@ export default class extends Controller {
       this.completedSinceRefill = (this.completedSinceRefill || 0) + 1
       this.updateCounts(result.destination === "conflict" ? "conflict" : button.value)
       const sourceGroup = this.element.dataset?.csvRegistrationGroup || "unregistered"
-      const destinationGroup = result.destination || { register: "registered", undo: "unregistered", exclude: "excluded", restore: "unregistered" }[button.value]
+      const destinationGroup = result.destination || { register: "registered", undo: "unregistered", exclude: "excluded", hold: "held", restore: "unregistered" }[button.value]
       const remainingDelta = (destinationGroup === "unregistered" ? 1 : 0) - (sourceGroup === "unregistered" ? 1 : 0)
       for (const selector of ["[data-csv-confidence-remaining-total]", `[data-csv-confidence-remaining="${card.dataset.confidence}"]`]) {
         const counter = this.element.querySelector(selector)
@@ -139,7 +139,7 @@ export default class extends Controller {
 
   updateCounts(decision) {
     const source = this.element.dataset?.csvRegistrationGroup || "unregistered"
-    const destination = { register: "registered", undo: "unregistered", exclude: "excluded", restore: "unregistered", conflict: "conflict" }[decision]
+    const destination = { register: "registered", undo: "unregistered", exclude: "excluded", hold: "held", restore: "unregistered", conflict: "conflict" }[decision]
     for (const link of this.element.querySelectorAll("[data-csv-group]")) {
       const delta = (link.dataset?.csvGroup === destination ? 1 : 0) - (link.dataset?.csvGroup === source ? 1 : 0)
       if (delta) link.textContent = link.textContent.replace(/（(\d+)店舗）/, (_, count) => `（${Math.max(0, Number(count) + delta)}店舗）`)
