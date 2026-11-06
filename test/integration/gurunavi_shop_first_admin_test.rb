@@ -36,6 +36,9 @@ class GurunaviShopFirstAdminTest < ActionDispatch::IntegrationTest
     get admin_gurunavi_csv_batches_path, headers: @headers
     assert_response :success
     assert_includes response.body, "吸えログ店舗が起点"
+    assert_select "form[action='#{admin_gurunavi_csv_batches_path}'][enctype='multipart/form-data'] input[type='file'][name='file']"
+    assert_select "a[href='#{admin_gurunavi_csv_batch_path(batch)}']", text: "照合・登録を続ける"
+    assert_select "input[name='trial_mode'][checked]", count: 0
     post apply_admin_gurunavi_csv_batch_path(batch), headers: @headers, params: { mode: "all_ready", reviewed: "1" }
     execution = batch.executions.order(:id).last
     assert_equal [ batch.targets.sole.matches.sole.id ], execution.selection

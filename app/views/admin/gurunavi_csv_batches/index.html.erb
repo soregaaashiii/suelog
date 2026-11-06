@@ -1,9 +1,24 @@
-<h1>ぐるなびCSV照合・一括登録</h1>
-<p>吸えログの公開中店舗を起点に、CSV全体からぐるなびの店舗候補を探します。確認後にURLを紐付けます。店舗は新規作成しません。</p>
-<p><%= link_to "CSVを取り込む", new_admin_gurunavi_csv_batch_path %> ｜ <%= link_to "店舗管理へ", admin_shops_path(status: "gurunavi_missing") %></p>
+<h1>ぐるなび アフィリエイト設定</h1>
+<p>CSVを読み込む → 店舗候補を確認 → 登録する</p>
+<% if (latest = @batches.find(&:shop_first?)) %>
+  <section style="padding:16px; border:1px solid #ddd; border-radius:10px; margin:16px 0;">
+    <h2>前回の作業</h2>
+    <p><%= latest.filename %> ／ <%= latest.created_at.in_time_zone("Asia/Tokyo").strftime("%Y/%m/%d %H:%M") %></p>
+    <%= link_to "照合・登録を続ける", admin_gurunavi_csv_batch_path(latest), style: "display:inline-block; padding:12px 18px; background:#111; color:#fff; border-radius:8px;" %>
+  </section>
+<% end %>
+<section style="padding:16px; border:1px solid #ddd; border-radius:10px; margin:16px 0;">
+  <h2>新しいCSVを読み込む</h2>
+  <%= render "upload_form" %>
+  <p>ファイルごとに照合結果と作業履歴を保存します。以前の結果も下の履歴から再開できます。</p>
+</section>
+<details><summary>過去の取り込み履歴</summary>
 <table style="width:100%; border-collapse:collapse;" border="1" cellpadding="8">
   <tr><th>取込ID・日時</th><th>ファイル</th><th>状態・進捗</th><th>対象</th><th>操作</th></tr>
   <% @batches.each do |batch| %>
     <tr><td>#<%= batch.id %><br><%= batch.created_at.in_time_zone("Asia/Tokyo").strftime("%Y/%m/%d %H:%M") %></td><td><%= batch.filename %><br><small>SHA256: <%= batch.sha256.first(12) %>…</small></td><td><%= batch.state %> / <%= batch.phase %><br><%= batch.shop_first? ? "吸えログ店舗が起点" : "旧仕様：CSV店舗が起点" %><br><%= batch.phase == "parse" ? "CSV読込 #{batch.processed_rows}行" : "照合 #{batch.processed_rows} / #{batch.target_rows}#{batch.shop_first? ? '店舗' : '行'}" %> ／ CSV全体 <%= batch.total_rows %>行<br><%= batch.message %></td><td><%= batch.trial_mode? ? (batch.shop_first? ? "試行：吸えログ100店舗まで" : "旧試行：CSV100行まで") : "全件" %><br><%= batch.area_filter.presence || "エリア指定なし" %></td><td><%= link_to "照合結果・作業を再開", admin_gurunavi_csv_batch_path(batch) %></td></tr>
   <% end %>
 </table>
+
+</details>
+<details><summary>個別のURL設定</summary><p><%= link_to "店舗URLを個別に入力・修正する", admin_shops_path(status: "gurunavi_missing") %></p></details>
