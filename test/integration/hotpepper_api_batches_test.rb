@@ -141,4 +141,20 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     assert @shop.hotpepper_url.present?
   end
 
+  test "API wait releases database connection lease outside a transaction" do
+    batch = collect([])
+    execution = batch.executions.sole
+    importer = HotpepperApi::Importer.new(batch, execution, execution.run_token)
+    fake_pool = Struct.new(:transaction_open, :released) do
+      def active_connection? = Struct.new(:transaction_open?).new(transaction_open)
+      def release_connection = self.released = true
+    end
+    pool = fake_pool.new(false, false)
+    importer.release_connection(pool: pool)
+    assert pool.released
+    pool = fake_pool.new(true, false)
+    importer.release_connection(pool: pool)
+    assert_not pool.released, "caller transaction must stay pinned"
+  end
+
 end

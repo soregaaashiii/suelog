@@ -14,6 +14,12 @@ module HotpepperApi
         @execution.update!(state: "running", heartbeat_at: Time.current)
         yield
       end
+    ensure
+      release_connection
+    end
+
+    def release_connection(pool: ActiveRecord::Base.connection_pool)
+      pool.release_connection unless pool.active_connection?&.transaction_open?
     end
 
     def call
@@ -50,6 +56,8 @@ module HotpepperApi
             next
           end
           begin
+            # HTTP can take seconds: never reserve a database connection while waiting.
+            release_connection
             records = @client_factory.call(shop).records_for_matching
           rescue RestaurantUrlSearch::HotpepperApi::TooManyCandidates => e
             processed += 1
