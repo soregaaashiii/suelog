@@ -85,6 +85,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     message = case params[:decision]
     when "exclude" then "この店舗の候補をすべて外しました。「除外済み」から戻せます。"
     when "restore" then "未登録一覧に戻しました。"
+    when "hold" then "保留中に移しました。あとで未登録に戻せます。"
     else "吸えログ店舗の確認状態を保存しました。URLはまだ更新していません。"
     end
     return render json: { success: true, message: message, shop_id: target.shop_id } if request.format.json?
@@ -132,6 +133,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
     @counts = @batch.targets.unregistered.group(:classification).count
     @counts["registered"] = @batch.targets.registered.count
     @counts["excluded"] = @batch.targets.excluded.count
+    @counts["held"] = @batch.targets.held.count
     @url_conflict_count = @batch.targets.url_conflicts.count
     @unregistered_count = @batch.targets.unregistered.count
     @invalid_count = @batch.rows.where(classification: "invalid").count
@@ -151,10 +153,11 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       scope = case @classification
       when "registered" then @batch.targets.registered
       when "excluded" then @batch.targets.excluded
+      when "held" then @batch.targets.held
       when "url_conflict" then @batch.targets.url_conflicts
       else @batch.targets.unregistered
       end
-      scope = scope.where(classification: @classification) if @classification.present? && !%w[registered excluded url_conflict].include?(@classification)
+      scope = scope.where(classification: @classification) if @classification.present? && !%w[registered excluded held url_conflict].include?(@classification)
       if @q.present?
         like = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
         shop_ids = Shop.where("name LIKE :q OR address LIKE :q", q: like).select(:id)
