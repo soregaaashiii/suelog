@@ -120,9 +120,14 @@ class Admin::HotpepperApiBatchesController < Admin::BaseController
       @page = [ @page, [ (@total / 50.0).ceil, 1 ].max ].min
       access_counts = PageView.where(is_bot: [ false, nil ]).where.not(shop_id: nil)
         .group(:shop_id).select("shop_id, COUNT(*) AS views_count")
+      ordering = if @classification == "excluded"
+        "COALESCE(csv_access.views_count, 0) DESC, hotpepper_api_targets.shop_id ASC"
+      else
+        "CASE WHEN EXISTS (SELECT 1 FROM hotpepper_api_matches WHERE hotpepper_api_matches.hotpepper_api_target_id = hotpepper_api_targets.id) THEN 0 ELSE 1 END ASC, hotpepper_api_targets.confidence DESC, COALESCE(csv_access.views_count, 0) DESC, hotpepper_api_targets.shop_id ASC"
+      end
       scope = scope.joins("LEFT JOIN (#{access_counts.to_sql}) csv_access ON csv_access.shop_id = hotpepper_api_targets.shop_id")
         .select("hotpepper_api_targets.*", "COALESCE(csv_access.views_count, 0) AS access_count")
-        .order(Arel.sql("CASE WHEN EXISTS (SELECT 1 FROM hotpepper_api_matches WHERE hotpepper_api_matches.hotpepper_api_target_id = hotpepper_api_targets.id) THEN 0 ELSE 1 END ASC, hotpepper_api_targets.confidence DESC, COALESCE(csv_access.views_count, 0) DESC, hotpepper_api_targets.shop_id ASC"))
+        .order(Arel.sql(ordering))
       @targets = scope.offset((@page - 1) * 50).limit(50).includes(matches: :hotpepper_api_row).to_a
       @shops = Shop.where(id: @targets.map(&:shop_id)).select(:id, :name, :address, :hotpepper_url, :hotpepper_affiliate_url, :updated_at).index_by(&:id)
     end
