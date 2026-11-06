@@ -138,6 +138,16 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :hotpepper_api_batches, only: [:index, :new, :create, :show] do
+      member do
+        post :apply
+        post :rollback
+        post :resume
+        post "targets/:target_id/review", action: :review_target, as: :review_target
+        post :refresh_candidates
+      end
+    end
+
     resources :shops, only: [ :index, :show, :new, :create, :edit, :update ] do
       member do
         patch :approve

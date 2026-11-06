@@ -13,7 +13,7 @@
 
 <% if gurunavi_setup || hotpepper_setup %>
   <p>Google検索は店名＋市区町村で開始します。見つからない場合は電話番号で検索してください。「段階検索・店舗照合」は一致を確認できた店舗詳細URLだけを自動登録します。検索できない店舗は未確認のまま残します。</p>
-  <% unless RestaurantUrlSearch::SerpApi.new.available? %>
+  <% unless RestaurantUrlSearch::SerpApi.new.available? || (hotpepper_setup && ENV["HOTPEPPER_API_KEY"].present?) %>
     <p style="color:#8a6500;">現在は自動検索のAPI設定（SERPAPI_KEY）がありません。Google検索・電話番号での手動確認は利用できます。</p>
   <% end %>
   <%= link_to "検索結果を更新", admin_shops_path(status: @status, q: @q, source: @source, page: @page, per: @per), data: { turbo: false } %>
@@ -42,7 +42,7 @@
   <%= link_to "アフィリエイト未設定",
       admin_shops_path(status: "tabelog_missing", source: @source, per: @per, page: 1),
       style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#eef8f0; color:#137333; border:1px solid #137333; text-decoration:none; font-weight:700;" %>
-  <%= link_to "ホットペッパー アフィリエイト設定", admin_shops_path(status: "hotpepper_missing", per: @per, page: 1), style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#fff0f3; color:#a31545; border:1px solid #a31545; text-decoration:none; font-weight:700;" %>
+  <%= link_to "ホットペッパー アフィリエイト設定", admin_hotpepper_api_batches_path, style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#fff0f3; color:#a31545; border:1px solid #a31545; text-decoration:none; font-weight:700;" %>
   <%= link_to "ぐるなび アフィリエイト設定", admin_gurunavi_csv_batches_path %>
 </div>
 

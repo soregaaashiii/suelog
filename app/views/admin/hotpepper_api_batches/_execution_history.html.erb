@@ -1,0 +1,11 @@
+<h2>実行履歴・進捗</h2>
+<% @executions.each do |execution| %>
+  <div style="border:1px solid #ccc; padding:8px; margin:8px 0;">
+    #<%= execution.id %> <%= {"match"=>"照合", "apply"=>"登録", "rollback"=>"取り消し", "confidence"=>"候補追加照合", "expand"=>"全店舗照合"}[execution.kind] %>：<strong><%= execution.state %></strong> <%= execution.processed_count %> / <%= execution.total_count %>件<br><%= execution.message %>
+    <% if execution.restartable? %><%= button_to "この処理を再開する", resume_admin_hotpepper_api_batch_path(@batch, execution_id: execution.id), method: :post, form: { data: { turbo: false } } %><% end %>
+  </div>
+<% end %>
+<h2>操作記録（直近50件）</h2>
+<% @events.each do |event| %>
+  <details><summary><%= event.created_at.in_time_zone("Asia/Tokyo").strftime("%m/%d %H:%M:%S") %> <%= event.action %> 行ID:<%= event.hotpepper_api_row_id %> 候補ID:<%= event.hotpepper_api_match_id %></summary><pre style="white-space:pre-wrap;"><%= JSON.pretty_generate(event.payload) %></pre></details>
+<% end %>

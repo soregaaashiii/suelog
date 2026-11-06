@@ -1,0 +1,24 @@
+<h1>ホットペッパー アフィリエイト設定</h1>
+<p>公式APIで候補を検索 → 店舗を確認 → 登録する</p>
+<p>公式API：<%= ENV["HOTPEPPER_API_KEY"].present? ? "設定済み" : "未設定" %> ／ Powered by <a href="https://webservice.recruit.co.jp/" target="_blank" rel="noopener">ホットペッパーグルメ Webサービス</a></p>
+<% if (latest = @batches.first) %>
+  <section style="padding:16px;border:1px solid #ddd;border-radius:10px;margin:16px 0;">
+    <h2>前回の作業</h2>
+    <p><%= latest.created_at.in_time_zone("Asia/Tokyo").strftime("%Y/%m/%d %H:%M") %> ／ <%= latest.message %></p>
+    <%= link_to "照合・登録を続ける", admin_hotpepper_api_batch_path(latest), style: "display:inline-block;padding:12px 18px;background:#111;color:#fff;border-radius:8px;" %>
+  </section>
+<% end %>
+<section style="padding:16px;border:1px solid #ddd;border-radius:10px;margin:16px 0;">
+  <h2>新しいAPI検索を始める</h2>
+  <p>吸えログの公開中店舗を検索します。検索だけでは店舗URLを更新しません。既存のURLと過去の作業履歴は保持します。</p>
+  <%= form_with url: admin_hotpepper_api_batches_path, local: true, data: { turbo: false } do %>
+    <p><label>対象の市区町村（空欄で全エリア）：<%= text_field_tag :area_filter, "", placeholder: "例：大阪市北区" %></label></p>
+    <p><label><%= check_box_tag :trial_mode, "1", false %> 試行モード：先頭100店舗まで</label></p>
+    <%= submit_tag "APIで候補を検索する", disabled: ENV["HOTPEPPER_API_KEY"].blank?, style: "padding:10px 16px;" %>
+  <% end %>
+</section>
+<details><summary>過去の検索履歴</summary>
+<table border="1" cellpadding="8"><tr><th>日時</th><th>状態・進捗</th><th>対象</th><th>操作</th></tr>
+<% @batches.each do |batch| %><tr><td><%= batch.created_at.in_time_zone("Asia/Tokyo").strftime("%Y/%m/%d %H:%M") %></td><td><%= batch.state %> ／ <%= batch.processed_rows %>/<%= batch.target_rows %>店舗<br><%= batch.message %></td><td><%= batch.area_filter.presence || "全エリア" %><%= "（試行100店舗）" if batch.trial_mode? %></td><td><%= link_to "照合・登録を再開", admin_hotpepper_api_batch_path(batch) %></td></tr><% end %>
+</table></details>
+<details><summary>個別のURL設定</summary><%= link_to "店舗URLを個別に入力・修正する", admin_shops_path(status: "hotpepper_missing") %></details>
