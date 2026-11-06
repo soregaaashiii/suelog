@@ -173,4 +173,19 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "excluded list orders by human page views ahead of confidence and candidate presence" do
+    batch = collect
+    target = batch.targets.find_by!(shop_id: @shop.id)
+    target.update!(state: "excluded", confidence: 400)
+    other = Shop.create!(name: "アクセスの多い除外店", address: "大阪府大阪市北区梅田7-8-9", genre: "居酒屋", approved: true, last_confirmed_on: Date.current)
+    batch.targets.create!(shop_id: other.id, shop_snapshot: HotpepperApi::Snapshot.call(other), classification: "unmatched", state: "excluded", confidence: 0)
+    3.times { PageView.create!(shop: other, path: "/shops/#{other.id}", is_bot: false) }
+    10.times { PageView.create!(shop: @shop, path: "/shops/#{@shop.id}", is_bot: true) }
+    get admin_hotpepper_api_batch_path(batch, classification: "excluded"), headers: @headers
+    assert_response :success
+    assert_select "section[data-target-shop]" do |cards|
+      assert_equal [other.id.to_s, @shop.id.to_s], cards.map { |card| card["data-target-shop"] }
+    end
+  end
+
 end
