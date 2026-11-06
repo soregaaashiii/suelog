@@ -18,8 +18,7 @@ module HotpepperApi
       release_connection
     end
 
-    def release_connection
-      pool = ActiveRecord::Base.connection_pool
+    def release_connection(pool: ActiveRecord::Base.connection_pool)
       pool.release_connection unless pool.active_connection?&.transaction_open?
     end
 

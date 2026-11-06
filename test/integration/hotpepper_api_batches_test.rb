@@ -1,5 +1,4 @@
 require "test_helper"
-require "minitest/mock"
 
 class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
   setup do
@@ -146,19 +145,16 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     batch = collect([])
     execution = batch.executions.sole
     importer = HotpepperApi::Importer.new(batch, execution, execution.run_token)
-    pool = ActiveRecord::Base.connection_pool
-    released = false
-    lease = Struct.new(:transaction_open?).new(false)
-    pool.stub(:active_connection?, lease) do
-      pool.stub(:release_connection, -> { released = true }) { importer.release_connection }
+    fake_pool = Struct.new(:transaction_open, :released) do
+      def active_connection? = Struct.new(:transaction_open?).new(transaction_open)
+      def release_connection = self.released = true
     end
-    assert released
-    released = false
-    lease = Struct.new(:transaction_open?).new(true)
-    pool.stub(:active_connection?, lease) do
-      pool.stub(:release_connection, -> { released = true }) { importer.release_connection }
-    end
-    assert_not released, "caller transaction must stay pinned"
+    pool = fake_pool.new(false, false)
+    importer.release_connection(pool: pool)
+    assert pool.released
+    pool = fake_pool.new(true, false)
+    importer.release_connection(pool: pool)
+    assert_not pool.released, "caller transaction must stay pinned"
   end
 
 end
