@@ -2,7 +2,6 @@
 
 <% hotpepper_setup = %w[hotpepper_missing hotpepper_configured hotpepper_not_found].include?(@status) %>
 <% gurunavi_setup = %w[gurunavi_missing gurunavi_configured gurunavi_not_found].include?(@status) %>
-<p><%= link_to "ぐるなびCSV照合・一括登録", admin_gurunavi_csv_batches_path %></p>
 <h1><%= gurunavi_setup ? "ぐるなび アフィリエイト設定" : hotpepper_setup ? "ホットペッパー アフィリエイト設定" : "店舗管理" %></h1>
 <% if gurunavi_setup %>
   <p>ぐるなびの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
@@ -44,7 +43,7 @@
       admin_shops_path(status: "tabelog_missing", source: @source, per: @per, page: 1),
       style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#eef8f0; color:#137333; border:1px solid #137333; text-decoration:none; font-weight:700;" %>
   <%= link_to "ホットペッパー アフィリエイト設定", admin_shops_path(status: "hotpepper_missing", per: @per, page: 1), style: "display:inline-block; padding:10px 14px; border-radius:10px; background:#fff0f3; color:#a31545; border:1px solid #a31545; text-decoration:none; font-weight:700;" %>
-  <%= link_to "ぐるなび アフィリエイト設定", admin_shops_path(status: "gurunavi_missing", per: @per, page: 1) %>
+  <%= link_to "ぐるなび アフィリエイト設定", admin_gurunavi_csv_batches_path %>
 </div>
 
 <div style="margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:12px;">
