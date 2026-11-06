@@ -122,6 +122,8 @@ class Admin::HotpepperApiBatchesController < Admin::BaseController
         .group(:shop_id).select("shop_id, COUNT(*) AS views_count")
       ordering = if @classification == "excluded"
         "COALESCE(hotpepper_api_targets.excluded_at, hotpepper_api_targets.updated_at) DESC, hotpepper_api_targets.id DESC"
+      elsif @classification == "registered"
+        "COALESCE((SELECT MAX(recent.applied_at) FROM hotpepper_api_matches recent WHERE recent.hotpepper_api_target_id = hotpepper_api_targets.id AND recent.state IN ('applied', 'rollback_conflict')), hotpepper_api_targets.created_at) DESC, hotpepper_api_targets.id DESC"
       else
         "CASE WHEN EXISTS (SELECT 1 FROM hotpepper_api_matches WHERE hotpepper_api_matches.hotpepper_api_target_id = hotpepper_api_targets.id) THEN 0 ELSE 1 END ASC, hotpepper_api_targets.confidence DESC, COALESCE(csv_access.views_count, 0) DESC, hotpepper_api_targets.shop_id ASC"
       end

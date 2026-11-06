@@ -190,4 +190,20 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "registered stores order by latest applied time instead of confidence or access" do
+    batch = collect
+    older = batch.targets.find_by!(shop_id: @shop.id)
+    older.update!(state: "applied", confidence: 400)
+    older.matches.first.update!(state: "applied", applied_at: 1.hour.ago)
+    5.times { PageView.create!(shop: @shop, path: "/shops/#{@shop.id}", is_bot: false) }
+    other = Shop.create!(name: "最近登録した店", address: "大阪府大阪市北区梅田7-8-9", genre: "居酒屋", approved: true, last_confirmed_on: Date.current)
+    recent = batch.targets.create!(shop_id: other.id, shop_snapshot: HotpepperApi::Snapshot.call(other), classification: "review", state: "applied", confidence: 50)
+    recent.matches.create!(shop_id: other.id, hotpepper_api_row: batch.rows.first, classification: "review", state: "applied", applied_at: Time.current)
+    get admin_hotpepper_api_batch_path(batch, classification: "registered"), headers: @headers
+    assert_response :success
+    assert_select "section[data-target-shop]" do |cards|
+      assert_equal [other.id.to_s, @shop.id.to_s], cards.map { |card| card["data-target-shop"] }
+    end
+  end
+
 end

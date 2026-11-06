@@ -35,7 +35,7 @@
 <% end %>
 <%= button_to "候補を追加照合・確度順に更新", refresh_candidates_admin_gurunavi_csv_batch_path(@batch), method: :post, form: { data: { turbo: false } } if @batch.state == "ready" %>
 <p><span style="color:#b42318;border-bottom:2px solid #b42318;">赤い下線</span>は双方の表記が異なる部分です。一致箇所や同じ店舗であることを示す印ではありません。</p>
-<p><%= @classification == "excluded" ? "表示順：最近除外した店舗が上です。" : "表示順：候補あり → 照合の確度が高い順 → 同じ確度ではアクセス数の多い順です。" %></p>
+<p><%= @classification == "excluded" ? "表示順：最近除外した店舗が上です。" : @classification == "registered" ? "表示順：最近登録した店舗が上です。" : "表示順：候補あり → 照合の確度が高い順 → 同じ確度ではアクセス数の多い順です。" %></p>
 <p>参照CSVの検証：<%= link_to "不正・欠損行（#{@invalid_count}行）", admin_gurunavi_csv_batch_path(@batch, classification: "invalid") %>（店舗の判定件数とは別集計）</p>
 <%= form_with url: admin_gurunavi_csv_batch_path(@batch), method: :get, local: true do %>
   <%= hidden_field_tag :classification, @classification %>
