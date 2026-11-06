@@ -167,7 +167,7 @@ class Admin::GurunaviCsvBatchesController < Admin::BaseController
       access_counts = PageView.where(is_bot: [ false, nil ]).where.not(shop_id: nil)
         .group(:shop_id).select("shop_id, COUNT(*) AS views_count")
       ordering = if @classification == "excluded"
-        "COALESCE(csv_access.views_count, 0) DESC, gurunavi_csv_targets.shop_id ASC"
+        "COALESCE(gurunavi_csv_targets.excluded_at, gurunavi_csv_targets.updated_at) DESC, gurunavi_csv_targets.id DESC"
       else
         "CASE WHEN EXISTS (SELECT 1 FROM gurunavi_csv_matches WHERE gurunavi_csv_matches.gurunavi_csv_target_id = gurunavi_csv_targets.id) THEN 0 ELSE 1 END ASC, gurunavi_csv_targets.confidence DESC, COALESCE(csv_access.views_count, 0) DESC, gurunavi_csv_targets.shop_id ASC"
       end

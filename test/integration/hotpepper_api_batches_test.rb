@@ -75,11 +75,13 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     post review_target_admin_hotpepper_api_batch_path(batch, target_id: target.id, format: :json), headers: @headers, params: { decision: "exclude" }
     assert_response :success
     assert_equal "excluded", target.reload.state
+    assert target.excluded_at.present?
     assert target.matches.all? { |match| match.state == "excluded" }
     assert_not HotpepperApiTarget.unregistered.exists?(target.id)
     post review_target_admin_hotpepper_api_batch_path(batch, target_id: target.id, format: :json), headers: @headers, params: { decision: "restore" }
     assert_response :success
     assert HotpepperApiTarget.unregistered.exists?(target.id)
+    assert_nil target.reload.excluded_at
   end
 
   test "post scan edits are rejected before URL registration" do
@@ -173,14 +175,14 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "excluded list orders by human page views ahead of confidence and candidate presence" do
+  test "excluded list orders by exclusion time instead of views or confidence" do
     batch = collect
     target = batch.targets.find_by!(shop_id: @shop.id)
-    target.update!(state: "excluded", confidence: 400)
+    target.update!(state: "excluded", confidence: 400, excluded_at: 2.hours.ago)
     other = Shop.create!(name: "アクセスの多い除外店", address: "大阪府大阪市北区梅田7-8-9", genre: "居酒屋", approved: true, last_confirmed_on: Date.current)
-    batch.targets.create!(shop_id: other.id, shop_snapshot: HotpepperApi::Snapshot.call(other), classification: "unmatched", state: "excluded", confidence: 0)
+    batch.targets.create!(shop_id: other.id, shop_snapshot: HotpepperApi::Snapshot.call(other), classification: "unmatched", state: "excluded", confidence: 0, excluded_at: Time.current)
     3.times { PageView.create!(shop: other, path: "/shops/#{other.id}", is_bot: false) }
-    10.times { PageView.create!(shop: @shop, path: "/shops/#{@shop.id}", is_bot: true) }
+    10.times { PageView.create!(shop: @shop, path: "/shops/#{@shop.id}", is_bot: false) }
     get admin_hotpepper_api_batch_path(batch, classification: "excluded"), headers: @headers
     assert_response :success
     assert_select "section[data-target-shop]" do |cards|
