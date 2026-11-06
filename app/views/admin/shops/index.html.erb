@@ -8,6 +8,7 @@
   <p>ぐるなびの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
 <% end %>
 <% if hotpepper_setup %>
+  <p>公式API：<%= ENV["HOTPEPPER_API_KEY"].present? ? "設定済み" : "未設定（Renderの環境変数 HOTPEPPER_API_KEY にキーを設定）" %> ／ Powered by <a href="https://webservice.recruit.co.jp/" target="_blank" rel="noopener">ホットペッパーグルメ Webサービス</a></p>
   <p>ホットペッパーの店舗URLを入力すると、アフィリエイトURLを自動生成します。空欄でEnterを押すと店舗を検索できます。</p>
 <% end %>
 

@@ -6,6 +6,7 @@ module RestaurantUrlSearch
     end
 
     def call
+      return HotpepperApi.new(@shop).call if @provider.key == "hotpepper" && ENV["HOTPEPPER_API_KEY"].present?
       return result("unavailable", "検索APIが未設定です。Google検索から手動で確認してください。") unless @client.available?
       Normalization.queries(@shop, @provider).each do |step|
         @queries << step
