@@ -32,7 +32,7 @@
 </div>
 <p>登録済みの店舗は作業一覧から外れ、「登録済み」に移ります。取り消すと未登録へ戻ります。</p>
 <p><span style="color:#b42318;border-bottom:2px solid #b42318;">赤い下線</span>は双方の表記が異なる部分です。一致箇所や同じ店舗であることを示す印ではありません。</p>
-<p><%= @classification == "excluded" ? "表示順：最近除外した店舗が上です。" : "表示順：候補あり → 照合の確度が高い順 → 同じ確度ではアクセス数の多い順です。" %></p>
+<p><%= @classification == "excluded" ? "表示順：最近除外した店舗が上です。" : @classification == "registered" ? "表示順：最近登録した店舗が上です。" : "表示順：候補あり → 照合の確度が高い順 → 同じ確度ではアクセス数の多い順です。" %></p>
 <%= form_with url: admin_hotpepper_api_batch_path(@batch), method: :get, local: true do %>
   <%= hidden_field_tag :classification, @classification %>
   <%= text_field_tag :q, @q, placeholder: "吸えログ・ホットペッパー候補の店名や住所", aria: { label: "店舗名・住所を検索" } %>
