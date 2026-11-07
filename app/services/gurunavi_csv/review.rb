@@ -32,7 +32,7 @@ module GurunaviCsv
               row.update!(classification: "review", state: "pending", selected_match_id: nil)
             when "confirm"
               shop = Shop.find_by(id: match.shop_id)
-              raise Conflict, "店舗が削除または照合後に更新されています。現在データで再確認してください。" unless shop && Snapshot.call(shop) == match.shop_snapshot
+              raise Conflict, "店舗が削除または照合後に更新されています。現在データで再確認してください。" unless shop && Snapshot.matches?(shop, match.shop_snapshot)
               existing = shop.gurunavi_url.present? || shop.gurunavi_affiliate_url.present?
               target = RestaurantUrlSearch::Provider.new("gurunavi").canonical_url(row.csv_url)
               raise Conflict, "CSV店舗URLが不正です" unless target

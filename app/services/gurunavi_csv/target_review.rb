@@ -46,7 +46,7 @@ module GurunaviCsv
                 match.update!(shop_snapshot: Snapshot.call(shop), classification: "review", state: "pending", allow_replace: false, reason: "現在の吸えログ店舗データを再取得。必ず再確認してください。")
                 target.update!(shop_snapshot: Snapshot.call(shop), classification: "review", state: "pending", selected_match_id: nil)
               when "confirm"
-                raise Review::Conflict, "照合後に店舗データが更新されています。現在データで再確認してください。" unless Snapshot.call(shop) == match.shop_snapshot
+                raise Review::Conflict, "照合後に店舗データが更新されています。現在データで再確認してください。" unless Snapshot.matches?(shop, match.shop_snapshot)
                 url = RestaurantUrlSearch::Provider.new("gurunavi").canonical_url(match.gurunavi_csv_row.csv_url)
                 raise Review::Conflict, "CSV店舗URLが不正です" unless url
                 if (shop.gurunavi_url.present? || shop.gurunavi_affiliate_url.present?) && RestaurantUrlSearch::Provider.new("gurunavi").canonical_url(shop.gurunavi_url) != url && !allow_replace

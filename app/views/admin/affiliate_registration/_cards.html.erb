@@ -17,7 +17,7 @@
         <% end %>
       <% end %>
       <details><summary>照合の詳細</summary><p><%= match_class::STATES.fetch(target.state, target.state) %>：<%= target.reason %></p></details>
-      <% if current && !applied && registration_namespace::Snapshot.call(current) != snapshot %><p style="color:#b00020;">照合後に現在の店舗データが変更されています。登録・取り消し時に再確認します。</p><% end %>
+      <% if current && !applied && !registration_namespace::Snapshot.matches?(current, snapshot) %><p style="color:#b00020;">照合後に現在の店舗データが変更されています。登録・取り消し時に再確認します。</p><% end %>
       <div style="overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse;" border="1" cellpadding="8">
         <thead><tr><th>吸えログの公開中店舗</th><th><%= provider_label %>の候補</th><th>確認・登録選択</th></tr></thead>
@@ -63,9 +63,14 @@
                       <% needs_replace = compared["#{provider}_url"].present? || compared["#{provider}_affiliate_url"].present? || match.classification == "conflict" %>
                       <%= button_tag(needs_replace ? "確認して置き換え登録" : "登録する", name: "decision", value: "register", data: { replacement_required: needs_replace }) %>
                       <% if needs_replace %><p>既存の設定があるため、上の「既存URLの置き換えを確認」をチェックすると登録できます。Enterまたは上部の固定ボタンは、先頭候補への置き換え登録まで行います。</p><% end %>
+                      <% if current && !registration_namespace::Snapshot.matches?(current, match.shop_snapshot) %>
+                        <p style="color:#b00020;">店名・住所・このサイトのURLに更新があります。最新情報を確認してください。</p>
+                        <p><%= current.name %><br><%= current.address %><br><%= current.public_send("#{provider}_url").presence || "URL未設定" %></p>
+                        <%= button_tag "現在データで再確認", name: "decision", value: "refresh" %>
+                      <% end %>
                       <details><summary>その他の操作・照合理由</summary>
                         <p><%= match_class::STATES.fetch(match.state, match.state) %>：<%= match.reason %></p>
-                          <%= button_tag "現在データで再確認", name: "decision", value: "refresh" %>
+
                       </details>
                     <% end %>
                     <% if eligible %><label><%= check_box_tag "match_ids[]", match.id, false, form: "bulk-apply" %> まとめて登録</label><% end %>
