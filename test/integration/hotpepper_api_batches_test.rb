@@ -91,6 +91,13 @@ class HotpepperApiBatchesTest < ActionDispatch::IntegrationTest
     post review_target_admin_hotpepper_api_batch_path(batch, target_id: target.id, format: :json), headers: @headers, params: { match_id: target.matches.first.id, decision: "register" }
     assert_response :unprocessable_entity
     assert_nil @shop.reload.hotpepper_url
+    get admin_hotpepper_api_batch_path(batch), headers: @headers
+    assert_select "button[value='refresh']", text: "現在データで再確認"
+    post review_target_admin_hotpepper_api_batch_path(batch, target_id: target.id), headers: @headers, params: { match_id: target.matches.first.id, decision: "refresh" }
+    assert_response :see_other
+    post review_target_admin_hotpepper_api_batch_path(batch, target_id: target.id, format: :json), headers: @headers, params: { match_id: target.matches.first.id, decision: "register" }
+    assert_response :success
+    assert @shop.reload.hotpepper_url.present?
   end
 
   test "empty results stay unconfirmed and completed targets are not refetched on resume" do

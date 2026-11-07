@@ -46,7 +46,7 @@ module HotpepperApi
                 match.update!(shop_snapshot: Snapshot.call(shop), classification: "review", state: "pending", allow_replace: false, reason: "現在の吸えログ店舗データを再取得。必ず再確認してください。")
                 target.update!(shop_snapshot: Snapshot.call(shop), classification: "review", state: "pending", selected_match_id: nil)
               when "confirm"
-                raise Review::Conflict, "照合後に店舗データが更新されています。現在データで再確認してください。" unless Snapshot.call(shop) == match.shop_snapshot
+                raise Review::Conflict, "照合後に店舗データが更新されています。現在データで再確認してください。" unless Snapshot.matches?(shop, match.shop_snapshot)
                 url = RestaurantUrlSearch::Provider.new("hotpepper").canonical_url(match.hotpepper_api_row.csv_url)
                 raise Review::Conflict, "API取得データ店舗URLが不正です" unless url
                 if (shop.hotpepper_url.present? || shop.hotpepper_affiliate_url.present?) && RestaurantUrlSearch::Provider.new("hotpepper").canonical_url(shop.hotpepper_url) != url && !allow_replace

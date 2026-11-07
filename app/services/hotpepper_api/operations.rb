@@ -53,7 +53,7 @@ module HotpepperApi
       return conflict(match, "店舗が削除されています") unless shop
       shop.with_lock do
         return conflict(match, "吸えログ店舗が非公開・保留になりました") if @batch.shop_first? && !Shop.approved.where(id: shop.id).exists?
-        return conflict(match, "照合後に店舗データが変更されました。登録せず競合として残します。") unless Snapshot.call(shop) == match.shop_snapshot
+        return conflict(match, "照合後に店舗データが変更されました。登録せず競合として残します。") unless Snapshot.matches?(shop, match.shop_snapshot)
         if match.classification == "bulk" && match.state == "pending"
           identity = Normalizer.identity(row.csv_name, row.csv_address)
           return conflict(match, "照合後に同じ正規化キーの店舗が増えたため一対一ではありません") unless identity && Shop.where(hotpepper_api_identity_key: identity).count == 1

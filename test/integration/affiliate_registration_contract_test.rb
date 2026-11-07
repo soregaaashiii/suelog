@@ -24,6 +24,11 @@ class AffiliateRegistrationContractTest < ActionDispatch::IntegrationTest
       post action, headers: @headers, params: { decision: "restore" }
       assert_response :success
       assert_equal "pending", target.reload.state
+      # Another provider's registration and unrelated shop edits must not invalidate this candidate.
+      other_provider = provider == "gurunavi" ? "hotpepper" : "gurunavi"
+      other_url = provider == "gurunavi" ? "https://www.hotpepper.jp/strJ003451219/" : "https://r.gnavi.co.jp/otherstore/"
+      @shop.update!("#{other_provider}_url" => other_url, note: "照合後のメモ変更")
+      @shop.update_columns(updated_at: 1.minute.from_now)
       post action, headers: @headers, params: { decision: "register", match_id: match.id }
       assert_response :success
       assert_equal "applied", target.reload.state
@@ -36,6 +41,7 @@ class AffiliateRegistrationContractTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_nil @shop.reload.public_send("#{provider}_url")
       assert_equal "rolled_back", target.reload.state
+      assert_equal other_url, @shop.public_send("#{other_provider}_url")
     end
   end
 end
