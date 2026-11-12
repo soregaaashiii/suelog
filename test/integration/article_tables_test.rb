@@ -1,0 +1,16 @@
+require "test_helper"
+
+class ArticleTablesRenderingTest < ActionDispatch::IntegrationTest
+  test "published table retains cells while unsafe clipboard HTML is sanitized" do
+    content = '<div class="article-table"><table><tbody><tr><th>店名</th><th>説明</th></tr><tr><td>店舗A</td><td>改行<br>続き<img src="x" onerror="alert(1)"><script>alert(2)</script></td></tr></tbody></table></div>'
+    attachment = ActionText::Attachment.from_attributes(content_type: "text/html", content: content)
+    article = Article.create!(title: "公開表テスト", slug: "public-table-test", body: attachment.to_html, published: true)
+    get article_path(article)
+    assert_response :success
+    assert_select ".article-body .article-table table th", text: "店名"
+    assert_select ".article-body .article-table td", text: "店舗A"
+    assert_select ".article-body .article-table br", count: 1
+    assert_select ".article-body .article-table script", count: 0
+    assert_select ".article-body .article-table [onerror]", count: 0
+  end
+end

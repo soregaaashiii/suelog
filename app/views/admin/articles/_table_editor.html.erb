@@ -1,0 +1,17 @@
+<dialog class="article-table-dialog" data-article-table-target="dialog" aria-label="表の編集">
+  <h2>表の編集</h2>
+  <p>セルに入力、またはExcelでコピーしたセルを貼り付けてください。Tabで次のセルへ移動できます。</p>
+  <div class="article-table-tools">
+    <label>行数 <input type="number" min="1" max="100" value="3" data-article-table-target="rows"></label>
+    <label>列数 <input type="number" min="1" max="20" value="3" data-article-table-target="columns"></label>
+    <button type="button" data-action="article-table#resize">行・列数を変更</button>
+    <label><input type="checkbox" checked data-article-table-target="header">1行目を見出しにする</label>
+  </div>
+  <p role="alert" data-article-table-target="message"></p>
+  <div class="article-table-grid"><table><tbody data-article-table-target="grid"></tbody></table></div>
+  <div class="article-table-tools">
+    <button type="button" data-action="article-table#save">表を反映する</button>
+    <button type="button" data-action="article-table#close">キャンセル</button>
+  </div>
+  <p>文字と改行を取り込みます。色・画像・結合セル・数式そのものは取り込みません。</p>
+</dialog>
