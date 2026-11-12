@@ -7,11 +7,17 @@
     <button type="button" data-action="article-table#resize">行・列数を変更</button>
     <label><input type="checkbox" checked data-article-table-target="header">1行目を見出しにする</label>
   </div>
+  <div class="article-table-tools">
+    <label>リンクの表示文字 <input type="text" data-article-table-target="linkText" placeholder="例：公式サイト"></label>
+    <label>リンク先URL <input type="url" data-article-table-target="linkUrl" placeholder="https://..."></label>
+    <button type="button" data-action="article-table#insertLink">選んだセルにリンクを追加</button>
+  </div>
+  <p>リンクを入れるセルを選んでから追加してください。セルにURLを直接入力してもリンクになります。</p>
   <p role="alert" data-article-table-target="message"></p>
-  <div class="article-table-grid"><table><tbody data-article-table-target="grid"></tbody></table></div>
+  <div class="article-table-grid" data-action="focusin->article-table#selectCell"><table><tbody data-article-table-target="grid"></tbody></table></div>
   <div class="article-table-tools">
     <button type="button" data-action="article-table#save">表を反映する</button>
     <button type="button" data-action="article-table#close">キャンセル</button>
   </div>
-  <p>文字と改行を取り込みます。色・画像・結合セル・数式そのものは取り込みません。</p>
+  <p>文字・改行・外部リンクを取り込みます。色・画像・結合セル・数式そのものは取り込みません。</p>
 </dialog>

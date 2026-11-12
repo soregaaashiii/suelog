@@ -29,14 +29,22 @@ class ArticleTablesTest < ApplicationSystemTestCase
     JS
     page.execute_script(<<~'JS')
       const htmlClipboard = new DataTransfer();
-      htmlClipboard.setData("text/html", '<table><tr><td>HTML貼付<br>改行</td><td>&lt;b&gt;文字&lt;/b&gt;</td></tr></table>');
+      htmlClipboard.setData("text/html", '<table><tr><td>HTML貼付<br>改行</td><td>&lt;b&gt;文字&lt;/b&gt;</td><td><a href="https://example.net/">コピー元リンク</a></td></tr></table>');
       document.querySelector('[aria-label="1行1列"]').dispatchEvent(new ClipboardEvent("paste", { clipboardData: htmlClipboard, bubbles: true, cancelable: true }));
     JS
     assert_field "1行1列", with: "HTML貼付\n改行"
     assert_field "1行2列", with: "<b>文字</b>"
+    assert_field "1行3列", with: "[コピー元リンク](https://example.net/)"
     fill_in "1行1列", with: "店名"
     fill_in "1行2列", with: "料金"
     assert_field "3行2列", with: "2行\nの説明"
+    fill_in "2行3列", with: ""
+    find('[aria-label="2行3列"]').click
+    find('[data-article-table-target="linkText"]').set("公式サイト")
+    find('[data-article-table-target="linkUrl"]').set("https://example.com/?a=1&b=2")
+    click_on "選んだセルにリンクを追加"
+    assert_field "2行3列", with: "[公式サイト](https://example.com/?a=1&b=2)"
+    fill_in "3行3列", with: "https://example.org/"
     click_on "表を反映する"
     assert_selector "trix-editor .article-table th", text: "店名"
     assert_selector "trix-editor .article-table td", text: "店舗B"
@@ -53,6 +61,8 @@ class ArticleTablesTest < ApplicationSystemTestCase
     JS
     click_on "表を作成・編集"
     assert_field "2行1列", with: "店舗A"
+    assert_field "2行3列", with: "[公式サイト](https://example.com/?a=1&b=2)"
+    assert_field "3行3列", with: "[https://example.org/](https://example.org/)"
     assert_field "3行2列", with: "2行\nの説明"
     fill_in "2行1列", with: "店舗A修正"
     click_on "表を反映する"
@@ -60,6 +70,8 @@ class ArticleTablesTest < ApplicationSystemTestCase
     assert_current_path admin_articles_path
     assert_includes article.reload.body.to_s, "店舗A修正"
     assert_includes article.body.to_s, "既存の文章"
+    fragment = Nokogiri::HTML.fragment(article.body.to_s)
+    assert_equal "https://example.com/?a=1&b=2", fragment.css(".article-table a").find { |link| link.text == "公式サイト" }["href"]
     assert_equal 1, Nokogiri::HTML.fragment(article.body.to_s).css("table").length
   end
 end
