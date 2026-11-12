@@ -104,11 +104,13 @@ export default class extends Controller {
   paste(event) {
     const html = event.clipboardData?.getData("text/html") || ""
     const text = event.clipboardData?.getData("text/plain") || ""
-    const table = html ? new DOMParser().parseFromString(html, "text/html").querySelector("table") : null
+    const document = html ? new DOMParser().parseFromString(html, "text/html") : null
+    const table = document?.querySelector("table")
     if (!table && !text.includes("\t")) return
     event.preventDefault()
     event.stopImmediatePropagation()
     try {
+      if (table && event.target.closest("trix-editor") && this.pasteDocument(document)) return
       const incoming = table ? this.readTable(table) : parseTSV(text)
       if (event.target.closest("trix-editor")) {
         this.range = this.editor.getSelectedRange()
@@ -134,6 +136,47 @@ export default class extends Controller {
       }
       this.messageTarget.textContent = error.message
     }
+  }
+
+  pasteDocument(document) {
+    const body = document.body
+    body.querySelectorAll("script, style, meta, link").forEach(node => node.remove())
+    const tables = Array.from(body.querySelectorAll("table"))
+    const outside = body.cloneNode(true)
+    outside.querySelectorAll("table").forEach(table => table.remove())
+    if (tables.length === 1 && !outside.textContent.trim() && !outside.querySelector("img")) return false
+
+    // Validate the complete clipboard before changing the article, including later tables.
+    const contents = tables.map(table => {
+      if (table.querySelector("table")) throw new Error("入れ子の表には対応していません。表を分けて貼り付けてください。")
+      const rows = this.readTable(table)
+      if (rows.length > 100 || rows.some(row => row.length > 20)) throw new Error("表は100行・20列以内にしてください。")
+      return tableHTML(rows, !!table.querySelector("th"))
+    })
+    const range = document.createRange()
+    range.setStart(body, 0)
+    const parts = []
+    const appendText = () => {
+      const container = document.createElement("div")
+      container.append(range.cloneContents())
+      if (container.textContent.trim() || container.querySelector("img, br")) parts.push({ html: container.innerHTML })
+    }
+    tables.forEach((table, index) => {
+      range.setEndBefore(table)
+      appendText()
+      parts.push({ content: contents[index] })
+      range.setStartAfter(table)
+    })
+    range.setEnd(body, body.childNodes.length)
+    appendText()
+    this.editor.recordUndoEntry("文章と表の貼り付け")
+    parts.forEach(part => {
+      if (part.content) {
+        this.editor.insertAttachment(new window.Trix.Attachment({ content: part.content, contentType: "text/html" }))
+        this.editor.insertString("\n")
+      } else this.editor.insertHTML(part.html)
+    })
+    return true
   }
 
   save() {

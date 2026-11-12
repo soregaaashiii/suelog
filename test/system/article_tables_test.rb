@@ -74,4 +74,32 @@ class ArticleTablesTest < ApplicationSystemTestCase
     assert_equal "https://example.com/?a=1&b=2", fragment.css(".article-table a").find { |link| link.text == "公式サイト" }["href"]
     assert_equal 1, Nokogiri::HTML.fragment(article.body.to_s).css("table").length
   end
+  test "paste prose and multiple nested tables in order and retain them after saving" do
+    article = Article.create!(title: "文章と表", slug: "mixed-table-test", body: "元の文章")
+    credentials = Rails.root.join("app/controllers/admin/base_controller.rb").read.match(/name: "([^"]+)", password: "([^"]+)"/)
+    server = Capybara.current_session.server
+    visit "http://#{ERB::Util.url_encode(credentials[1])}:#{ERB::Util.url_encode(credentials[2])}@#{server.host}:#{server.port}#{edit_admin_article_path(article)}"
+    visit edit_admin_article_path(article)
+    page.execute_script(<<~'JS')
+      const clipboard = new DataTransfer();
+      clipboard.setData("text/html", '<div><h2>貼付見出し</h2><p>前の文章 <a href="https://example.com/">外部リンク</a></p><div><table><tr><th>表一見出し</th></tr><tr><td>表一内容</td></tr></table><p>間の文章</p><table><tr><td>表二内容</td></tr></table></div><p>後の文章</p></div>');
+      const editor = document.querySelector('trix-editor');
+      editor.editor.setSelectedRange([0, 0]);
+      editor.dispatchEvent(new ClipboardEvent("paste", { clipboardData: clipboard, bubbles: true, cancelable: true }));
+    JS
+    assert_no_selector "dialog[open]"
+    assert_selector "trix-editor table", count: 2
+    assert_selector "trix-editor", text: "貼付見出し"
+    assert_selector 'trix-editor a[href="https://example.com/"]', text: "外部リンク"
+    click_on "保存", exact: true
+    assert_current_path admin_articles_path
+    visit edit_admin_article_path(article)
+    assert_selector "trix-editor table", count: 2
+    content = Nokogiri::HTML.fragment(article.reload.body.to_s)
+    positions = ["前の文章", "表一内容", "間の文章", "表二内容", "後の文章", "元の文章"].map { |text| content.text.index(text) }
+    assert positions.all?
+    assert_equal positions.sort, positions
+    assert_equal "表一見出し", content.at_css("table th").text
+  end
+
 end
