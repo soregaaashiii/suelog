@@ -3652,3 +3652,18 @@ color: #7a5a12;
     top: 0;
   }
 }
+/* Article tables keep their width on small screens and scroll independently. */
+.article-table { display: block; max-width: 100%; overflow-x: auto; margin: 16px 0; }
+.article-table table { border-collapse: collapse; width: 100%; min-width: 320px; text-align: left; }
+.article-table th, .article-table td { border: 1px solid #ccc; padding: 10px 12px; min-width: 100px; vertical-align: top; }
+.article-table th { background: #f5f1e7; font-weight: 700; }
+.article-table-dialog { width: min(960px, 94vw); max-height: 90vh; padding: 20px; border: 1px solid #ccc; border-radius: 12px; }
+.article-table-dialog::backdrop { background: #0006; }
+.article-table-tools { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 12px 0; }
+.article-table-tools input[type=number] { width: 70px; }
+.article-table-tools button { padding: 8px 12px; cursor: pointer; }
+.article-table-grid { overflow: auto; max-height: 55vh; }
+.article-table-grid table { border-collapse: collapse; }
+.article-table-grid td { border: 1px solid #ccc; padding: 0; }
+.article-table-grid textarea { display: block; width: 140px; min-height: 55px; border: 0; padding: 8px; font: inherit; box-sizing: border-box; resize: vertical; }
+.article-body .attachment--content, trix-editor .attachment--content { display: block; max-width: 100%; min-width: 0; }
