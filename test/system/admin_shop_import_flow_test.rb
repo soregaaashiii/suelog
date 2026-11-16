@@ -9,8 +9,19 @@ class AdminShopImportFlowTest < ApplicationSystemTestCase
 
     assert_text "解析結果"
 
+    3.times do
+      assert_no_difference("Shop.where(name: 'Enter連打テスト店舗').count") do
+        dismiss_confirm("重複候補がある場合でも新規登録します。よろしいですか？") do
+          dispatch_repeated_enter("h2", count: 1)
+        end
+      end
+      assert_selector 'input[value="この内容で新規仮登録する"]:not([disabled])'
+    end
+
     assert_difference("Shop.where(name: 'Enter連打テスト店舗').count", 1) do
-      dispatch_repeated_enter("h2")
+      accept_confirm("重複候補がある場合でも新規登録します。よろしいですか？") do
+        dispatch_repeated_enter("h2")
+      end
       assert_text "店舗編集（管理者用）"
     end
 
@@ -41,10 +52,10 @@ class AdminShopImportFlowTest < ApplicationSystemTestCase
     "http://kawa_admin_92:X9f%21pL3%23sK@#{server.host}:#{server.port}#{path}"
   end
 
-  def dispatch_repeated_enter(selector)
+  def dispatch_repeated_enter(selector, count: 3)
     page.execute_script(<<~JS)
       const target = document.querySelector(#{selector.to_json});
-      for (let index = 0; index < 3; index += 1) {
+      for (let index = 0; index < #{count}; index += 1) {
         target.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       }
     JS

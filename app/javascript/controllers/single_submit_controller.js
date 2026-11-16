@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static values = { submitSelector: String, deferUntilTurbo: Boolean }
+  static values = { submitSelector: String, deferUntilTurbo: Boolean, confirmMessage: String }
 
   connect() {
     this.enterPending = false
@@ -40,6 +40,11 @@ export default class extends Controller {
     // Turbo asks for confirmation after the submit event. Do not lock the
     // form until it actually starts, otherwise Cancel leaves it locked forever.
     if (this.deferUntilTurboValue) return
+    if (this.confirmMessageValue && !window.confirm(this.confirmMessageValue)) {
+      event.preventDefault()
+      this.enterPending = false
+      return
+    }
     this.startSubmission()
   }
 

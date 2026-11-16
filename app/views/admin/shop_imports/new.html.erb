@@ -75,6 +75,7 @@
 <% if @parsed_attrs.present? %>
   <div
     data-controller="single-submit"
+    data-single-submit-confirm-message-value="重複候補がある場合でも新規登録します。よろしいですか？"
     data-single-submit-submit-selector-value='input[type="submit"][value="この内容で新規仮登録する"]'
     data-action="keydown@document->single-submit#submitOnEnter submit->single-submit#guardSubmit"
   >
@@ -118,8 +119,7 @@
 
     <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <%= submit_tag "この内容で新規仮登録する",
-        class: "nav-btn",
-        data: { confirm: "重複候補がある場合でも新規登録します。よろしいですか？" } %>
+        class: "nav-btn" %>
 
       <%= link_to "食べログ貼り付けインポートクリア",
         new_admin_shop_import_path,
