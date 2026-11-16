@@ -1697,4 +1697,36 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     refute_includes result[:smoking_hours_text], "11:30"
   end
 
+  test "weekly family day after an effective date excludes Sunday for heated smoking" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      和鶏屋
+      営業時間
+      火・水・木・金・土・日
+      17:30 - 00:00
+      L.O. 料理23:00 ドリンク23:30
+      月
+      定休日
+      禁煙・喫煙
+      分煙（加熱式たばこ限定）
+      ※３月１日より毎週日曜日はファミリーデーとして、全席禁煙となります。
+      駐車場
+      無
+    TEXT
+    %w[火 水 木 金 土].each { |day| assert_includes result[:smoking_hours_text], "#{day} 17:30 - 00:00" }
+    assert_includes result[:smoking_hours_text], "日 喫煙不可"
+    refute_match(/日 .*\d/, result[:smoking_hours_text])
+    refute_match(/月 .*\d/, result[:smoking_hours_text])
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+    assert_includes result[:public_store_details], "ファミリーデー"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    travel_to(Time.zone.parse("2026-11-17 18:00")) { assert shop.smoking_now? }
+    travel_to(Time.zone.parse("2026-11-22 18:00")) do
+      assert shop.open_now?
+      refute shop.smoking_now?
+    end
+    travel_to(Time.zone.parse("2026-11-23 18:00")) { refute shop.open_now? }
+  end
+
 end
