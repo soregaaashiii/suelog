@@ -169,6 +169,7 @@ class TabelogPasteParser
     lines.each do |line|
       break if line.match?(/\A予算\z|予算（口コミ集計）|支払い方法|席・設備|禁煙・喫煙|求人情報|ホールスタッフ|調理師|料理長候補/)
       break if line.match?(/\A勤務時間/)
+      break if kept.present? && line.match?(/\A[【\[]営業時間変更/)
       if line.match?(/\A■\s*営業時間\z/)
         break if kept.present? && (!explicit_meals || kept.any? { |entry| day_label_line?(entry) })
         next
@@ -989,18 +990,22 @@ class TabelogPasteParser
   end
 
   def inferred_lunch_end_time
-    full_opening_raw = field_value("営業時間").to_s.tr("：", ":")
-
-    lunch_end =
-      full_opening_raw[/ランチ.*?[～〜~\-－–—]\s*(\d{1,2}:\d{2})/, 1]
+    lunch_end = opening_hours_lines_for_parsing.filter_map do |line|
+      next if line.match?(/L\.?O\.?|ラストオーダー/i)
+      labeled_meal_range(line, "ランチ")&.last
+    end.first
 
     return lunch_end if lunch_end.present?
 
     opening_ranges_by_day.values.filter_map do |ranges|
       ranges = ranges.to_a.uniq
       next unless ranges.size >= 2
+      # Only a separate midday service identifies lunch; dated exceptions and
+      # evening-only splits must not define the lunch cutoff for other days.
+      opening, closing = ranges.first
+      next unless time_to_minutes(opening) < 14 * 60 && time_to_minutes(closing).between?(12 * 60, 16 * 60)
 
-      ranges.first&.last
+      closing
     end.min_by { |time| time_to_minutes(time) }
   end
 
@@ -1122,6 +1127,11 @@ class TabelogPasteParser
       next if cleaned.match?(/\A\d{1,2}:\d{2}\s*[-〜～~－–—]\s*\d{1,2}:\d{2}\z/)
       next if cleaned.match?(/\A[（(]?\s*L\.?O\.?\s*(?:料理|ドリンク|フード)?\s*\d{1,2}:\d{2}[）)]?\z/i)
       next if cleaned.match?(/\A定休日\z/)
+
+      if cleaned.start_with?("※") || cleaned.match?(/\A\d{1,2}\/\d{1,2}(?:[（(]|[～〜])/)
+        notes << cleaned
+        next
+      end
 
       if cleaned.match?(/定休日|不定休|無休|年末年始|臨時休業|休業|営業時間変更|通常営業|準ずる|日曜、祝日やってます/)
         notes << cleaned

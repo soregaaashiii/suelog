@@ -1,6 +1,52 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "dated opening notices do not alter regular hours or inferred lunch ban" do
+    raw = <<~TEXT
+      店名
+      七輪鳥焼 鶏焼屋 堺東店
+      営業時間
+      月
+      17:00 - 23:30
+      L.O. 23:00
+      火・水・木・金
+      11:30 - 15:00
+      L.O. 14:30
+      17:00 - 23:30
+      L.O. 23:00
+      土・日・祝日
+      11:30 - 23:30
+      L.O. 23:00
+      不定休日
+      ※土日祝のランチのL.Oは14:30です
+      ※月曜が祝日の場合はランチ営業有、翌火曜日がランチ休み
+      【営業時間変更のお知らせ】
+      8/10(月)…11:30-15:00(LO14:30) 17:00-23:30(LO23:00)　8/12～8/14…11:30-23:30(ランチLO14：30/23:00)
+      ※大型連休の際の詳しい営業時間は店舗にお問い合わせください
+      予算
+      ￥3,000～￥3,999
+      禁煙・喫煙
+      全席喫煙可
+      ランチタイムは禁煙とさせていただきます。
+      駐車場
+      無
+    TEXT
+    result = TabelogPasteParser.call(raw)
+    assert_equal "月 17:00-23:30（L.O. 23:00）（喫煙可：17:00-23:30）", result[:opening_hours_text].lines.first.strip
+    %w[火 水 木 金].each do |day|
+      assert_includes result[:opening_hours_text], "#{day} 11:30-15:00（L.O. 14:30）, 17:00-23:30（L.O. 23:00）（喫煙可：17:00-23:30）"
+      assert_includes result[:smoking_hours_text], "#{day} 17:00 - 23:30"
+    end
+    %w[土 日 祝日].each do |day|
+      assert_includes result[:opening_hours_text], "#{day} 11:30-23:30（L.O. 23:00）（喫煙可：15:00-23:30）"
+      assert_includes result[:smoking_hours_text], "#{day} 15:00 - 23:30"
+    end
+    assert_equal "23:30", result[:opening_hours_json]["saturday"]["close"]
+    refute result[:opening_hours_json]["saturday"]["break_enabled"]
+    assert_includes result[:special_hours_note], "※月曜が祝日の場合はランチ営業有、翌火曜日がランチ休み"
+    assert_includes result[:special_hours_note], "8/10(月)"
+  end
+
   test "heated seats and indoor smoking space import separate conditions" do
     result = TabelogPasteParser.call("店名\n鳥平ちゃん 堺東駅前店\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n2F席にて電子たばこ喫煙可能・店内に喫煙スペースあり\n駐車場\n無")
     assert_equal "all_smoking", result[:smoking_area]
