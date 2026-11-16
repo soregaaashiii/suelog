@@ -1398,7 +1398,7 @@ class TabelogPasteParser
       return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
     end
 
-    smoking_seats = raw.to_s.tr("０１２３４５６７８９", "0123456789").match(/喫煙(?:席|\s*[（(]\s*テラス(?:席)?\s*[）)])\s*[:：]?\s*(\d+)\s*席/)
+    smoking_seats = raw.to_s.tr("０１２３４５６７８９", "0123456789").match(/喫煙(?:席|\s*[（(]\s*テラス(?:席)?\s*[）)])\s*[:：]?\s*(\d+)(?:\s*席|\s*(?=[、,，\/／）)\n]|\z))/)
     if smoking_seats && smoking_seats[1].to_i.positive?
       type = extract_smoking_type(raw)
       return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]

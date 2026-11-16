@@ -1,6 +1,20 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "counted smoking seats can omit the trailing seat unit" do
+    ["禁煙席: 80、喫煙席: 22", "禁煙席：８０、喫煙席：２２", "喫煙席:22、禁煙席:80"].each do |note|
+      result = TabelogPasteParser.call("店名\nドトールコーヒーショップ なかもず駅前店\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "both_ok", result[:smoking_type]
+      assert_nil result[:smoking_area_2]
+      assert_includes result[:public_store_details], note
+    end
+    ["禁煙席:80、喫煙席:0", "喫煙席22時以降のみ"].each do |note|
+      result = TabelogPasteParser.call("店名\n要確認\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      refute_equal "all_smoking", result[:smoking_area]
+    end
+  end
+
   test "dated opening notices do not alter regular hours or inferred lunch ban" do
     raw = <<~TEXT
       店名
