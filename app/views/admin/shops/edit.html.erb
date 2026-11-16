@@ -24,7 +24,8 @@
   if params[:from] == "shop_import"
     {
       controller: "single-submit",
-      action: "keydown@document->single-submit#submitOnEnter submit->single-submit#guardSubmit",
+      action: "keydown@document->single-submit#submitOnEnter submit->single-submit#guardSubmit turbo:submit-start->single-submit#startSubmission turbo:submit-end->single-submit#finishSubmission",
+      single_submit_defer_until_turbo_value: true,
       single_submit_submit_selector_value: 'input[type="submit"][name="commit_action"][value="approve"]'
     }
   else
