@@ -17,6 +17,14 @@ class AdminShopImportFlowTest < ApplicationSystemTestCase
     shop = Shop.find_by!(name: "Enter連打テスト店舗")
     assert_not shop.approved?
 
+    2.times do
+      dismiss_confirm("更新して承認しますか？") do
+        dispatch_repeated_enter("#shop_name")
+      end
+      assert_not shop.reload.approved?
+      assert_selector 'input[type="submit"][name="commit_action"][value="approve"]:not([disabled])'
+    end
+
     accept_confirm("更新して承認しますか？") do
       dispatch_repeated_enter("#shop_name")
     end
