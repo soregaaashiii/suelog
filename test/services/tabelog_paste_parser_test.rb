@@ -1672,4 +1672,29 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "both_ok", result[:smoking_type]
   end
 
+  test "yori smoking start follows weekday closing times and retains request note" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      すき焼きとおばんざいの店 すき
+      営業時間
+      月・火・木・金・土
+      11:30 - 21:00
+      日
+      11:30 - 21:20
+      水
+      定休日
+      禁煙・喫煙
+      分煙
+      16時より喫煙可能　御予約時に喫煙希望とお伝え下さい
+      駐車場
+      無
+    TEXT
+    %w[月 火 木 金 土].each { |day| assert_includes result[:smoking_hours_text], "#{day} 16:00 - 21:00" }
+    assert_includes result[:smoking_hours_text], "日 16:00 - 21:20"
+    refute_match(/水 .*\d/, result[:smoking_hours_text])
+    assert_includes result[:opening_hours_text], "喫煙可：16:00-21:20"
+    assert_includes result[:public_store_details], "御予約時に喫煙希望とお伝え下さい"
+    refute_includes result[:smoking_hours_text], "11:30"
+  end
+
 end
