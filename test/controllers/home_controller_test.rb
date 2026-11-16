@@ -157,10 +157,11 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     ranking_query = shop_sql.find { |sql| sql.include?("confirmed_on_sort") }
-    full_row_query = shop_sql.find { |sql| sql.include?("shops.*") }
+    full_row_query = shop_sql.find { |sql| sql.match?(/"?shops"?\."?name"?/) }
     assert ranking_query
     assert_not_includes ranking_query, "shops.*"
     assert full_row_query
+    assert_not_includes full_row_query, "raw_import_text"
     assert_match(/WHERE "shops"."id" IN/, full_row_query)
     assert_equal 30, rendered_shop_names.size
   ensure
@@ -174,6 +175,23 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
         assert_response :success
       end
     end
+  end
+
+  test "ranking instantiates shop models only for the visible page and skips editor preloads" do
+    insert_shops(*Array.new(61) { |index| shop_attributes(name: "軽量店舗#{index}") })
+    loaded = 0
+    subscriber = ActiveSupport::Notifications.subscribe("instantiation.active_record") do |event|
+      loaded += event.payload[:record_count] if event.payload[:class_name] == "Shop"
+    end
+    get root_url, headers: request_headers
+    assert_response :success
+    assert_equal 30, rendered_shop_names.size
+    assert_equal 30, loaded
+    assert_select "link[rel='modulepreload'][href*='trix']", count: 0
+    assert_select "link[rel='modulepreload'][href*='actiontext']", count: 0
+    assert_select "link[rel='modulepreload'][href*='article_table_controller']", count: 0
+  ensure
+    ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
   end
 
   test "has a partial index for the daily public page view lookup" do

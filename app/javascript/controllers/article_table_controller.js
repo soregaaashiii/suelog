@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import "trix"
+import "@rails/actiontext"
 
 // Tables are content attachments so Trix retains their structure on save/reopen.
 export default class extends Controller {

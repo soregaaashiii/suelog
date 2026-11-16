@@ -1,6 +1,20 @@
 require "application_system_test_case"
 
 class ArticleTablesTest < ApplicationSystemTestCase
+  test "public browsing does not download the article editor and retains shop styling" do
+    Geocoder.configure(lookup: :test)
+    Geocoder::Lookup::Test.set_default_stub([])
+    shop = Shop.create!(name: "軽量表示の確認", address: "大阪市北区梅田", genre: "カフェ", approved: true,
+      last_confirmed_on: Date.current, smoking_area: :all_smoking, smoking_type: :both_ok)
+    visit root_path
+    assert_selector ".shop-card__titleLink", text: shop.name
+    assert_empty page.evaluate_script("performance.getEntriesByType('resource').filter(entry => /\\/(trix|actiontext)[^/]*\\.js/.test(entry.name)).map(entry => entry.name)")
+    visit shop_path(shop)
+    assert_selector "h1", text: shop.name
+    assert_selector "link[rel='stylesheet'][href*='shop_show']", visible: :all
+    assert_empty page.evaluate_script("performance.getEntriesByType('resource').filter(entry => /\\/(trix|actiontext)[^/]*\\.js/.test(entry.name)).map(entry => entry.name)")
+  end
+
   setup { Capybara.enable_aria_label = true }
   teardown { Capybara.enable_aria_label = false }
   test "create paste edit save and reopen a table without losing cells" do

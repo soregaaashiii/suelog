@@ -10,6 +10,9 @@
     <%= stylesheet_link_tag "trix", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+    <% if controller_path == "admin/articles" && %w[new edit create update].include?(action_name) %>
+      <%= javascript_import_module_tag "article_editor" %>
+    <% end %>
   </head>
 
   <body class="admin-layout" style="background:#f7f7f7; font-family:-apple-system, BlinkMacSystemFont, sans-serif;">
