@@ -613,6 +613,12 @@ class TabelogPasteParser
 
   def normalized_smoking_rule_text
     raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:").gsub(/喫煙[（(]可[）)]/, "喫煙可").tr("　", " ")
+    # Tabelog also encloses time rules in Japanese brackets and uses ラスト
+    # for each weekday's closing time (not a single fixed midnight cutoff).
+    raw = raw.tr("【】", "()")
+    raw = raw.gsub(/(\d{1,2})(?::(\d{2}))?時?\s*[～〜~－–—-]\s*(?:ラスト|閉店)(?:まで)?[）)]?\s*(?:全席|全面|完全)?喫煙可/) do
+      format("%02d:%02d以降喫煙可", Regexp.last_match(1).to_i, Regexp.last_match(2).to_i)
+    end
     raw = raw.gsub(/(\d{1,2}:\d{2}\s*[～〜~－–—-]\s*\d{1,2}:\d{2})\s*の\s*ランチ(?:タイム|時間帯|時間|時)?\s*(?:は|のみ)?\s*禁煙/, '\\1まで禁煙')
     # Normalize a bare time-range ban (including full-width spacing) to the
     # existing cutoff format, shared by opening annotations and smoking hours.
@@ -770,6 +776,18 @@ class TabelogPasteParser
 
     # 「21時まで禁煙／21時以降喫煙可」のような併記は、後半の開始時刻を優先する。
     # 先に「時まで」を見ると、後方の「喫煙可」まで拾って時間帯が逆転するため。
+    clock_after = smoking_raw.match(/(\d{1,2}:\d{2})以降喫煙可/)
+    if clock_after
+      start = clock_after[1]
+      return opening_ranges_by_day.transform_values do |ranges|
+        ranges.filter_map do |open_time, close_time|
+          from, to = normalized_time_range(open_time, close_time)
+          cutoff = time_to_minutes(start)
+          next if cutoff >= to
+          "#{cutoff > from ? start : open_time}-#{close_time}"
+        end.join(", ")
+      end
+    end
     after_hour_match = smoking_raw.match(/(\d{1,2})時以降.*喫煙可|(\d{1,2})時から.*喫煙可|(\d{1,2})時\s*[〜～~][^。\n]{0,20}喫煙可/)
 
     if after_hour_match
@@ -1429,6 +1447,7 @@ class TabelogPasteParser
     return "separated" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|喫煙所|喫煙スペース|喫煙ブース|喫煙専用室/)
     return "all_smoking" if text.match?(/昼[^。\n]*禁煙/) && text.match?(/夜[^。\n]*喫煙可/)
     return "all_smoking" if raw.to_s.match?(/分煙/) && nonsmoking_seats_available?(raw)
+    return "all_smoking" if raw.to_s.match?(/全面喫煙可/)
     return "unknown" if text.match?(/分煙/)
     return "all_smoking" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "unknown" if text.match?(/全席禁煙|禁煙|不明/)
@@ -1457,6 +1476,7 @@ class TabelogPasteParser
     return "both_ok" if text.match?(/昼[^。\n]*禁煙/) && text.match?(/夜[^。\n]*喫煙可/)
     return "both_ok" if raw.to_s.match?(/紙(?:巻(?:き)?)?(?:たばこ|タバコ|煙草)/)
     return "both_ok" if raw.to_s.match?(/分煙/) && nonsmoking_seats_available?(raw)
+    return "both_ok" if raw.to_s.match?(/全面喫煙可/)
     return "unknown" if text.match?(/入口横.*喫煙可|店外.*喫煙可|屋外.*喫煙可|ベンチ.*喫煙|喫煙.*ベンチ|分煙/)
     return "both_ok" if text.match?(/全席喫煙|席で喫煙|喫煙可/)
     return "both_ok" if text.match?(/紙タバコ|紙たばこ/)

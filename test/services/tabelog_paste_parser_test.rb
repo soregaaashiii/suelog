@@ -1624,4 +1624,31 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_includes result[:opening_hours_text], "11:00-15:00（喫煙可：14:00-15:00）"
   end
 
+  test "Japanese bracketed lunch ban and last closing permission follow weekday overnight hours" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      とんりゅうラーメン 堺石津本店
+      営業時間
+      月・火・水・木・日
+      11:00 - 00:00
+      L.O. 00:00
+      金・土
+      11:00 - 01:00
+      L.O. 01:00
+      ■定休日
+      年中無休
+      禁煙・喫煙
+      分煙
+      ランチタイム【11時～14時】　禁煙／【14時～ラスト】　全面喫煙可
+      駐車場
+      有
+    TEXT
+    %w[月 火 水 木 日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 14:00 - 00:00" }
+    %w[金 土].each { |day| assert_includes result[:smoking_hours_text], "#{day} 14:00 - 01:00" }
+    assert_includes result[:opening_hours_text], "喫煙可：14:00-01:00"
+    refute_includes result[:smoking_hours_text], "11:00"
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+  end
+
 end
