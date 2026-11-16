@@ -1258,7 +1258,11 @@ class TabelogPasteParser
       ]
     end
 
-    if heated_at_seat && separate_smoking_area?(text)
+    indoor_facility_with_smoking_seats =
+      raw.to_s.match?(/席[^。\n・]{0,30}(?:電子|加熱式)(?:たばこ|タバコ)[^。\n・]{0,10}喫煙(?:可能|可)/) &&
+      raw.to_s.match?(/店内に(?:喫煙所|喫煙スペース|喫煙ブース|喫煙専用室|喫煙ルーム)(?:あり|有り|有|設置)/)
+
+    if heated_at_seat && (separate_smoking_area?(text) || indoor_facility_with_smoking_seats)
       return [
         { area: "all_smoking", type: "electronic_only" },
         { area: "separated", type: "both_ok" }

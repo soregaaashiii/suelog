@@ -1,6 +1,18 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "heated seats and indoor smoking space import separate conditions" do
+    result = TabelogPasteParser.call("店名\n鳥平ちゃん 堺東駅前店\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n2F席にて電子たばこ喫煙可能・店内に喫煙スペースあり\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+    assert_equal "separated", result[:smoking_area_2]
+    assert_equal "both_ok", result[:smoking_type_2]
+    assert_includes result[:public_store_details], "2F席にて電子たばこ喫煙可能"
+
+    result = TabelogPasteParser.call("店名\n喫煙室のみ\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n店内に喫煙スペースあり\n駐車場\n無")
+    assert_nil result[:smoking_area_2]
+  end
+
   test "only private rooms nonsmoking imports both tobacco types at other seats" do
     ["個室のみ禁煙", "個室だけ禁煙", "個室のみは禁煙"].each do |note|
       result = TabelogPasteParser.call("店名\n中国料理 黄酒家\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
