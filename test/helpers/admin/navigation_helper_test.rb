@@ -8,7 +8,8 @@ class Admin::NavigationHelperTest < ActionView::TestCase
       reviews: Review.where(status: 0).count,
       shops: Shop.where(approved: false).where(rejected: [false, nil]).count,
       edit_requests: ShopEditRequest.where(status: 0).count,
-      reports: ShopReport.where(status: 0).count + ReviewReport.where(status: 0).count
+      reports: ShopReport.where(status: 0).count + ReviewReport.where(status: 0).count,
+      contacts: ContactMessage.count
     }
     sql = []
     subscriber = lambda do |_name, _started, _finished, _id, payload|
@@ -20,7 +21,8 @@ class Admin::NavigationHelperTest < ActionView::TestCase
         reviews: pending_reviews_count,
         shops: pending_shops_count,
         edit_requests: pending_edit_requests_count,
-        reports: pending_reports_count
+        reports: pending_reports_count,
+        contacts: contact_messages_count
       }
     end
 
