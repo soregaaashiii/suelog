@@ -1,6 +1,18 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "fullwidth spaces between floor and smoking permission retain seat smoking" do
+    ["１階　喫煙可　２階　禁煙", "1階 喫煙可 2階 禁煙"].each do |note|
+      result = TabelogPasteParser.call("店名\n創作ダイニングカフェ 一道\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "both_ok", result[:smoking_type]
+      assert_nil result[:smoking_area_2]
+      assert_includes result[:public_store_details], note
+    end
+    result = TabelogPasteParser.call("店名\n禁煙\n禁煙・喫煙\n分煙\n１階　喫煙不可　２階　禁煙\n駐車場\n無")
+    refute_equal "all_smoking", result[:smoking_area]
+  end
+
   test "weekend and holiday nonsmoking days preserve weekday smoking and opening hours" do
     ["土曜・日曜・祝日全席禁煙", "土日祝は全面禁煙", "土曜日・日曜日・祝日は終日禁煙"].each do |note|
       result = TabelogPasteParser.call("店名\nビッグボーイ 堺大庭寺店\n営業時間\n11:00 - 00:00\n■ 営業時間\nランチタイム オープン時～１７時まで（日・祝日を除く）\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n有")
