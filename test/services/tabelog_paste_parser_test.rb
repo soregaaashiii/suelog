@@ -1,6 +1,27 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "a smoking floor before a later all-seat extension permits business hours" do
+    raw = "店名\n大衆とり酒場 とりいちず 堺東店\n営業時間\n月・火・水・木・金\n17:00 - 05:00\n土・日・祝日\n13:00 - 05:00\n禁煙・喫煙\n分煙\n※１階：禁煙、2階：喫煙可（紙たばこ可）／22時以降、全席にて喫煙可\n駐車場\n無"
+    result = TabelogPasteParser.call(raw)
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_equal "business", result[:smoking_condition_schedules].dig("primary", "mode")
+    assert_nil result[:smoking_hours_text]
+    refute_includes result[:opening_hours_text], "22:00"
+    assert_includes result[:public_store_details], "22時以降、全席にて喫煙可"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    travel_to(Time.zone.parse("2026-11-17 20:00")) { assert shop.smoking_now? }
+    travel_to(Time.zone.parse("2026-11-21 15:00")) { assert shop.smoking_now? }
+    travel_to(Time.zone.parse("2026-11-17 10:00")) { refute shop.smoking_now? }
+
+    ["※１階：禁煙", "2階：20時以降喫煙可（紙たばこ可）"].each do |floor|
+      limited = TabelogPasteParser.call(raw.sub("※１階：禁煙、2階：喫煙可（紙たばこ可）", floor))
+      refute_equal "business", limited[:smoking_condition_schedules].to_h.dig("primary", "mode")
+      assert_includes limited[:smoking_hours_text], floor.include?("20時") ? "20:00" : "22:00"
+    end
+  end
+
   test "fullwidth spaces between floor and smoking permission retain seat smoking" do
     ["１階　喫煙可　２階　禁煙", "1階 喫煙可 2階 禁煙"].each do |note|
       result = TabelogPasteParser.call("店名\n創作ダイニングカフェ 一道\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")

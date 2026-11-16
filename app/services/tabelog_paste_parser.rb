@@ -718,6 +718,8 @@ class TabelogPasteParser
     return counter_only_timed_ban[:schedules] if counter_only_timed_ban
     schedules = if timed_tobacco_switch
       timed_tobacco_switch[:schedules]
+    elsif floor_smoking_before_all_seat_permission?
+      { "primary" => { "mode" => "business" } }
     elsif !unknown_night_smoking_time? && multiple_daily_smoking_ranges && extract_smoking_conditions(field_value_with_continuation("禁煙・喫煙")).length == 1
       { "primary" => { "mode" => "custom", "hours_text" => extract_smoking_hours_text } }
     else
@@ -737,6 +739,7 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
+    return {} if floor_smoking_before_all_seat_permission?
     return {} if counter_only_timed_ban
     return {} if unknown_night_smoking_time?
     return {} if timed_tobacco_switch
@@ -1206,6 +1209,19 @@ class TabelogPasteParser
     "unknown"
   end
 
+  # A later extension to all seats does not restrict an already-smoking floor.
+  def floor_smoking_before_all_seat_permission?
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：　", "0123456789: ")
+    clauses = raw.split(/[／\/。\n]/)
+    extension = clauses.index { |clause| clause.match?(/\A\s*\d{1,2}(?::\d{2})?時?(?:以降|から)[、,\s]*全席(?:にて|で)?\s*喫煙(?:可能|可)/) }
+    return false unless extension
+
+    clauses.take(extension).any? do |clause|
+      next false if clause.match?(/\d{1,2}(?::\d{2}|時)|以降|から|まで|ランチ|ディナー|夜|昼|朝/)
+      clause.match?(/(?:\A|[、,])\s*※?\s*\d+(?:階|F)(?:の)?(?:席)?\s*:?\s*喫煙(?:可能|可)(?:[（(][^）)]*[）)])?\s*\z/i)
+    end
+  end
+
   def timed_tobacco_switch
     raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：　", "0123456789: ")
     return nil unless raw.match?(/(?:加熱式|電子)(?:たばこ|タバコ)?(?:のみ|限定)/)
@@ -1254,6 +1270,11 @@ class TabelogPasteParser
         { area: "all_smoking", type: "electronic_only" },
         { area: "separated", type: paper_tobacco_exclusive?(raw.to_s) ? "paper_only" : "both_ok" }
       ]
+    end
+
+    if floor_smoking_before_all_seat_permission?
+      type = extract_smoking_type(raw)
+      return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
     end
 
     text = [raw, @text].compact.join("\n")
@@ -1510,6 +1531,7 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    return nil if floor_smoking_before_all_seat_permission?
     return nil if counter_only_timed_ban
     return nil if unknown_night_smoking_time?
     return nil if timed_tobacco_switch
