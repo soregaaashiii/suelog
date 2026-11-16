@@ -563,8 +563,15 @@ class TabelogPasteParser
     end
   end
 
+  def explicit_daytime_ban_with_night_permission?
+    raw = normalized_smoking_rule_text
+    raw.match?(/昼[^。\n]*禁煙/) && raw.match?(/夜[^。\n]*喫煙可/) &&
+      raw.match?(/\d{1,2}:\d{2}\s*[～〜~\-－–—]\s*\d{1,2}:\d{2}\s*(?:まで)?\s*(?:は)?\s*(?:全席|全面|完全)?\s*禁煙/)
+  end
+
   def evening_only_smoking_ranges
     raw = field_value_with_continuation("禁煙・喫煙").to_s
+    return nil if explicit_daytime_ban_with_night_permission?
     night_only = raw.match?(/(?:夜|夜間|ディナー)(?:だけ|のみ)?(?:は)?\s*喫煙可/)
     daytime_ban = raw.match?(/昼[^。\n]*禁煙/) && raw.match?(/夜[^。\n]*喫煙可/)
     return nil unless night_only || daytime_ban
@@ -653,7 +660,8 @@ class TabelogPasteParser
     end
     # Other existing rules retain their usual single-window behavior.
     @multiple_daily_smoking_ranges = ranges if ranges.values.any? { |parts| parts.length > 1 } &&
-      opening_ranges_by_day.values.any? { |parts| parts.any? { |start, finish| time_to_minutes(start) < ban_start && time_to_minutes(finish) > ban_end } }
+      (explicit_daytime_ban_with_night_permission? ||
+       opening_ranges_by_day.values.any? { |parts| parts.any? { |start, finish| time_to_minutes(start) < ban_start && time_to_minutes(finish) > ban_end } })
   end
 
   def counter_only_timed_ban
@@ -1481,6 +1489,12 @@ class TabelogPasteParser
     return nil if ambiguous_partial_lunch_ban?
     if (weekday_ranges = weekday_start_weekend_full_smoking_ranges)
       return weekday_ranges.map do |day, ranges|
+        label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"
+        "#{day_label(day)} #{label}"
+      end.join("\n")
+    end
+    if explicit_daytime_ban_with_night_permission? && (ranges_by_day = multiple_daily_smoking_ranges)
+      return ranges_by_day.map do |day, ranges|
         label = ranges.present? ? ranges.map { |times| times.join(" - ") }.join(", ") : "喫煙不可"
         "#{day_label(day)} #{label}"
       end.join("\n")

@@ -1599,4 +1599,29 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     travel_to(Time.zone.parse("2026-10-26 19:00")) { refute shop.smoking_now? }
   end
 
+  test "explicit lunch ban retains late lunch and evening smoking windows" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      びもん
+      営業時間
+      月・火・水・木・金・土
+      11:00 - 15:00
+      17:30 - 20:00
+      日
+      定休日
+      禁煙・喫煙
+      分煙
+      [昼]11:00～14:00まで禁煙　[夜]喫煙可
+      駐車場
+      有
+    TEXT
+    %w[月 火 水 木 金 土].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 14:00 - 15:00, 17:30 - 20:00"
+    end
+    refute_match(/日 .*\d/, result[:smoking_hours_text])
+    assert_equal result[:smoking_hours_text], result.dig(:smoking_condition_schedules, "primary", "hours_text")
+    assert_equal "custom", result.dig(:smoking_condition_schedules, "primary", "mode")
+    assert_includes result[:opening_hours_text], "11:00-15:00（喫煙可：14:00-15:00）"
+  end
+
 end
