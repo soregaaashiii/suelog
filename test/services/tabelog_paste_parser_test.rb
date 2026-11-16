@@ -1651,4 +1651,25 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "both_ok", result[:smoking_type]
   end
 
+  test "only during range with dakewa wording excludes the ban and retains the last half hour" do
+    result = TabelogPasteParser.call(<<~TEXT)
+      店名
+      れすとらん 浪花亭
+      営業時間
+      11:30 - 13:30
+      禁煙・喫煙
+      全席喫煙可
+      毎日11：30～13：00だけは全面禁煙
+      駐車場
+      無
+    TEXT
+    %w[月 火 水 木 金 土 日].each do |day|
+      assert_includes result[:smoking_hours_text], "#{day} 13:00 - 13:30"
+    end
+    refute_includes result[:smoking_hours_text], "11:30"
+    assert_includes result[:opening_hours_text], "喫煙可：13:00-13:30"
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+  end
+
 end
