@@ -51,6 +51,11 @@ def pending_reports_count
 pending_navigation_counts[:reports]
 end
 
+# お問い合わせには対応状態がないため、保存中の全件を表示する。
+def contact_messages_count
+pending_navigation_counts[:contacts]
+end
+
 private
 
 def pending_navigation_counts
@@ -63,14 +68,16 @@ SELECT
   (#{pending_shops_scope.reselect("COUNT(*)").to_sql}) AS pending_shops,
   (#{ShopEditRequest.where(status: 0).reselect("COUNT(*)").to_sql}) AS pending_edit_requests,
   (#{ShopReport.where(status: 0).reselect("COUNT(*)").to_sql}) +
-    (#{ReviewReport.where(status: 0).reselect("COUNT(*)").to_sql}) AS pending_reports
+    (#{ReviewReport.where(status: 0).reselect("COUNT(*)").to_sql}) AS pending_reports,
+  (#{ContactMessage.reselect("COUNT(*)").to_sql}) AS contact_messages
 SQL
 
 {
 reviews: row["pending_reviews"].to_i,
 shops: row["pending_shops"].to_i,
 edit_requests: row["pending_edit_requests"].to_i,
-reports: row["pending_reports"].to_i
+reports: row["pending_reports"].to_i,
+contacts: row["contact_messages"].to_i
 }
 rescue StandardError
 fallback_pending_navigation_counts
@@ -82,7 +89,8 @@ defined?(Review) && Review.column_names.include?("status") &&
 defined?(Shop) && Shop.column_names.include?("approved") && Shop.column_names.include?("rejected") &&
 defined?(ShopEditRequest) && ShopEditRequest.column_names.include?("status") &&
 defined?(ShopReport) && ShopReport.column_names.include?("status") &&
-defined?(ReviewReport) && ReviewReport.column_names.include?("status")
+defined?(ReviewReport) && ReviewReport.column_names.include?("status") &&
+defined?(ContactMessage) && ContactMessage.column_names.include?("id")
 end
 
 def pending_shops_scope
@@ -94,8 +102,15 @@ def fallback_pending_navigation_counts
 reviews: defined?(Review) && Review.column_names.include?("status") ? Review.where(status: 0).count : 0,
 shops: defined?(Shop) && Shop.column_names.include?("approved") ? fallback_pending_shops_count : 0,
 edit_requests: defined?(ShopEditRequest) && ShopEditRequest.column_names.include?("status") ? ShopEditRequest.where(status: 0).count : 0,
-reports: fallback_pending_reports_count
+reports: fallback_pending_reports_count,
+contacts: fallback_contact_messages_count
 }
+end
+
+def fallback_contact_messages_count
+  defined?(ContactMessage) ? ContactMessage.count : 0
+rescue StandardError
+  0
 end
 
 def fallback_pending_shops_count
