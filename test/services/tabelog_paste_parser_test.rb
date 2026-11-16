@@ -1,6 +1,24 @@
 require "test_helper"
 
 class TabelogPasteParserTest < ActiveSupport::TestCase
+  test "weekend and holiday nonsmoking days preserve weekday smoking and opening hours" do
+    ["土曜・日曜・祝日全席禁煙", "土日祝は全面禁煙", "土曜日・日曜日・祝日は終日禁煙"].each do |note|
+      result = TabelogPasteParser.call("店名\nビッグボーイ 堺大庭寺店\n営業時間\n11:00 - 00:00\n■ 営業時間\nランチタイム オープン時～１７時まで（日・祝日を除く）\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n有")
+      %w[月 火 水 木 金].each { |day| assert_includes result[:smoking_hours_text], "#{day} 11:00 - 00:00" }
+      %w[土 日 祝日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
+      assert_includes result[:opening_hours_text], "土 11:00-00:00"
+      assert_includes result[:opening_hours_text], "日 11:00-00:00"
+      shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+      travel_to(Time.zone.parse("2026-11-17 18:00")) { assert shop.smoking_now? }
+      travel_to(Time.zone.parse("2026-11-21 18:00")) do
+        assert shop.open_now?
+        refute shop.smoking_now?
+      end
+    end
+    result = TabelogPasteParser.call("店名\n時間制限\n営業時間\n11:00 - 00:00\n禁煙・喫煙\n分煙\n土曜・日曜・祝日14時まで全席禁煙\n駐車場\n無")
+    refute_includes result[:smoking_hours_text].to_s, "土 喫煙不可"
+  end
+
   test "all counter seats smoking imports both types and counter location" do
     ["カウンター全席喫煙可", "カウンター席全席喫煙可能"].each do |note|
       result = TabelogPasteParser.call("店名\n珈琲専門店MUC 三国ヶ丘店\n個室\n有\n個室は禁煙のようです。\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n有")
