@@ -61,6 +61,10 @@ class HomeController < ApplicationController
 
   SORT_OPTIONS = %w[recommended rating reviews_count newest].freeze
   FULLWIDTH_SPACE = "\u3000"
+  ListingRankedShop = Struct.new(:attributes) do
+    def id = attributes.fetch("id")
+    def [](key) = attributes[key.to_s]
+  end
 
   def index
   track_page_view
@@ -584,7 +588,7 @@ end
     base = base.where("shops.last_confirmed_on IS NULL OR shops.last_confirmed_on < ?", cutoff)
   end
 
-  records = base
+  ranking_scope = base
     .left_joins(:reviews)
     .select(
       "shops.id",
@@ -600,11 +604,14 @@ end
       "MAX(CASE WHEN reviews.approved THEN reviews.created_at END) AS latest_review_at"
     )
     .group("shops.id")
-    .to_a
 
+  # Ranking needs scalar values only. Instantiate full models for the visible
+  # page, and evaluate each distinct schedule only once in this request.
+  opening_status = ShopOpeningStatus.new
   open_now_map = {}
-  records.each do |shop|
-    open_now_map[shop.id] = shop.open_now?
+  records = Shop.connection.select_all(ranking_scope.to_sql).map do |row|
+    open_now_map[row.fetch("id")] = opening_status.for_row(row)
+    ListingRankedShop.new(row)
   end
 
   records.select! { |shop| open_now_map[shop.id] } if @open_now_only
@@ -633,7 +640,7 @@ end
       menu_photos_attachments: :blob
     )
     .select(
-      "shops.*",
+      *(Shop.column_names - %w[raw_import_text]).map { |column| "shops.#{column}" },
       "COALESCE(AVG(CASE WHEN reviews.approved THEN reviews.rating END), 0) AS avg_rating",
       "COALESCE(SUM(CASE WHEN reviews.approved THEN 1 ELSE 0 END), 0) AS reviews_count",
       "MAX(CASE WHEN reviews.approved THEN reviews.created_at END) AS latest_review_at"
@@ -653,6 +660,7 @@ end
       Article
         .published
         .recommended_for(@current_area_key)
+        .with_attached_eyecatch
         .limit(3)
   end
 

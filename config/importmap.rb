@@ -7,9 +7,10 @@ pin "@hotwired/stimulus", to: "stimulus.min.js"
 pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
 
 pin "controllers", to: "controllers/index.js"
-pin_all_from "app/javascript/controllers", under: "controllers"
+pin_all_from "app/javascript/controllers", under: "controllers", preload: false
 
-pin "trix"
-pin "@rails/actiontext", to: "actiontext.esm.js"
+pin "article_editor", preload: false
+pin "trix", preload: false
+pin "@rails/actiontext", to: "actiontext.esm.js", preload: false
 
 pin "hero_fit", to: "hero_fit.js"

@@ -38,6 +38,7 @@ class MapsController < ApplicationController
     columns = Shop.column_names - %w[raw_import_text import_metadata note]
     @shops = scope.select(*columns).order(last_confirmed_on: :desc, id: :desc).to_a
     @open_now_cache = {}
+    @opening_status = ShopOpeningStatus.new
     keyword = params[:q].to_s.strip.downcase.unicode_normalize(:nfkc)
     station = params[:station].to_s.strip.downcase
     @shops.select! do |shop|
@@ -169,7 +170,7 @@ class MapsController < ApplicationController
   def open_now_for(shop)
     return false unless shop.respond_to?(:open_now?)
 
-    @open_now_cache.fetch(shop.id) { @open_now_cache[shop.id] = !!shop.open_now? }
+    @open_now_cache.fetch(shop.id) { @open_now_cache[shop.id] = !!(@opening_status ||= ShopOpeningStatus.new).for_shop(shop) }
   rescue StandardError
     false
   end

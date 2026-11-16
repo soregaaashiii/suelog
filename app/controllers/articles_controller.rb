@@ -2,7 +2,7 @@ class ArticlesController < ApplicationController
   def index
     @q = params[:q].to_s.strip
 
-    @articles = Article.published.left_joins(:rich_text_body)
+    @articles = Article.published.with_attached_eyecatch.left_joins(:rich_text_body)
 
     if @q.present?
       @articles = @articles.where(

@@ -60,14 +60,19 @@ class ShopsController < ApplicationController
     track_page_view(shop: @shop)
 
     @review = Review.new
-    @approved_reviews = @shop.reviews.approved.order(created_at: :desc)
+    @approved_reviews = @shop.reviews.approved.order(created_at: :desc).load
 
     ip_hash = ip_hash_for_request
     @my_review = @shop.reviews.find_by(ip_hash: ip_hash)
 
+    @defer_recommendation_images = true
     @nearby_shops = nearby_shops_for(@shop)
     @same_genre_shops = same_genre_shops_for(@shop)
     @popular_shops = popular_shops_for(@shop)
+    ActiveRecord::Associations::Preloader.new(
+      records: [@shop, *@nearby_shops, *@same_genre_shops, *@popular_shops, *@approved_reviews],
+      associations: RECOMMENDATION_IMAGE_PRELOADS
+    ).call
     @related_articles = related_articles_for(@shop)
   end
 
@@ -250,7 +255,7 @@ class ShopsController < ApplicationController
 
   def popular_shops_for(shop)
     if shop.latitude.present? && shop.longitude.present?
-      click_counts = popular_click_counts
+      click_counts = popular_click_counts(geocoded_recommendation_rows_for(shop).map { |row| row.fetch("id") })
       ranked_shops = geocoded_recommendation_rows_for(shop)
         .sort_by { |row| popular_geocoded_sort_key(row, click_counts) }
         .first(6)
@@ -389,8 +394,8 @@ class ShopsController < ApplicationController
     row.fetch("smoking_area").to_i == Shop.smoking_areas.fetch(shop.smoking_area)
   end
 
-  def popular_click_counts
-    @popular_click_counts ||= ShopClick.group(:shop_id).count
+  def popular_click_counts(shop_ids)
+    ShopClick.where(shop_id: shop_ids).group(:shop_id).count
   end
 
   def popular_geocoded_sort_key(row, click_counts)
@@ -447,9 +452,8 @@ class ShopsController < ApplicationController
       )
     end
 
-    shops_by_id = display_scope
-      .preload(RECOMMENDATION_IMAGE_PRELOADS)
-      .index_by(&:id)
+    display_scope = display_scope.preload(RECOMMENDATION_IMAGE_PRELOADS) unless @defer_recommendation_images
+    shops_by_id = display_scope.index_by(&:id)
 
     ranked_ids.filter_map { |shop_id| shops_by_id[shop_id] }
   end
