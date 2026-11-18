@@ -752,7 +752,27 @@ class TabelogPasteParser
     schedules.presence
   end
 
+  def weekday_lunch_only_smoking_ranges
+    return unless field_value_with_continuation("禁煙・喫煙").to_s.match?(/平日ランチ(?:タイム|時間帯|時間)?のみ喫煙可/)
+    cutoff = inferred_lunch_end_time
+    return if cutoff.blank?
+
+    opening_ranges_by_day.each_with_object({ "holiday" => [] }) do |(day, ranges), result|
+      result[day] = if %w[月 火 水 木 金].include?(day_label(day))
+        ranges.filter_map do |from, to|
+          next unless time_to_minutes(from) < time_to_minutes(cutoff)
+          [from, time_to_minutes(to) > time_to_minutes(cutoff) ? cutoff : to]
+        end
+      else
+        []
+      end
+    end
+  end
+
   def extract_smoking_hours_by_day
+    if (ranges = weekday_lunch_only_smoking_ranges)
+      return ranges.transform_values { |periods| periods.map { |times| times.join("-") }.join(", ") }
+    end
     return {} if floor_smoking_before_all_seat_permission?
     return {} if counter_only_timed_ban
     return {} if unknown_night_smoking_time?
@@ -1271,6 +1291,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_conditions(raw)
+    if weekday_lunch_only_smoking_ranges
+      return [{ area: "all_smoking", type: "both_ok" }]
+    end
     if timed_seat_ban_with_smoking_corner?
       return [{ area: "all_smoking", type: "both_ok" }, { area: "separated", type: "both_ok" }]
     end
@@ -1563,6 +1586,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    if (ranges = weekday_lunch_only_smoking_ranges)
+      return ranges.map { |day, periods| "#{day_label(day)} #{periods.present? ? periods.map { |times| times.join(' - ') }.join(', ') : '喫煙不可'}" }.join("\n")
+    end
     return nil if floor_smoking_before_all_seat_permission?
     return nil if counter_only_timed_ban
     return nil if unknown_night_smoking_time?

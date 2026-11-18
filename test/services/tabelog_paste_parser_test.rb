@@ -1917,4 +1917,12 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_nil absent[:smoking_area_2]
   end
 
+  test "weekday lunch only smoking excludes dinner weekends and holidays" do
+    result = TabelogPasteParser.call("店名\nチャールスとん\n営業時間\n月・水・木・金・土・日\n11:00 - 14:00\n17:00 - 21:00\n火\n定休日\n禁煙・喫煙\n分煙\n平日ランチタイムのみ喫煙可で、他は全面禁煙という変則の分煙\n駐車場\n有")
+    assert_equal "all_smoking", result[:smoking_area]
+    %w[月 水 木 金].each { |day| assert_includes result[:smoking_hours_text], "#{day} 11:00 - 14:00" }
+    %w[土 日 祝日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
+    refute_includes result[:smoking_hours_text], "17:00"
+  end
+
 end
