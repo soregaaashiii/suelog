@@ -735,6 +735,10 @@ class TabelogPasteParser
       schedules["primary"] ||= {}
       schedules["primary"]["seat_location"] = "counter"
     end
+    if conditions.length == 1 && conditions.first[:area] == "all_smoking" && raw.match?(/掘りごたつ(?:席)?[、・と及び\s]+カウンター(?:席)?(?:は|が|で)?\s*喫煙(?:可能|可)/)
+      schedules["primary"] ||= {}
+      schedules["primary"]["seat_location"] = "counter_and_horigotatsu"
+    end
     schedules.presence
   end
 

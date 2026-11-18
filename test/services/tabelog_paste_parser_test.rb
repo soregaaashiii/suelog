@@ -1878,4 +1878,13 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     end
   end
 
+  test "horigotatsu and counter smoking permission populates seat location details" do
+    result = TabelogPasteParser.call("店名\n焼肉三徳\n禁煙・喫煙\n分煙\n掘りごたつ席、カウンターは喫煙可能です\n駐車場\n有")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "counter_and_horigotatsu", result[:smoking_condition_schedules]["primary"]["seat_location"]
+    assert_includes result[:public_store_details], "掘りごたつ席、カウンターは喫煙可能です"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    assert_equal "掘りごたつ席・カウンター席", shop.smoking_seat_location_label("primary")
+  end
+
 end
