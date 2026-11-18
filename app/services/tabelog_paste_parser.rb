@@ -723,7 +723,21 @@ class TabelogPasteParser
       raw.match?(/\d{1,2}:\d{2}\s*[〜~－-]\s*\d{1,2}:\d{2}\s*禁煙\s*[（(]喫煙コーナーあり[）)]/)
   end
 
+  def daytime_counter_night_all_schedules
+    raw = field_value_with_continuation("禁煙・喫煙").to_s
+    return unless raw.match?(/お?昼はカウンター(?:席)?のみ喫煙可/) && raw.match?(/夜は(?:全面|全席)喫煙(?:席|可)/)
+    hours = opening_ranges_by_day.map do |day, ranges|
+      evening = ranges.select { |from, _| time_to_minutes(from) >= 17 * 60 }
+      "#{day_label(day)} #{evening.present? ? evening.map { |times| times.join(' - ') }.join(', ') : '喫煙不可'}"
+    end.join("\n")
+    {
+      "primary" => { "mode" => "business", "seat_location" => "counter" },
+      "secondary" => { "mode" => "custom", "hours_text" => hours, "seat_location" => "non_counter" }
+    }
+  end
+
   def imported_smoking_condition_schedules
+    return daytime_counter_night_all_schedules if daytime_counter_night_all_schedules
     return counter_only_timed_ban[:schedules] if counter_only_timed_ban
     schedules = if timed_tobacco_switch
       timed_tobacco_switch[:schedules]
@@ -1294,6 +1308,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_conditions(raw)
+    if daytime_counter_night_all_schedules
+      return [{ area: "all_smoking", type: "both_ok" }, { area: "all_smoking", type: "both_ok" }]
+    end
     if weekday_lunch_only_smoking_ranges
       return [{ area: "all_smoking", type: "both_ok" }]
     end

@@ -1944,4 +1944,25 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     refute_equal "all_smoking", result[:smoking_area]
   end
 
+  test "daytime counter and nighttime all seats have separate schedules" do
+    result = TabelogPasteParser.call("店名\nCavolo\n営業時間\n火・木・土\n11:00 - 16:00\n18:00 - 22:00\n水・金\n11:00 - 16:00\n月・日・祝日\n定休日\n禁煙・喫煙\n分煙\nお昼はカウンターのみ喫煙可。夜は全面喫煙席\n駐車場\n有")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "all_smoking", result[:smoking_area_2]
+    schedules = result[:smoking_condition_schedules]
+    assert_equal "counter", schedules["primary"]["seat_location"]
+    assert_equal "business", schedules["primary"]["mode"]
+    assert_equal "non_counter", schedules["secondary"]["seat_location"]
+    assert_includes schedules["secondary"]["hours_text"], "火 18:00 - 22:00"
+    assert_includes schedules["secondary"]["hours_text"], "水 喫煙不可"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    travel_to(Time.zone.parse("2026-11-19 12:00")) do
+      assert shop.smoking_condition_now?("primary")
+      refute shop.smoking_condition_now?("secondary")
+    end
+    travel_to(Time.zone.parse("2026-11-19 19:00")) do
+      assert shop.smoking_condition_now?("primary")
+      assert shop.smoking_condition_now?("secondary")
+    end
+  end
+
 end
