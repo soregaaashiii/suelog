@@ -1906,4 +1906,15 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     travel_to(Time.zone.parse("2026-11-18 23:00")) { refute shop.smoking_condition_now?("secondary") }
   end
 
+  test "all smoking seats and additional dedicated room remain separate conditions" do
+    result = TabelogPasteParser.call("店名\nカラオケ クラブ ノバ\n禁煙・喫煙\n全席喫煙可\n喫煙専用室もあり\n駐車場\n有")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "both_ok", result[:smoking_type]
+    assert_equal "separated", result[:smoking_area_2]
+    assert_equal "both_ok", result[:smoking_type_2]
+    assert_includes result[:public_store_details], "喫煙専用室もあり"
+    absent = TabelogPasteParser.call("店名\nテスト\n禁煙・喫煙\n全席喫煙可\n喫煙専用室はありません\n駐車場\n無")
+    assert_nil absent[:smoking_area_2]
+  end
+
 end
