@@ -1933,4 +1933,15 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     %w[金 土].each { |day| assert_includes result[:smoking_hours_text], "#{day} 15:00 - 23:00" }
   end
 
+  test "floor only permission is smoking at seats" do
+    ["一階のみ喫煙可", "1階だけ喫煙可能", "１階のみ喫煙可"].each do |note|
+      result = TabelogPasteParser.call("店名\nコッテジ\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "both_ok", result[:smoking_type]
+      assert_includes result[:public_store_details], note
+    end
+    result = TabelogPasteParser.call("店名\nテスト\n禁煙・喫煙\n分煙\n一階のみ喫煙不可\n駐車場\n無")
+    refute_equal "all_smoking", result[:smoking_area]
+  end
+
 end
