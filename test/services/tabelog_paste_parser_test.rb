@@ -1887,4 +1887,22 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     assert_equal "掘りごたつ席・カウンター席", shop.smoking_seat_location_label("primary")
   end
 
+  test "smoking corner stays available during timed seat ban" do
+    result = TabelogPasteParser.call("店名\n旬彩 がんこ屋 りんくう店\n営業時間\n10:00 - 14:30\nL.O. 14:00\n14:30 - 22:00\n禁煙・喫煙\n分煙\n一部禁煙席あり　10:00～15:00禁煙(喫煙コーナーあり)\n駐車場\n有")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "separated", result[:smoking_area_2]
+    assert_equal "business", result[:smoking_condition_schedules]["secondary"]["mode"]
+    assert_includes result[:smoking_condition_schedules]["primary"]["hours_text"], "15:00"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    travel_to(Time.zone.parse("2026-11-18 12:00")) do
+      refute shop.smoking_condition_now?("primary")
+      assert shop.smoking_condition_now?("secondary")
+    end
+    travel_to(Time.zone.parse("2026-11-18 16:00")) do
+      assert shop.smoking_condition_now?("primary")
+      assert shop.smoking_condition_now?("secondary")
+    end
+    travel_to(Time.zone.parse("2026-11-18 23:00")) { refute shop.smoking_condition_now?("secondary") }
+  end
+
 end
