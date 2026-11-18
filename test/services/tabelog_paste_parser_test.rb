@@ -1965,4 +1965,21 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     end
   end
 
+  test "lunch cutoff with outdoor ashtray has separate seat and facility hours" do
+    result = TabelogPasteParser.call("店名\n江坂海鮮食堂 おーうえすと\n営業時間\n11:30 - 00:00\nL.O. 23:00\n禁煙・喫煙\n全席喫煙可\n13:00までのランチタイムは全席禁煙。店外に灰皿有り。\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "separated", result[:smoking_area_2]
+    assert_equal "business", result[:smoking_condition_schedules]["secondary"]["mode"]
+    assert_includes result[:smoking_condition_schedules]["primary"]["hours_text"], "13:00 - 00:00"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    travel_to(Time.zone.parse("2026-11-19 12:00")) do
+      refute shop.smoking_condition_now?("primary")
+      assert shop.smoking_condition_now?("secondary")
+    end
+    travel_to(Time.zone.parse("2026-11-19 14:00")) do
+      assert shop.smoking_condition_now?("primary")
+      assert shop.smoking_condition_now?("secondary")
+    end
+  end
+
 end
