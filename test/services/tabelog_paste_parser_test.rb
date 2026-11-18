@@ -1663,8 +1663,9 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
 
     assert_equal "11:00", result[:opening_hours_json].dig("monday", "open")
     assert_equal "22:00", result[:opening_hours_json].dig("monday", "close")
-    assert_equal "17:00", result[:opening_hours_json].dig("monday", "break_start")
-    assert_equal "17:00", result[:opening_hours_json].dig("monday", "break_end")
+    assert_equal false, result[:opening_hours_json].dig("monday", "break_enabled")
+    assert_equal "", result[:opening_hours_json].dig("monday", "break_start")
+    assert_equal "", result[:opening_hours_json].dig("monday", "break_end")
   end
 
   test "parses next day dinner closing time after an open ended lunch" do
