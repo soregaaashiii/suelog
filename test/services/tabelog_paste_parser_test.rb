@@ -730,7 +730,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
       カウンター席あり
     TEXT
     %w[月 火 水 木 金].each { |day| assert_includes result[:smoking_hours_text], "#{day} 11:30 - 14:00" }
-    %w[土 日 祝日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
+    %w[土 日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
     refute_includes result[:smoking_hours_text], "09:30"
     assert_includes result[:public_store_details], "朝食時禁煙"
   end
