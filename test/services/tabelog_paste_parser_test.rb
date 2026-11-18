@@ -1865,4 +1865,17 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     travel_to(Time.zone.parse("2026-11-23 18:00")) { refute shop.open_now? }
   end
 
+  test "private room smoking seats are classified as smoking at seats" do
+    ["完全個室席は喫煙可。", "個室のみ喫煙可能"].each do |note|
+      result = TabelogPasteParser.call("店名\n鮨 そら\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      assert_equal "all_smoking", result[:smoking_area]
+      assert_equal "both_ok", result[:smoking_type]
+      assert_includes result[:public_store_details], note
+    end
+    ["個室は喫煙不可", "個室は禁煙", "個室に喫煙室あり"].each do |note|
+      result = TabelogPasteParser.call("店名\nテスト\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
+      refute_equal "all_smoking", result[:smoking_area]
+    end
+  end
+
 end
