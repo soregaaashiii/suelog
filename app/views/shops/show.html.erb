@@ -111,6 +111,10 @@
 
   page_description_parts << "#{seo_area_title}で喫煙できる#{genre_label_text}を探すなら吸えログ。"
 
+  if (description_override = shop_meta_description_override(@shop))
+    page_description_parts = [description_override]
+  end
+
   referrer_path = nil
 
   if request.referer.present?

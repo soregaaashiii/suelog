@@ -1,4 +1,15 @@
 module ShopsHelper
+  SHOP_META_DESCRIPTIONS = {
+    14797 => "大阪市城東区成育の喫茶店「わらく」。京阪本線・野江駅から徒歩約6分。住所・営業時間・地図を確認できます。喫煙情報は未確認のため、来店前に店舗へご確認ください。",
+    38 => "梅田の立ち飲み店「立呑パーラー 西澤商店」。北新地駅から53m。住所・営業時間・地図を確認できます。喫煙情報は未確認のため、来店前に店舗へご確認ください。",
+    13380 => "大阪市浪速区幸町の焼肉店「ぎゅうおう 堀江（GYUOU HORIE）」。JR難波駅26-A出口から徒歩約3分。住所・地図・営業時間を確認できます。喫煙情報は未確認のため、来店前に店舗へご確認ください。",
+    442 => "大阪市北区堂山町のスナック「かくれんぼ」。住所・地図・営業時間を確認できます。喫煙情報は未確認のため、来店前に店舗へご確認ください。",
+  }.freeze
+
+  def shop_meta_description_override(shop)
+    SHOP_META_DESCRIPTIONS[shop.id]
+  end
+
   # Compare only like units: walking times first, otherwise stated distances.
   # This summarizes the supplied access text; it does not geocode the address.
   def compact_station_label(access_text)
