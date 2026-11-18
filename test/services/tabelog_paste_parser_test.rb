@@ -1982,4 +1982,11 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     end
   end
 
+  test "weekday heated seats exclude all rooms on weekends and holidays" do
+    result = TabelogPasteParser.call("店名\nカフェ 三番館 江坂公園店\n営業時間\n月・火・水・木・金\n07:00 - 20:00\n土・日・祝日\n08:00 - 20:00\n禁煙・喫煙\n分煙（加熱式たばこ限定）\n平日のみ電子タバコ席あり(分煙)土日祝全室禁煙\n駐車場\n無")
+    assert_equal "electronic_only", result[:smoking_type]
+    %w[月 火 水 木 金].each { |day| assert_includes result[:smoking_hours_text], "#{day} 07:00 - 20:00" }
+    %w[土 日 祝日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
+  end
+
 end
