@@ -1934,7 +1934,7 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
   end
 
   test "floor only permission is smoking at seats" do
-    ["一階のみ喫煙可", "1階だけ喫煙可能", "１階のみ喫煙可"].each do |note|
+    ["一階のみ喫煙可", "1階だけ喫煙可能", "１階のみ喫煙可", "１階：喫煙可 ／ ２階：禁煙"].each do |note|
       result = TabelogPasteParser.call("店名\nコッテジ\n禁煙・喫煙\n分煙\n#{note}\n駐車場\n無")
       assert_equal "all_smoking", result[:smoking_area]
       assert_equal "both_ok", result[:smoking_type]
