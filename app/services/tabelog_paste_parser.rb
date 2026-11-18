@@ -417,9 +417,9 @@ class TabelogPasteParser
           "closed" => false,
           "open" => first_open,
           "close" => second_close,
-          "break_enabled" => true,
-          "break_start" => first_close,
-          "break_end" => second_open
+          "break_enabled" => first_close != second_open,
+          "break_start" => first_close == second_open ? "" : first_close,
+          "break_end" => first_close == second_open ? "" : second_open
         }
       else
         open_time, close_time = periods[0]
@@ -714,6 +714,12 @@ class TabelogPasteParser
     } }
   end
 
+  def timed_seat_ban_with_smoking_corner?
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：～", "0123456789:〜")
+    raw.match?(/一部禁煙席あり/) &&
+      raw.match?(/\d{1,2}:\d{2}\s*[〜~－-]\s*\d{1,2}:\d{2}\s*禁煙\s*[（(]喫煙コーナーあり[）)]/)
+  end
+
   def imported_smoking_condition_schedules
     return counter_only_timed_ban[:schedules] if counter_only_timed_ban
     schedules = if timed_tobacco_switch
@@ -738,6 +744,10 @@ class TabelogPasteParser
     if conditions.length == 1 && conditions.first[:area] == "all_smoking" && raw.match?(/掘りごたつ(?:席)?[、・と及び\s]+カウンター(?:席)?(?:は|が|で)?\s*喫煙(?:可能|可)/)
       schedules["primary"] ||= {}
       schedules["primary"]["seat_location"] = "counter_and_horigotatsu"
+    end
+    if timed_seat_ban_with_smoking_corner?
+      schedules["primary"] = { "mode" => "custom", "hours_text" => extract_smoking_hours_text }
+      schedules["secondary"] = { "mode" => "business" }
     end
     schedules.presence
   end
@@ -1261,6 +1271,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_conditions(raw)
+    if timed_seat_ban_with_smoking_corner?
+      return [{ area: "all_smoking", type: "both_ok" }, { area: "separated", type: "both_ok" }]
+    end
     if counter_only_timed_ban
       type = extract_smoking_type(raw)
       return [{ area: "all_smoking", type: type }, { area: "all_smoking", type: type }]
