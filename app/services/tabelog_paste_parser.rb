@@ -624,6 +624,9 @@ class TabelogPasteParser
     # Tabelog also encloses time rules in Japanese brackets and uses ラスト
     # for each weekday's closing time (not a single fixed midnight cutoff).
     raw = raw.tr("【】", "()")
+    raw = raw.gsub(/カフェタイム以降[（(]\s*(\d{1,2}):(\d{2})\s*[〜～~]\s*[）)]\s*店内(?:電子|加熱式)(?:タバコ|たばこ)のみOK/i) do
+      format("%02d:%02d以降喫煙可", Regexp.last_match(1).to_i, Regexp.last_match(2).to_i)
+    end
     raw = raw.gsub(/(\d{1,2})(?::(\d{2}))?\s*時?\s*より\s*喫煙(?:可能|可)/) do
       format("%02d:%02d以降喫煙可", Regexp.last_match(1).to_i, Regexp.last_match(2).to_i)
     end
