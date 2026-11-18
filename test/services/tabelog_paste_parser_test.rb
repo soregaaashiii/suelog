@@ -1925,4 +1925,12 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     refute_includes result[:smoking_hours_text], "17:00"
   end
 
+  test "cafe time heated tobacco starts at explicit time and follows weekday closing" do
+    result = TabelogPasteParser.call("店名\nCALMEX 豊中店\n営業時間\n月・火・水・木・日\n11:00 - 22:00\nL.O. 21:30\n金・土\n11:00 - 23:00\nL.O. 22:30\n■営業時間\nランチ 11:00～15:00\nカフェ 15:00～17:00\nディナー 17:00～23:00（L.O.22:30）\n禁煙・喫煙\n分煙（加熱式たばこ限定）\nランチタイムのみ禁煙 カフェタイム以降（15:00～）店内電子タバコのみOK\n駐車場\n無")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_equal "electronic_only", result[:smoking_type]
+    %w[月 火 水 木 日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 15:00 - 22:00" }
+    %w[金 土].each { |day| assert_includes result[:smoking_hours_text], "#{day} 15:00 - 23:00" }
+  end
+
 end
