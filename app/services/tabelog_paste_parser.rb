@@ -504,7 +504,7 @@ class TabelogPasteParser
     raw = field_value_with_continuation("禁煙・喫煙").to_s
     day_token = /(?:祝日?|[月火水木金土日](?:曜日|曜)?)/
     day_list = /#{day_token}(?:[・、\s]*#{day_token})*/
-    rules = raw.scan(/(?:\A|[。\n（(])\s*(?:毎週)?(#{day_list})\s*(?:のみ|だけ|は)?\s*(?:全席|全面|完全|終日)?禁煙/)
+    rules = raw.scan(/(?:\A|[。\n（(）)])\s*(?:毎週)?(#{day_list})\s*(?:のみ|だけ|は)?\s*(?:全席|全室|全面|完全|終日)?禁煙/)
     event_rules = raw.scan(/(?:\A|[。\n（(]|より)\s*(?:毎週)?(#{day_list})\s*は\s*([^。\n]{1,60}?)として[、,\s]*(?:全席|全面|完全|終日)禁煙(?:です|となります|にします)?/)
     event_rules.each do |days, event|
       next if event.match?(/ランチ|昼|夜|朝|時間|時|[0-9０-９]/)
