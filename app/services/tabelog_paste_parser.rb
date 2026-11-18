@@ -1411,6 +1411,12 @@ class TabelogPasteParser
       return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
     end
 
+    # 個室で飲食しながら吸える場合も、着席喫煙として扱う。
+    if raw.to_s.tr("　", " ").match?(/(?:完全)?個室(?:席)?(?:のみ|だけ|全席)?(?:は|が|で)?\s*喫煙(?:可能|可)(?!能ではない|ではない|ではありません)/)
+      type = extract_smoking_type(raw)
+      return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
+    end
+
     if raw.to_s.match?(/(?:テーブル|カウンター)(?:席)?(?:のみ|だけ|全席)?(?:は|が|で)?\s*喫煙(?!不可|禁止|所|ブース|スペース|室)(?:可|可能)?/)
       type = extract_smoking_type(raw)
       return [{ area: "all_smoking", type: type == "unknown" ? "both_ok" : type }]
