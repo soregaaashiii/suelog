@@ -1371,6 +1371,15 @@ class TabelogPasteParser
       ]
     end
 
+    if raw.to_s.match?(/全席喫煙可|席で喫煙可/) &&
+       raw.to_s.match?(/(?:喫煙専用室|喫煙所|喫煙ブース|喫煙ルーム)(?:も)?(?:あり|有り|有)(?!ません)/)
+      type = extract_smoking_type(raw)
+      return [
+        { area: "all_smoking", type: type == "unknown" ? "both_ok" : type },
+        { area: "separated", type: "both_ok" }
+      ]
+    end
+
     if raw.to_s.match?(/全席喫煙可|席で喫煙可/) && raw.to_s.match?(/店内禁煙/) &&
        raw.to_s.match?(/(?:店外|屋外)(?:は|で)?\s*喫煙(?:OK|可|可能)/i)
       return [
