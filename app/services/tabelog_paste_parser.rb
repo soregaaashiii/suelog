@@ -624,6 +624,7 @@ class TabelogPasteParser
     # Tabelog also encloses time rules in Japanese brackets and uses ラスト
     # for each weekday's closing time (not a single fixed midnight cutoff).
     raw = raw.tr("【】", "()")
+    raw = raw.gsub(/(\d{1,2}:\d{2})までのランチタイムは全席禁煙/, '\\1まで全席禁煙')
     raw = raw.gsub(/カフェタイム以降[（(]\s*(\d{1,2}):(\d{2})\s*[〜～~]\s*[）)]\s*店内(?:電子|加熱式)(?:タバコ|たばこ)のみOK/i) do
       format("%02d:%02d以降喫煙可", Regexp.last_match(1).to_i, Regexp.last_match(2).to_i)
     end
@@ -717,7 +718,13 @@ class TabelogPasteParser
     } }
   end
 
+  def lunch_cutoff_with_outdoor_ashtray?
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：", "0123456789:")
+    raw.match?(/全席喫煙可/) && raw.match?(/\d{1,2}:\d{2}までのランチタイムは全席禁煙/) && raw.match?(/店外に灰皿(?:有り|あり)/)
+  end
+
   def timed_seat_ban_with_smoking_corner?
+    return true if lunch_cutoff_with_outdoor_ashtray?
     raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：～", "0123456789:〜")
     raw.match?(/一部禁煙席あり/) &&
       raw.match?(/\d{1,2}:\d{2}\s*[〜~－-]\s*\d{1,2}:\d{2}\s*禁煙\s*[（(]喫煙コーナーあり[）)]/)
