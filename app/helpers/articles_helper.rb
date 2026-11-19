@@ -1,5 +1,22 @@
 # /Users/kawamuratakuya/dev/suelog/app/helpers/articles_helper.rb
 module ArticlesHelper
+  # Presentation is normalized only for the public page; stored editor HTML stays intact.
+  def normalize_public_article_tables(html)
+    fragment = Nokogiri::HTML.fragment(html.to_s)
+    fragment.css("table").each do |table|
+      table.css("colgroup, col").remove
+      [table, *table.css("*")].each do |node|
+        %w[style class width height bgcolor color face align valign border cellpadding cellspacing].each { |attribute| node.remove_attribute(attribute) }
+      end
+      table["class"] = "published-article-table"
+      wrapper = Nokogiri::XML::Node.new("div", fragment.document)
+      wrapper["class"] = "published-article-table-scroll"
+      table.add_previous_sibling(wrapper)
+      wrapper.add_child(table)
+    end
+    fragment.to_html.html_safe
+  end
+
   SHOP_SHORTCODE_REGEX = /\[shop\s+id=(\d+)\]/i.freeze
   SIDEBAR_SHORTCODE_REGEX = /\[sidebar\]/i.freeze
   ARTICLE_CTA_SHORTCODE_REGEX = /\[article-cta\]/i.freeze
