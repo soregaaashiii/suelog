@@ -62,6 +62,12 @@ class ArticleTablesTest < ApplicationSystemTestCase
     click_on "表を反映する"
     assert_selector "trix-editor .article-table th", text: "店名"
     assert_selector "trix-editor .article-table td", text: "店舗B"
+    editor_table_style = page.evaluate_script(<<~JS)
+      (() => { const table = document.querySelector('trix-editor .article-table');
+        return ['th', 'td', 'a'].map(selector => { const style = getComputedStyle(table.querySelector(selector));
+          return [style.fontSize, style.lineHeight, style.padding, style.borderTopWidth, style.backgroundColor, style.color, style.textAlign]; }); })()
+    JS
+
     fill_in "article_title", with: "表の保存テスト"
 
     click_on "保存", exact: true
@@ -87,6 +93,16 @@ class ArticleTablesTest < ApplicationSystemTestCase
     fragment = Nokogiri::HTML.fragment(article.body.to_s)
     assert_equal "https://example.com/?a=1&b=2", fragment.css(".article-table a").find { |link| link.text == "公式サイト" }["href"]
     assert_equal 1, Nokogiri::HTML.fragment(article.body.to_s).css("table").length
+    article.update!(published: true, published_at: Time.current)
+    visit article_path(article)
+    assert_selector ".article-body .article-table td", text: "店舗A修正"
+    public_table_style = page.evaluate_script(<<~JS)
+      (() => { const table = document.querySelector('.article-body .article-table');
+        return ['th', 'td', 'a'].map(selector => { const style = getComputedStyle(table.querySelector(selector));
+          return [style.fontSize, style.lineHeight, style.padding, style.borderTopWidth, style.backgroundColor, style.color, style.textAlign]; }); })()
+    JS
+    assert_equal editor_table_style, public_table_style
+
   end
   test "paste prose and multiple nested tables in order and retain them after saving" do
     article = Article.create!(title: "文章と表", slug: "mixed-table-test", body: "元の文章")

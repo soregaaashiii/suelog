@@ -5,7 +5,7 @@
     <label>行数 <input type="number" min="1" max="100" value="3" data-article-table-target="rows"></label>
     <label>列数 <input type="number" min="1" max="20" value="3" data-article-table-target="columns"></label>
     <button type="button" data-action="article-table#resize">行・列数を変更</button>
-    <label><input type="checkbox" checked data-article-table-target="header">1行目を見出しにする</label>
+    <label><input type="checkbox" checked data-article-table-target="header" data-action="article-table#refreshHeader">1行目を見出しにする</label>
   </div>
   <div class="article-table-tools">
     <label>リンクの表示文字 <input type="text" data-article-table-target="linkText" placeholder="例：公式サイト"></label>
@@ -14,7 +14,7 @@
   </div>
   <p>リンクを入れるセルを選んでから追加してください。セルにURLを直接入力してもリンクになります。</p>
   <p role="alert" data-article-table-target="message"></p>
-  <div class="article-table-grid" data-action="focusin->article-table#selectCell"><table><tbody data-article-table-target="grid"></tbody></table></div>
+  <div class="article-table article-table-grid" data-action="focusin->article-table#selectCell"><table><tbody data-article-table-target="grid"></tbody></table></div>
   <div class="article-table-tools">
     <button type="button" data-action="article-table#save">表を反映する</button>
     <button type="button" data-action="article-table#close">キャンセル</button>

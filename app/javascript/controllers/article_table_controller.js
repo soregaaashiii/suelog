@@ -67,6 +67,8 @@ export default class extends Controller {
     return Array.from(this.gridTarget.querySelectorAll("tr"), row => Array.from(row.querySelectorAll("textarea"), input => input.value))
   }
 
+  refreshHeader() { this.draw(this.values()) }
+
   draw(values) {
     const columns = Math.max(1, ...values.map(row => row.length))
     if (values.length > 100 || columns > 20) throw new Error("表は100行・20列以内にしてください。")
@@ -75,7 +77,7 @@ export default class extends Controller {
     values.forEach((row, rowIndex) => {
       const tr = document.createElement("tr")
       for (let column = 0; column < columns; column++) {
-        const td = document.createElement("td")
+        const td = document.createElement(this.headerTarget.checked && rowIndex === 0 ? "th" : "td")
         const input = document.createElement("textarea")
         input.rows = 2
         input.value = row[column] || ""
