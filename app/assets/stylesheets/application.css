@@ -3668,3 +3668,11 @@ trix-editor figure:has(.article-table), .article-body figure:has(.article-table)
 .article-table-grid { overflow: auto; max-height: 55vh; }
 .article-table-grid textarea { display: block; width: 100%; min-width: 100px; min-height: 61px; border: 0; padding: 0; margin: 0; background: transparent; color: inherit; font: inherit; line-height: inherit; box-sizing: border-box; resize: vertical; }
 .article-body .attachment--content, trix-editor .attachment--content { display: block; max-width: 100%; min-width: 0; }
+
+/* Public article tables ignore imported decoration and remain readable on dark pages. */
+.article-body .published-article-table-scroll { width:100%; max-width:100%; overflow-x:auto; margin:16px 0; }
+.article-body table.published-article-table { width:100% !important; min-width:320px; border-collapse:collapse !important; table-layout:auto !important; background:#fff !important; color:#111 !important; font:400 16px/1.8 -apple-system,BlinkMacSystemFont,sans-serif !important; }
+.article-body .published-article-table :is(th,td) { min-width:120px; height:auto !important; padding:12px 14px !important; border:1px solid #ccc !important; background:#fff !important; color:#111 !important; text-align:left !important; vertical-align:top !important; white-space:normal !important; overflow-wrap:anywhere !important; word-break:normal !important; box-sizing:border-box; font:inherit !important; }
+.article-body .published-article-table th { background:#f5f1e7 !important; font-weight:700 !important; }
+.article-body .published-article-table :is(p,div,span,font,strong,em,b,i) { color:inherit !important; background:transparent !important; font-size:inherit !important; line-height:inherit !important; margin:0; }
+.article-body .published-article-table a, .suelog-refine .article-body .published-article-table a { color:#2563eb !important; background:transparent !important; text-decoration:underline !important; }

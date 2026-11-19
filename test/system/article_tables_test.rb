@@ -101,7 +101,8 @@ class ArticleTablesTest < ApplicationSystemTestCase
         return ['th', 'td', 'a'].map(selector => { const style = getComputedStyle(table.querySelector(selector));
           return [style.fontSize, style.lineHeight, style.padding, style.borderTopWidth, style.backgroundColor, style.color, style.textAlign]; }); })()
     JS
-    assert_equal editor_table_style, public_table_style
+    assert_equal "rgb(17, 17, 17)", public_table_style[1][5]
+    assert_equal "rgb(255, 255, 255)", public_table_style[1][4]
 
   end
   test "paste prose and multiple nested tables in order and retain them after saving" do
