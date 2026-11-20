@@ -599,6 +599,23 @@ class TabelogPasteParser
       !raw.match?(/\d{1,2}(?::\d{2}|時)/) && evening_only_smoking_ranges.nil?
   end
 
+  def breakfast_and_midday_ban_ranges
+    raw = field_value_with_continuation("禁煙・喫煙").to_s.tr("０１２３４５６７８９：～", "0123456789:〜")
+    match = raw.match(/朝食時と\s*(\d{1,2})時\s*[〜~]\s*(\d{1,2})時は(?:全面|全席)?禁煙[、,]その他は分煙/)
+    return unless match
+    cutoff = match[2].to_i * 60
+    return unless match[1].to_i.between?(10, 14) && match[2].to_i.between?(12, 16) && match[1].to_i < match[2].to_i
+
+    # Breakfast's end is unspecified. Only the period after the midday ban is certain.
+    opening_ranges_by_day.transform_values do |services|
+      services.filter_map do |start, finish|
+        from, to = normalized_time_range(start, finish)
+        next unless to > cutoff
+        [from >= cutoff ? start : format("%02d:00", match[2].to_i), finish]
+      end
+    end
+  end
+
   def breakfast_nonsmoking_ranges
     raw = field_value_with_continuation("禁煙・喫煙").to_s
     return nil unless raw.match?(/(?:朝食|モーニング)(?:時|時間帯|タイム)?(?:は)?禁煙[^。\n]*(?:それ以外|以外).*喫煙可/)
@@ -794,6 +811,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_by_day
+    if (ranges = breakfast_and_midday_ban_ranges)
+      return ranges.transform_values { |periods| periods.map { |times| times.join("-") }.join(", ") }
+    end
     if (ranges = weekday_lunch_only_smoking_ranges)
       return ranges.transform_values { |periods| periods.map { |times| times.join("-") }.join(", ") }
     end
@@ -1315,6 +1335,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_conditions(raw)
+    if breakfast_and_midday_ban_ranges
+      return [{ area: "all_smoking", type: "both_ok" }]
+    end
     if daytime_counter_night_all_schedules
       return [{ area: "all_smoking", type: "both_ok" }, { area: "all_smoking", type: "both_ok" }]
     end
@@ -1613,6 +1636,9 @@ class TabelogPasteParser
   end
 
   def extract_smoking_hours_text
+    if (ranges = breakfast_and_midday_ban_ranges)
+      return ranges.map { |day, periods| "#{day_label(day)} #{periods.present? ? periods.map { |times| times.join(' - ') }.join(', ') : '喫煙不可'}" }.join("\n")
+    end
     if (ranges = weekday_lunch_only_smoking_ranges)
       return ranges.map { |day, periods| "#{day_label(day)} #{periods.present? ? periods.map { |times| times.join(' - ') }.join(', ') : '喫煙不可'}" }.join("\n")
     end

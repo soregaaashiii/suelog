@@ -1989,4 +1989,16 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     %w[土 日 祝日].each { |day| assert_includes result[:smoking_hours_text], "#{day} 喫煙不可" }
   end
 
+  test "breakfast and midday bans never mark uncertain morning as smoking allowed" do
+    result = TabelogPasteParser.call("店名\nイルミナ\n営業時間\n07:00 - 21:00\n禁煙・喫煙\n分煙\n朝食時と12時～13時は全面禁煙、その他は分煙。\n空間・設備\nカウンター席あり")
+    assert_equal "all_smoking", result[:smoking_area]
+    assert_includes result[:smoking_hours_text], "月 13:00 - 21:00"
+    refute_includes result[:smoking_hours_text], "07:00"
+    assert_includes result[:public_store_details], "朝食時と12時～13時は全面禁煙"
+    shop = Shop.new(result.except(:import_metadata, :raw_import_text, :import_source, :imported_at))
+    travel_to(Time.zone.parse("2026-11-20 08:00")) { refute shop.smoking_now? }
+    travel_to(Time.zone.parse("2026-11-20 12:30")) { refute shop.smoking_now? }
+    travel_to(Time.zone.parse("2026-11-20 14:00")) { assert shop.smoking_now? }
+  end
+
 end
