@@ -4,7 +4,7 @@ class Admin::ArticlesController < Admin::BaseController
 before_action :set_article, only: [:show, :edit, :update, :destroy]
 
 def index
-@articles = Article.order(created_at: :desc)
+@articles = Article.with_attached_eyecatch.order(created_at: :desc)
 end
 
 def show
