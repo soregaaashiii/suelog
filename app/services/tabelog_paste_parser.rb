@@ -48,6 +48,14 @@ class TabelogPasteParser
 
   private
 
+  def extract_source_page_url
+    # Only the explicit provenance marker is trusted; links inside reviews are not sources.
+    candidate = @raw_text[/^食べログURL[ \t]*\r?\n[ \t]*(https:\/\/tabelog\.com\/[^\s<>]+)/, 1]
+    return if candidate.blank?
+    match = candidate.match(%r{\Ahttps://tabelog\.com/([a-z0-9_-]+/A[0-9]+/A[0-9]+/[0-9]+)(?:/|\z|[?#])})
+    "https://tabelog.com/#{match[1]}/" if match
+  end
+
   def build_metadata
     genre_raw = field_value("ジャンル")
     smoking_raw = field_value_with_continuation("禁煙・喫煙")
@@ -59,6 +67,7 @@ class TabelogPasteParser
     smoking_conditions = extract_smoking_conditions(smoking_raw)
 
     {
+      source_url: extract_source_page_url,
       name: extract_name,
       genre_raw: genre_raw,
       genre: normalize_genre(genre_raw),

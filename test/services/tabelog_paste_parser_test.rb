@@ -2001,4 +2001,16 @@ class TabelogPasteParserTest < ActiveSupport::TestCase
     travel_to(Time.zone.parse("2026-11-20 14:00")) { assert shop.smoking_now? }
   end
 
+  test "source page URL is stored privately and is not an affiliate URL" do
+    raw = "店名\nテスト店\n禁煙・喫煙\n全席喫煙可\n食べログURL\nhttps://tabelog.com/osaka/A2706/A270602/27010597/dtlmenu/?x=1"
+    result = TabelogPasteParser.call(raw)
+    assert_equal "https://tabelog.com/osaka/A2706/A270602/27010597/", result[:import_metadata][:source_url]
+    assert_nil result[:tabelog_url]
+    refute_includes result[:public_store_details].to_s, "tabelog.com"
+    unrelated = TabelogPasteParser.call("店名\nテスト店\n口コミ https://tabelog.com/osaka/A2706/A270602/27010597/")
+    assert_nil unrelated[:import_metadata][:source_url]
+    invalid = TabelogPasteParser.call(raw.sub('tabelog.com/', 'tabelog.com.evil.example/'))
+    assert_nil invalid[:import_metadata][:source_url]
+  end
+
 end

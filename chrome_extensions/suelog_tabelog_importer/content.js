@@ -1,5 +1,20 @@
 (() => {
+  if (!/^\/[a-z0-9_-]+\/A[0-9]+\/A[0-9]+\/[0-9]+(?:\/|$)/.test(location.pathname)) return;
   if (document.getElementById("suelog-import-button")) return;
+
+  // The tab URL, not a link found in the selected article, identifies the source.
+  document.addEventListener("copy", (event) => {
+    const target = event.target;
+    if (target?.closest?.('input, textarea, [contenteditable="true"]')) return;
+    const selection = window.getSelection();
+    const text = selection?.toString();
+    if (!text || !event.clipboardData) return;
+    const container = document.createElement("div");
+    for (let index = 0; index < selection.rangeCount; index++) container.append(selection.getRangeAt(index).cloneContents());
+    event.clipboardData.setData("text/plain", `${text}\n\n食べログURL\n${location.href}`);
+    event.clipboardData.setData("text/html", container.innerHTML);
+    event.preventDefault();
+  });
 
   const button = document.createElement("button");
   button.id = "suelog-import-button";

@@ -4,7 +4,7 @@ class AdminShopImportFlowTest < ApplicationSystemTestCase
   test "repeated Enter submits provisional and final registration only once" do
     visit admin_url(new_admin_shop_import_path)
     visit new_admin_shop_import_path
-    fill_in "raw_text", with: tabelog_text
+    fill_in "raw_text", with: tabelog_text + "\n食べログURL\nhttps://tabelog.com/osaka/A2706/A270602/27010597/"
     click_on "解析する"
 
     assert_text "解析結果"
@@ -26,6 +26,8 @@ class AdminShopImportFlowTest < ApplicationSystemTestCase
     end
 
     shop = Shop.find_by!(name: "Enter連打テスト店舗")
+    assert_equal "https://tabelog.com/osaka/A2706/A270602/27010597/", shop.import_metadata["source_url"]
+    assert_nil shop.tabelog_url
     assert_not shop.approved?
 
     2.times do
