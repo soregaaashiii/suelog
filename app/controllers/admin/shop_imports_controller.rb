@@ -179,7 +179,12 @@ class Admin::ShopImportsController < Admin::BaseController
 
     # コピペ本文と解析結果は、重複時でも必ず保存する。
     attrs[:raw_import_text] = parsed_attrs[:raw_import_text] if shop.respond_to?(:raw_import_text=)
-    attrs[:import_metadata] = parsed_attrs[:import_metadata] if shop.respond_to?(:import_metadata=)
+    if shop.respond_to?(:import_metadata=)
+      metadata = parsed_attrs[:import_metadata].to_h.deep_stringify_keys
+      previous_url = shop.import_metadata.to_h["source_url"]
+      metadata["source_url"] = previous_url if metadata["source_url"].blank? && previous_url.present?
+      attrs[:import_metadata] = metadata
+    end
     attrs[:import_source] = parsed_attrs[:import_source] if shop.respond_to?(:import_source=)
     attrs[:imported_at] = parsed_attrs[:imported_at] if shop.respond_to?(:imported_at=)
 
