@@ -14,7 +14,16 @@
   <tbody>
     <% @articles.each do |article| %>
       <tr>
-        <td style="padding:8px; border-bottom:1px solid #eee;"><%= article.title %></td>
+        <td style="padding:8px; border-bottom:1px solid #eee;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <% if article.eyecatch.attached? %>
+              <%= link_to edit_admin_article_path(article), tabindex: -1, aria: { hidden: true }, style: "flex:0 0 96px;" do %>
+                <%= image_tag article.eyecatch, alt: "", loading: "lazy", decoding: "async", width: 96, height: 64, style: "display:block; width:96px; height:64px; object-fit:cover; border-radius:6px;" %>
+              <% end %>
+            <% end %>
+            <span><%= article.title %></span>
+          </div>
+        </td>
         <td style="padding:8px; border-bottom:1px solid #eee;"><%= article.published? ? "公開" : "下書き" %></td>
         <td style="padding:8px; border-bottom:1px solid #eee;"><%= article.published_at %></td>
         <td style="padding:8px; border-bottom:1px solid #eee;">
