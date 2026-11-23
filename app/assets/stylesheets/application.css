@@ -3676,3 +3676,9 @@ trix-editor figure:has(.article-table), .article-body figure:has(.article-table)
 .article-body .published-article-table th { background:#f5f1e7 !important; font-weight:700 !important; }
 .article-body .published-article-table :is(p,div,span,font,strong,em,b,i) { color:inherit !important; background:transparent !important; font-size:inherit !important; line-height:inherit !important; margin:0; }
 .article-body .published-article-table a, .suelog-refine .article-body .published-article-table a { color:#2563eb !important; background:transparent !important; text-decoration:underline !important; }
+
+/* Google Maps info windows stay light regardless of the page theme. */
+.map-info, .suelog-refine .map-info { background:#fff !important; color:#111 !important; }
+.map-info__name, .suelog-refine .map-info .map-info__name { display:block; color:#111 !important; background:#fff !important; font-size:17px; font-weight:800; line-height:1.5; margin:0 0 10px; overflow-wrap:anywhere; }
+.map-info a.map-info__action, .suelog-refine .map-info a.map-info__action { background:#111 !important; color:#fff !important; border:1px solid #111 !important; font-size:14px !important; text-decoration:none !important; }
+.map-info a.map-info__action:hover, .map-info a.map-info__action:focus-visible { background:#333 !important; color:#fff !important; outline:2px solid #666; outline-offset:2px; }

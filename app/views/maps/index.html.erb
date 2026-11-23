@@ -326,10 +326,10 @@ function walkingMinutesFromCurrentLocation(shop) {
 
 function buildInfoHtml(shop) {
   return `
-    <div style="min-width:220px; line-height:1.7;">
+    <div class="map-info" style="min-width:220px; line-height:1.7;">
+      <div class="map-info__name">${escapeHtml(shop.name)}</div>
       ${buildStatusBadgeHtml(shop)}
       ${smokingBadgesFor(shop)}
-      <div style="font-weight:800; margin-bottom:6px;">${escapeHtml(shop.name)}</div>
       ${shop.address ? `<div style="font-size:12px; color:#444;">住所：${escapeHtml(shop.address)}</div>` : ""}
       ${shop.nearest_station ? `<div style="font-size:12px; color:#444;">最寄駅：${escapeHtml(shop.nearest_station)}</div>` : ""}
       ${walkingMinutesFromCurrentLocation(shop) ? `<div style="font-size:12px; color:#7a5a12; font-weight:800;">現在地から徒歩${walkingMinutesFromCurrentLocation(shop)}分</div>` : ""}
@@ -353,13 +353,13 @@ function buildInfoHtml(shop) {
         ` : ""}
         ${shop.map_url ? `
           <a href="${escapeHtml(shop.map_url)}"
-             data-map-link
+             class="map-info__action" data-map-link
              style="display:block; padding:9px 10px; background:#fff; color:#111; border:1px solid #d7d2c8; border-radius:8px; text-align:center; text-decoration:none; font-weight:800; font-size:12px;">
             ルートを見る
           </a>
         ` : ""}
         <a href="${escapeHtml(shop.url)}"
-   data-map-link
+   class="map-info__action" data-map-link
    style="grid-column:1 / -1; display:block; padding:9px 12px; background:#f7f4ee; color:#111; border:1px solid #e8e3d7; border-radius:8px; text-align:center; text-decoration:none; font-weight:800; font-size:12px;">
   詳細を見る
 </a>
