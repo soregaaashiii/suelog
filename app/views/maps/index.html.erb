@@ -438,24 +438,30 @@ function clearMarkers() {
 }
 
 function renderMarkers(shops) {
-  clearMarkers();
-
-  shops.forEach((shop) => {
-    const marker = new google.maps.Marker({
-      map: map,
-      position: { lat: Number(shop.lat), lng: Number(shop.lng) },
-      title: shop.name,
-      icon: markerIconFor(shop)
-    });
-
-    marker.addListener("click", () => {
-      infoWindow.setContent(buildInfoHtml(shop));
-      infoWindow.open(map, marker);
-    });
-
-    markers.push(marker);
+  const existing = new Map(markers.map(marker => [String(marker.shopData.id), marker]));
+  markers = shops.map(shop => {
+    const id = String(shop.id);
+    let marker = existing.get(id);
+    if (marker) {
+      existing.delete(id);
+      marker.setPosition({ lat: Number(shop.lat), lng: Number(shop.lng) });
+      marker.setIcon(markerIconFor(shop));
+    } else {
+      marker = new google.maps.Marker({
+        map,
+        position: { lat: Number(shop.lat), lng: Number(shop.lng) },
+        title: shop.name,
+        icon: markerIconFor(shop)
+      });
+      marker.addListener("click", () => {
+        infoWindow.setContent(buildInfoHtml(marker.shopData));
+        infoWindow.open({ map, anchor: marker, shouldFocus: false });
+      });
+    }
+    marker.shopData = shop;
+    return marker;
   });
-
+  existing.forEach(marker => marker.setMap(null));
   updateVisibleCount(shops.length);
 }
 
@@ -629,7 +635,7 @@ function renderMapResponse(data) {
   setStatus(allShops.length ? `この範囲に${allShops.length}店舗を個別表示しています。` : "この範囲では条件に一致する店舗がありません。地図を移動・縮小して範囲を広げられます。");
 }
 
-function applyFilters() {
+function applyFilters({ preserveMarkers = false } = {}) {
   renderActiveFilterChips();
   syncMapQuery();
   if (!mapLoadingReady) return;
@@ -637,7 +643,7 @@ function applyFilters() {
   activeRequest?.abort();
   const version = ++requestVersion;
   // Clear stale pins so failed or pending searches never look like current results.
-  clearMarkers();
+  if (!preserveMarkers) clearMarkers();
   const quickList = document.getElementById("map-quick-actions-list");
   if (quickList) quickList.textContent = "この範囲の店舗を読み込み中です…";
   updateVisibleCount(0);
@@ -916,7 +922,7 @@ function initMap() {
   if (hasQueryFilters) readMapQuery();
 
   mapLoadingReady = true;
-  map.addListener("idle", applyFilters);
+  map.addListener("idle", () => applyFilters({ preserveMarkers: true }));
   const leaveInitialRadius = () => {
     initialSearchCenter = null;
     initialSearchCircle?.setMap(null);
