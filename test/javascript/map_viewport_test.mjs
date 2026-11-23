@@ -15,7 +15,7 @@ function harness() {
   let sequence = 0;
   const point = p => ({lat:()=>p.lat, lng:()=>p.lng});
   const node = id => {
-    if (!nodes.has(id)) nodes.set(id, {value:'',checked:false,style:{},selectedOptions:[],addEventListener(){},textContent:'',innerHTML:''});
+    if (!nodes.has(id)) nodes.set(id, {value:'',checked:false,style:{setProperty(){}},setAttribute(){},selectedOptions:[],addEventListener(){},textContent:'',innerHTML:''});
     return nodes.get(id);
   };
   class Bounds {
@@ -24,7 +24,7 @@ function harness() {
     getNorthEast() {return point(this.ne);}
   }
   class MapMock {
-    constructor(el, options) {map=this; this.center=options.center; this.zoom=15; this.events={};}
+    constructor(el, options) {map=this; this.options=options; this.controls={rightBottom:[]}; this.center=options.center; this.zoom=15; this.events={};}
     fitBounds(bounds) {this.bounds=bounds;}
     getBounds(){return this.bounds;}
     addListener(name, fn){this.events[name]=fn;}
@@ -38,7 +38,7 @@ function harness() {
     history:{replaceState(){}},document:{getElementById:node,addEventListener(){}},
     navigator:{geolocation:{getCurrentPosition(ok, fail){fail();}}},
     sessionStorage:{getItem(){return null;}}, URL,URLSearchParams,AbortController,console,
-    google:{maps:{Map:MapMock,LatLngBounds:Bounds,InfoWindow:class {},Circle:class {setMap(){}},SymbolPath:{CIRCLE:'circle'}}},
+    google:{maps:{ControlPosition:{RIGHT_BOTTOM:"rightBottom"},Map:MapMock,LatLngBounds:Bounds,InfoWindow:class {},Circle:class {setMap(){}},SymbolPath:{CIRCLE:'circle'}}},
     setTimeout(fn){const id=++sequence; timers.set(id,fn);return id;},clearTimeout(id){timers.delete(id);},
     fetch(url, options) {return new Promise((resolve,reject)=>{requests.push({url,signal:options.signal,resolve,reject});});}
   };
@@ -87,4 +87,11 @@ test('keyboard or camera panning leaves the initial radius and searches the new 
   h.map.events.idle();const next=h.flush();
   assert.equal(new URL(h.requests[1].url,'https://example.test').searchParams.has('radius'),false);
   h.reply(h.requests[1]);await next;
+});
+
+test('map exposes current location in fullscreen controls and enables gesture zoom',()=>{
+  const h=harness();
+  assert.equal(h.map.options.gestureHandling,'greedy');
+  assert.equal(h.map.options.scrollwheel,true);
+  assert.equal(h.map.controls.rightBottom[0],h.nodes.get('show-my-location-btn'));
 });
