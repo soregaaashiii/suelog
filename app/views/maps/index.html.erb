@@ -101,7 +101,7 @@ map_shops = @shops.select { |s| s.latitude.present? && s.longitude.present? }
     type="button"
     id="show-my-location-btn"
     class="map-pill-btn map-pill-btn--ghost">
-    現在地を表示
+    現在地
   </button>
 </div>
 
@@ -909,10 +909,30 @@ function initMap() {
     center: { lat: 34.7025, lng: 135.4959 },
     zoom: 15,
     minZoom: 6,
+    gestureHandling: "greedy",
+    scrollwheel: true,
     mapTypeControl: false,
     streetViewControl: false,
     fullscreenControl: true
   });
+
+  // Keep the location control on the map, including in fullscreen mode.
+  const locationButton = document.getElementById("show-my-location-btn");
+  if (locationButton) {
+    locationButton.setAttribute("aria-label", "現在地へ移動");
+    locationButton.setAttribute("title", "現在地へ移動");
+    const controlStyles = {
+      background: "#fff", color: "#111", border: "1px solid #ccc",
+      borderRadius: "4px", padding: "10px 14px", margin: "10px",
+      fontSize: "14px", fontWeight: "700", cursor: "pointer",
+      boxShadow: "0 1px 4px rgba(0,0,0,.3)"
+    };
+    Object.entries(controlStyles).forEach(([key, value]) => {
+      const property = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+      locationButton.style.setProperty(property, value, "important");
+    });
+    map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(locationButton);
+  }
 
   infoWindow = new google.maps.InfoWindow();
   bindFilterEvents();
