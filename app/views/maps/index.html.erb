@@ -326,11 +326,11 @@ function walkingMinutesFromCurrentLocation(shop) {
 
 function buildInfoHtml(shop) {
   return `
-    <div class="map-info" style="min-width:220px; line-height:1.7;">
-      <div style="display:flex; align-items:flex-start; gap:12px; justify-content:space-between;">
-        <div class="map-info__name">${escapeHtml(shop.name)}</div>
+    <div class="map-info" style="min-width:220px; max-width:100%; box-sizing:border-box; line-height:1.7;">
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) 36px; align-items:start; gap:8px; width:100%; box-sizing:border-box;">
+        <div class="map-info__name" style="min-width:0;">${escapeHtml(shop.name)}</div>
         <button type="button" data-map-close aria-label="店舗詳細を閉じる"
-          style="flex-shrink:0; background:#fff !important; color:#111 !important; border:1px solid #aaa; border-radius:6px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">閉じる</button>
+          style="justify-self:end; box-sizing:border-box; width:36px; max-width:100%; height:36px; margin:0; padding:0; background:transparent !important; color:#111 !important; border:0; border-radius:0; box-shadow:none; font-size:28px; font-weight:400; line-height:1; cursor:pointer;">×</button>
       </div>
       ${buildStatusBadgeHtml(shop)}
       ${smokingBadgesFor(shop)}
