@@ -327,7 +327,11 @@ function walkingMinutesFromCurrentLocation(shop) {
 function buildInfoHtml(shop) {
   return `
     <div class="map-info" style="min-width:220px; line-height:1.7;">
-      <div class="map-info__name">${escapeHtml(shop.name)}</div>
+      <div style="display:flex; align-items:flex-start; gap:12px; justify-content:space-between;">
+        <div class="map-info__name">${escapeHtml(shop.name)}</div>
+        <button type="button" data-map-close aria-label="店舗詳細を閉じる"
+          style="flex-shrink:0; background:#fff !important; color:#111 !important; border:1px solid #aaa; border-radius:6px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">閉じる</button>
+      </div>
       ${buildStatusBadgeHtml(shop)}
       ${smokingBadgesFor(shop)}
       ${shop.address ? `<div style="font-size:12px; color:#444;">住所：${escapeHtml(shop.address)}</div>` : ""}
@@ -837,6 +841,11 @@ function bindFilterEvents() {
   }
 
   document.addEventListener("click", function(event) {
+    if (event.target.closest("[data-map-close]")) {
+      event.preventDefault();
+      infoWindow.close();
+      return;
+    }
     const link = event.target.closest("[data-map-link]");
     if (!link) return;
 
