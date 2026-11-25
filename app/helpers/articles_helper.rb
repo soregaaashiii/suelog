@@ -312,7 +312,7 @@ def replace_shop_shortcodes(text)
 
   def render_article_cta_shortcode
     %(
-      <div style="margin:24px 0; padding:14px; border:1px solid #e8e3d7; border-radius:10px; background:#fffdf8; box-shadow:0 6px 18px rgba(17,17,17,0.04);">
+      <div class="article-inline-cta" style="margin:24px 0; padding:14px; border:1px solid #e8e3d7; border-radius:10px; background:#fffdf8; box-shadow:0 6px 18px rgba(17,17,17,0.04);">
         <div style="font-size:20px; font-weight:900; color:#111; line-height:1.5; margin-bottom:8px;">
           今吸える店をすぐ確認する
         </div>
@@ -322,7 +322,7 @@ def replace_shop_shortcodes(text)
         </p>
 
         <div style="display:grid; gap:8px; max-width:420px; margin:0 auto;">
-          <a href="/?open_now_only=1"
+          <a class="article-inline-cta__primary" href="/?open_now_only=1"
              style="display:flex; align-items:center; justify-content:center; min-height:38px; padding:0 12px; background:#2b2b2b; color:#fff; border:1px solid #2b2b2b; border-radius:12px; text-decoration:none; font-size:13px; font-weight:900;">
             今営業中の喫煙可を見る
           </a>
