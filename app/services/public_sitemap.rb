@@ -12,6 +12,7 @@ class PublicSitemap
   def index
     cached("index") do
       paths = ["/sitemaps/pages.xml"]
+      paths << "/sitemaps/geographic-facets.xml" if GeographicFacets.new.all_published.any?
       { "shops" => Shop.public_listing, "articles" => Article.published }.each do |kind, scope|
         scope.reorder(nil).pluck(:id).map { |id| id / BUCKET_SIZE }.uniq.sort.each do |bucket|
           paths << "/sitemaps/#{kind}/#{bucket}.xml"
@@ -42,6 +43,13 @@ class PublicSitemap
     end
   end
 
+  def facets
+    cached("geographic-facets") do
+      facets = GeographicFacets.new
+      urlset(facets.all_published.map { |entry, facet| [facets.path(entry, facet), nil] })
+    end
+  end
+
   def records(kind, bucket)
     raise ArgumentError, "unsupported sitemap" unless %w[shops articles].include?(kind)
 
@@ -60,7 +68,7 @@ class PublicSitemap
   private
 
   def cached(key, &block)
-    Rails.cache.fetch("public-sitemap/v2/#{key}", expires_in: CACHE_TTL, skip_nil: true, &block)
+    Rails.cache.fetch("public-sitemap/v3/#{key}", expires_in: CACHE_TTL, skip_nil: true, &block)
   end
 
   def urlset(entries)

@@ -6,7 +6,7 @@ class GeographicDirectory
   CONFIG_TEXT = Rails.root.join("config/seo/geographies.json").read.freeze
   CONFIG = JSON.parse(CONFIG_TEXT).freeze
   MIN_SHOPS = 10 # Editorial publication threshold, not a search-engine requirement.
-  CACHE_KEY = "geographic-directory/v1/#{Digest::SHA256.hexdigest(CONFIG_TEXT)}"
+  CACHE_KEY = "geographic-directory/v3/#{Digest::SHA256.hexdigest(CONFIG_TEXT)}"
   ADDRESS_SQL = "REPLACE(REPLACE(COALESCE(shops.address, ''), ' ', ''), '　', '')".freeze
 
   def regions = CONFIG.fetch("regions")
@@ -99,19 +99,28 @@ class GeographicDirectory
   def build_statistics
     result = { "region" => {}, "station" => {} }
     { "region" => regions, "station" => stations }.each do |kind, entries|
-      entries.each_key { |slug| result[kind][slug] = { "count" => 0, "genres" => {}, "ids" => [] } }
+      entries.each_key { |slug| result[kind][slug] = { "count" => 0, "genres" => {}, "ids" => [], "facets" => {} } }
     end
     # Scalar fields only; no shop objects, photos, reviews, or per-region database queries.
-    Shop.approved.pluck(:id, :address, :nearest_station, :genre).each do |id, address, raw_station, genre|
+    Shop.approved.pluck(:id, :address, :nearest_station, :genre, :genre_other, *GeographicFacets::SMOKING_COLUMNS).each do |id, address, raw_station, genre, genre_other, *smoking_values|
       region = region_key(address)
       next unless region
 
       station = station_key(raw_station, region)
+      facet_keys = GeographicFacets.keys_for(GeographicFacets::SMOKING_COLUMNS.zip(smoking_values).to_h.merge(genre: genre, genre_other: genre_other))
       [["region", region], ["station", station]].each do |kind, slug|
         next unless slug
         data = result[kind][slug]
         data["count"] += 1
-        data["ids"] << id if kind == "station"
+        data["ids"] << id
+        facet_keys.each do |key|
+          facet = data["facets"][key] ||= { "count" => 0, "ids" => [], "genres" => {} }
+          facet["count"] += 1
+          facet["ids"] << id
+          ShopGenreFilter.tokens(genre, genre_other).reject { |name| name == "その他" }.each do |name|
+            facet["genres"][name] = facet["genres"].fetch(name, 0) + 1
+          end
+        end
         genre.to_s.split(/[、,，\/／\s]+/).reject { |name| name.blank? || name == "その他" }.uniq.each do |name|
           data["genres"][name] = data["genres"].fetch(name, 0) + 1
         end

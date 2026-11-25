@@ -1,9 +1,10 @@
-<% breadcrumbs = [{ name: "吸えログ", item: "https://suelog.jp/" }, { name: "地域・駅から探す", item: "https://suelog.jp/areas" }, { name: @geographic_page.fetch("label"), item: @canonical_url }] %>
+<% breadcrumbs = [{ name: "吸えログ", item: "https://suelog.jp/" }, { name: "地域・駅から探す", item: "https://suelog.jp/areas" }, { name: @geographic_page.fetch("label"), item: "https://suelog.jp#{@directory.path(@geographic_page)}" }] %>
+<% breadcrumbs << { name: @geographic_facet.fetch("label"), item: "https://suelog.jp#{@search_form_url}" } if @geographic_facet %>
 <script type="application/ld+json"><%= raw json_escape({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: breadcrumbs.each_with_index.map { |crumb, index| { "@type": "ListItem", position: index + 1, name: crumb[:name], item: crumb[:item] } } }.to_json) %></script>
 <section class="home-section geo-context">
-  <nav class="geo-breadcrumb" aria-label="パンくず"><%= link_to "ホーム", root_path %> › <%= link_to "地域・駅から探す", geographic_directory_path %> › <%= @geographic_page.fetch("label") %></nav>
-  <h2><%= @geographic_page.fetch("label") %>の掲載情報</h2>
-  <p>掲載店舗は<strong><%= @geographic_stats.fetch("count") %>件</strong>です。喫煙情報が未確認の店舗も含まれます。各店舗の喫煙条件・時間・確認状況をご確認ください。</p>
+  <nav class="geo-breadcrumb" aria-label="パンくず"><%= link_to "ホーム", root_path %> › <%= link_to "地域・駅から探す", geographic_directory_path %> › <% if @geographic_facet %><%= link_to @geographic_page.fetch("label"), @directory.path(@geographic_page) %> › <%= @geographic_facet.fetch("label") %><% else %><%= @geographic_page.fetch("label") %><% end %></nav>
+  <h2><%= @geographic_page.fetch("label") %><%= "の#{@geographic_facet.fetch("label")}" if @geographic_facet %>の掲載情報</h2>
+  <p>掲載店舗は<strong><%= @geographic_stats.fetch("count") %>件</strong>です。<%= @geographic_facet&.fetch("kind") == "smoking" ? "登録された喫煙条件に基づく一覧です。終日・全席での喫煙を保証するものではありません。" : "喫煙情報が未確認の店舗も含まれます。" %>各店舗の喫煙条件・時間・確認状況をご確認ください。</p>
   <% if @geographic_page.fetch("kind") == "region" %>
     <p class="geo-note">住所が「<%= @geographic_page.fetch("label") %>」の店舗を掲載しています。</p>
   <% else %>
@@ -13,12 +14,26 @@
   <% if genres.any? %>
     <p>掲載ジャンル：<%= genres.map { |name, count| "#{name} #{count}件" }.join(" ／ ") %>（複数ジャンルの店舗を含む）</p>
   <% end %>
+  <% { "genre" => "ジャンルから探す", "smoking" => "喫煙条件から探す" }.each do |kind, heading| %>
+    <% facet_pages = @facets.published(@geographic_page).select { |facet| facet.fetch("kind") == kind && facet != @geographic_facet } %>
+    <% if facet_pages.any? %>
+      <h3><%= heading %></h3>
+      <div class="geo-links geo-facet-links">
+        <% facet_pages.each do |facet| %>
+          <%= link_to "#{facet.fetch('label')}（#{@facets.stats(@geographic_page, facet).fetch('count')}店舗）", @facets.path(@geographic_page, facet), class: "geo-link" %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
   <% related = @directory.related(@geographic_page) %>
   <% if related.any? %>
     <h3><%= @geographic_page.fetch("kind") == "region" ? "この地域の駅から探す" : "地域の店舗一覧も見る" %></h3>
     <div class="geo-links">
       <% related.each do |entry| %>
         <%= link_to "#{entry.fetch('label')}（#{@directory.stats(entry).fetch('count')}店舗）", @directory.path(entry), class: "geo-link" %>
+        <% if @geographic_facet && @facets.decision(entry, @geographic_facet).fetch(:published) %>
+          <%= link_to "#{entry.fetch('label')}の#{@geographic_facet.fetch('label')}", @facets.path(entry, @geographic_facet), class: "geo-link" %>
+        <% end %>
       <% end %>
     </div>
   <% end %>
