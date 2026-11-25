@@ -1196,6 +1196,19 @@
         </section>
       <% end %>
 
+      <% directory = GeographicDirectory.new %>
+      <% geographic_links = directory.links_for(@shop) %>
+      <% if geographic_links.present? %>
+        <section class="shop-show__section">
+          <h2 class="shop-show__sectionTitle">同じ地域・駅から探す</h2>
+          <div class="shop-show__relatedLinks">
+            <% geographic_links.each do |entry| %>
+              <%= link_to "#{entry.fetch('label')}の店舗一覧", directory.path(entry), class: "shop-show__relatedChip" %>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
       <% if related_area_links.present? %>
         <section class="shop-show__section">
           <h2 class="shop-show__sectionTitle"><%= area_label %>の喫煙可店舗を条件で探す</h2>

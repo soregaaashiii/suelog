@@ -1,0 +1,747 @@
+{
+  "regions": {
+    "osaka-kita": {
+      "label": "大阪市北区"
+    },
+    "osaka-miyakojima": {
+      "label": "大阪市都島区"
+    },
+    "osaka-fukushima": {
+      "label": "大阪市福島区"
+    },
+    "osaka-konohana": {
+      "label": "大阪市此花区"
+    },
+    "osaka-chuo": {
+      "label": "大阪市中央区"
+    },
+    "osaka-nishi": {
+      "label": "大阪市西区"
+    },
+    "osaka-minato": {
+      "label": "大阪市港区"
+    },
+    "osaka-taisho": {
+      "label": "大阪市大正区"
+    },
+    "osaka-tennoji": {
+      "label": "大阪市天王寺区"
+    },
+    "osaka-naniwa": {
+      "label": "大阪市浪速区"
+    },
+    "osaka-nishiyodogawa": {
+      "label": "大阪市西淀川区"
+    },
+    "osaka-yodogawa": {
+      "label": "大阪市淀川区"
+    },
+    "osaka-higashiyodogawa": {
+      "label": "大阪市東淀川区"
+    },
+    "osaka-higashinari": {
+      "label": "大阪市東成区"
+    },
+    "osaka-ikuno": {
+      "label": "大阪市生野区"
+    },
+    "osaka-asahi": {
+      "label": "大阪市旭区"
+    },
+    "osaka-joto": {
+      "label": "大阪市城東区"
+    },
+    "osaka-tsurumi": {
+      "label": "大阪市鶴見区"
+    },
+    "osaka-abeno": {
+      "label": "大阪市阿倍野区"
+    },
+    "osaka-suminoe": {
+      "label": "大阪市住之江区"
+    },
+    "osaka-sumiyoshi": {
+      "label": "大阪市住吉区"
+    },
+    "osaka-higashisumiyoshi": {
+      "label": "大阪市東住吉区"
+    },
+    "osaka-hirano": {
+      "label": "大阪市平野区"
+    },
+    "osaka-nishinari": {
+      "label": "大阪市西成区"
+    },
+    "sakai-sakai": {
+      "label": "堺市堺区"
+    },
+    "sakai-naka": {
+      "label": "堺市中区"
+    },
+    "sakai-higashi": {
+      "label": "堺市東区"
+    },
+    "sakai-nishi": {
+      "label": "堺市西区"
+    },
+    "sakai-minami": {
+      "label": "堺市南区"
+    },
+    "sakai-kita": {
+      "label": "堺市北区"
+    },
+    "sakai-mihara": {
+      "label": "堺市美原区"
+    },
+    "suita": {
+      "label": "吹田市"
+    },
+    "toyonaka": {
+      "label": "豊中市"
+    },
+    "takatsuki": {
+      "label": "高槻市"
+    },
+    "ibaraki": {
+      "label": "茨木市"
+    },
+    "hirakata": {
+      "label": "枚方市"
+    },
+    "neyagawa": {
+      "label": "寝屋川市"
+    },
+    "higashiosaka": {
+      "label": "東大阪市"
+    },
+    "kadoma": {
+      "label": "門真市"
+    },
+    "moriguchi": {
+      "label": "守口市"
+    },
+    "ikeda": {
+      "label": "池田市"
+    },
+    "kishiwada": {
+      "label": "岸和田市"
+    },
+    "izumisano": {
+      "label": "泉佐野市"
+    },
+    "izumi": {
+      "label": "和泉市"
+    },
+    "izumiotsu": {
+      "label": "泉大津市"
+    },
+    "settsu": {
+      "label": "摂津市"
+    },
+    "minoh": {
+      "label": "箕面市"
+    },
+    "yao": {
+      "label": "八尾市"
+    },
+    "matsubara": {
+      "label": "松原市"
+    },
+    "habikino": {
+      "label": "羽曳野市"
+    },
+    "takaishi": {
+      "label": "高石市"
+    },
+    "kaizuka": {
+      "label": "貝塚市"
+    },
+    "daito": {
+      "label": "大東市"
+    },
+    "shijonawate": {
+      "label": "四條畷市"
+    },
+    "fujiidera": {
+      "label": "藤井寺市"
+    },
+    "tondabayashi": {
+      "label": "富田林市"
+    },
+    "kawachinagano": {
+      "label": "河内長野市"
+    }
+  },
+  "stations": {
+    "kyobashi": {
+      "label": "京橋駅",
+      "regions": [
+        "osaka-miyakojima",
+        "osaka-joto"
+      ],
+      "aliases": [
+        "京橋駅"
+      ]
+    },
+    "temma": {
+      "label": "天満駅",
+      "regions": [
+        "osaka-kita"
+      ],
+      "aliases": [
+        "天満駅"
+      ]
+    },
+    "ogimachi": {
+      "label": "扇町駅",
+      "regions": [
+        "osaka-kita"
+      ],
+      "aliases": [
+        "扇町駅"
+      ]
+    },
+    "tenjinbashisuji-6chome": {
+      "label": "天神橋筋六丁目駅",
+      "regions": [
+        "osaka-kita"
+      ],
+      "aliases": [
+        "天神橋筋六丁目駅"
+      ]
+    },
+    "osaka-temmangu": {
+      "label": "大阪天満宮駅",
+      "regions": [
+        "osaka-kita"
+      ],
+      "aliases": [
+        "大阪天満宮駅"
+      ]
+    },
+    "minamimorimachi": {
+      "label": "南森町駅",
+      "regions": [
+        "osaka-kita"
+      ],
+      "aliases": [
+        "南森町駅"
+      ]
+    },
+    "juso": {
+      "label": "十三駅",
+      "regions": [
+        "osaka-yodogawa"
+      ],
+      "aliases": [
+        "十三駅"
+      ]
+    },
+    "shin-osaka": {
+      "label": "新大阪駅",
+      "regions": [
+        "osaka-yodogawa",
+        "osaka-higashiyodogawa"
+      ],
+      "aliases": [
+        "新大阪駅"
+      ]
+    },
+    "higashi-mikuni": {
+      "label": "東三国駅",
+      "regions": [
+        "osaka-yodogawa"
+      ],
+      "aliases": [
+        "東三国駅"
+      ]
+    },
+    "tsukamoto": {
+      "label": "塚本駅",
+      "regions": [
+        "osaka-yodogawa",
+        "osaka-nishiyodogawa"
+      ],
+      "aliases": [
+        "塚本駅"
+      ]
+    },
+    "kamishinjo": {
+      "label": "上新庄駅",
+      "regions": [
+        "osaka-higashiyodogawa"
+      ],
+      "aliases": [
+        "上新庄駅"
+      ]
+    },
+    "honmachi": {
+      "label": "本町駅",
+      "regions": [
+        "osaka-chuo",
+        "osaka-nishi"
+      ],
+      "aliases": [
+        "本町駅"
+      ]
+    },
+    "sakaisuji-honmachi": {
+      "label": "堺筋本町駅",
+      "regions": [
+        "osaka-chuo"
+      ],
+      "aliases": [
+        "堺筋本町駅"
+      ]
+    },
+    "nagahoribashi": {
+      "label": "長堀橋駅",
+      "regions": [
+        "osaka-chuo"
+      ],
+      "aliases": [
+        "長堀橋駅"
+      ]
+    },
+    "yodoyabashi": {
+      "label": "淀屋橋駅",
+      "regions": [
+        "osaka-chuo",
+        "osaka-kita"
+      ],
+      "aliases": [
+        "淀屋橋駅"
+      ]
+    },
+    "temmabashi": {
+      "label": "天満橋駅",
+      "regions": [
+        "osaka-chuo",
+        "osaka-kita"
+      ],
+      "aliases": [
+        "天満橋駅"
+      ]
+    },
+    "tanimachi-4chome": {
+      "label": "谷町四丁目駅",
+      "regions": [
+        "osaka-chuo"
+      ],
+      "aliases": [
+        "谷町四丁目駅"
+      ]
+    },
+    "tanimachi-6chome": {
+      "label": "谷町六丁目駅",
+      "regions": [
+        "osaka-chuo"
+      ],
+      "aliases": [
+        "谷町六丁目駅"
+      ]
+    },
+    "yotsubashi": {
+      "label": "四ツ橋駅",
+      "regions": [
+        "osaka-nishi",
+        "osaka-chuo"
+      ],
+      "aliases": [
+        "四ツ橋駅"
+      ]
+    },
+    "nishi-ohashi": {
+      "label": "西大橋駅",
+      "regions": [
+        "osaka-nishi"
+      ],
+      "aliases": [
+        "西大橋駅"
+      ]
+    },
+    "higobashi": {
+      "label": "肥後橋駅",
+      "regions": [
+        "osaka-nishi"
+      ],
+      "aliases": [
+        "肥後橋駅"
+      ]
+    },
+    "nishi-nagahori": {
+      "label": "西長堀駅",
+      "regions": [
+        "osaka-nishi"
+      ],
+      "aliases": [
+        "西長堀駅"
+      ]
+    },
+    "kujo": {
+      "label": "九条駅",
+      "regions": [
+        "osaka-nishi"
+      ],
+      "aliases": [
+        "九条駅"
+      ]
+    },
+    "awaza": {
+      "label": "阿波座駅",
+      "regions": [
+        "osaka-nishi"
+      ],
+      "aliases": [
+        "阿波座駅"
+      ]
+    },
+    "tennoji": {
+      "label": "天王寺駅",
+      "regions": [
+        "osaka-tennoji",
+        "osaka-abeno"
+      ],
+      "aliases": [
+        "天王寺駅"
+      ]
+    },
+    "osaka-abenobashi": {
+      "label": "大阪阿部野橋駅",
+      "regions": [
+        "osaka-abeno"
+      ],
+      "aliases": [
+        "大阪阿部野橋駅",
+        "大阪阿倍野橋駅"
+      ]
+    },
+    "tennoji-ekimae": {
+      "label": "天王寺駅前駅",
+      "regions": [
+        "osaka-abeno"
+      ],
+      "aliases": [
+        "天王寺駅前駅"
+      ]
+    },
+    "osaka-uehommachi": {
+      "label": "大阪上本町駅",
+      "regions": [
+        "osaka-tennoji",
+        "osaka-chuo"
+      ],
+      "aliases": [
+        "大阪上本町駅"
+      ]
+    },
+    "tanimachi-9chome": {
+      "label": "谷町九丁目駅",
+      "regions": [
+        "osaka-tennoji",
+        "osaka-chuo"
+      ],
+      "aliases": [
+        "谷町九丁目駅"
+      ]
+    },
+    "tsuruhashi": {
+      "label": "鶴橋駅",
+      "regions": [
+        "osaka-tennoji",
+        "osaka-ikuno",
+        "osaka-higashinari"
+      ],
+      "aliases": [
+        "鶴橋駅"
+      ]
+    },
+    "momodani": {
+      "label": "桃谷駅",
+      "regions": [
+        "osaka-tennoji",
+        "osaka-ikuno"
+      ],
+      "aliases": [
+        "桃谷駅"
+      ]
+    },
+    "bentencho": {
+      "label": "弁天町駅",
+      "regions": [
+        "osaka-minato"
+      ],
+      "aliases": [
+        "弁天町駅"
+      ]
+    },
+    "taisho": {
+      "label": "大正駅",
+      "regions": [
+        "osaka-taisho"
+      ],
+      "aliases": [
+        "大正駅"
+      ]
+    },
+    "abiko": {
+      "label": "あびこ駅",
+      "regions": [
+        "osaka-sumiyoshi"
+      ],
+      "aliases": [
+        "あびこ駅"
+      ]
+    },
+    "nagai": {
+      "label": "長居駅",
+      "regions": [
+        "osaka-sumiyoshi",
+        "osaka-higashisumiyoshi"
+      ],
+      "aliases": [
+        "長居駅"
+      ]
+    },
+    "hanazonocho": {
+      "label": "花園町駅",
+      "regions": [
+        "osaka-nishinari"
+      ],
+      "aliases": [
+        "花園町駅"
+      ]
+    },
+    "esaka": {
+      "label": "江坂駅",
+      "regions": [
+        "suita"
+      ],
+      "aliases": [
+        "江坂駅"
+      ]
+    },
+    "toyonaka": {
+      "label": "豊中駅",
+      "regions": [
+        "toyonaka"
+      ],
+      "aliases": [
+        "豊中駅"
+      ]
+    },
+    "shonai": {
+      "label": "庄内駅",
+      "regions": [
+        "toyonaka"
+      ],
+      "aliases": [
+        "庄内駅"
+      ]
+    },
+    "hattori-tenjin": {
+      "label": "服部天神駅",
+      "regions": [
+        "toyonaka"
+      ],
+      "aliases": [
+        "服部天神駅"
+      ]
+    },
+    "sone": {
+      "label": "曽根駅",
+      "regions": [
+        "toyonaka"
+      ],
+      "aliases": [
+        "曽根駅"
+      ]
+    },
+    "ishibashi-handai-mae": {
+      "label": "石橋阪大前駅",
+      "regions": [
+        "ikeda",
+        "toyonaka"
+      ],
+      "aliases": [
+        "石橋阪大前駅",
+        "石橋阪大前駅",
+        "石橋駅"
+      ]
+    },
+    "takatsuki": {
+      "label": "高槻駅",
+      "regions": [
+        "takatsuki"
+      ],
+      "aliases": [
+        "高槻駅"
+      ]
+    },
+    "takatsukishi": {
+      "label": "高槻市駅",
+      "regions": [
+        "takatsuki"
+      ],
+      "aliases": [
+        "高槻市駅"
+      ]
+    },
+    "ibaraki": {
+      "label": "茨木駅",
+      "regions": [
+        "ibaraki"
+      ],
+      "aliases": [
+        "茨木駅"
+      ]
+    },
+    "ibarakishi": {
+      "label": "茨木市駅",
+      "regions": [
+        "ibaraki"
+      ],
+      "aliases": [
+        "茨木市駅"
+      ]
+    },
+    "hirakatashi": {
+      "label": "枚方市駅",
+      "regions": [
+        "hirakata"
+      ],
+      "aliases": [
+        "枚方市駅"
+      ]
+    },
+    "korien": {
+      "label": "香里園駅",
+      "regions": [
+        "neyagawa",
+        "hirakata"
+      ],
+      "aliases": [
+        "香里園駅"
+      ]
+    },
+    "neyagawashi": {
+      "label": "寝屋川市駅",
+      "regions": [
+        "neyagawa"
+      ],
+      "aliases": [
+        "寝屋川市駅"
+      ]
+    },
+    "fuse": {
+      "label": "布施駅",
+      "regions": [
+        "higashiosaka"
+      ],
+      "aliases": [
+        "布施駅"
+      ]
+    },
+    "moriguchishi": {
+      "label": "守口市駅",
+      "regions": [
+        "moriguchi"
+      ],
+      "aliases": [
+        "守口市駅"
+      ]
+    },
+    "furukawabashi": {
+      "label": "古川橋駅",
+      "regions": [
+        "kadoma"
+      ],
+      "aliases": [
+        "古川橋駅"
+      ]
+    },
+    "owada": {
+      "label": "大和田駅",
+      "regions": [
+        "kadoma"
+      ],
+      "aliases": [
+        "大和田駅"
+      ]
+    },
+    "sakai-higashi": {
+      "label": "堺東駅",
+      "regions": [
+        "sakai-sakai"
+      ],
+      "aliases": [
+        "堺東駅"
+      ]
+    },
+    "sakai": {
+      "label": "堺駅",
+      "regions": [
+        "sakai-sakai"
+      ],
+      "aliases": [
+        "堺駅"
+      ]
+    },
+    "fukai": {
+      "label": "深井駅",
+      "regions": [
+        "sakai-naka"
+      ],
+      "aliases": [
+        "深井駅"
+      ]
+    },
+    "nakamozu": {
+      "label": "なかもず・中百舌鳥駅",
+      "regions": [
+        "sakai-kita"
+      ],
+      "aliases": [
+        "なかもず駅",
+        "中百舌鳥駅"
+      ]
+    },
+    "otori": {
+      "label": "鳳駅",
+      "regions": [
+        "sakai-nishi"
+      ],
+      "aliases": [
+        "鳳駅"
+      ]
+    },
+    "izumi-fuchu": {
+      "label": "和泉府中駅",
+      "regions": [
+        "izumi",
+        "izumiotsu"
+      ],
+      "aliases": [
+        "和泉府中駅"
+      ]
+    },
+    "kishiwada": {
+      "label": "岸和田駅",
+      "regions": [
+        "kishiwada"
+      ],
+      "aliases": [
+        "岸和田駅"
+      ]
+    },
+    "izumisano": {
+      "label": "泉佐野駅",
+      "regions": [
+        "izumisano"
+      ],
+      "aliases": [
+        "泉佐野駅"
+      ]
+    }
+  }
+}

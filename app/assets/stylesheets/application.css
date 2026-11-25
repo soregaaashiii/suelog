@@ -3716,3 +3716,16 @@ trix-editor figure:has(.article-table), .article-body figure:has(.article-table)
 }
 .article-body .article-inline-cta a:hover { border-color:#d7bd75 !important; }
 .article-body .article-inline-cta a:focus-visible { outline:2px solid #d7bd75; outline-offset:3px; }
+
+/* Geographic landing pages share the site's dark palette and work without JS. */
+.geo-directory, .geo-context { color:#e8e6df; }
+.geo-directory h1 { font-size:clamp(24px,4vw,34px); line-height:1.5; }
+.geo-directory p, .geo-context p { line-height:1.8; }
+.geo-breadcrumb { margin:18px 0; font-size:13px; overflow-wrap:anywhere; }
+.geo-note { color:#bcb9af; font-size:14px; }
+.geo-links { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:10px; margin:14px 0; }
+.geo-links a.geo-link { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:48px; padding:12px 14px; border:1px solid #49422d; border-radius:6px; background:#191916; color:#e8e6df !important; text-decoration:none; overflow-wrap:anywhere; box-sizing:border-box; }
+.geo-link span { color:#d7bd75; font-size:13px; flex-shrink:0; }
+.geo-links a.geo-link:hover, .geo-links a.geo-link:focus-visible { border-color:#d7bd75; outline-offset:3px; }
+
+.hero .refine-hero-title.geo-hero-title { font-size:clamp(26px,4vw,44px); line-height:1.5; overflow-wrap:anywhere; }

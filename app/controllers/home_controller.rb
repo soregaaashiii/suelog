@@ -491,6 +491,8 @@ end
 
   base = (smoking_area.present? || smoking_type.present? || @open_now_only) ? Shop.approved : Shop.public_listing
 
+  base = base.merge(@geographic_scope) if @geographic_scope
+
   if @forced_area_keyword.present?
     like = "%#{@forced_area_keyword}%"
     area_sql = <<~SQL.squish

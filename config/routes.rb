@@ -9,6 +9,9 @@ Rails.application.routes.draw do
   end
 
   root "home#index"
+  get "areas", to: "geographies#index", as: :geographic_directory
+  get "areas/:slug", to: "geographies#show", as: :geographic_region, defaults: { geographic_kind: "region" }
+  get "stations/:slug", to: "geographies#show", as: :geographic_station, defaults: { geographic_kind: "station" }
   get "sitemap.xml", to: "sitemaps#index", as: :sitemap, format: false
   get "sitemaps/pages.xml", to: "sitemaps#pages", format: false
   get "sitemaps/:kind/:bucket.xml", to: "sitemaps#records", format: false,

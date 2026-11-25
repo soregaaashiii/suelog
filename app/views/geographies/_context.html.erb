@@ -1,0 +1,25 @@
+<% breadcrumbs = [{ name: "吸えログ", item: "https://suelog.jp/" }, { name: "地域・駅から探す", item: "https://suelog.jp/areas" }, { name: @geographic_page.fetch("label"), item: @canonical_url }] %>
+<script type="application/ld+json"><%= raw json_escape({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: breadcrumbs.each_with_index.map { |crumb, index| { "@type": "ListItem", position: index + 1, name: crumb[:name], item: crumb[:item] } } }.to_json) %></script>
+<section class="home-section geo-context">
+  <nav class="geo-breadcrumb" aria-label="パンくず"><%= link_to "ホーム", root_path %> › <%= link_to "地域・駅から探す", geographic_directory_path %> › <%= @geographic_page.fetch("label") %></nav>
+  <h2><%= @geographic_page.fetch("label") %>の掲載情報</h2>
+  <p>掲載店舗は<strong><%= @geographic_stats.fetch("count") %>件</strong>です。喫煙情報が未確認の店舗も含まれます。各店舗の喫煙条件・時間・確認状況をご確認ください。</p>
+  <% if @geographic_page.fetch("kind") == "region" %>
+    <p class="geo-note">住所が「<%= @geographic_page.fetch("label") %>」の店舗を掲載しています。</p>
+  <% else %>
+    <p class="geo-note">登録された最寄駅が<%= @geographic_page.fetch("aliases").join("・") %>で、住所が<%= @geographic_page.fetch("regions").map { |key| @directory.regions.fetch(key).fetch("label") }.join("・") %>の店舗を掲載しています。駅からの距離は各店舗で確認できます。</p>
+  <% end %>
+  <% genres = @geographic_stats.fetch("genres").sort_by { |name, count| [-count, name] }.first(4) %>
+  <% if genres.any? %>
+    <p>掲載ジャンル：<%= genres.map { |name, count| "#{name} #{count}件" }.join(" ／ ") %>（複数ジャンルの店舗を含む）</p>
+  <% end %>
+  <% related = @directory.related(@geographic_page) %>
+  <% if related.any? %>
+    <h3><%= @geographic_page.fetch("kind") == "region" ? "この地域の駅から探す" : "地域の店舗一覧も見る" %></h3>
+    <div class="geo-links">
+      <% related.each do |entry| %>
+        <%= link_to "#{entry.fetch('label')}（#{@directory.stats(entry).fetch('count')}店舗）", @directory.path(entry), class: "geo-link" %>
+      <% end %>
+    </div>
+  <% end %>
+</section>
