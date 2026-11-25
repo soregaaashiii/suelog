@@ -123,6 +123,7 @@ Rails.application.routes.draw do
   end
 
   namespace :admin, path: "panel_8m4k" do
+    get "seo_pages", to: "seo_pages#index", as: :seo_pages
     get "analytics", to: "analytics#index", as: :analytics
 
     # 送客一覧
