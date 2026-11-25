@@ -1,20 +1,27 @@
 # frozen_string_literal: true
 
-class SitemapsController < ApplicationController
-def show
-xml_path = Rails.root.join("public", "sitemap.xml")
-gz_path = Rails.root.join("public", "sitemap.xml.gz")
+# XML endpoints deliberately bypass HTML browser checks and importmap ETags.
+class SitemapsController < ActionController::Base
 
-if File.exist?(xml_path)
-send_file xml_path,
-type: "application/xml",
-disposition: "inline"
-elsif File.exist?(gz_path)
-send_file gz_path,
-type: "application/gzip",
-disposition: "inline"
-else
-head :not_found
-end
-end
+  def index
+    render_sitemap PublicSitemap.new.index
+  end
+
+  def pages
+    render_sitemap PublicSitemap.new.pages
+  end
+
+  def records
+    xml = PublicSitemap.new.records(params[:kind], params[:bucket].to_i)
+    return head :not_found if xml.nil?
+
+    render_sitemap xml
+  end
+
+  private
+
+  def render_sitemap(xml)
+    expires_in PublicSitemap::CACHE_TTL, public: true
+    render body: xml, content_type: "application/xml; charset=utf-8"
+  end
 end

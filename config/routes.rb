@@ -9,6 +9,10 @@ Rails.application.routes.draw do
   end
 
   root "home#index"
+  get "sitemap.xml", to: "sitemaps#index", as: :sitemap, format: false
+  get "sitemaps/pages.xml", to: "sitemaps#pages", format: false
+  get "sitemaps/:kind/:bucket.xml", to: "sitemaps#records", format: false,
+      constraints: { kind: /shops|articles/, bucket: /[0-9]{1,8}/ }
   get "shops/:id/photos", to: "shops#refine_section", defaults: { section: "photos" }
   get "shops/:id/reviews", to: "shops#refine_section", defaults: { section: "reviews" }
   get "shops/:id/access", to: "shops#refine_section", defaults: { section: "access" }
