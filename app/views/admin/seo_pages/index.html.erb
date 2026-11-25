@@ -3,12 +3,14 @@
   <p>地域・駅と、そのジャンル別・喫煙条件別ページの掲載状況です。店舗数と判定は最大5分のキャッシュを使用します。</p>
   <p class="admin-seo__note">「index対象」はサイト側の設定であり、Googleへのインデックス登録状況ではありません。追加の検索条件・並べ替え・ページ送りがない基本URLを表示しています。梅田・難波の従来ページ、店舗詳細、記事はこの一覧の対象外です。</p>
 
+  <%= render "search_console" %>
+
   <div class="admin-seo__summary" aria-label="全候補の判定件数">
-    <%= link_to admin_seo_pages_path, class: "admin-seo__summaryItem" do %>
+    <%= link_to admin_seo_pages_path(import_id: @report&.id), class: "admin-seo__summaryItem" do %>
       <span>候補全体</span><strong><%= number_with_delimiter @catalog.counts.fetch("total") %><small>ページ</small></strong>
     <% end %>
     <% SeoPageCatalog::STATUSES.each do |status, label| %>
-      <%= link_to admin_seo_pages_path(status: status), class: "admin-seo__summaryItem" do %>
+      <%= link_to admin_seo_pages_path(status: status, import_id: @report&.id), class: "admin-seo__summaryItem" do %>
         <span><%= label %></span><strong><%= number_with_delimiter @catalog.counts.fetch(status) %><small>ページ</small></strong>
       <% end %>
     <% end %>
@@ -26,22 +28,24 @@
   </details>
 
   <%= form_with url: admin_seo_pages_path, method: :get, class: "admin-seo__filters" do |form| %>
+    <% if @reports.any? %><div><%= form.label :import_id, "取り込み履歴（最近20回）" %><%= form.select :import_id, @reports.map { |report| ["##{report.id} #{report.period_label}（#{report.created_at.strftime("%Y/%m/%d %H:%M")}）", report.id] }, selected: @report&.id %></div><% end %>
     <div><%= form.label :q, "地域・駅・条件・URL" %><%= form.search_field :q, value: @query, placeholder: "例：江坂、居酒屋、/smoking/", maxlength: 100 %></div>
     <div><%= form.label :kind, "ページ種別" %><%= form.select :kind, [["すべて", ""]] + SeoPageCatalog::KINDS.map { |key, label| [label, key] }, selected: @kind %></div>
     <div><%= form.label :status, "判定" %><%= form.select :status, [["すべて", ""]] + SeoPageCatalog::STATUSES.map { |key, label| [label, key] }, selected: @status %></div>
     <div><%= form.label :reason, "判定理由" %><%= form.select :reason, [["すべて", ""]] + SeoPageCatalog::REASONS.map { |key, label| [label, key] }, selected: @reason %></div>
-    <div><%= form.label :sort, "並び順" %><%= form.select :sort, [["店舗数が多い順", "shops_desc"], ["店舗数が少ない順", "shops_asc"], ["URL順", "url"]], selected: @sort %></div>
-    <div class="admin-seo__actions"><%= form.submit "絞り込む" %><%= link_to "リセット", admin_seo_pages_path %></div>
+    <div><%= form.label :performance, "検索実績・改善候補" %><%= form.select :performance, [["すべて", ""]] + SearchConsolePerformance::FILTERS.map { |key, label| [label, key] }, selected: @performance_filter %></div>
+    <div><%= form.label :sort, "並び順" %><%= form.select :sort, [["店舗数が多い順", "shops_desc"], ["店舗数が少ない順", "shops_asc"], ["URL順", "url"]] + SearchConsolePerformance::SORTS.map { |key, label| [label, key] }, selected: @sort %></div>
+    <div class="admin-seo__actions"><%= form.submit "絞り込む" %><%= link_to "リセット", admin_seo_pages_path(import_id: @report&.id) %></div>
   <% end %>
 
   <p class="admin-seo__result" role="status"><strong><%= number_with_delimiter @rows.total_count %>件</strong>該当<% if @rows.any? %> ／ <%= @rows.offset_value + 1 %>〜<%= @rows.offset_value + @rows.length %>件を表示<% end %>（50件ずつ表示）</p>
   <% if @rows.any? %>
     <p class="admin-seo__scrollHint">表は横にスクロールできます。</p>
     <div class="admin-seo__tableWrap" tabindex="0" role="region" aria-label="SEOページの判定一覧">
-      <table class="admin-seo__table">
+      <table class="admin-seo__table <%= "admin-seo__table--performance" if @report %>">
         <caption class="admin-seo__srOnly">SEOページのURL・店舗数・判定理由・canonical</caption>
-        <colgroup><col style="width:29%"><col style="width:8%"><col style="width:8%"><col style="width:11%"><col style="width:24%"><col style="width:20%"></colgroup>
-        <thead><tr><th scope="col">ページ・URL</th><th scope="col">種別</th><th scope="col">店舗数</th><th scope="col">サイト側の判定</th><th scope="col">判定理由</th><th scope="col">canonical</th></tr></thead>
+        <% unless @report %><colgroup><col style="width:29%"><col style="width:8%"><col style="width:8%"><col style="width:11%"><col style="width:24%"><col style="width:20%"></colgroup><% end %>
+        <thead><tr><th scope="col">ページ・URL</th><th scope="col">種別</th><th scope="col">店舗数</th><% if @report %><th scope="col">クリック数</th><th scope="col">表示回数</th><th scope="col">CTR</th><th scope="col">平均掲載順位</th><th scope="col">改善候補</th><% end %><th scope="col">サイト側の判定</th><th scope="col">判定理由</th><th scope="col">canonical</th></tr></thead>
         <tbody>
           <% @rows.each do |row| %>
             <tr data-seo-path="<%= row.fetch(:path) %>" data-seo-status="<%= row.fetch(:status) %>">
@@ -54,6 +58,7 @@
               </th>
               <td><%= SeoPageCatalog::KINDS.fetch(row.fetch(:kind)) %><% if %w[genre smoking].include?(row.fetch(:kind)) %><small><%= SeoPageCatalog::KINDS.fetch(row.fetch(:geography_kind)) %>別</small><% end %></td>
               <td class="admin-seo__count"><strong><%= number_with_delimiter row.fetch(:count) %></strong><% if %w[genre smoking].include?(row.fetch(:kind)) %><small>親 <%= number_with_delimiter row.fetch(:parent_count) %>件</small><% end %></td>
+              <%= render "performance_cells", row: row if @report %>
               <td><span class="admin-seo__badge admin-seo__badge--<%= row.fetch(:status) %>"><%= SeoPageCatalog::STATUSES.fetch(row.fetch(:status)) %></span></td>
               <td><strong><%= SeoPageCatalog::REASONS.fetch(row.fetch(:reason)) %></strong><small><%= SeoPageCatalog::REASON_DETAILS.fetch(row.fetch(:reason)) %></small></td>
               <td><% if row.fetch(:canonical) %><%= link_to row.fetch(:canonical), row.fetch(:canonical), target: "_blank", rel: "noopener noreferrer", class: "admin-seo__url" %><% else %><span>—</span><small>404のため設定なし</small><% end %></td>
@@ -91,6 +96,19 @@
 .admin-seo__actions a { color:#333; }
 .admin-seo__tableWrap { max-width:100%; overflow-x:auto; border:1px solid #ddd; border-radius:8px; background:#fff; }
 .admin-seo__table { width:100%; min-width:1000px; border-collapse:collapse; table-layout:fixed; text-align:left; font-size:14px; }
+.admin-seo__table--performance { min-width:2000px; }
+.admin-seo__table--performance th:first-child { width:220px; }
+.admin-seo__metric { font-variant-numeric:tabular-nums; }
+.admin-seo__candidate { display:block; padding:4px 6px; margin-bottom:4px; border-radius:4px; background:#fff5dc; color:#795500; font-size:12px; }
+.admin-seo__searchConsole { padding:18px; margin:20px 0; border:1px solid #ddd; border-radius:10px; background:#fff; }
+.admin-seo__searchConsole h2 { margin:0 0 12px; font-size:20px; }
+.admin-seo__candidateHelp { margin-top:12px; }
+.admin-seo__importForm { display:grid; gap:16px; margin-top:16px; }
+.admin-seo__importForm fieldset { min-width:0; display:flex; flex-wrap:wrap; gap:12px; border:1px solid #ddd; padding:12px; border-radius:6px; }
+.admin-seo__importForm fieldset > div { flex:1 1 180px; min-width:0; }
+.admin-seo__importForm label { display:block; font-weight:700; font-size:14px; margin-bottom:6px; }
+.admin-seo__importForm input:not([type=submit]), .admin-seo__importForm textarea { box-sizing:border-box; width:100%; max-width:100%; min-height:40px; padding:7px; border:1px solid #aaa; border-radius:5px; color:#171717; background:#fff; font-size:14px; }
+.admin-seo__importError { border:1px solid #cc8888; background:#fff3f3; padding:12px; color:#8c2020; }
 .admin-seo__table th, .admin-seo__table td { padding:14px 12px; border-bottom:1px solid #e2e2e2; vertical-align:top; line-height:1.5; }
 .admin-seo__table thead th { background:#eee; color:#222; }
 .admin-seo__table tbody th { font-weight:400; }

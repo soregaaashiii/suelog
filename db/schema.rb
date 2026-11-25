@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_06_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_25_000100) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -376,6 +376,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_000200) do
     t.index ["shop_id"], name: "index_reviews_on_shop_id"
   end
 
+  create_table "search_console_imports", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "current_filename", null: false
+    t.date "period_end", null: false
+    t.date "period_start", null: false
+    t.date "previous_end"
+    t.string "previous_filename"
+    t.date "previous_start"
+    t.text "search_context", null: false
+    t.json "statistics", default: {}, null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "search_console_page_metrics", force: :cascade do |t|
+    t.bigint "clicks", null: false
+    t.datetime "created_at", null: false
+    t.bigint "impressions", null: false
+    t.string "path", limit: 512, null: false
+    t.integer "period", null: false
+    t.decimal "position", precision: 12, scale: 4
+    t.integer "search_console_import_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["search_console_import_id", "period", "path"], name: "index_search_console_metrics_on_import_period_path", unique: true
+    t.index ["search_console_import_id"], name: "index_search_console_page_metrics_on_search_console_import_id"
+  end
+
   create_table "shop_business_hour_windows", force: :cascade do |t|
     t.integer "closes_at_minute", null: false
     t.integer "opens_at_minute", null: false
@@ -589,6 +615,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_000200) do
   add_foreign_key "restaurant_url_search_runs", "shops"
   add_foreign_key "review_reports", "reviews"
   add_foreign_key "reviews", "shops"
+  add_foreign_key "search_console_page_metrics", "search_console_imports"
   add_foreign_key "shop_business_hour_windows", "shops"
   add_foreign_key "shop_clicks", "articles"
   add_foreign_key "shop_clicks", "shops"

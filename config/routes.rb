@@ -123,6 +123,7 @@ Rails.application.routes.draw do
   end
 
   namespace :admin, path: "panel_8m4k" do
+    post "seo_pages/import", to: "seo_pages#import_csv", as: :import_seo_pages
     get "seo_pages", to: "seo_pages#index", as: :seo_pages
     get "analytics", to: "analytics#index", as: :analytics
 

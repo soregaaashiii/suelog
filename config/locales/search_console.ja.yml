@@ -1,0 +1,14 @@
+ja:
+  activerecord:
+    attributes:
+      search_console_import:
+        period_start: 対象期間の開始日
+        period_end: 対象期間の終了日
+        search_context: 検索条件メモ
+        current_filename: 対象期間のCSV
+    errors:
+      models:
+        search_console_import:
+          attributes:
+            search_context:
+              too_long: は500文字以内で入力してください

@@ -1,0 +1,48 @@
+<div class="admin-seo__searchConsole">
+  <h2>Search Consoleの検索実績</h2>
+  <% if @report %>
+    <p><strong>対象期間：<%= @report.period_label %></strong><% if @report.comparison? %> ／ 比較期間：<%= @report.previous_label %><% end %><br>検索条件：<%= @report.search_context %></p>
+    <p class="admin-seo__note">取り込み：<%= @report.created_at.strftime("%Y/%m/%d %H:%M") %> ／ <%= @report.current_filename %><% if @report.comparison? %>・<%= @report.previous_filename %><% end %><br>
+      対象期間：CSV <%= number_with_delimiter @report.statistics.dig("current", "total") %>行 ／ 一致 <%= number_with_delimiter @report.statistics.dig("current", "matched") %>ページ ／ 一覧対象外 <%= number_with_delimiter @report.statistics.dig("current", "unmatched") %>行
+      <% if @report.comparison? %><br>比較期間：CSV <%= number_with_delimiter @report.statistics.dig("previous", "total") %>行 ／ 一致 <%= number_with_delimiter @report.statistics.dig("previous", "matched") %>ページ ／ 一覧対象外 <%= number_with_delimiter @report.statistics.dig("previous", "unmatched") %>行<% end %>
+    </p>
+  <% else %>
+    <p>まだ検索実績を取り込んでいません。ページ別CSVを取り込むと、この一覧で検索実績と改善候補を確認できます。</p>
+  <% end %>
+  <p class="admin-seo__note">CSVはページの一部だけが書き出される場合があります。「データなし」は0クリックや未登録を意味しません。Googleのインデックス登録状況はこのCSVから判定しません。CTRはクリック数÷表示回数で計算し、前期間比は両方のCSVにデータがある場合だけ表示します。順位の数値は小さいほど上位です。</p>
+  <details class="admin-seo__criteria" <%= "open" if @import_error || @reports.empty? %>>
+    <summary>ページ別CSVを取り込む</summary>
+    <ol>
+      <li>Search Consoleの「検索パフォーマンス → 検索結果」で対象期間と検索条件を設定し、「ページ」タブのデータをCSVで書き出してください。ZIPで取得した場合は解凍し、「ページ.csv」または「Pages.csv」を選びます。</li>
+      <li>比較する場合は、同じ検索条件・同じ日数の前の期間を、別の通常CSVとして書き出してください。日付比較付きCSVは使いません。</li>
+      <li>それぞれのCSVの期間と、検索タイプ・国・デバイス・ページなどの検索条件を下に入力してください。期間や条件はCSVから自動判別できません。</li>
+    </ol>
+    <p class="admin-seo__note">日本語・英語の5列（ページ、クリック数、表示回数、CTR、掲載順位）、UTF-8形式、各5MB以下に対応します。https://suelog.jp の一覧候補と完全に一致する基本URLだけを保存します。クエリ付きURL、店舗・記事、別ホストなどは対象外として数えます。<%= link_to "Googleのエクスポート仕様", "https://support.google.com/webmasters/answer/12919797?hl=ja", target: "_blank", rel: "noopener noreferrer" %></p>
+    <% if @import_error %><p class="admin-seo__importError" role="alert"><%= @import_error %> ファイルを選び直して取り込んでください。</p><% end %>
+    <% values = @import_values || {} %>
+    <%= form_with url: admin_import_seo_pages_path, scope: :search_console_import, method: :post, multipart: true, class: "admin-seo__importForm" do |form| %>
+      <fieldset><legend>対象期間（必須）</legend>
+        <div><%= form.label :current_file, "対象期間のページ別CSV" %><%= form.file_field :current_file, accept: ".csv,text/csv", required: true %></div>
+        <div><%= form.label :period_start, "対象期間の開始日" %><%= form.date_field :period_start, value: values["period_start"], required: true %></div>
+        <div><%= form.label :period_end, "対象期間の終了日" %><%= form.date_field :period_end, value: values["period_end"], required: true, max: Date.current.iso8601 %></div>
+      </fieldset>
+      <fieldset><legend>比較期間（任意・同じ日数の前の期間）</legend>
+        <div><%= form.label :previous_file, "比較期間のページ別CSV" %><%= form.file_field :previous_file, accept: ".csv,text/csv" %></div>
+        <div><%= form.label :previous_start, "比較期間の開始日" %><%= form.date_field :previous_start, value: values["previous_start"] %></div>
+        <div><%= form.label :previous_end, "比較期間の終了日" %><%= form.date_field :previous_end, value: values["previous_end"] %></div>
+      </fieldset>
+      <div><%= form.label :search_context, "検索条件メモ（比較する場合は両期間で同じ条件）" %><%= form.text_area :search_context, value: values["search_context"], required: true, maxlength: 500, rows: 2, placeholder: "例：検索タイプ=ウェブ、国・デバイス=すべて、ページ=/areas/・/stations/、クエリ指定なし" %></div>
+      <div class="admin-seo__actions"><%= form.submit "検索実績を取り込む", data: { turbo_submits_with: "取り込み中…" } %></div>
+    <% end %>
+  </details>
+  <details class="admin-seo__criteria admin-seo__candidateHelp">
+    <summary>改善候補の判定基準</summary>
+    <ul>
+      <li>表示は多いがCTRが低い：100回以上の表示、CTR 1%未満、平均20位以内。</li>
+      <li>クリック数が減少：前期間10クリック以上で、対象期間が30%以上減少。</li>
+      <li>11〜20位のページ：100回以上表示され、平均順位が10位超〜20位。</li>
+      <li>掲載設定を確認：現在noindex・404対象のページに、対象期間の表示実績がある場合。実績期間後に設定が変わった可能性もあります。</li>
+    </ul>
+    <p class="admin-seo__note">前3つは現在index対象のページのみです。これらは確認の優先順位を付ける運用上の目安で、Googleの評価基準や改善効果の保証ではありません。</p>
+  </details>
+</div>
