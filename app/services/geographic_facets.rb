@@ -89,7 +89,9 @@ class GeographicFacets
   end
 
   def decision(entry, facet)
-    decisions.fetch(path(entry, facet)) { { published: false, canonical: path(entry, facet) } }
+    decisions.fetch(path(entry, facet)) do
+      { published: false, canonical: path(entry, facet), reason: stats(entry, facet).fetch("count").zero? ? "no_shops" : "insufficient_shops" }
+    end
   end
 
   private
@@ -113,19 +115,22 @@ class GeographicFacets
           count = data.fetch("count")
           canonical = candidate_path
           published = count >= GeographicDirectory::MIN_SHOPS
+          reason = published ? "eligible" : (count.zero? ? "no_shops" : "insufficient_shops")
           if published && (parent_count - count < MIN_DIFFERENCE || count.fdiv(parent_count) > MAX_PARENT_SHARE)
             published = false
             canonical = @directory.path(entry)
+            reason = "near_parent"
           elsif published
             signature = fingerprint(data.fetch("ids"))
             if seen.key?(signature)
               published = false
               canonical = seen.fetch(signature)
+              reason = "duplicate"
             else
               seen[signature] = candidate_path
             end
           end
-          result[candidate_path] = { published: published, canonical: canonical }
+          result[candidate_path] = { published: published, canonical: canonical, reason: reason }
         end
       end
       result

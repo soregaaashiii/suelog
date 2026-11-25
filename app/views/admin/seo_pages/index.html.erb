@@ -1,0 +1,116 @@
+<section class="admin-seo" aria-labelledby="seo-pages-title">
+  <h1 id="seo-pages-title">SEOページ一覧</h1>
+  <p>地域・駅と、そのジャンル別・喫煙条件別ページの掲載状況です。店舗数と判定は最大5分のキャッシュを使用します。</p>
+  <p class="admin-seo__note">「index対象」はサイト側の設定であり、Googleへのインデックス登録状況ではありません。追加の検索条件・並べ替え・ページ送りがない基本URLを表示しています。梅田・難波の従来ページ、店舗詳細、記事はこの一覧の対象外です。</p>
+
+  <div class="admin-seo__summary" aria-label="全候補の判定件数">
+    <%= link_to admin_seo_pages_path, class: "admin-seo__summaryItem" do %>
+      <span>候補全体</span><strong><%= number_with_delimiter @catalog.counts.fetch("total") %><small>ページ</small></strong>
+    <% end %>
+    <% SeoPageCatalog::STATUSES.each do |status, label| %>
+      <%= link_to admin_seo_pages_path(status: status), class: "admin-seo__summaryItem" do %>
+        <span><%= label %></span><strong><%= number_with_delimiter @catalog.counts.fetch(status) %><small>ページ</small></strong>
+      <% end %>
+    <% end %>
+  </div>
+
+  <details class="admin-seo__criteria">
+    <summary>掲載基準と判定の意味</summary>
+    <ul>
+      <li>地域・駅は<%= GeographicDirectory::MIN_SHOPS %>店舗以上でindex対象です。</li>
+      <li>条件別は<%= GeographicDirectory::MIN_SHOPS %>店舗以上に加え、親ページとの差が<%= GeographicFacets::MIN_DIFFERENCE %>店舗以上、親の<%= (GeographicFacets::MAX_PARENT_SHARE * 100).to_i %>%以下の店舗数であることが必要です。同じ店舗集合の候補は1つのURLに統合します。</li>
+      <li>index対象だけを内部リンク・サイトマップに掲載します。1件以上で基準未達ならnoindex、0件なら404対象です。404対象のcanonicalはありません。</li>
+      <li>喫煙条件別は未確認の喫煙情報を除外します。曜日・時間・席などの制限は各店舗で確認できます。</li>
+      <li>サイトマップ・HTTPキャッシュと重なると、掲載対象の変更は最大約15分で反映されます。</li>
+    </ul>
+  </details>
+
+  <%= form_with url: admin_seo_pages_path, method: :get, class: "admin-seo__filters" do |form| %>
+    <div><%= form.label :q, "地域・駅・条件・URL" %><%= form.search_field :q, value: @query, placeholder: "例：江坂、居酒屋、/smoking/", maxlength: 100 %></div>
+    <div><%= form.label :kind, "ページ種別" %><%= form.select :kind, [["すべて", ""]] + SeoPageCatalog::KINDS.map { |key, label| [label, key] }, selected: @kind %></div>
+    <div><%= form.label :status, "判定" %><%= form.select :status, [["すべて", ""]] + SeoPageCatalog::STATUSES.map { |key, label| [label, key] }, selected: @status %></div>
+    <div><%= form.label :reason, "判定理由" %><%= form.select :reason, [["すべて", ""]] + SeoPageCatalog::REASONS.map { |key, label| [label, key] }, selected: @reason %></div>
+    <div><%= form.label :sort, "並び順" %><%= form.select :sort, [["店舗数が多い順", "shops_desc"], ["店舗数が少ない順", "shops_asc"], ["URL順", "url"]], selected: @sort %></div>
+    <div class="admin-seo__actions"><%= form.submit "絞り込む" %><%= link_to "リセット", admin_seo_pages_path %></div>
+  <% end %>
+
+  <p class="admin-seo__result" role="status"><strong><%= number_with_delimiter @rows.total_count %>件</strong>該当<% if @rows.any? %> ／ <%= @rows.offset_value + 1 %>〜<%= @rows.offset_value + @rows.length %>件を表示<% end %>（50件ずつ表示）</p>
+  <% if @rows.any? %>
+    <p class="admin-seo__scrollHint">表は横にスクロールできます。</p>
+    <div class="admin-seo__tableWrap" tabindex="0" role="region" aria-label="SEOページの判定一覧">
+      <table class="admin-seo__table">
+        <caption class="admin-seo__srOnly">SEOページのURL・店舗数・判定理由・canonical</caption>
+        <colgroup><col style="width:29%"><col style="width:8%"><col style="width:8%"><col style="width:11%"><col style="width:24%"><col style="width:20%"></colgroup>
+        <thead><tr><th scope="col">ページ・URL</th><th scope="col">種別</th><th scope="col">店舗数</th><th scope="col">サイト側の判定</th><th scope="col">判定理由</th><th scope="col">canonical</th></tr></thead>
+        <tbody>
+          <% @rows.each do |row| %>
+            <tr data-seo-path="<%= row.fetch(:path) %>" data-seo-status="<%= row.fetch(:status) %>">
+              <th scope="row"><span class="admin-seo__label"><%= row.fetch(:label) %></span>
+                <% if row.fetch(:status) == "not_found" %>
+                  <span class="admin-seo__url"><%= row.fetch(:url) %></span>
+                <% else %>
+                  <%= link_to row.fetch(:url), row.fetch(:url), target: "_blank", rel: "noopener noreferrer", class: "admin-seo__url" %>
+                <% end %>
+              </th>
+              <td><%= SeoPageCatalog::KINDS.fetch(row.fetch(:kind)) %><% if %w[genre smoking].include?(row.fetch(:kind)) %><small><%= SeoPageCatalog::KINDS.fetch(row.fetch(:geography_kind)) %>別</small><% end %></td>
+              <td class="admin-seo__count"><strong><%= number_with_delimiter row.fetch(:count) %></strong><% if %w[genre smoking].include?(row.fetch(:kind)) %><small>親 <%= number_with_delimiter row.fetch(:parent_count) %>件</small><% end %></td>
+              <td><span class="admin-seo__badge admin-seo__badge--<%= row.fetch(:status) %>"><%= SeoPageCatalog::STATUSES.fetch(row.fetch(:status)) %></span></td>
+              <td><strong><%= SeoPageCatalog::REASONS.fetch(row.fetch(:reason)) %></strong><small><%= SeoPageCatalog::REASON_DETAILS.fetch(row.fetch(:reason)) %></small></td>
+              <td><% if row.fetch(:canonical) %><%= link_to row.fetch(:canonical), row.fetch(:canonical), target: "_blank", rel: "noopener noreferrer", class: "admin-seo__url" %><% else %><span>—</span><small>404のため設定なし</small><% end %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= paginate @rows %>
+  <% else %>
+    <p class="admin-seo__empty">この条件に該当するページはありません。絞り込み条件を変更してください。</p>
+  <% end %>
+</section>
+
+<style>
+.admin-seo { color:#171717; overflow-wrap:anywhere; }
+.admin-seo h1 { font-size:28px; margin:24px 0 12px; }
+.admin-seo p { line-height:1.7; }
+.admin-seo__note, .admin-seo__criteria { color:#505050; font-size:14px; }
+.admin-seo__summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:24px 0; }
+.admin-seo__summaryItem { padding:16px; border:1px solid #ddd; border-radius:10px; background:#fff; color:#222; text-decoration:none; }
+.admin-seo__summaryItem:hover { border-color:#777; }
+.admin-seo__summaryItem strong { display:block; margin-top:8px; font-size:26px; }
+.admin-seo__summaryItem small { font-size:13px; margin-left:6px; font-weight:400; }
+.admin-seo__criteria { padding:14px; background:#fff; border:1px solid #ddd; border-radius:8px; }
+.admin-seo__criteria summary { cursor:pointer; font-weight:700; color:#222; }
+.admin-seo__criteria li { margin:8px 0; line-height:1.6; }
+.admin-seo__filters { display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin:24px 0; }
+.admin-seo__filters > div { min-width:130px; }
+.admin-seo__filters > div:first-child { flex:1 1 230px; }
+.admin-seo__filters label { display:block; font-size:14px; font-weight:700; margin-bottom:6px; }
+.admin-seo__filters input[type=search], .admin-seo__filters select { box-sizing:border-box; width:100%; min-height:42px; padding:8px; border:1px solid #aaa; border-radius:6px; color:#171717; background:#fff; font-size:14px; }
+.admin-seo__actions { display:flex; align-items:center; gap:14px; min-height:42px; }
+.admin-seo__actions input { border:1px solid #111; border-radius:6px; background:#111; color:#fff; padding:10px 16px; cursor:pointer; font-weight:700; }
+.admin-seo__actions a { color:#333; }
+.admin-seo__tableWrap { max-width:100%; overflow-x:auto; border:1px solid #ddd; border-radius:8px; background:#fff; }
+.admin-seo__table { width:100%; min-width:1000px; border-collapse:collapse; table-layout:fixed; text-align:left; font-size:14px; }
+.admin-seo__table th, .admin-seo__table td { padding:14px 12px; border-bottom:1px solid #e2e2e2; vertical-align:top; line-height:1.5; }
+.admin-seo__table thead th { background:#eee; color:#222; }
+.admin-seo__table tbody th { font-weight:400; }
+.admin-seo__table tbody tr:last-child > * { border-bottom:0; }
+.admin-seo__label { display:block; font-weight:700; margin-bottom:6px; }
+.admin-seo__url { display:block; font-size:12px; overflow-wrap:anywhere; color:#145799; }
+.admin-seo__table small { display:block; font-size:12px; color:#555; margin-top:5px; }
+.admin-seo__count { font-variant-numeric:tabular-nums; }
+.admin-seo__badge { display:inline-block; border:1px solid; padding:3px 6px; border-radius:5px; font-weight:700; font-size:12px; white-space:nowrap; }
+.admin-seo__badge--index { background:#e8f3ec; color:#1b6035; border-color:#a7cdb4; }
+.admin-seo__badge--noindex { background:#fff5dc; color:#795500; border-color:#ddc383; }
+.admin-seo__badge--not_found { background:#eee; color:#505050; border-color:#ccc; }
+.admin-seo__empty { padding:24px; border:1px solid #ddd; background:#fff; border-radius:8px; }
+.admin-seo .km-pagination { margin:20px 0; }
+.admin-seo__scrollHint { display:none; font-size:13px; color:#555; }
+.admin-seo__srOnly { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+@media(max-width:700px) {
+  .admin-seo__summary { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .admin-seo__summaryItem { padding:12px; }
+  .admin-seo__filters > div { flex:1 1 140px; min-width:0; }
+  .admin-seo__scrollHint { display:block; }
+}
+</style>
