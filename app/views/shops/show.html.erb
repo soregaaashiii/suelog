@@ -1198,12 +1198,17 @@
 
       <% directory = GeographicDirectory.new %>
       <% geographic_links = directory.links_for(@shop) %>
+      <% facets = GeographicFacets.new(directory) %>
+      <% shop_facet_keys = GeographicFacets.keys_for(@shop.attributes.symbolize_keys) %>
       <% if geographic_links.present? %>
         <section class="shop-show__section">
           <h2 class="shop-show__sectionTitle">同じ地域・駅から探す</h2>
           <div class="shop-show__relatedLinks">
             <% geographic_links.each do |entry| %>
               <%= link_to "#{entry.fetch('label')}の店舗一覧", directory.path(entry), class: "shop-show__relatedChip" %>
+              <% facets.published(entry).select { |facet| shop_facet_keys.include?(facets.key(facet)) }.each do |facet| %>
+                <%= link_to "#{entry.fetch('label')}の#{facet.fetch('label')}", facets.path(entry, facet), class: "shop-show__relatedChip" %>
+              <% end %>
             <% end %>
           </div>
         </section>

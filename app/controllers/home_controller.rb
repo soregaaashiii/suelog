@@ -503,58 +503,7 @@ end
     base = base.where(area_sql, like: like)
   end
 
-  if genre_terms.present?
-    genre_sql_parts = []
-    genre_bindings = {}
-
-    normalized_genre_sql = <<~SQL.squish
-      REPLACE(
-        REPLACE(
-          REPLACE(
-            REPLACE(COALESCE(shops.genre, ''), '　', '、'),
-            ' ', '、'
-          ),
-          ',', '、'
-        ),
-        '，', '、'
-      )
-    SQL
-
-    normalized_genre_other_sql = <<~SQL.squish
-      REPLACE(
-        REPLACE(
-          REPLACE(
-            REPLACE(COALESCE(shops.genre_other, ''), '　', '、'),
-            ' ', '、'
-          ),
-          ',', '、'
-        ),
-        '，', '、'
-      )
-    SQL
-
-    # Match custom genre tokens using the same separators as the map and selectors.
-    [ "/", "／", "｜", "|", "・" ].each do |separator|
-      normalized_genre_sql = "REPLACE(#{normalized_genre_sql}, '#{separator}', '、')"
-      normalized_genre_other_sql = "REPLACE(#{normalized_genre_other_sql}, '#{separator}', '、')"
-    end
-
-    genre_terms.each_with_index do |term, idx|
-      key = :"genre_token_#{idx}"
-
-      genre_sql_parts << <<~SQL.squish
-        (
-          ('、' || #{normalized_genre_sql} || '、') LIKE :#{key}
-          OR ('、' || #{normalized_genre_other_sql} || '、') LIKE :#{key}
-        )
-      SQL
-
-      genre_bindings[key] = "%、#{ActiveRecord::Base.sanitize_sql_like(term)}、%"
-    end
-
-    genre_sql = genre_sql_parts.join(" OR ")
-    base = base.where(genre_sql, genre_bindings)
-  end
+  base = ShopGenreFilter.apply(base, genre_terms)
 
   if station_q.present?
     like = "%#{ActiveRecord::Base.sanitize_sql_like(station_q)}%"

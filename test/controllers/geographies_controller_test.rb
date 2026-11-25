@@ -84,6 +84,45 @@ class GeographiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name='robots'][content='noindex,follow']"
   end
 
+  test "genre and smoking facets expose consistent navigation canonical and sitemap entries" do
+    seed_shops(10, smoking_unverified: false)
+    seed_shops(5, genre: "カフェ", smoking_unverified: false, prefix: "喫茶")
+    seed_shops(5, genre: "バー", smoking_area: 0, smoking_unverified: false, prefix: "バー")
+    get "/areas/suita/genre/izakaya", headers: UA
+    assert_response :success
+    assert_select "h1", text: "吹田市で喫煙できる居酒屋"
+    assert_select ".result-hit-text", text: "10件ヒット"
+    assert_select "meta[name='robots'][content='index,follow']"
+    assert_select "link[rel='canonical'][href='https://suelog.jp/areas/suita/genre/izakaya']"
+    assert_select ".geo-context a[href='/areas/suita/smoking/seat-smoking']"
+    get "/areas/suita/smoking/seat-smoking", headers: UA
+    assert_response :success
+    assert_select "h1", text: "吹田市の席で喫煙可の店"
+    assert_select ".result-hit-text", text: "15件ヒット"
+    assert_select ".geo-context", text: /終日・全席での喫煙を保証するものではありません/
+    assert_select ".geo-context a[href='/areas/suita/genre/izakaya']"
+    get "/sitemaps/geographic-facets.xml"
+    assert_response :success
+    assert_includes response.body, "https://suelog.jp/areas/suita/genre/izakaya"
+    assert_includes response.body, "https://suelog.jp/areas/suita/smoking/seat-smoking"
+    assert_not_includes response.body, "/stations/esaka/genre/izakaya"
+    get "/sitemap.xml"
+    assert_includes response.body, "/sitemaps/geographic-facets.xml"
+    get "/stations/esaka/genre/izakaya", headers: UA
+    assert_select "meta[name='robots'][content='noindex,follow']"
+    assert_select "link[rel='canonical'][href='https://suelog.jp/areas/suita/genre/izakaya']"
+    get "/shops/#{Shop.find_by!(name: '江坂0').id}", headers: UA
+    assert_select ".shop-show__relatedLinks a[href='/areas/suita/genre/izakaya']"
+    assert_select ".shop-show__relatedLinks a[href='/areas/suita/smoking/seat-smoking']"
+    get "/areas/suita/genre/izakaya", params: { genre: "カフェ" }, headers: UA
+    assert_select ".result-hit-text", text: "0件ヒット"
+    assert_select "meta[name='robots'][content='noindex,follow']"
+    get "/areas/suita/genre/unknown", headers: UA
+    assert_response :not_found
+    get "/areas/suita/smoking/heated-only", headers: UA
+    assert_response :not_found
+  end
+
   private
 
   def seed_shops(count, **overrides)

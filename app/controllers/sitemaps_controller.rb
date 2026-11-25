@@ -11,6 +11,10 @@ class SitemapsController < ActionController::Base
     render_sitemap PublicSitemap.new.pages
   end
 
+  def facets
+    render_sitemap PublicSitemap.new.facets
+  end
+
   def records
     xml = PublicSitemap.new.records(params[:kind], params[:bucket].to_i)
     return head :not_found if xml.nil?

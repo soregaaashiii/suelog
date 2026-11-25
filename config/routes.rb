@@ -10,9 +10,12 @@ Rails.application.routes.draw do
 
   root "home#index"
   get "areas", to: "geographies#index", as: :geographic_directory
+  get "areas/:slug/:facet_kind/:facet", to: "geographies#show", constraints: { facet_kind: /genre|smoking/ }, defaults: { geographic_kind: "region" }
+  get "stations/:slug/:facet_kind/:facet", to: "geographies#show", constraints: { facet_kind: /genre|smoking/ }, defaults: { geographic_kind: "station" }
   get "areas/:slug", to: "geographies#show", as: :geographic_region, defaults: { geographic_kind: "region" }
   get "stations/:slug", to: "geographies#show", as: :geographic_station, defaults: { geographic_kind: "station" }
   get "sitemap.xml", to: "sitemaps#index", as: :sitemap, format: false
+  get "sitemaps/geographic-facets.xml", to: "sitemaps#facets", format: false
   get "sitemaps/pages.xml", to: "sitemaps#pages", format: false
   get "sitemaps/:kind/:bucket.xml", to: "sitemaps#records", format: false,
       constraints: { kind: /shops|articles/, bucket: /[0-9]{1,8}/ }

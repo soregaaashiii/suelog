@@ -19,19 +19,32 @@ class GeographiesController < HomeController
     @geographic_page = @directory.definition(kind, params[:slug])
     raise ActionController::RoutingError, "Not Found" unless @geographic_page
 
-    @geographic_stats = @directory.stats(@geographic_page)
+    @facets = GeographicFacets.new(@directory)
+    if request.path_parameters[:facet_kind]
+      @geographic_facet = @facets.definition(request.path_parameters[:facet_kind], request.path_parameters[:facet])
+      raise ActionController::RoutingError, "Not Found" unless @geographic_facet
+    end
+    @geographic_stats = @geographic_facet ? @facets.stats(@geographic_page, @geographic_facet) : @directory.stats(@geographic_page)
     raise ActionController::RoutingError, "Not Found" if @geographic_stats.fetch("count").zero?
 
-    @geographic_scope = @directory.scope(@geographic_page)
+    @geographic_scope = @geographic_facet ? @facets.scope(@geographic_page, @geographic_facet) : @directory.scope(@geographic_page)
     @seo_noindex = !@directory.published?(@geographic_page)
     label = @geographic_page.fetch("label")
     context = kind == "station" ? "#{label}周辺" : label
-    @page_heading = "#{context}で喫煙できる店"
-    @page_title = "#{@page_heading}｜席で喫煙可・喫煙所あり【吸えログ】"
+    @page_heading = @geographic_facet ? @facets.heading(context, @geographic_facet) : "#{context}で喫煙できる店"
+    @page_title = "#{@page_heading}｜吸えログ"
     @page_description = "#{context}の掲載店舗#{@geographic_stats.fetch('count')}件から探せます。喫煙条件・確認状況・営業時間・地図を確認し、席で喫煙可や加熱式のみなどで絞り込めます。"
-    @search_form_url = @directory.path(@geographic_page)
+    if @geographic_facet
+      @page_description = "#{@page_heading}を掲載。#{@geographic_stats.fetch('count')}件の営業時間・地図・喫煙条件を確認できます。喫煙できる曜日・時間・席やたばこの種類は店舗により異なります。来店前に各店舗の詳細をご確認ください。"
+    end
+    @search_form_url = @geographic_facet ? @facets.path(@geographic_page, @geographic_facet) : @directory.path(@geographic_page)
+    if @geographic_facet
+      @facet_decision = @facets.decision(@geographic_page, @geographic_facet)
+      @seo_noindex ||= !@facet_decision.fetch(:published)
+      @forced_genre_label = @geographic_facet.fetch("label") if @geographic_facet.fetch("kind") == "genre"
+    end
     @clear_filters_url = @search_form_url
-    @canonical_url = "https://suelog.jp#{@search_form_url}"
+    @canonical_url = "https://suelog.jp#{@facet_decision ? @facet_decision.fetch(:canonical) : @search_form_url}"
     @forced_area_label = label
     track_page_view
     build_listing!
