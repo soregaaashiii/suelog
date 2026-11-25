@@ -95,14 +95,25 @@ class ArticleTablesTest < ApplicationSystemTestCase
     assert_equal 1, Nokogiri::HTML.fragment(article.body.to_s).css("table").length
     article.update!(published: true, published_at: Time.current)
     visit article_path(article)
-    assert_selector ".article-body .article-table td", text: "店舗A修正"
+    assert_selector ".article-body .published-article-table td", text: "店舗A修正"
     public_table_style = page.evaluate_script(<<~JS)
-      (() => { const table = document.querySelector('.article-body .article-table');
+      (() => { const table = document.querySelector('.article-body .published-article-table');
         return ['th', 'td', 'a'].map(selector => { const style = getComputedStyle(table.querySelector(selector));
           return [style.fontSize, style.lineHeight, style.padding, style.borderTopWidth, style.backgroundColor, style.color, style.textAlign]; }); })()
     JS
-    assert_equal "rgb(17, 17, 17)", public_table_style[1][5]
-    assert_equal "rgb(255, 255, 255)", public_table_style[1][4]
+    assert_equal "rgb(232, 230, 223)", public_table_style[1][5]
+    assert_equal "rgb(25, 25, 22)", public_table_style[1][4]
+    assert_equal "rgb(215, 189, 117)", public_table_style[0][5]
+    assert_equal ["rgb(25, 25, 22)", "rgb(198, 167, 94)", "rgb(35, 35, 31)"], page.evaluate_script(<<~JS)
+      ['.article-exit', '.article-exit__btn--primary', '.article-exit__btn:not(.article-exit__btn--primary)']
+        .map(selector => getComputedStyle(document.querySelector(selector)).backgroundColor)
+    JS
+    page.save_screenshot(Rails.root.join("tmp/article-dark-desktop.png"))
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 390, height: 844, deviceScaleFactor: 1, mobile: true)
+    assert_equal "auto", page.evaluate_script("getComputedStyle(document.querySelector('.published-article-table-scroll')).overflowX")
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
+    page.save_screenshot(Rails.root.join("tmp/article-dark-mobile.png"))
+    page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
 
   end
   test "paste prose and multiple nested tables in order and retain them after saving" do
