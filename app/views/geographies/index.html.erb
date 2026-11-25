@@ -1,0 +1,31 @@
+<% content_for :title, @page_title %>
+<% content_for :meta_description, @page_description %>
+<% content_for :canonical_url, @canonical_url %>
+<script type="application/ld+json"><%= raw json_escape({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "吸えログ", item: "https://suelog.jp/" }, { "@type": "ListItem", position: 2, name: "地域・駅から探す", item: "https://suelog.jp/areas" }] }.to_json) %></script>
+<div class="home-page geo-directory">
+  <nav class="geo-breadcrumb" aria-label="パンくず"><%= link_to "ホーム", root_path %> › 地域・駅から探す</nav>
+  <h1>大阪の地域・駅から喫煙できる店を探す</h1>
+  <p>市区町村と最寄駅から、喫煙条件や営業時間を確認できる店舗一覧へ進めます。掲載店舗が<%= GeographicDirectory::MIN_SHOPS %>件以上ある地域・駅を掲載しています。</p>
+  <p class="geo-note">掲載件数には喫煙情報が未確認の店舗も含まれます。喫煙条件・時間は各店舗の表示をご確認ください。</p>
+  <section class="home-section">
+    <h2>地域から探す</h2>
+    <div class="geo-links">
+      <% @regions.each do |entry| %>
+        <%= link_to @directory.path(entry), class: "geo-link" do %>
+          <strong><%= entry.fetch("label") %></strong><span><%= @directory.stats(entry).fetch("count") %>店舗</span>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+  <section class="home-section">
+    <h2>駅から探す</h2>
+    <p>登録された最寄駅をもとにまとめています。既存の<%= link_to "梅田の駅一覧", umeda_path %>・<%= link_to "難波の駅一覧", namba_path %>もご利用ください。</p>
+    <div class="geo-links">
+      <% @stations.each do |entry| %>
+        <%= link_to @directory.path(entry), class: "geo-link" do %>
+          <strong><%= entry.fetch("label") %></strong><span><%= @directory.stats(entry).fetch("count") %>店舗</span>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+</div>

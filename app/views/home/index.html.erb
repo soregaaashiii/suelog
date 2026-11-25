@@ -6,6 +6,8 @@
 <%= render "shared/hero" %>
 
 <div class="home-page">
+  <%= render "geographies/context" if @geographic_page %>
+  <% unless @geographic_page %>
   <section class="home-section refine-popular-areas">
     <div class="section-head">
       <div>
@@ -52,6 +54,9 @@
       </article>
     </div>
   </section>
+
+  <p><%= link_to "大阪の地域・駅一覧を見る →", geographic_directory_path, class: "btn btn--ghost" %></p>
+  <% end %>
 
   <% genre_label = {} %>
   <% Shop.selectable_genre_options.each { |g| genre_label[g] = g } %>

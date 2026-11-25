@@ -33,6 +33,11 @@ class PublicSitemap
         %w[all_smoking separated].each { |kind| paths << public_send("#{area}_smoking_path", kind) }
         %w[izakaya bar cafe yakiniku].each { |genre| paths << public_send("#{area}_genre_path", genre) }
       end
+      directory = GeographicDirectory.new
+      paths << geographic_directory_path
+      %w[region station].each do |kind|
+        paths.concat(directory.published(kind).map { |entry| directory.path(entry) })
+      end
       urlset(paths.uniq.map { |path| [path, nil] })
     end
   end
@@ -55,7 +60,7 @@ class PublicSitemap
   private
 
   def cached(key, &block)
-    Rails.cache.fetch("public-sitemap/v1/#{key}", expires_in: CACHE_TTL, skip_nil: true, &block)
+    Rails.cache.fetch("public-sitemap/v2/#{key}", expires_in: CACHE_TTL, skip_nil: true, &block)
   end
 
   def urlset(entries)
