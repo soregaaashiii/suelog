@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_25_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_25_000200) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -402,6 +402,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_000100) do
     t.index ["search_console_import_id"], name: "index_search_console_page_metrics_on_search_console_import_id"
   end
 
+  create_table "seo_page_revisions", force: :cascade do |t|
+    t.json "after_values", default: {}, null: false
+    t.json "before_values", default: {}, null: false
+    t.text "change_note"
+    t.datetime "created_at", null: false
+    t.integer "seo_page_setting_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["seo_page_setting_id", "id"], name: "index_seo_page_revisions_on_seo_page_setting_id_and_id"
+    t.index ["seo_page_setting_id"], name: "index_seo_page_revisions_on_seo_page_setting_id"
+  end
+
+  create_table "seo_page_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "lock_version", default: 0, null: false
+    t.string "path", limit: 512, null: false
+    t.string "title", limit: 200
+    t.datetime "updated_at", null: false
+    t.index ["path"], name: "index_seo_page_settings_on_path", unique: true
+  end
+
   create_table "shop_business_hour_windows", force: :cascade do |t|
     t.integer "closes_at_minute", null: false
     t.integer "opens_at_minute", null: false
@@ -616,6 +637,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_000100) do
   add_foreign_key "review_reports", "reviews"
   add_foreign_key "reviews", "shops"
   add_foreign_key "search_console_page_metrics", "search_console_imports"
+  add_foreign_key "seo_page_revisions", "seo_page_settings"
   add_foreign_key "shop_business_hour_windows", "shops"
   add_foreign_key "shop_clicks", "articles"
   add_foreign_key "shop_clicks", "shops"

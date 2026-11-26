@@ -46,7 +46,8 @@ class Admin::SeoPagesControllerTest < ActionDispatch::IntegrationTest
     get admin_seo_pages_path, params: { q: "/areas/sakai-naka", kind: "region", status: "not_found" }, headers: @headers
     assert_select "tr[data-seo-status='not_found']" do
       assert_select "td", text: /404のため設定なし/
-      assert_select "a", count: 0
+      assert_select "a[href^='https://suelog.jp/']", count: 0
+      assert_select "a", text: "SEO設定を編集"
     end
   end
 

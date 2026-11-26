@@ -30,18 +30,20 @@ class GeographiesController < HomeController
     @geographic_scope = @geographic_facet ? @facets.scope(@geographic_page, @geographic_facet) : @directory.scope(@geographic_page)
     @seo_noindex = !@directory.published?(@geographic_page)
     label = @geographic_page.fetch("label")
-    context = kind == "station" ? "#{label}周辺" : label
-    @page_heading = @geographic_facet ? @facets.heading(context, @geographic_facet) : "#{context}で喫煙できる店"
-    @page_title = "#{@page_heading}｜吸えログ"
-    @page_description = "#{context}の掲載店舗#{@geographic_stats.fetch('count')}件から探せます。喫煙条件・確認状況・営業時間・地図を確認し、席で喫煙可や加熱式のみなどで絞り込めます。"
-    if @geographic_facet
-      @page_description = "#{@page_heading}を掲載。#{@geographic_stats.fetch('count')}件の営業時間・地図・喫煙条件を確認できます。喫煙できる曜日・時間・席やたばこの種類は店舗により異なります。来店前に各店舗の詳細をご確認ください。"
-    end
+    generated = GeographicPageMetadata.generated(entry: @geographic_page, facet: @geographic_facet, count: @geographic_stats.fetch("count"))
+    @page_heading = generated.fetch(:heading)
+    @page_title = generated.fetch(:title)
+    @page_description = generated.fetch(:description)
     @search_form_url = @geographic_facet ? @facets.path(@geographic_page, @geographic_facet) : @directory.path(@geographic_page)
     if @geographic_facet
       @facet_decision = @facets.decision(@geographic_page, @geographic_facet)
       @seo_noindex ||= !@facet_decision.fetch(:published)
       @forced_genre_label = @geographic_facet.fetch("label") if @geographic_facet.fetch("kind") == "genre"
+    end
+    if (setting = SeoPageSetting.find_by(path: @search_form_url))
+      effective = setting.effective(generated)
+      @page_title = effective.fetch(:title)
+      @page_description = effective.fetch(:description)
     end
     @clear_filters_url = @search_form_url
     @canonical_url = "https://suelog.jp#{@facet_decision ? @facet_decision.fetch(:canonical) : @search_form_url}"
