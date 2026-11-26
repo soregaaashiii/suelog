@@ -123,6 +123,30 @@ class GeographiesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "guide explains real facet intersections and keeps metadata and publication decisions" do
+    seed_shops(12, smoking_unverified: false)
+    seed_shops(5, genre: "カフェ", smoking_unverified: false, prefix: "喫茶")
+    seed_shops(5, genre: "バー", smoking_area: 0, smoking_unverified: false, prefix: "バー")
+    get "/areas/suita/genre/izakaya", headers: UA
+    assert_response :success
+    assert_select ".geo-guide", text: /掲載22件のうち.*12件/
+    assert_select ".geo-guide [data-smoking-condition='seat-smoking']", text: /この一覧内 12件/
+    assert_select ".geo-guide [data-smoking-condition='smoking-room']", text: /この一覧内 0件/
+    assert_select ".geo-guide a[href='/areas/suita/smoking/seat-smoking']", text: /17件/
+    assert_select ".geo-guide a[href*='?']", count: 0
+    document = Nokogiri::HTML(response.body)
+    assert document.at_css(".geo-guide").previous_element.css(".shop-card__titleLink").any?, "Guide must follow the shop listing"
+    assert_select "link[rel='canonical'][href='https://suelog.jp/areas/suita/genre/izakaya']"
+    assert_select "meta[name='robots'][content='index,follow']"
+    get "/areas/suita", params: { genre: "カフェ" }, headers: UA
+    assert_select ".geo-guide", count: 0
+    get "/areas/suita?page=2", headers: UA
+    assert_select ".geo-guide", count: 0
+    get "/stations/esaka/genre/izakaya", headers: UA
+    assert_select "meta[name='robots'][content='noindex,follow']"
+    assert_select ".geo-guide", count: 0
+  end
+
   private
 
   def seed_shops(count, **overrides)

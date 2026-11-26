@@ -51,6 +51,9 @@ class GeographiesController < HomeController
     track_page_view
     build_listing!
     @seo_noindex ||= @shops_count < GeographicDirectory::MIN_SHOPS
+    if !@seo_noindex && request.query_parameters.empty?
+      @geographic_guide = GeographicPageGuide.new(directory: @directory, facets: @facets, entry: @geographic_page, facet: @geographic_facet)
+    end
     render "home/index"
   end
 end

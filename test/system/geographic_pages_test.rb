@@ -61,4 +61,30 @@ class GeographicPagesTest < ApplicationSystemTestCase
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
   end
 
+  test "read page specific condition guidance and follow only published links on mobile" do
+    Shop.update_all(smoking_unverified: false)
+    now = Time.current
+    Shop.insert_all!(Array.new(8) do |i|
+      { name: "別条件#{i}", address: "大阪府吹田市江坂町2-1", nearest_station: "江坂駅から200m", genre: "カフェ", approved: true,
+        on_hold: false, smoking_unverified: false, smoking_area: i < 3 ? 1 : 0, smoking_type: 0, created_at: now, updated_at: now }
+    end)
+    visit "/areas/suita/genre/izakaya"
+    assert_selector ".geo-guide", text: "掲載20件のうち、居酒屋の条件に該当する店舗は12件"
+    within(".geo-guide") do
+      assert_selector "[data-smoking-condition='seat-smoking']", text: "この一覧内 12件"
+      assert_selector "[data-smoking-condition='smoking-room']", text: "この一覧内 0件"
+    end
+    page.execute_script("document.querySelector('.geo-guide').scrollIntoView()")
+    page.save_screenshot(Rails.root.join("tmp/geographic-guide-desktop.png"))
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 390, height: 844, deviceScaleFactor: 1, mobile: true)
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
+    page.execute_script("document.querySelector('.geo-guide').scrollIntoView()")
+    page.save_screenshot(Rails.root.join("tmp/geographic-guide-mobile.png"))
+    within(".geo-guide") { click_link "吹田市全体の席で喫煙可を見る（15件）" }
+    assert_selector "h1", text: "吹田市の席で喫煙可の店"
+    assert_selector ".shop-card__titleLink", count: 15
+    assert_selector ".geo-guide [data-smoking-condition='seat-smoking']", text: "この一覧内 15件"
+    page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
+  end
+
 end
