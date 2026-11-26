@@ -52,6 +52,24 @@ class SearchConsolePerformanceTest < ActiveSupport::TestCase
     assert_equal ["publication_review"], rows.first[:performance][:candidates]
   end
 
+  test "prioritizes declines ahead of low CTR and growth with deterministic tie breaking" do
+    report = import_report
+    report.page_metrics.find_by!(path: "/areas/suita", period: "current").update!(position: 13)
+    service = SearchConsolePerformance.new(report)
+    catalog = SeoPageCatalog.new.rows
+    ranked = service.apply(catalog, sort: "priority")
+    assert_equal "/areas/suita", ranked.first[:path]
+    assert_equal 1, ranked.first[:performance][:priority][:rank]
+    assert_includes ranked.first[:performance][:candidates], "position_decline"
+    assert_equal ["/areas/suita"], service.apply(catalog, filter: "position_decline").map { |r| r[:path] }
+    assert_equal ["/areas/suita"], service.apply(catalog, filter: "actionable").map { |r| r[:path] }
+    assert_equal "/areas/suita", service.apply(catalog, sort: "position_change_desc").first[:path]
+    assert_nil ranked.last[:performance][:current]
+    # A low-volume prior period cannot support a ranking decline candidate.
+    report.page_metrics.find_by!(path: "/areas/suita", period: "previous").update!(impressions: 99)
+    assert_empty SearchConsolePerformance.new(report).apply(catalog, filter: "position_decline")
+  end
+
   private
 
   def import_report
