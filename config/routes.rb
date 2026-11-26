@@ -124,6 +124,8 @@ Rails.application.routes.draw do
 
   namespace :admin, path: "panel_8m4k" do
     post "seo_pages/import", to: "seo_pages#import_csv", as: :import_seo_pages
+    get "seo_pages/edit", to: "seo_pages#edit", as: :edit_seo_page
+    patch "seo_pages/metadata", to: "seo_pages#update_metadata", as: :update_seo_page_metadata
     get "seo_pages", to: "seo_pages#index", as: :seo_pages
     get "analytics", to: "analytics#index", as: :analytics
 

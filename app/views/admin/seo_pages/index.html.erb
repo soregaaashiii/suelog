@@ -55,6 +55,11 @@
                 <% else %>
                   <%= link_to row.fetch(:url), row.fetch(:url), target: "_blank", rel: "noopener noreferrer", class: "admin-seo__url" %>
                 <% end %>
+                <div class="admin-seo__metadata">
+                  <%= link_to "SEO設定を編集", admin_edit_seo_page_path(page_path: row.fetch(:path), filters: @editor_filters) %>
+                  <% setting = @page_settings[row.fetch(:path)] %>
+                  <small><%= setting && setting[:customized] ? "個別設定あり" : "自動生成" %><% if setting %><br>設定変更：<%= setting[:updated_at].strftime("%Y/%m/%d %H:%M:%S") %><% end %></small>
+                </div>
               </th>
               <td><%= SeoPageCatalog::KINDS.fetch(row.fetch(:kind)) %><% if %w[genre smoking].include?(row.fetch(:kind)) %><small><%= SeoPageCatalog::KINDS.fetch(row.fetch(:geography_kind)) %>別</small><% end %></td>
               <td class="admin-seo__count"><strong><%= number_with_delimiter row.fetch(:count) %></strong><% if %w[genre smoking].include?(row.fetch(:kind)) %><small>親 <%= number_with_delimiter row.fetch(:parent_count) %>件</small><% end %></td>
@@ -114,6 +119,8 @@
 .admin-seo__table tbody th { font-weight:400; }
 .admin-seo__table tbody tr:last-child > * { border-bottom:0; }
 .admin-seo__label { display:block; font-weight:700; margin-bottom:6px; }
+.admin-seo__metadata { margin-top:8px; font-size:13px; }
+.admin-seo__metadata a { color:#145799; }
 .admin-seo__url { display:block; font-size:12px; overflow-wrap:anywhere; color:#145799; }
 .admin-seo__table small { display:block; font-size:12px; color:#555; margin-top:5px; }
 .admin-seo__count { font-variant-numeric:tabular-nums; }

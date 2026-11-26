@@ -1,0 +1,15 @@
+ja:
+  activerecord:
+    attributes:
+      seo_page_setting:
+        path: 対象ページ
+        title: 検索用タイトル
+        description: 説明文
+    errors:
+      models:
+        seo_page_setting:
+          attributes:
+            title:
+              too_long: は200文字以内で入力してください
+            description:
+              too_long: は500文字以内で入力してください

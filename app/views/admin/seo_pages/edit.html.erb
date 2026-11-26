@@ -1,0 +1,98 @@
+<section class="seo-editor" aria-labelledby="seo-editor-title">
+  <p><%= link_to "← SEOページ一覧に戻る", admin_seo_pages_path(@return_filters) %></p>
+  <h1 id="seo-editor-title">SEO設定の編集</h1>
+  <h2><%= @row.fetch(:label) %></h2>
+  <p class="seo-editor__url"><%= @row.fetch(:url) %></p>
+  <p>店舗数：<%= number_with_delimiter @row.fetch(:count) %>件 ／ サイト側の判定：<strong><%= SeoPageCatalog::STATUSES.fetch(@row.fetch(:status)) %></strong></p>
+  <p>タイトル・説明文の空欄の項目には自動生成の文面を使います。保存すると検索用メタ情報とSNS共有用のメタ情報に反映されます。本文の見出しやcanonical、indexの判定は変更しません。</p>
+  <% if @row.fetch(:status) != "index" %><p class="seo-editor__notice">現在は<%= SeoPageCatalog::STATUSES.fetch(@row.fetch(:status)) %>です。<%= SeoPageCatalog::REASON_DETAILS.fetch(@row.fetch(:reason)) %> SEO設定を保存しても掲載基準は変わりません。</p><% end %>
+  <p class="seo-editor__muted">最終設定変更：<%= @setting.persisted? ? @setting.updated_at.strftime("%Y/%m/%d %H:%M:%S") : "変更履歴なし（自動生成）" %></p>
+
+  <% if @edit_error || @setting.errors.any? %>
+    <div class="seo-editor__error" role="alert"><%= @edit_error %><% @setting.errors.full_messages.each do |message| %><p><%= message %></p><% end %></div>
+  <% end %>
+  <% if @conflicting_values %>
+    <details class="seo-editor__card" open><summary>今回保存しようとした内容（未保存）</summary><p>検索用タイトル：<%= @conflicting_values[:title].presence || "空欄（自動生成）" %></p><p>説明文：<%= @conflicting_values[:description].presence || "空欄（自動生成）" %></p></details>
+  <% end %>
+
+  <%= form_with url: admin_update_seo_page_metadata_path, method: :patch, scope: :seo_page_setting, class: "seo-editor__form" do |form| %>
+    <%= hidden_field_tag :page_path, @row.fetch(:path) %>
+    <% @return_filters.each do |key, value| %><%= hidden_field_tag "filters[#{key}]", value %><% end %>
+    <%= form.hidden_field :version, value: @setting.version_token %>
+    <div><%= form.label :title, "検索用タイトル" %><%= form.text_field :title, value: @setting.title, maxlength: 200, placeholder: @generated.fetch(:title), aria: { describedby: "seo-title-help" } %><p id="seo-title-help" class="seo-editor__muted">200文字以内。末尾の「｜吸えログ」を含むタイトル全文を入力してください。空欄なら自動生成です。</p></div>
+    <div><%= form.label :description, "説明文（meta description）" %><%= form.text_area :description, value: @setting.description, maxlength: 500, rows: 4, placeholder: @generated.fetch(:description), aria: { describedby: "seo-description-help" } %><p id="seo-description-help" class="seo-editor__muted">500文字以内。HTMLを使わず文章で入力してください。空欄なら自動生成です。</p></div>
+    <div><%= form.label :change_note, "変更メモ（任意）" %><%= form.text_area :change_note, value: @change_note, maxlength: 500, rows: 2, placeholder: "例：検索実績を確認し、対象エリアと喫煙条件を明確にした" %></div>
+    <div class="seo-editor__actions"><%= form.submit "保存して反映", data: { turbo_submits_with: "保存中…" } %><%= form.button "自動生成に戻す", name: :commit_action, value: "reset", formnovalidate: true, class: "seo-editor__reset" %></div>
+  <% end %>
+
+  <details class="seo-editor__card">
+    <summary>自動生成の文面（空欄の項目に使用）</summary>
+    <dl><dt>タイトル</dt><dd><%= @generated.fetch(:title) %></dd><dt>説明文</dt><dd><%= @generated.fetch(:description) %></dd></dl>
+    <p class="seo-editor__muted">店舗数などの変化に応じて自動更新されます。200文字・500文字は入力上限で、検索結果での表示文字数を保証するものではありません。</p>
+  </details>
+
+  <% if @report %>
+    <% data = @performance_row.fetch(:performance) %>
+    <section class="seo-editor__card" aria-label="選択した検索実績">
+      <h2>選択した検索実績</h2>
+      <p>対象期間：<%= @report.period_label %><% if @report.comparison? %> ／ 比較期間：<%= @report.previous_label %><% end %><br>検索条件：<%= @report.search_context %></p>
+      <div class="seo-editor__metrics"><% { clicks: "クリック数", impressions: "表示回数", ctr: "CTR", position: "平均掲載順位" }.each do |key, label| %><div><span><%= label %></span><strong><%= seo_metric_value(data[:current], key) %></strong><small><%= seo_metric_change(data[:deltas], key) %></small></div><% end %></div>
+      <p class="seo-editor__muted">変更履歴の日付と実績の対象期間を照合してください。期間比較だけで編集の効果を断定するものではありません。CSVにないページはデータなしです。</p>
+    </section>
+  <% end %>
+
+  <section class="seo-editor__history" aria-labelledby="seo-history-title">
+    <h2 id="seo-history-title">変更履歴</h2>
+    <% if @revisions.empty? %><p>変更履歴はありません。</p><% end %>
+    <% @revisions.each do |revision| %>
+      <article class="seo-editor__card" data-revision-id="<%= revision.id %>">
+        <h3><time datetime="<%= revision.created_at.iso8601 %>"><%= revision.created_at.strftime("%Y/%m/%d %H:%M:%S") %></time>の変更</h3>
+        <% if revision.change_note.present? %><p>変更メモ：<%= revision.change_note %></p><% end %>
+        <div class="seo-editor__historyGrid">
+          <% { "変更前" => revision.before_values, "変更後" => revision.after_values }.each do |heading, values| %>
+            <div><h4><%= heading %></h4><dl>
+              <dt>タイトル（<%= values["title"].present? ? "個別設定" : "自動生成" %>）</dt><dd><%= values["effective_title"] %></dd>
+              <dt>説明文（<%= values["description"].present? ? "個別設定" : "自動生成" %>）</dt><dd><%= values["effective_description"] %></dd>
+            </dl></div>
+          <% end %>
+        </div>
+      </article>
+    <% end %>
+    <% if @revisions.total_pages > 1 %>
+      <nav class="seo-editor__pagination" aria-label="変更履歴のページ送り">
+        <% if @revisions.prev_page %><%= link_to "← 前の履歴", admin_edit_seo_page_path(page_path: @row.fetch(:path), filters: @return_filters, history_page: @revisions.prev_page) %><% end %>
+        <span><%= @revisions.current_page %> / <%= @revisions.total_pages %>ページ</span>
+        <% if @revisions.next_page %><%= link_to "次の履歴 →", admin_edit_seo_page_path(page_path: @row.fetch(:path), filters: @return_filters, history_page: @revisions.next_page) %><% end %>
+      </nav>
+    <% end %>
+  </section>
+</section>
+
+<style>
+.seo-editor { color:#171717; overflow-wrap:anywhere; }
+.seo-editor h1 { font-size:28px; margin:24px 0 12px; }
+.seo-editor h2 { font-size:20px; margin:16px 0 10px; }
+.seo-editor p, .seo-editor dd { line-height:1.7; }
+.seo-editor__url { font-size:14px; color:#505050; }
+.seo-editor__muted { font-size:13px; color:#555; }
+.seo-editor__notice { padding:12px; background:#fff5dc; color:#795500; border:1px solid #ddc383; border-radius:6px; }
+.seo-editor__error { margin:16px 0; padding:12px; border:1px solid #cc8888; color:#8c2020; background:#fff3f3; border-radius:6px; }
+.seo-editor__form, .seo-editor__card { padding:20px; margin:18px 0; background:#fff; border:1px solid #ddd; border-radius:8px; }
+.seo-editor__form { display:grid; gap:18px; }
+.seo-editor__form label { display:block; font-weight:700; margin-bottom:8px; }
+.seo-editor__form input[type=text], .seo-editor__form textarea { width:100%; box-sizing:border-box; padding:10px; border:1px solid #aaa; border-radius:5px; background:#fff; color:#171717; font-size:16px; }
+.seo-editor__actions { display:flex; flex-wrap:wrap; gap:12px; }
+.seo-editor__actions input, .seo-editor__actions button { padding:12px 18px; border:1px solid #111; border-radius:6px; background:#111; color:#fff; font-weight:700; cursor:pointer; }
+.seo-editor__actions .seo-editor__reset { background:#fff; color:#222; }
+.seo-editor summary { font-weight:700; cursor:pointer; }
+.seo-editor dt { font-weight:700; margin:12px 0 6px; }
+.seo-editor dd { margin:0; white-space:pre-wrap; }
+.seo-editor__historyGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.seo-editor__historyGrid h4 { margin:8px 0; }
+.seo-editor__metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.seo-editor__metrics > div { border:1px solid #ddd; border-radius:6px; padding:12px; }
+.seo-editor__metrics strong, .seo-editor__metrics small { display:block; margin-top:6px; }
+.seo-editor__metrics strong { font-size:22px; }
+.seo-editor__pagination { display:flex; flex-wrap:wrap; gap:20px; margin:20px 0; }
+@media(max-width:700px) { .seo-editor__historyGrid { grid-template-columns:1fr; gap:8px; } .seo-editor__metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .seo-editor__form, .seo-editor__card { padding:14px; } }
+</style>
