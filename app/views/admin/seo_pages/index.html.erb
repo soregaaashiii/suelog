@@ -15,6 +15,8 @@
     <p class="admin-seo__note">候補件数は選択した実績の全ページが対象です（複数の理由に該当する場合は重複）。優先順は掲載確認・実績低下 → 低CTR → 11〜20位。同じ優先度ではクリック減少数、表示回数、URL順です。</p>
   <% end %>
 
+  <p><%= link_to "変更後の実績を比較できるページ", admin_seo_pages_path(import_id: @report&.id, comparison: "ready", sort: "priority") %></p>
+  <p class="admin-seo__note">「比較可能」は選択したCSVの両期間が最新のメタ情報変更日を挟み、変更当日を除外し、範囲内に別の変更がなく、両CSVに実績があるページです。対応状況は自動では変更しません。</p>
   <div class="admin-seo__summary" aria-label="全候補の判定件数">
     <%= link_to admin_seo_pages_path(import_id: @report&.id), class: "admin-seo__summaryItem" do %>
       <span>候補全体</span><strong><%= number_with_delimiter @catalog.counts.fetch("total") %><small>ページ</small></strong>
@@ -45,6 +47,8 @@
     <div><%= form.label :reason, "判定理由" %><%= form.select :reason, [["すべて", ""]] + SeoPageCatalog::REASONS.map { |key, label| [label, key] }, selected: @reason %></div>
     <div><%= form.label :performance, "検索実績・改善候補" %><%= form.select :performance, [["すべて", ""]] + SearchConsolePerformance::FILTERS.map { |key, label| [label, key] }, selected: @performance_filter %></div>
     <div><%= form.label :sort, "並び順" %><%= form.select :sort, [["店舗数が多い順", "shops_desc"], ["店舗数が少ない順", "shops_asc"], ["URL順", "url"]] + SearchConsolePerformance::SORTS.map { |key, label| [label, key] }, selected: @sort %></div>
+    <div><%= form.label :task_status, "対応状況" %><%= form.select :task_status, [["すべて", ""]] + SeoPageTask::STATUSES.map { |key, label| [label, key] }, selected: @task_status %></div>
+    <div><%= form.label :comparison, "変更後の実績比較" %><%= form.select :comparison, [["すべて", ""], ["比較可能", "ready"], ["比較データ待ち・対象外", "not_ready"]], selected: @comparison_filter %></div>
     <div class="admin-seo__actions"><%= form.submit "絞り込む" %><%= link_to "リセット", admin_seo_pages_path(import_id: @report&.id) %></div>
   <% end %>
 
@@ -65,6 +69,12 @@
                 <% else %>
                   <%= link_to row.fetch(:url), row.fetch(:url), target: "_blank", rel: "noopener noreferrer", class: "admin-seo__url" %>
                 <% end %>
+                <div class="admin-seo__task">
+                  <strong><%= SeoPageTask::STATUSES.fetch(row[:task][:status]) %></strong>
+                  <% if row[:task][:handled_on] %><small>対応日：<%= row[:task][:handled_on] %></small><% end %>
+                  <% if row[:comparison_ready] %><small>変更後の実績を比較可能</small><% end %>
+                  <%= link_to "対応状況を編集", admin_edit_seo_page_path(page_path: row.fetch(:path), filters: @editor_filters, anchor: "seo-task") %>
+                </div>
                 <div class="admin-seo__metadata">
                   <%= link_to "SEO設定を編集", admin_edit_seo_page_path(page_path: row.fetch(:path), filters: @editor_filters) %>
                   <% setting = @page_settings[row.fetch(:path)] %>
@@ -132,6 +142,8 @@
 .admin-seo__table tbody th { font-weight:400; }
 .admin-seo__table tbody tr:last-child > * { border-bottom:0; }
 .admin-seo__label { display:block; font-weight:700; margin-bottom:6px; }
+.admin-seo__task { padding:8px; margin-top:8px; border:1px solid #ddd; border-radius:5px; font-size:13px; }
+.admin-seo__task a { display:block; margin-top:6px; color:#145799; }
 .admin-seo__metadata { margin-top:8px; font-size:13px; }
 .admin-seo__metadata a { color:#145799; }
 .admin-seo__url { display:block; font-size:12px; overflow-wrap:anywhere; color:#145799; }

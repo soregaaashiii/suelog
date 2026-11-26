@@ -43,6 +43,23 @@ class Admin::SeoPagesController < Admin::BaseController
     render :edit, status: :unprocessable_entity
   end
 
+  def update_task
+    load_editor
+    attributes = params.fetch(:seo_page_task, ActionController::Parameters.new).permit(:status, :note, :handled_on).to_h.symbolize_keys
+    changed = SeoPageTaskEditor.new(path: @row.fetch(:path), attributes: attributes,
+      expected_version: params.dig(:seo_page_task, :version)).call
+    redirect_to admin_edit_seo_page_path(page_path: @row.fetch(:path), filters: @return_filters), status: :see_other,
+      flash: { admin_notice: changed ? "対応状況を保存しました。" : "対応状況の変更はありません。" }
+  rescue SeoPageTaskEditor::Conflict
+    @task_draft = attributes
+    @task_error = "別の画面で対応状況が更新されています。現在の内容を確認して保存し直してください。"
+    load_editor
+    render :edit, status: :conflict
+  rescue ActiveRecord::RecordInvalid => e
+    @task = e.record
+    render :edit, status: :unprocessable_entity
+  end
+
   private
 
   def protect_seo_response
@@ -60,8 +77,9 @@ class Admin::SeoPagesController < Admin::BaseController
     definition = GeographicPageMetadata.definition(@row.fetch(:path))
     @generated = GeographicPageMetadata.generated(**definition, count: @row.fetch(:count))
     @setting = SeoPageSetting.find_or_initialize_by(path: @row.fetch(:path))
+    @task = SeoPageTask.find_or_initialize_by(path: @row.fetch(:path))
     @revisions = @setting.revisions.order(id: :desc).page(params[:history_page]).per(10)
-    @return_filters = params.fetch(:filters, ActionController::Parameters.new).permit(:q, :kind, :status, :reason, :performance, :sort, :page, :import_id).to_h
+    @return_filters = params.fetch(:filters, ActionController::Parameters.new).permit(:q, :kind, :status, :reason, :performance, :sort, :page, :import_id, :task_status, :comparison).to_h
     @report = @return_filters["import_id"].present? ? SearchConsoleImport.find(@return_filters["import_id"]) : SearchConsoleImport.order(id: :desc).first
     @performance_row = SearchConsolePerformance.new(@report).apply([@row]).first if @report
     @revision_comparisons = SeoRevisionPerformance.new(report: @report, setting: @setting, performance: @performance_row&.fetch(:performance)).apply(@revisions)
@@ -77,6 +95,8 @@ class Admin::SeoPagesController < Admin::BaseController
     @status = SeoPageCatalog::STATUSES.key?(params[:status]) ? params[:status] : ""
     @reason = SeoPageCatalog::REASONS.key?(params[:reason]) ? params[:reason] : ""
     @performance_filter = SearchConsolePerformance::FILTERS.key?(params[:performance]) ? params[:performance] : ""
+    @task_status = SeoPageTask::STATUSES.key?(params[:task_status]) ? params[:task_status] : ""
+    @comparison_filter = %w[ready not_ready].include?(params[:comparison]) ? params[:comparison] : ""
     @sort = (%w[shops_desc shops_asc url] + SearchConsolePerformance::SORTS.keys).include?(params[:sort]) ? params[:sort] : (@report ? "priority" : "shops_desc")
     rows = @catalog.search(query: @query, kind: @kind, status: @status, reason: @reason, sort: @sort)
     performance = SearchConsolePerformance.new(@report)
@@ -84,10 +104,11 @@ class Admin::SeoPagesController < Admin::BaseController
       row[:performance][:candidates].each { |flag| counts[flag] += 1 }
     end if @report
     rows = performance.apply(rows, filter: @performance_filter, sort: @sort)
+    rows = SeoPageWorklist.new(@report).apply(rows, status: @task_status, comparison: @comparison_filter)
     @rows = Kaminari.paginate_array(rows).page([params[:page].to_i, 1].max).per(50)
     @page_settings = SeoPageSetting.where(path: @rows.map { |row| row.fetch(:path) }).pluck(:path, :title, :description, :updated_at).to_h do |path, title, description, updated_at|
       [path, { customized: title.present? || description.present?, updated_at: updated_at }]
     end
-    @editor_filters = { q: @query, kind: @kind, status: @status, reason: @reason, performance: @performance_filter, sort: @sort, page: @rows.current_page, import_id: @report&.id }.compact
+    @editor_filters = { q: @query, kind: @kind, status: @status, reason: @reason, performance: @performance_filter, sort: @sort, page: @rows.current_page, task_status: @task_status, comparison: @comparison_filter, import_id: @report&.id }.compact
   end
 end

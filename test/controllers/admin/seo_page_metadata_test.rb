@@ -157,6 +157,48 @@ class Admin::SeoPageMetadataTest < ActionDispatch::IntegrationTest
     css_select(".seo-editor__pagination a").each { |link| assert_no_match(/seo_page_setting|authenticity_token/, link["href"]) }
   end
 
+  test "task editing is authenticated independent and preserves filters with escaped notes" do
+    params = { page_path: @path, filters: { task_status: "observing", comparison: "ready", q: "吹田", redirect: "https://evil.example" },
+      seo_page_task: { version: "new", status: "observing", note: '<script>alert("test")</script>', handled_on: "", title: "ignored" } }
+    patch admin_update_seo_page_task_path, params: params
+    assert_response :unauthorized
+    assert_no_difference ["SeoPageSetting.count", "SeoPageRevision.count"] do
+      patch admin_update_seo_page_task_path, params: params, headers: @headers
+      assert_response :see_other
+    end
+    assert_redirected_to admin_edit_seo_page_path(page_path: @path, filters: { task_status: "observing", comparison: "ready", q: "吹田" })
+    follow_redirect! headers: @headers
+    assert_select "#seo-task select option[selected][value='observing']"
+    assert_select "#seo-task script", count: 0
+    assert_select "textarea#seo_page_task_note", text: '<script>alert("test")</script>'
+    assert_equal "no-store", response.headers["Cache-Control"]
+    task = SeoPageTask.find_by!(path: @path)
+    assert_equal Date.current, task.handled_on
+    get admin_seo_pages_path, params: { task_status: "observing" }, headers: @headers
+    assert_select "tr[data-seo-path]", count: 1
+    assert_select ".admin-seo__task", text: /経過観察/
+    assert_select "a[href*='filters%5Btask_status%5D=observing']", text: "対応状況を編集"
+    get admin_seo_pages_path, params: { task_status: "completed" }, headers: @headers
+    assert_select "tr[data-seo-path]", count: 0
+  end
+
+  test "invalid tasks retain input and stale tasks retain draft while displaying the latest state" do
+    base = { page_path: @path, seo_page_task: { version: "new", status: "completed", handled_on: (Date.current + 1).iso8601, note: "保存前のメモ" } }
+    patch admin_update_seo_page_task_path, params: base, headers: @headers
+    assert_response :unprocessable_entity
+    assert_select "textarea#seo_page_task_note", text: "保存前のメモ"
+    assert_select "#seo-task .seo-editor__error", text: /今日以前/
+    task = SeoPageTask.create!(path: @path, status: "in_progress", note: "現在のメモ")
+    patch admin_update_seo_page_task_path, params: base, headers: @headers
+    assert_response :conflict
+    assert_select "#seo-task .seo-editor__error", text: /別の画面/
+    assert_select "#seo-task", text: /保存前のメモ/
+    assert_select "textarea#seo_page_task_note", text: "現在のメモ"
+    assert_equal "in_progress", task.reload.status
+    patch admin_update_seo_page_task_path, params: { page_path: "/shops/1", seo_page_task: { version: "new", status: "completed" } }, headers: @headers
+    assert_response :not_found
+  end
+
   private
 
   def update_params(version, **attributes)
