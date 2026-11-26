@@ -111,6 +111,44 @@ class SeoPageMetadataTest < ApplicationSystemTestCase
     end
   end
 
+  test "track work and filter comparison ready pages without changing metadata" do
+    setting = SeoPageSetting.create!(path: "/areas/suita", title: "維持するタイトル")
+    setting.revisions.create!(created_at: 25.days.ago, before_values: {}, after_values: { "effective_title" => setting.title })
+    report = SearchConsoleCsvImporter.new(
+      current_file: gsc_upload(gsc_csv(["https://suelog.jp/areas/suita", 5, 1000, "0.5%", 12])),
+      previous_file: gsc_upload(gsc_csv(["https://suelog.jp/areas/suita", 20, 1500, "1.33%", 9])),
+      attributes: { period_start: Date.current - 17, period_end: Date.current - 4, previous_start: Date.current - 45,
+        previous_end: Date.current - 32, search_context: "ウェブ・全デバイス" }).call
+    authenticate_at(admin_seo_pages_path(import_id: report.id))
+    click_link "変更後の実績を比較できるページ"
+    assert_selector "tr[data-seo-path]", count: 1
+    assert_selector ".admin-seo__task", text: "未対応"
+    click_link "対応状況を編集"
+    within("#seo-task") do
+      select "経過観察", from: "対応状況"
+      fill_in "対応メモ", with: "変更後の実績を確認する"
+      click_button "対応状況を保存"
+    end
+    assert_text "対応状況を保存しました。"
+    assert_field "対応日", with: Date.current.iso8601
+    assert_equal "維持するタイトル", setting.reload.title
+    assert_equal 1, setting.revisions.count
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 390, height: 844, deviceScaleFactor: 1, mobile: true)
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
+    page.execute_script("document.querySelector('#seo-task').scrollIntoView()")
+    page.save_screenshot(Rails.root.join("tmp/seo-workflow-mobile.png"))
+    page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
+    click_link "← SEOページ一覧に戻る"
+    assert_selector "tr[data-seo-path]", count: 1
+    assert_selector ".admin-seo__task", text: "経過観察"
+    select "経過観察", from: "対応状況"
+    click_button "絞り込む"
+    assert_selector "tr[data-seo-path]", count: 1
+    select "対応済み", from: "対応状況"
+    click_button "絞り込む"
+    assert_text "この条件に該当するページはありません。"
+  end
+
   private
 
   def authenticate_at(path)

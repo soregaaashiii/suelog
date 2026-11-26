@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_25_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_26_000100) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -421,6 +421,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_000200) do
     t.string "title", limit: 200
     t.datetime "updated_at", null: false
     t.index ["path"], name: "index_seo_page_settings_on_path", unique: true
+  end
+
+  create_table "seo_page_tasks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "handled_on"
+    t.integer "lock_version", default: 0, null: false
+    t.text "note"
+    t.string "path", limit: 512, null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["path"], name: "index_seo_page_tasks_on_path", unique: true
   end
 
   create_table "shop_business_hour_windows", force: :cascade do |t|

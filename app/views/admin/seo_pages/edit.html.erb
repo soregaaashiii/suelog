@@ -15,6 +15,22 @@
     <details class="seo-editor__card" open><summary>今回保存しようとした内容（未保存）</summary><p>検索用タイトル：<%= @conflicting_values[:title].presence || "空欄（自動生成）" %></p><p>説明文：<%= @conflicting_values[:description].presence || "空欄（自動生成）" %></p></details>
   <% end %>
 
+  <section id="seo-task" aria-labelledby="seo-task-title">
+    <h2 id="seo-task-title">改善候補の対応状況</h2>
+    <p class="seo-editor__muted">ページ単位で記録し、CSVを取り込み直しても引き継ぎます。メタ情報の変更履歴や公開内容には影響しません。</p>
+    <% if @task_error || @task.errors.any? %><div class="seo-editor__error" role="alert"><%= @task_error %><% @task.errors.full_messages.each do |message| %><p><%= message %></p><% end %></div><% end %>
+    <% if @task_draft %><details class="seo-editor__card" open><summary>保存しようとした対応状況（未保存）</summary><p><%= SeoPageTask::STATUSES[@task_draft[:status]] %> ／ <%= @task_draft[:handled_on] %></p><p><%= @task_draft[:note] %></p></details><% end %>
+    <%= form_with url: admin_update_seo_page_task_path, method: :patch, scope: :seo_page_task, class: "seo-editor__form" do |form| %>
+      <%= hidden_field_tag :page_path, @row.fetch(:path) %>
+      <% @return_filters.each do |key, value| %><%= hidden_field_tag "filters[#{key}]", value %><% end %>
+      <%= form.hidden_field :version, value: @task.version_token %>
+      <div><%= form.label :status, "対応状況" %><%= form.select :status, SeoPageTask::STATUSES.map { |key, label| [label, key] }, selected: @task.status %></div>
+      <div><%= form.label :handled_on, "対応日" %><%= form.date_field :handled_on, value: @task.handled_on, max: Date.current.iso8601 %><p class="seo-editor__muted">空欄で未対応以外を保存した場合は今日の日付を記録します。記録済みの日付は、変更するまで維持します。</p></div>
+      <div><%= form.label :note, "対応メモ" %><%= form.text_area :note, value: @task.note, maxlength: 2000, rows: 3 %></div>
+      <div class="seo-editor__actions"><%= form.submit "対応状況を保存", data: { turbo_submits_with: "保存中…" } %></div>
+    <% end %>
+  </section>
+
   <%= form_with url: admin_update_seo_page_metadata_path, method: :patch, scope: :seo_page_setting, class: "seo-editor__form" do |form| %>
     <%= hidden_field_tag :page_path, @row.fetch(:path) %>
     <% @return_filters.each do |key, value| %><%= hidden_field_tag "filters[#{key}]", value %><% end %>
@@ -89,7 +105,7 @@
 .seo-editor__form, .seo-editor__card { padding:20px; margin:18px 0; background:#fff; border:1px solid #ddd; border-radius:8px; }
 .seo-editor__form { display:grid; gap:18px; }
 .seo-editor__form label { display:block; font-weight:700; margin-bottom:8px; }
-.seo-editor__form input[type=text], .seo-editor__form textarea { width:100%; box-sizing:border-box; padding:10px; border:1px solid #aaa; border-radius:5px; background:#fff; color:#171717; font-size:16px; }
+.seo-editor__form select, .seo-editor__form input[type=date], .seo-editor__form input[type=text], .seo-editor__form textarea { width:100%; box-sizing:border-box; padding:10px; border:1px solid #aaa; border-radius:5px; background:#fff; color:#171717; font-size:16px; }
 .seo-editor__actions { display:flex; flex-wrap:wrap; gap:12px; }
 .seo-editor__actions input, .seo-editor__actions button { padding:12px 18px; border:1px solid #111; border-radius:6px; background:#111; color:#fff; font-weight:700; cursor:pointer; }
 .seo-editor__actions .seo-editor__reset { background:#fff; color:#222; }

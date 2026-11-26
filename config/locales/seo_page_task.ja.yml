@@ -1,0 +1,9 @@
+ja:
+  activerecord:
+    models:
+      seo_page_task: SEOページの対応状況
+    attributes:
+      seo_page_task:
+        status: 対応状況
+        note: 対応メモ
+        handled_on: 対応日
