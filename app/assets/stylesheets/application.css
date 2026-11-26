@@ -3729,3 +3729,18 @@ trix-editor figure:has(.article-table), .article-body figure:has(.article-table)
 .geo-links a.geo-link:hover, .geo-links a.geo-link:focus-visible { border-color:#d7bd75; outline-offset:3px; }
 
 .hero .refine-hero-title.geo-hero-title { font-size:clamp(26px,4vw,44px); line-height:1.5; overflow-wrap:anywhere; }
+
+.geo-guide { color:#e8e6df; overflow-wrap:anywhere; }
+.geo-guide p, .geo-guide li { line-height:1.8; }
+.geo-guide h2 { font-size:clamp(21px,3vw,28px); line-height:1.5; }
+.geo-guide h3 { margin:26px 0 12px; font-size:19px; line-height:1.6; }
+.geo-guide__conditions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.geo-guide__condition { padding:18px; background:#191916; border:1px solid #49422d; border-radius:8px; }
+.geo-guide__condition h4 { margin:0; font-size:17px; line-height:1.6; }
+.geo-guide__condition h4 span { display:block; color:#d7bd75; font-size:14px; margin-top:6px; }
+.geo-guide__condition p { font-size:14px; }
+.geo-guide__condition a { color:#d7bd75; text-underline-offset:3px; line-height:1.7; }
+.geo-guide__condition a:focus-visible { outline:2px solid #d7bd75; outline-offset:4px; }
+.geo-guide__checks { padding-left:1.5em; }
+.geo-guide__checks li { margin:10px 0; }
+@media(max-width:760px) { .geo-guide__conditions { grid-template-columns:1fr; } }

@@ -1,0 +1,33 @@
+<section class="home-section geo-guide" aria-labelledby="geo-guide-title">
+  <h2 id="geo-guide-title"><%= guide.context %>で<%= "#{@geographic_facet.fetch('label')}の" if @geographic_facet %>お店を選ぶには</h2>
+  <p><%= guide.overview %></p>
+  <h3>この一覧の喫煙条件を見比べる</h3>
+  <p class="geo-note">このページに掲載する店舗の登録条件の内訳です。未確認の喫煙情報は集計対象外です。条件が複数ある店舗は重複して数えます。件数だけで喫煙の可否を判断せず、各店舗の詳細をご確認ください。</p>
+  <div class="geo-guide__conditions">
+    <% guide.conditions.each do |condition| %>
+      <article class="geo-guide__condition" data-smoking-condition="<%= condition[:slug] %>">
+        <h4><%= condition[:label] %><span>この一覧内 <%= condition[:count] %>件</span></h4>
+        <p><%= condition[:explanation] %></p>
+        <% if condition[:path] %><%= link_to "#{guide.context}全体の#{condition[:label]}を見る（#{condition[:destination_count]}件）", condition[:path] %><% end %>
+      </article>
+    <% end %>
+  </div>
+  <% if guide.genre_links.any? %>
+    <h3>ジャンルと喫煙条件を合わせて選ぶ</h3>
+    <p>この一覧には、<%= guide.genre_links.map { |link| "#{link[:label]} #{link[:count]}件" }.join("、") %>が含まれます。以下のリンクでは<%= guide.context %>全体のジャンル別一覧に切り替わります。喫煙条件は各店舗でご確認ください。</p>
+    <div class="geo-links"><% guide.genre_links.each do |link| %><%= link_to "#{guide.context}の#{link[:label]}（#{link[:destination_count]}件）", link[:path], class: "geo-link" %><% end %></div>
+  <% end %>
+  <h3>来店前に確認すること</h3>
+  <ul class="geo-guide__checks">
+    <li>店舗詳細で、席で吸えるか・喫煙所を利用するか、紙たばこ・加熱式のどちらが対象かを確認してください。</li>
+    <li>喫煙できる曜日・時間が営業時間と異なる場合があります。分煙の席やフロア、予約時の条件も確認してください。</li>
+    <li><%= @geographic_page.fetch('kind') == 'station' ? '駅からの距離だけでなく、利用する出口と店舗までの経路も地図で確認してください。' : '同じ市区でも店舗の最寄駅は異なります。行きたい場所に合わせて駅別一覧や地図を確認してください。' %>情報が未確認の場合は来店前に店舗へお問い合わせください。</li>
+  </ul>
+  <% if guide.other_stations.any? %>
+    <nav aria-labelledby="geo-other-stations-title">
+      <h3 id="geo-other-stations-title">同じ市区に掲載のあるほかの駅から探す</h3>
+      <p class="geo-note">同じ市区に登録店舗がある駅の一覧です。隣接駅や徒歩圏を示すものではありません。条件別の掲載ページがある場合は同じ条件で探せます。</p>
+      <div class="geo-links"><% guide.other_stations.each do |link| %><%= link_to "#{link[:label]}（#{link[:count]}件）", link[:path], class: "geo-link" %><% end %></div>
+    </nav>
+  <% end %>
+</section>

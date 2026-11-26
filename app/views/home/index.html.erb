@@ -231,6 +231,8 @@
     <% end %>
   </section>
 
+  <%= render "geographies/guide", guide: @geographic_guide if @geographic_guide %>
+
   <% if @is_area_page %>
     <section class="home-section">
       <div class="panel" style="line-height:1.9;">
