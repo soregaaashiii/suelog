@@ -48,6 +48,15 @@
       <article class="seo-editor__card" data-revision-id="<%= revision.id %>">
         <h3><time datetime="<%= revision.created_at.iso8601 %>"><%= revision.created_at.strftime("%Y/%m/%d %H:%M:%S") %></time>の変更</h3>
         <% if revision.change_note.present? %><p>変更メモ：<%= revision.change_note %></p><% end %>
+        <% comparison = @revision_comparisons.fetch(revision.id) %>
+        <section class="seo-editor__comparison" aria-label="変更前後の検索実績">
+          <h4>変更前後の検索実績</h4>
+          <% if comparison[:available] %>
+            <p>変更前：<%= @report.previous_label %> ／ 変更後：<%= @report.period_label %><br>検索条件：<%= @report.search_context %></p>
+            <div class="seo-editor__metrics"><% { clicks: "クリック数", impressions: "表示回数", ctr: "CTR", position: "平均掲載順位" }.each do |key, label| %><div><span><%= label %></span><small>変更前 <%= seo_metric_value(comparison[:previous], key) %></small><strong><%= seo_metric_value(comparison[:current], key) %></strong><small><%= seo_metric_change(comparison[:deltas], key) %></small></div><% end %></div>
+            <p class="seo-editor__muted">変更当日は比較から除外しています。順位差はプラスが低下、CTR差はポイントです。検索需要や順位なども変動するため、SEO設定変更の因果効果を示すものではありません。両期間の検索条件が同じか確認してください。</p>
+          <% else %><p class="seo-editor__muted"><%= comparison[:reason] %></p><% end %>
+        </section>
         <div class="seo-editor__historyGrid">
           <% { "変更前" => revision.before_values, "変更後" => revision.after_values }.each do |heading, values| %>
             <div><h4><%= heading %></h4><dl>

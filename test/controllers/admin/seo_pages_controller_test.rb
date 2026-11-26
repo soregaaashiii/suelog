@@ -119,4 +119,18 @@ class Admin::SeoPagesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".admin-seo__metric strong", text: "—", count: 200
   end
 
+  test "priority shortcuts select candidates and preserve the chosen report in edit links" do
+    report = SearchConsoleCsvImporter.new(current_file: gsc_upload(gsc_csv(["https://suelog.jp/areas/suita", 5, 1000, "0.5%", 12])), attributes: gsc_attributes).call
+    get admin_seo_pages_path, params: { import_id: report.id }, headers: @headers
+    assert_response :success
+    assert_select "select#sort option[selected][value='priority']"
+    assert_select ".admin-seo__candidateLinks a", text: "表示は多いがCTRが低い（1件）"
+    assert_select ".admin-seo__candidateLinks a[href*='performance=actionable'][href*='sort=priority'][href*='import_id=#{report.id}']"
+    assert_equal "/areas/suita", css_select("tr[data-seo-path]").first["data-seo-path"]
+    get admin_seo_pages_path, params: { import_id: report.id, performance: "actionable", sort: "priority" }, headers: @headers
+    assert_select "tr[data-seo-path]", count: 1
+    assert_select ".admin-seo__priority", text: "優先度 中"
+    assert_select "a[href*='filters%5Bperformance%5D=actionable'][href*='filters%5Bimport_id%5D=#{report.id}']", text: "SEO設定を編集"
+  end
+
 end

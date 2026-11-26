@@ -3,6 +3,8 @@
   <td class="admin-seo__metric"><strong><%= seo_metric_value(data[:current], key) %></strong><small><%= seo_metric_change(data[:deltas], key) %></small><% if @report.comparison? %><small>前期間 <%= seo_metric_value(data[:previous], key) %></small><% end %></td>
 <% end %>
 <td class="admin-seo__candidates">
+  <strong class="admin-seo__priority"><%= data[:priority][:label] %></strong>
+  <% if data[:priority][:action] %><small><%= data[:priority][:action] %></small><% end %>
   <% if data[:current].nil? %><span>対象期間のデータなし</span>
   <% elsif data[:candidates].empty? %><span>候補なし</span>
   <% else %><% data[:candidates].each do |candidate| %><span class="admin-seo__candidate"><%= SearchConsolePerformance::CANDIDATES.fetch(candidate) %></span><% end %><% end %>

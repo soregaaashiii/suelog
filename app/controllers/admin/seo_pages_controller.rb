@@ -64,6 +64,7 @@ class Admin::SeoPagesController < Admin::BaseController
     @return_filters = params.fetch(:filters, ActionController::Parameters.new).permit(:q, :kind, :status, :reason, :performance, :sort, :page, :import_id).to_h
     @report = @return_filters["import_id"].present? ? SearchConsoleImport.find(@return_filters["import_id"]) : SearchConsoleImport.order(id: :desc).first
     @performance_row = SearchConsolePerformance.new(@report).apply([@row]).first if @report
+    @revision_comparisons = SeoRevisionPerformance.new(report: @report, setting: @setting, performance: @performance_row&.fetch(:performance)).apply(@revisions)
   end
 
   def load_inventory
@@ -76,9 +77,13 @@ class Admin::SeoPagesController < Admin::BaseController
     @status = SeoPageCatalog::STATUSES.key?(params[:status]) ? params[:status] : ""
     @reason = SeoPageCatalog::REASONS.key?(params[:reason]) ? params[:reason] : ""
     @performance_filter = SearchConsolePerformance::FILTERS.key?(params[:performance]) ? params[:performance] : ""
-    @sort = (%w[shops_desc shops_asc url] + SearchConsolePerformance::SORTS.keys).include?(params[:sort]) ? params[:sort] : "shops_desc"
+    @sort = (%w[shops_desc shops_asc url] + SearchConsolePerformance::SORTS.keys).include?(params[:sort]) ? params[:sort] : (@report ? "priority" : "shops_desc")
     rows = @catalog.search(query: @query, kind: @kind, status: @status, reason: @reason, sort: @sort)
-    rows = SearchConsolePerformance.new(@report).apply(rows, filter: @performance_filter, sort: @sort)
+    performance = SearchConsolePerformance.new(@report)
+    @candidate_counts = performance.apply(@catalog.rows).each_with_object(Hash.new(0)) do |row, counts|
+      row[:performance][:candidates].each { |flag| counts[flag] += 1 }
+    end if @report
+    rows = performance.apply(rows, filter: @performance_filter, sort: @sort)
     @rows = Kaminari.paginate_array(rows).page([params[:page].to_i, 1].max).per(50)
     @page_settings = SeoPageSetting.where(path: @rows.map { |row| row.fetch(:path) }).pluck(:path, :title, :description, :updated_at).to_h do |path, title, description, updated_at|
       [path, { customized: title.present? || description.present?, updated_at: updated_at }]

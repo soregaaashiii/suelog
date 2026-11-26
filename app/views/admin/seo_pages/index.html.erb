@@ -5,6 +5,16 @@
 
   <%= render "search_console" %>
 
+  <% if @report %>
+    <nav class="admin-seo__candidateLinks" aria-label="改善候補を選ぶ">
+      <%= link_to "改善・確認候補すべて", admin_seo_pages_path(import_id: @report.id, performance: "actionable", sort: "priority") %>
+      <% SearchConsolePerformance::CANDIDATES.each do |key, label| %>
+        <%= link_to "#{label}（#{@candidate_counts[key]}件）", admin_seo_pages_path(import_id: @report.id, performance: key, sort: "priority") %>
+      <% end %>
+    </nav>
+    <p class="admin-seo__note">候補件数は選択した実績の全ページが対象です（複数の理由に該当する場合は重複）。優先順は掲載確認・実績低下 → 低CTR → 11〜20位。同じ優先度ではクリック減少数、表示回数、URL順です。</p>
+  <% end %>
+
   <div class="admin-seo__summary" aria-label="全候補の判定件数">
     <%= link_to admin_seo_pages_path(import_id: @report&.id), class: "admin-seo__summaryItem" do %>
       <span>候補全体</span><strong><%= number_with_delimiter @catalog.counts.fetch("total") %><small>ページ</small></strong>
@@ -104,6 +114,9 @@
 .admin-seo__table--performance { min-width:2000px; }
 .admin-seo__table--performance th:first-child { width:220px; }
 .admin-seo__metric { font-variant-numeric:tabular-nums; }
+.admin-seo__candidateLinks { display:flex; flex-wrap:wrap; gap:10px; margin:20px 0 8px; }
+.admin-seo__candidateLinks a { padding:10px 12px; border:1px solid #ccc; border-radius:6px; background:#fff; color:#145799; text-decoration:none; }
+.admin-seo__priority { display:block; margin-bottom:6px; }
 .admin-seo__candidate { display:block; padding:4px 6px; margin-bottom:4px; border-radius:4px; background:#fff5dc; color:#795500; font-size:12px; }
 .admin-seo__searchConsole { padding:18px; margin:20px 0; border:1px solid #ddd; border-radius:10px; background:#fff; }
 .admin-seo__searchConsole h2 { margin:0 0 12px; font-size:20px; }
