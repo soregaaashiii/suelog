@@ -24,7 +24,7 @@ class ArticlePageLinks
   end
 
   def for_article(article, limit: 6)
-    refs = extract(article.body.to_s)
+    refs = extract(article.rich_text_body&.body&.to_html.to_s)
     # Current approval state is rechecked independently of the directory cache.
     shop_ids = Shop.approved.where(id: refs[:shops]).pluck(:id)
     entries = %w[region station].flat_map { |kind| @directory.published(kind) }
