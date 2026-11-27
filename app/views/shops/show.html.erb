@@ -1167,9 +1167,9 @@
         <section class="shop-show__section shop-show__relatedArticles">
           <div class="shop-show__sectionHeader">
             <div>
-              <h2 class="shop-show__sectionTitle">このエリアの喫煙可記事も見る</h2>
+              <h2 class="shop-show__sectionTitle"><%= @has_direct_article_refs ? "この店舗を紹介する記事" : "このエリアの喫煙可記事も見る" %></h2>
               <p class="shop-show__articleIntro">
-                喫煙できるお店をテーマ別にまとめた記事もチェックできます。
+                <%= @has_direct_article_refs ? "この店舗へのリンクや店舗カードを掲載している記事です。" : "喫煙できるお店をテーマ別にまとめた記事もチェックできます。" %>
               </p>
             </div>
 

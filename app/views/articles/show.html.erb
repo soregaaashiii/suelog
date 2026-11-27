@@ -180,6 +180,13 @@ article_body_html =
   <%= normalize_public_article_tables(article_body_html) %>
 </div>
 
+    <% if @geographic_article_links.any? %>
+      <nav class="article-geographic-links" aria-labelledby="article-geographic-title">
+        <h2 id="article-geographic-title">紹介店舗の地域・駅からほかのお店も探す</h2>
+        <p>記事内の店舗リンクをもとに、その地域・駅の一覧へ進めます。掲載店舗や喫煙条件は各一覧でご確認ください。</p>
+        <div class="geo-links"><% @geographic_article_links.each do |link| %><%= link_to link[:label], link[:path], class: "geo-link" %><% end %></div>
+      </nav>
+    <% end %>
     <section class="article-exit">
       <div class="article-exit__head">
         <div class="article-exit__label">次に探す</div>

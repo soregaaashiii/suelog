@@ -52,6 +52,7 @@ class GeographiesController < HomeController
     build_listing!
     @seo_noindex ||= @shops_count < GeographicDirectory::MIN_SHOPS
     if !@seo_noindex && request.query_parameters.empty?
+      @geographic_articles = ArticlePageLinks.new(@directory).for_page(@geographic_page, facet: @geographic_facet)
       @geographic_guide = GeographicPageGuide.new(directory: @directory, facets: @facets, entry: @geographic_page, facet: @geographic_facet)
     end
     render "home/index"
