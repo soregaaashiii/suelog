@@ -232,6 +232,15 @@
   </section>
 
   <%= render "geographies/guide", guide: @geographic_guide if @geographic_guide %>
+  <% if @geographic_articles.present? %>
+    <section class="home-section geo-articles" aria-labelledby="geo-articles-title">
+      <h2 id="geo-articles-title"><%= @page_heading %>に関連する記事</h2>
+      <p>この一覧の店舗、またはこの地域・条件のページへのリンクを掲載している記事です。記事内のほかの店舗は別の地域・条件の場合があります。</p>
+      <div class="geo-articles__grid"><% @geographic_articles.each do |article| %>
+        <%= link_to article_path(article), class: "geo-articles__card" do %><h3><%= article.title %></h3><% if article.summary.present? %><p><%= article.summary %></p><% end %><span>記事を読む →</span><% end %>
+      <% end %></div>
+    </section>
+  <% end %>
 
   <% if @is_area_page %>
     <section class="home-section">

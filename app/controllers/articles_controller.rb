@@ -14,6 +14,7 @@ class ArticlesController < ApplicationController
 
   def show
     @article = Article.published.find_by!(slug: params[:id])
+    @geographic_article_links = ArticlePageLinks.new.for_article(@article)
   end
 
   def track_shop_click

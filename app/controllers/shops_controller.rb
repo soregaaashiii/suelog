@@ -461,6 +461,13 @@ class ShopsController < ApplicationController
   def related_articles_for(shop)
     return [] unless defined?(Article)
 
+    introduced = ArticlePageLinks.new.for_shop(shop)
+    if introduced.any?
+      @has_direct_article_refs = true
+      ActiveRecord::Associations::Preloader.new(records: introduced, associations: { eyecatch_attachment: :blob }).call
+      return introduced
+    end
+
     area_text = [ shop.area, shop.address, shop.nearest_station ].compact.join(" ")
     shop_genres = [ shop.genre.to_s.strip, shop.genre_other.to_s.strip ].reject(&:blank?)
 
