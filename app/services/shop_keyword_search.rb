@@ -11,7 +11,7 @@ class ShopKeywordSearch
 
   def self.base(value)
     value.to_s.unicode_normalize(:nfkc).downcase.tr("ァ-ヶ", "ぁ-ゖ").tr("髙﨑ゕゖ", "高崎かけ")
-      .gsub(/[[:space:]・･\-‐‑‒–—―−'’「」『』()（）]/, "")
+      .gsub(/[^\p{L}\p{M}\p{N}]/, "")
   end
 
   ALIAS_MAP = ALIASES.each_with_object({}) do |group, result|
@@ -24,7 +24,9 @@ class ShopKeywordSearch
   end
 
   def self.tokens(value)
-    value.to_s.unicode_normalize(:nfkc).split(/[[:space:]]+/).map { |word| normalize(word) }
+    text = value.to_s.unicode_normalize(:nfkc)
+    words = text.split(/[^\p{L}\p{M}\p{N}]+/).reject(&:empty?).map { |word| normalize(word) }
+    words.empty? && text.present? ? [""] : words
   end
 
   def self.document(values)
@@ -33,7 +35,10 @@ class ShopKeywordSearch
 
   def self.apply(scope, value, station: false)
     return scope if value.to_s.blank?
-    keyword = normalize(value)
+    tokens(value).reduce(scope) { |result, token| apply_token(result, token, station: station) }
+  end
+
+  def self.apply_token(scope, keyword, station: false)
     return scope.none if keyword.empty?
     # Bulk inserts without callbacks remain searchable until their projection is rebuilt.
     column = station ? :keyword_station_text : :keyword_search_text

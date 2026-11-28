@@ -134,5 +134,17 @@ class MapsControllerTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "keyword_station_text"
     refute_includes response.body, "keyword_search_text"
   end
+  test "map accepts punctuation between store name and station" do
+    Shop.update_all(approved: false)
+    Geocoder.configure(lookup: :test)
+    Geocoder::Lookup::Test.set_default_stub([])
+    shop = Shop.create!(name: "立ち寿司ホルモン 新鮮や！", address: "大阪市中央区日本橋1-1", nearest_station: "近鉄日本橋駅", genre: "居酒屋",
+      last_confirmed_on: Date.current, smoking_area: :all_smoking, smoking_type: :both_ok, approved: true, latitude: 34.66, longitude: 135.50)
+    bounds = { south: 34.65, west: 135.49, north: 34.67, east: 135.51 }
+    ["立ち寿司ホルモン 新鮮や！｜近鉄日本橋", "立ち寿司ホルモン 新鮮や 近鉄日本橋", "新鮮や／近鉄日本橋"].each do |q|
+      get map_url(format: :json), params: bounds.merge(q: q)
+      assert_equal [shop.id], response.parsed_body.fetch("shops").map { |row| row["id"] }
+    end
+  end
 
 end

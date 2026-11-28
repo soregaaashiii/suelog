@@ -18,6 +18,9 @@ class KeywordSearchTest < ApplicationSystemTestCase
     find('input[type="submit"][value="検索"]').click
     assert_selector ".shop-card__titleLink", text: "Ｃａｆｅ・ＢＯＮＤ", count: 1
     assert_field "station", with: "難波"
+    fill_in "q", with: "Cafe｜BOND"
+    find('input[type="submit"][value="検索"]').click
+    assert_selector ".shop-card__titleLink", text: "Ｃａｆｅ・ＢＯＮＤ", count: 1
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
   end
 end

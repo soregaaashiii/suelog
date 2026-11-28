@@ -527,9 +527,9 @@ end
   end
 
   if keyword_q.present?
-    keyword_tokens = keyword_q.split(" ")
+    keyword_tokens = ShopKeywordSearch.tokens(keyword_q)
     keyword_tokens.each do |token|
-      base = base.keyword(token)
+      base = ShopKeywordSearch.apply_token(base, token)
     end
   end
 

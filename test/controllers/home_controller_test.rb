@@ -225,6 +225,15 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_empty rendered_shop_names
   end
 
+  test "search accepts pasted shop title station and interchangeable separators" do
+    insert_shops(shop_attributes(name: "立ち寿司ホルモン 新鮮や！", nearest_station: "近鉄日本橋駅"))
+    ["立ち寿司ホルモン 新鮮や 近鉄日本橋", "立ち寿司ホルモン 新鮮や！｜近鉄日本橋", "立ち寿司ホルモン／新鮮や！、近鉄日本橋"].each do |q|
+      get root_path, params: { q: q }, headers: request_headers
+      assert_response :success
+      assert_equal ["立ち寿司ホルモン 新鮮や！"], rendered_shop_names
+    end
+  end
+
   private
 
   def request_headers(extra = {})
