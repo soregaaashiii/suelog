@@ -53,7 +53,37 @@
         <% end %>
       <% end %>
 
-      <% fallback_image = shop_fallback_image_path(shop) %>
+      <%
+      fallback_map = {
+        "居酒屋" => "yakitori.jpg",
+        "バー・パブ" => "bar.jpg",
+        "ラウンジ" => "lounge.jpg",
+        "スナック" => "snack.jpg",
+        "カフェ" => "cafe.jpg",
+        "喫茶店" => "cafe.jpg",
+        "焼肉" => "yakiniku.jpg",
+        "バーベキュー" => "yakiniku.jpg",
+        "寿司" => "sushi.jpg",
+        "和食" => "washoku.jpg",
+        "海鮮" => "sushi.jpg",
+        "中華" => "chinese.jpg",
+        "韓国料理" => "korean.jpg",
+        "エスニック" => "ethnic.jpg",
+        "洋食" => "western.jpg",
+        "レストラン" => "western.jpg",
+        "フレンチ" => "french.jpg",
+        "イタリアン" => "italian.jpg",
+        "アメリカ料理" => "american.jpg",
+        "ステーキ" => "steak.jpg",
+        "ラーメン" => "ramen.jpg",
+        "串カツ" => "kushikatsu.jpg",
+        "たこ焼き" => "takoyaki.jpg",
+        "お好み焼き" => "okonomiyaki.jpg",
+        "天ぷら" => "tempura.jpg"
+      }
+      %>
+
+      <% fallback_image = fallback_map[shop.display_genre] || "other.jpg" %>
 
       <% card_photos = [] %>
       <% card_photos << thumb if thumb.present? %>
@@ -72,14 +102,14 @@
 
             <% if card_photos.present? %>
               <% if card_photos.size > 1 %>
-                <button type="button" class="shop-card__photoNav"
+                <button type="button"
                   aria-label="前の画像"
                   onclick="event.preventDefault(); event.stopPropagation(); var sc=this.parentElement.querySelector('[data-shop-card-slider]'); if(sc){ var max=sc.scrollWidth-sc.clientWidth; if(sc.scrollLeft <= 2){ sc.scrollTo({ left:max, behavior:'smooth' }); } else { sc.scrollBy({ left:-sc.clientWidth, behavior:'smooth' }); } }"
                   style="position:absolute; left:10px; top:50%; transform:translateY(-50%); z-index:5; width:34px; height:46px; border:0; border-radius:999px; background:rgba(255,255,255,0.6); backdrop-filter:blur(4px); color:rgba(17,17,17,0.72); font-size:22px; font-weight:500; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; padding:0;">
                   ‹
                 </button>
 
-                <button type="button" class="shop-card__photoNav"
+                <button type="button"
                   aria-label="次の画像"
                   onclick="event.preventDefault(); event.stopPropagation(); var sc=this.parentElement.querySelector('[data-shop-card-slider]'); if(sc){ var max=sc.scrollWidth-sc.clientWidth; if(sc.scrollLeft >= max - 2){ sc.scrollTo({ left:0, behavior:'smooth' }); } else { sc.scrollBy({ left:sc.clientWidth, behavior:'smooth' }); } }"
                   style="position:absolute; right:10px; top:50%; transform:translateY(-50%); z-index:5; width:34px; height:46px; border:0; border-radius:999px; background:rgba(255,255,255,0.6); backdrop-filter:blur(4px); color:rgba(17,17,17,0.72); font-size:22px; font-weight:500; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; padding:0;">
@@ -98,7 +128,7 @@
                             loading: "lazy",
                             decoding: "async") %>
                     <% rescue StandardError %>
-                      <%= image_tag fallback_image,
+                      <%= image_tag "fallbacks/#{fallback_image}",
                             class: "shop-card__img",
                             alt: shop.name,
                             loading: "lazy",
@@ -121,22 +151,29 @@
                 </div>
               <% end %>
             <% else %>
-              <%= image_tag fallback_image,
+              <%= image_tag "fallbacks/#{fallback_image}",
                     class: "shop-card__img",
                     alt: shop.name,
                     loading: "lazy",
                     decoding: "async" %>
             <% end %>
 
-            <% unless card_photos.present? %>
-              <div class="shop-card__imageNote">イメージ画像</div>
-            <% end %>
+            <div class="shop-card__overlay">
+              <% unless card_photos.present? %>
+                <div class="shop-card__imageNote">※画像はイメージです</div>
+              <% end %>
+              <h3 class="shop-card__overlayTitle shop-card__titleLink"><%= shop.name %></h3>
+              <% unless card_photos.present? %>
+                <div class="shop-card__overlaySub">
+                  このお店の最新情報・写真を募集中！
+                </div>
+              <% end %>
+            </div>
 
           </div>
         <% end %>
 
         <div class="shop-card__body">
-          <h3 class="shop-card__title"><%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink" %></h3>
           <% shop_open_now = defined?(open_now_map) && open_now_map.present? ? open_now_map[shop.id] : shop.open_now? %>
           <div class="shop-card__meta">
             <div class="shop-card__statusRow">
@@ -191,7 +228,7 @@
           </p>
 
           <div class="shop-card__actions shop-card__actions--primary">
-            <%= link_to (confirmed_non_smoking ? "禁煙店の情報を見る" : "店舗の詳細を見る"),
+            <%= link_to (confirmed_non_smoking ? "禁煙店の情報を見る" : "喫煙状況・地図・予約を見る"),
                         shop_path(shop),
                         class: "btn btn--dark shop-card__detailBtn" %>
           </div>
