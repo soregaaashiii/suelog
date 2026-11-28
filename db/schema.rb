@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_26_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_28_000100) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -557,6 +557,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_26_000100) do
     t.json "import_metadata", default: {}, null: false
     t.string "import_source"
     t.datetime "imported_at"
+    t.text "keyword_search_text"
+    t.text "keyword_station_text"
     t.date "last_confirmed_on"
     t.string "last_order_text"
     t.float "latitude"
@@ -608,6 +610,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_26_000100) do
     t.index ["hold_reason"], name: "index_shops_on_hold_reason"
     t.index ["hotpepper_api_identity_key"], name: "index_shops_on_hotpepper_api_identity_key"
     t.index ["hotpepper_api_url_key"], name: "index_shops_on_hotpepper_api_url_key"
+    t.index ["id"], name: "index_shops_missing_keyword_search", where: "keyword_search_text IS NULL OR keyword_station_text IS NULL"
     t.index ["name", "address", "approved"], name: "index_shops_on_name_address_approved"
     t.index ["normalized_phone"], name: "index_shops_on_normalized_phone"
     t.index ["on_hold"], name: "index_shops_on_on_hold"

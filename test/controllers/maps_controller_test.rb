@@ -111,4 +111,28 @@ class MapsControllerTest < ActionDispatch::IntegrationTest
     refute_includes ids, far.id
   end
 
+  test "map uses the same width kana spacing and place variants within bounds" do
+    Shop.update_all(approved: false)
+    Geocoder.configure(lookup: :test)
+    Geocoder::Lookup::Test.set_default_stub([])
+    shop = Shop.create!(name: "Ｃａｆｅ・ＢＯＮＤ", address: "大阪市浪速区難波1-1", nearest_station: "なんば駅", genre: "カフェ",
+      last_confirmed_on: Date.current, smoking_area: :all_smoking, smoking_type: :both_ok, approved: true, latitude: 34.66, longitude: 135.50)
+    bounds = { south: 34.65, west: 135.49, north: 34.67, east: 135.51 }
+    get map_url(format: :json), params: bounds.merge(q: "cafebond ナンバ")
+    assert_response :success
+    assert_equal [shop.id], response.parsed_body.fetch("shops").map { |row| row["id"] }
+    get map_url(format: :json), params: bounds.merge(q: "難波 かふぇ")
+    assert_equal [shop.id], response.parsed_body.fetch("shops").map { |row| row["id"] }
+    get map_url(format: :json), params: bounds.merge(q: "cafebond 梅田")
+    assert_empty response.parsed_body.fetch("shops")
+    get map_url(format: :json), params: bounds.merge(q: "-")
+    assert_empty response.parsed_body.fetch("shops")
+    get map_url(format: :json), params: bounds.merge(station: "難波")
+    assert_equal [shop.id], response.parsed_body.fetch("shops").map { |row| row["id"] }
+    get map_url(format: :json), params: bounds.merge(station: "-")
+    assert_empty response.parsed_body.fetch("shops")
+    refute_includes response.body, "keyword_station_text"
+    refute_includes response.body, "keyword_search_text"
+  end
+
 end
