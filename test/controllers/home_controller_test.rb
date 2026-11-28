@@ -204,6 +204,27 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_equal "shop_id IS NULL", index.where
   end
 
+  test "keyword variants keep AND matching approval filters pagination and geographic scope" do
+    insert_shops(shop_attributes(name: "Ｃａｆｅ・ＢＯＮＤ", address: "大阪市浪速区難波1-1", nearest_station: "なんば駅", genre: "カフェ"),
+      shop_attributes(name: "無関係のカフェ", address: "大阪市北区梅田", genre: "カフェ"),
+      shop_attributes(name: "Ｃａｆｅ ＢＯＮＤ 非公開", approved: false))
+    get root_path, params: { q: "cafebond ナンバ" }, headers: request_headers
+    assert_response :success
+    assert_equal ["Ｃａｆｅ・ＢＯＮＤ"], rendered_shop_names
+    get root_path, params: { q: "難波 かふぇ" }, headers: request_headers
+    assert_equal ["Ｃａｆｅ・ＢＯＮＤ"], rendered_shop_names
+    get root_path, params: { station: "ナンバ" }, headers: request_headers
+    assert_equal ["Ｃａｆｅ・ＢＯＮＤ"], rendered_shop_names
+    get root_path, params: { station: "-" }, headers: request_headers
+    assert_empty rendered_shop_names
+    get root_path, params: { q: "cafebond", genre: "居酒屋" }, headers: request_headers
+    assert_empty rendered_shop_names
+    get "/areas/osaka-kita", params: { q: "cafebond" }, headers: request_headers
+    assert_empty rendered_shop_names
+    get root_path, params: { q: "カフェ 存在しない語" }, headers: request_headers
+    assert_empty rendered_shop_names
+  end
+
   private
 
   def request_headers(extra = {})

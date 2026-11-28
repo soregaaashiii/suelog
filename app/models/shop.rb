@@ -226,28 +226,7 @@ class Shop < ApplicationRecord
   scope :on_hold_only, -> { where(on_hold: true) }
   scope :excluding_shop, ->(shop) { where.not(id: shop.id) }
 
-  scope :keyword, lambda { |q|
-    kw = q.to_s.strip.downcase
-    next all if kw.blank?
-
-    like = "%#{sanitize_sql_like(kw)}%"
-    where(
-      <<~SQL.squish,
-        LOWER(COALESCE(shops.name, '')) LIKE :like
-        OR LOWER(COALESCE(shops.address, '')) LIKE :like
-        OR LOWER(COALESCE(shops.area, '')) LIKE :like
-        OR LOWER(COALESCE(shops.nearest_station, '')) LIKE :like
-        OR LOWER(COALESCE(shops.phone, '')) LIKE :like
-        OR LOWER(COALESCE(shops.public_store_details, '')) LIKE :like
-        OR LOWER(COALESCE(shops.genre, '')) LIKE :like
-        OR LOWER(COALESCE(shops.genre_other, '')) LIKE :like
-        OR LOWER(COALESCE(shops.opening_hours_text, '')) LIKE :like
-        OR LOWER(COALESCE(shops.holiday_hours_text, '')) LIKE :like
-        OR LOWER(COALESCE(shops.closed_days_text, '')) LIKE :like
-      SQL
-      like: like
-    )
-  }
+  scope :keyword, ->(query) { ShopKeywordSearch.apply(all, query) }
 
   scope :text_like, lambda { |column, value|
     v = value.to_s.strip
@@ -303,6 +282,7 @@ class Shop < ApplicationRecord
   validate :last_confirmed_on_cannot_be_future
 
   # 電話番号の重複防止（digitsのみ）
+  before_save :refresh_keyword_search_text
   before_validation :set_hotpepper_api_url_key
   before_validation :set_gurunavi_csv_url_key
   before_validation :clear_stale_gurunavi_affiliate_url
@@ -1109,6 +1089,13 @@ class Shop < ApplicationRecord
       "low"
     else
       "unknown"
+    end
+  end
+
+  def refresh_keyword_search_text
+    if keyword_search_text.nil? || keyword_station_text.nil? || ShopKeywordSearch::FIELDS.any? { |field| will_save_change_to_attribute?(field) }
+      self.keyword_search_text = ShopKeywordSearch.document(ShopKeywordSearch::FIELDS.map { |field| self[field] })
+      self.keyword_station_text = ShopKeywordSearch.normalize(nearest_station)
     end
   end
 

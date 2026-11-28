@@ -35,16 +35,16 @@ class MapsController < ApplicationController
       end
       scope = scope.where(id: ids)
     end
-    columns = Shop.column_names - %w[raw_import_text import_metadata note]
+    columns = Shop.column_names - %w[raw_import_text import_metadata note keyword_search_text keyword_station_text]
     @shops = scope.select(*columns).order(last_confirmed_on: :desc, id: :desc).to_a
     @open_now_cache = {}
     @opening_status = ShopOpeningStatus.new
-    keyword = params[:q].to_s.strip.downcase.unicode_normalize(:nfkc)
-    station = params[:station].to_s.strip.downcase
+    keywords = ShopKeywordSearch.tokens(params[:q])
+    station = ShopKeywordSearch.normalize(params[:station])
     @shops.select! do |shop|
-      target = [shop.name, shop.address, genre_label_for(shop), shop.nearest_station].join(" ").downcase.unicode_normalize(:nfkc)
-      keyword.split.all? { |word| target.include?(word) } &&
-        (station.blank? || shop.nearest_station.to_s.downcase.include?(station)) &&
+      target = ShopKeywordSearch.document([shop.name, shop.address, genre_label_for(shop), shop.nearest_station])
+      keywords.all? { |word| word.present? && target.include?(word) } &&
+        (params[:station].blank? || (station.present? && ShopKeywordSearch.normalize(shop.nearest_station).include?(station))) &&
         (params[:genre].blank? || genre_candidates_for(shop).include?(params[:genre]) || (params[:genre] == "その他" && shop.genre == "その他")) &&
         (params[:smoking_area].blank? || shop.smoking_area == params[:smoking_area]) &&
         (params[:smoking_type].blank? || shop.smoking_search_types.include?(params[:smoking_type])) &&

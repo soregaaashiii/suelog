@@ -506,8 +506,7 @@ end
   base = ShopGenreFilter.apply(base, genre_terms)
 
   if station_q.present?
-    like = "%#{ActiveRecord::Base.sanitize_sql_like(station_q)}%"
-    base = base.where("shops.nearest_station LIKE ?", like)
+    base = ShopKeywordSearch.apply(base, station_q, station: true)
   end
 
   if smoking_area.present?
@@ -530,7 +529,7 @@ end
   if keyword_q.present?
     keyword_tokens = keyword_q.split(" ")
     keyword_tokens.each do |token|
-      base = base.merge(Shop.keyword(token))
+      base = base.keyword(token)
     end
   end
 
