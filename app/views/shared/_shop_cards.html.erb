@@ -102,14 +102,14 @@
 
             <% if card_photos.present? %>
               <% if card_photos.size > 1 %>
-                <button type="button"
+                <button type="button" class="shop-card__photoNav"
                   aria-label="前の画像"
                   onclick="event.preventDefault(); event.stopPropagation(); var sc=this.parentElement.querySelector('[data-shop-card-slider]'); if(sc){ var max=sc.scrollWidth-sc.clientWidth; if(sc.scrollLeft <= 2){ sc.scrollTo({ left:max, behavior:'smooth' }); } else { sc.scrollBy({ left:-sc.clientWidth, behavior:'smooth' }); } }"
                   style="position:absolute; left:10px; top:50%; transform:translateY(-50%); z-index:5; width:34px; height:46px; border:0; border-radius:999px; background:rgba(255,255,255,0.6); backdrop-filter:blur(4px); color:rgba(17,17,17,0.72); font-size:22px; font-weight:500; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; padding:0;">
                   ‹
                 </button>
 
-                <button type="button"
+                <button type="button" class="shop-card__photoNav"
                   aria-label="次の画像"
                   onclick="event.preventDefault(); event.stopPropagation(); var sc=this.parentElement.querySelector('[data-shop-card-slider]'); if(sc){ var max=sc.scrollWidth-sc.clientWidth; if(sc.scrollLeft >= max - 2){ sc.scrollTo({ left:0, behavior:'smooth' }); } else { sc.scrollBy({ left:sc.clientWidth, behavior:'smooth' }); } }"
                   style="position:absolute; right:10px; top:50%; transform:translateY(-50%); z-index:5; width:34px; height:46px; border:0; border-radius:999px; background:rgba(255,255,255,0.6); backdrop-filter:blur(4px); color:rgba(17,17,17,0.72); font-size:22px; font-weight:500; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; padding:0;">
@@ -158,22 +158,15 @@
                     decoding: "async" %>
             <% end %>
 
-            <div class="shop-card__overlay">
-              <% unless card_photos.present? %>
-                <div class="shop-card__imageNote">※画像はイメージです</div>
-              <% end %>
-              <h3 class="shop-card__overlayTitle shop-card__titleLink"><%= shop.name %></h3>
-              <% unless card_photos.present? %>
-                <div class="shop-card__overlaySub">
-                  このお店の最新情報・写真を募集中！
-                </div>
-              <% end %>
-            </div>
+            <% unless card_photos.present? %>
+              <div class="shop-card__imageNote">イメージ画像</div>
+            <% end %>
 
           </div>
         <% end %>
 
         <div class="shop-card__body">
+          <h3 class="shop-card__title"><%= link_to shop.name, shop_path(shop), class: "shop-card__titleLink" %></h3>
           <% shop_open_now = defined?(open_now_map) && open_now_map.present? ? open_now_map[shop.id] : shop.open_now? %>
           <div class="shop-card__meta">
             <div class="shop-card__statusRow">
@@ -228,7 +221,7 @@
           </p>
 
           <div class="shop-card__actions shop-card__actions--primary">
-            <%= link_to (confirmed_non_smoking ? "禁煙店の情報を見る" : "喫煙状況・地図・予約を見る"),
+            <%= link_to (confirmed_non_smoking ? "禁煙店の情報を見る" : "店舗の詳細を見る"),
                         shop_path(shop),
                         class: "btn btn--dark shop-card__detailBtn" %>
           </div>
