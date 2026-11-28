@@ -53,37 +53,7 @@
         <% end %>
       <% end %>
 
-      <%
-      fallback_map = {
-        "居酒屋" => "yakitori.jpg",
-        "バー・パブ" => "bar.jpg",
-        "ラウンジ" => "lounge.jpg",
-        "スナック" => "snack.jpg",
-        "カフェ" => "cafe.jpg",
-        "喫茶店" => "cafe.jpg",
-        "焼肉" => "yakiniku.jpg",
-        "バーベキュー" => "yakiniku.jpg",
-        "寿司" => "sushi.jpg",
-        "和食" => "washoku.jpg",
-        "海鮮" => "sushi.jpg",
-        "中華" => "chinese.jpg",
-        "韓国料理" => "korean.jpg",
-        "エスニック" => "ethnic.jpg",
-        "洋食" => "western.jpg",
-        "レストラン" => "western.jpg",
-        "フレンチ" => "french.jpg",
-        "イタリアン" => "italian.jpg",
-        "アメリカ料理" => "american.jpg",
-        "ステーキ" => "steak.jpg",
-        "ラーメン" => "ramen.jpg",
-        "串カツ" => "kushikatsu.jpg",
-        "たこ焼き" => "takoyaki.jpg",
-        "お好み焼き" => "okonomiyaki.jpg",
-        "天ぷら" => "tempura.jpg"
-      }
-      %>
-
-      <% fallback_image = fallback_map[shop.display_genre] || "other.jpg" %>
+      <% fallback_image = shop_fallback_image_path(shop) %>
 
       <% card_photos = [] %>
       <% card_photos << thumb if thumb.present? %>
@@ -128,7 +98,7 @@
                             loading: "lazy",
                             decoding: "async") %>
                     <% rescue StandardError %>
-                      <%= image_tag "fallbacks/#{fallback_image}",
+                      <%= image_tag fallback_image,
                             class: "shop-card__img",
                             alt: shop.name,
                             loading: "lazy",
@@ -151,7 +121,7 @@
                 </div>
               <% end %>
             <% else %>
-              <%= image_tag "fallbacks/#{fallback_image}",
+              <%= image_tag fallback_image,
                     class: "shop-card__img",
                     alt: shop.name,
                     loading: "lazy",
