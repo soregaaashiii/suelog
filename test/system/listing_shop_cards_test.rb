@@ -1,7 +1,7 @@
 require "application_system_test_case"
 
-class HorizontalShopCardsTest < ApplicationSystemTestCase
-  test "photos and fallback stay left of linked title and details at all screen sizes" do
+class ListingShopCardsTest < ApplicationSystemTestCase
+  test "listing cards retain image overlays and details below while article cards stay independent" do
     previous_transformer = ActiveStorage.variant_transformer
     ActiveStorage.variant_transformer = ActiveStorage::Transformers::ImageMagick
     Shop.update_all(approved: false)
@@ -18,8 +18,8 @@ class HorizontalShopCardsTest < ApplicationSystemTestCase
       page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: width, height: 900, deviceScaleFactor: 1, mobile: width < 640)
       visit "/?q=喫茶店"
       assert_selector ".shop-card", count: 2
-      assert_selector ".shop-card__body .shop-card__titleLink", count: 2
-      assert_selector ".shop-card__imageNote", text: "イメージ画像", count: 1
+      assert_selector ".shop-card__media .shop-card__titleLink", count: 2
+      assert_selector ".shop-card__imageNote", text: "※画像はイメージです", count: 1
       assert_selector "[data-shop-card-slider]", count: 1
       assert_selector 'button[aria-label="次の画像"]', count: 1
       assert page.evaluate_script(<<~JS)
@@ -27,18 +27,18 @@ class HorizontalShopCardsTest < ApplicationSystemTestCase
           const image = card.querySelector('.shop-card__mediaLink').getBoundingClientRect();
           const body = card.querySelector('.shop-card__body').getBoundingClientRect();
           const title = card.querySelector('.shop-card__titleLink').getBoundingClientRect();
-          return image.width >= 90 && image.right <= body.left && title.left >= body.left &&
-            body.right <= card.getBoundingClientRect().right && image.top < title.bottom;
+          return image.width >= 90 && image.bottom <= body.top && title.left >= image.left &&
+            body.right <= card.getBoundingClientRect().right && title.bottom <= image.bottom;
         }) && document.documentElement.scrollWidth <= #{width}
       JS
       page.execute_script("document.querySelectorAll('.shop-card img').forEach(img => img.loading = 'eager')")
       Selenium::WebDriver::Wait.new(timeout: 10).until { page.evaluate_script("[...document.querySelectorAll('.shop-card img')].every(img => img.complete && img.naturalWidth > 0)") }
       page.execute_script("document.querySelector('.shop-grid').scrollIntoView({block: 'start'})")
       page.driver.browser.execute_async_script("const done = arguments[0]; requestAnimationFrame(() => requestAnimationFrame(done));")
-      page.save_screenshot(Rails.root.join("tmp/horizontal-shop-cards-#{width}.png"))
+      page.save_screenshot(Rails.root.join("tmp/restored-listing-cards-#{width}.png"))
     end
     within ".shop-card", text: "写真ありの喫茶店" do
-      find(".shop-card__body .shop-card__titleLink").click
+      find(".shop-card__mediaLink").click
     end
     assert_current_path shop_path(photo_shop)
   ensure

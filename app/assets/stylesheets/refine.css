@@ -265,29 +265,6 @@ body.suelog-refine {
 .suelog-refine .shop-card__confirmed { font-size:10px; }
 .suelog-refine .shop-card__address { margin:0 0 8px; font-size:12px; line-height:1.5; }
 
-/* Shared shop listings: image on the left, all information on the right. */
-.suelog-refine .shop-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
-.suelog-refine .shop-card { flex-direction:row; align-items:flex-start; gap:16px; padding:14px; }
-.suelog-refine .shop-card__mediaLink { flex:0 0 30%; min-width:0; max-width:180px; }
-.suelog-refine .shop-card__media { width:100%; aspect-ratio:1; height:auto; border-radius:3px; }
-.suelog-refine .shop-card__body { flex:1 1 0; min-width:0; padding:0; }
-.suelog-refine .shop-card__title { margin:0 0 8px; line-height:1.4; }
-.suelog-refine .shop-card__titleLink { font-size:19px; line-height:1.4; overflow-wrap:anywhere; text-decoration:none; }
-.suelog-refine .shop-card__imageNote { top:auto; right:0; bottom:0; left:0; border-radius:0; text-align:center; font-size:10px; padding:3px; }
-.suelog-refine .shop-card__confirmed { margin-left:0; }
-.suelog-refine .shop-card__detailBtn { white-space:normal; overflow-wrap:anywhere; }
-.suelog-refine .shop-card__photoNav { width:24px!important; height:32px!important; font-size:18px!important; }
-.suelog-refine .shop-card__photoNav[aria-label="前の画像"] { left:4px!important; }
-.suelog-refine .shop-card__photoNav[aria-label="次の画像"] { right:4px!important; }
-@media(max-width:1000px) { .suelog-refine .shop-grid { grid-template-columns:minmax(0,1fr); } }
-@media(max-width:640px) {
-  .suelog-refine .shop-card { gap:12px; padding:12px; }
-  .suelog-refine .shop-card__mediaLink { flex-basis:96px; }
-  .suelog-refine .shop-card__titleLink { font-size:17px; }
-  .suelog-refine .shop-card__statusRow { flex-wrap:wrap; }
-  .suelog-refine .shop-card__detailBtn::after { display:none; }
-}
-
 /* Inline article shortcodes use the same shop image as listing cards. */
 .suelog-refine .refine-article-shop-card { display:flex; align-items:flex-start; gap:16px; }
 .suelog-refine .refine-article-shop-card__photo { flex:0 0 112px; width:112px; height:112px; overflow:hidden; border-radius:3px; }
