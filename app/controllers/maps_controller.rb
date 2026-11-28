@@ -40,11 +40,11 @@ class MapsController < ApplicationController
     @open_now_cache = {}
     @opening_status = ShopOpeningStatus.new
     keywords = ShopKeywordSearch.tokens(params[:q])
-    station = ShopKeywordSearch.normalize(params[:station])
+    stations = ShopKeywordSearch.tokens(params[:station])
     @shops.select! do |shop|
       target = ShopKeywordSearch.document([shop.name, shop.address, genre_label_for(shop), shop.nearest_station])
       keywords.all? { |word| word.present? && target.include?(word) } &&
-        (params[:station].blank? || (station.present? && ShopKeywordSearch.normalize(shop.nearest_station).include?(station))) &&
+        (params[:station].blank? || stations.all? { |word| word.present? && ShopKeywordSearch.normalize(shop.nearest_station).include?(word) }) &&
         (params[:genre].blank? || genre_candidates_for(shop).include?(params[:genre]) || (params[:genre] == "その他" && shop.genre == "その他")) &&
         (params[:smoking_area].blank? || shop.smoking_area == params[:smoking_area]) &&
         (params[:smoking_type].blank? || shop.smoking_search_types.include?(params[:smoking_type])) &&

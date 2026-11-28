@@ -30,10 +30,11 @@ class ShopKeywordSearchTest < ActiveSupport::TestCase
     assert_not_includes Shop.keyword("にゅーかふぇ").pluck(:id), shop.id
   end
 
-  test "literal SQL wildcards are escaped and punctuation only does not match everything" do
+  test "wildcard and punctuation only queries never match everything" do
     ordinary = create_shop(name: "通常の店舗", approved: true)
     literal = create_shop(name: "１００％_CAFE", approved: true)
-    assert_equal [literal.id], Shop.keyword("%_").pluck(:id)
+    assert_empty Shop.keyword("%_")
+    assert_equal [literal.id], Shop.keyword("１００ＣＡＦＥ").pluck(:id)
     assert_not_includes Shop.keyword("%_").pluck(:id), ordinary.id
     assert_empty Shop.keyword("-")
     assert_equal Shop.count, Shop.keyword("　 ").count
@@ -48,6 +49,21 @@ class ShopKeywordSearchTest < ActiveSupport::TestCase
     assert_empty Shop.where(id: ids.first).keyword("存在しない")
     assert_not Shop.where(id: ids.first).keyword("どとーる中百舌鳥").exists?, "Matches must not cross field boundaries"
   end
+  test "separator forms match store titles and stations without treating punctuation as required" do
+    shop = create_shop(name: "立ち寿司ホルモン 新鮮や！", nearest_station: "近鉄日本橋駅", approved: true)
+    separators = [" ", "　", "\t", "\n", "｜", "|", "／", "/", "・", "、", ",", "：", ":", "；", ";", "—", "-", "（", "【", "→", "★", "！", "_", "％", "＆", "…", "＝", "＋"]
+    separators.each do |separator|
+      query = "立ち寿司ホルモン#{separator}新鮮や！#{separator}近鉄日本橋"
+      assert_includes Shop.approved.keyword(query).pluck(:id), shop.id, query
+    end
+    assert_includes Shop.keyword("新鮮や").pluck(:id), shop.id
+    assert_includes Shop.keyword("新鮮や!｜近鉄 日本橋").pluck(:id), shop.id
+    assert_empty Shop.keyword("新鮮や｜存在しない駅")
+    assert_empty Shop.keyword("｜ ／ ★")
+    shop.update!(name: "立ち寿司ホルモン｜新鮮や！")
+    assert_includes Shop.keyword("立ち寿司ホルモン 新鮮や").pluck(:id), shop.id
+  end
+
   private
 
   def create_shop(**values)
